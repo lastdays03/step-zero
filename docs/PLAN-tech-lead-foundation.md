@@ -14,6 +14,8 @@ StepZero MVP 개발을 위해 시니어 엔지니어(Tech Lead)가 4명의 주�
 - **Stack:** Next.js 14 (FE), FastAPI 0.109+ (BE), PostgreSQL 16 + pgvector (DB)
 - **Repo:** Monorepo (Simplified Folders: `app-frontend`, `app-backend`)
 - **Deployment:** Docker Compose (All-in-One Monolith)
+- **Architecture:** Clean Architecture (Layered: Router -> Service -> Repository -> Model)
+- **Methodology:** TDD (Test-Driven Development) Mandatory for Business Logic
 
 ---
 
@@ -42,10 +44,27 @@ StepZero MVP 개발을 위해 시니어 엔지니어(Tech Lead)가 4명의 주�
 - [ ] DB 연결 (`sqlmodel` or `sqlalchemy`, `app/core/db.py`)
 - [ ] Config 관리 (`pydantic-settings`, `.env` 로딩)
 - [ ] Lint/Format 설정 (`pyproject.toml`: Black, Isort, Flake8, MyPy)
+- [ ] **Clean Architecture Setup:**
+    - `app/api/v1` (Controller): 요청/응답 처리.
+    - `app/services` (UseCase): 비즈니스 로직.
+    - `app/repositories` (Data Access): DB 쿼리 분리.
+- [ ] **TDD Environment:**
+    - `tests/conftest.py`: DB Session fixture, AsyncClient fixture 설정.
+    - `tests/factories.py`: Polyfactory 기반 테스트 데이터 생성기.
+- [ ] **DB Audit Base:**
+    - `TimestampMixin` (`created_at`, `updated_at`) 구현.
+    - `SoftDeleteMixin` (`deleted_at` 처리 로직) 구현.
+    - `AuditLog` 모델 및 트랜잭션 훅 검토.
 
 #### [NEW] Frontend Boilerplate (`app-frontend/`)
+- [ ] **Feature-Based Architecture:**
+    - `features/auth`, `features/roadmap`, `features/dashboard` 폴더 구조 확립.
+    - 각 Feature 내 `components`, `hooks`, `api`, `types` 분리.
+- [ ] **TDD Environment:**
+    - Jest + React Testing Library 설정.
+    - `msw` (Mock Service Worker) API 모킹 설정.
 - [ ] Next.js 14 App Router 초기화 (`npx create-next-app`)
-- [ ] TailwindCSS v3 + Shadcn UI 초기 설정 (`components/ui` 폴더 생성)
+- [ ] TailwindCSS v3 + Shadcn UI 초기 설정
 - [ ] ESLint, Prettier, Husky (pre-commit) 설정
 - [ ] API Fetch Wrapper (`lib/api-client.ts` - 토큰 자동 주입, 에러 처리)
 
@@ -72,13 +91,15 @@ StepZero MVP 개발을 위해 시니어 엔지니어(Tech Lead)가 4명의 주�
 > **Goal:** "로그인부터 대시보드 진입까지"의 기준 코드(Guideline Code) 작성.
 
 ### 3.1. Authentication System
-- [ ] **Supabase Auth Integration:** 
-    - FE: `SupabaseClient` 설정 및 `useAuth` 훅 구현.
-    - BE: JWT 토큰 검증 미들웨어 (`Depends(get_current_user)`).
+- [ ] **Self-Hosted Auth System:**
+    - BE: `FastAPI-Users` 또는 `OAuth2PasswordBearer` 기반 JWT 발급/검증 로직 구현.
+    - BE: `users` 테이블 마이그레이션 (`email`, `hashed_password`, `is_active`).
+    - FE: `NextAuth` (Auth.js) Credentials Provider 연동 또는 커스텀 로그인 폼.
 - [ ] **User & Team Model:** 
     - `users`: Identity Provider로 사용.
     - `teams`: 데이터 소유의 주체 (Multi-Tenancy Root).
     - `team_members`: 유저-팀 권한 매핑.
+    - `audit_logs`: 중요 데이터 변경 이력 저장.
     - Alembic으로 마이그레이션 스크립트 작성.
 
 ### 3.2. Dashboard "Hello World"

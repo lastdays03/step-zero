@@ -29,9 +29,14 @@
 "이 기능 어떻게 짜요?"라는 질문에 대한 **살아있는 예제 코드(Reference)** 제공.
 가장 기본이 되는 **[회원가입 -> 로그인 -> 메인 대시보드 진입]** 흐름을 완벽하게 구현.
 
-- **Authentication (Auth):**
-    - Supabase Auth 연동 (FE: SSR/CSR 처리, BE: JWT 검증 미들웨어).
-    - `UserContext`프로바이더 및 `useUser` 훅 구현.
+- **Authentication (Auth) with Hidden Multi-Tenancy:**
+    - **Backend:** 
+        - **Self-Hosted JWT Auth:** `FastAPI-Users` 또는 직접 구현 (`OAuth2PasswordBearer`, `Passlib`, `PyJWT`).
+        - **User Model:** DB에 `password_hash` 저장 및 검증 로직 구현.
+        - **Auto-Team Creation:** 회원가입 시 Service Layer에서 `1 User = 1 Default Team` 생성 트랜잭션 보장.
+    - **Frontend:** 
+        - `NextAuth.js (Auth.js)` 또는 커스텀 `AuthContext` 구현.
+        - 로그인/회원가입 폼 직접 구현 (Shadcn UI).
 - **API Communication:**
     - `fetch` 래퍼(Wrapper) 구현: 토큰 자동 주입, 에러 핸들링, 타임아웃 처리.
     - React Query (TanStack Query) 설정: `QueryClient` 전역 설정, 캐싱 전략.
@@ -55,7 +60,7 @@
 프론트엔드와 백엔드 간의 오해를 없애기 위한 약속.
 
 - **Shared Types:**
-    - `User`, `Roadmap`, `Step`, `ActionKit` 등 핵심 도메인 모델의 TypeScript Interface 정의.
+    - `User`, `Team`, `Roadmap`, `Step`, `ActionKit` 등 핵심 도메인 모델의 TypeScript Interface 정의.
     - Pydantic 모델(Python)과 Sync 맞추기 (가능하면 코드 제너레이터 사용 고려).
 - **API Specification (Draft):**
     - 핵심 API(약 10개)에 대한 URL, Method, Request/Response Body 명세.

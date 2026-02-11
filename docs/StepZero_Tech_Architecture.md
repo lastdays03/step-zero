@@ -1,3 +1,4 @@
+
 # StepZero Technical Architecture (Option A - All-in-One Docker)
 
 ## 1. Overview
@@ -81,7 +82,21 @@ graph TD
 
 ---
 
-## 5. Pros & Cons (vs Separate Services)
+## 5. Scalability & Multi-Tenancy Strategy (Hidden)
+
+### 5.1. Database Design (B2B Ready)
+*   모든 비즈니스 데이터(Roadmap, ActionKit)는 `users`가 아닌 **`teams`**에 종속됩니다.
+*   이는 향후 **B2B(지자체, 창업보육센터)**나 **팀 협업 기능** 도입 시, DB Schema 변경 없이 즉시 확장하기 위함입니다.
+*   **Audit Trail:** 모든 테이블에 `created_at`, `updated_at`, `deleted_at`, `xxx_by` 컬럼을 기본 적용하여 데이터 무결성을 보장합니다.
+
+### 5.2. UX Strategy (MVP - Hidden Complexity)
+*   **1 User = 1 Team:** 초기 단계(MVP)에서는 사용자가 회원가입 시 **자동으로 1인 팀(Default Team)**을 생성합니다.
+*   **Interface:** 사용자에게 "팀 생성"이나 "워크스페이스 선택" UI를 노출하지 않습니다. 개인 앱처럼 느껴지게 합니다 (Personal UX).
+*   **Future Proof:** 나중에 "초대하기" 버튼 하나만 노출하면 즉시 협업 툴로 전환 가능합니다.
+
+---
+
+## 6. Pros & Cons (vs Separate Services)
 *   **Pros:**
     *   **비용 효율:** 월 $5~10 수준의 VPS 하나로 모든 서비스 운영 가능.
     *   **성능:** 프론트엔드와 백엔드가 같은 머신(Docker Network)에 있어 통신 지연이 거의 없음 (0ms 수준).

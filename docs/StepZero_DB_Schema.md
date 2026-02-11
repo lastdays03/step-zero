@@ -25,15 +25,17 @@ StepZero의 **안정성(Audit Trail)**, **B2B 확장성(Multi-Tenancy)**, 그리
 ## 3. Identity & Access Management (IAM)
 
 ### 3.1. `users` (Global User Identity)
-인증(Authentication) 주체입니다. Supabase Auth의 `auth.users`와 1:1 매핑됩니다.
+인증(Authentication) 주체입니다. 자체 JWT 인증을 위한 기본 정보를 저장합니다.
 
-| Column       | Type         | PK/FK  | Description               |
-| :----------- | :----------- | :----- | :------------------------ |
-| `id`         | UUID         | PK     | Supabase User ID          |
-| `email`      | VARCHAR      | Unique | 이메일                    |
-| `full_name`  | VARCHAR(100) |        | 사용자 실명               |
-| `avatar_url` | TEXT         |        | 프로필 이미지 URL         |
-| *(Audit)*    | ...          |        | created_at, updated_at... |
+| Column          | Type         | PK/FK  | Description                     |
+| :-------------- | :----------- | :----- | :------------------------------ |
+| `id`            | UUID         | PK     | User ID (System Generated)      |
+| `email`         | VARCHAR      | Unique | 이메일                          |
+| `password_hash` | VARCHAR      |        | **bcrypt/argon2 해시값** (필수) |
+| `full_name`     | VARCHAR(100) |        | 사용자 실명                     |
+| `avatar_url`    | TEXT         |        | 프로필 이미지 URL               |
+| `is_active`     | BOOLEAN      |        | 계정 활성화 여부                |
+| *(Audit)*       | ...          |        | created_at, updated_at...       |
 
 ### 3.2. `teams` (Tenants / Workspaces)
 데이터 소유의 주체입니다. **개인 사용자도 1인 Team을 자동 생성**하여 사용합니다.
