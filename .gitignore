@@ -83,3 +83,5 @@ next-env.d.ts
 # Local DB Data (Docker Volume)
 data/
 pgdata/
+
+.temp/

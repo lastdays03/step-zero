@@ -1,0 +1,93 @@
+services:
+  # ---------------------------------------------------------------------------
+  # Database Service (PostgreSQL + pgvector)
+  # ---------------------------------------------------------------------------
+  app-db:
+    image: pgvector/pgvector:pg16
+    container_name: stepzero-db
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=stepzero_admin
+      - POSTGRES_PASSWORD=stepzero_password
+      - POSTGRES_DB=stepzero_db
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./scripts/init_db.sh:/docker-entrypoint-initdb.d/init_db.sh
+    networks:
+      - stepzero-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U stepzero_admin -d stepzero_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Cache & Queue Service (Redis)
+  # ---------------------------------------------------------------------------
+  app-redis:
+    image: redis:alpine
+    container_name: stepzero-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - stepzero-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # ---------------------------------------------------------------------------
+  # Backend Service (FastAPI)
+  # ---------------------------------------------------------------------------
+  app-backend:
+    build:
+      context: ./app-backend
+      dockerfile: Dockerfile
+    container_name: stepzero-backend
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./app-backend:/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://stepzero_admin:stepzero_password@app-db:5432/stepzero_db
+      - REDIS_URL=redis://app-redis:6379
+      # - OPENAI_API_KEY=${OPENAI_API_KEY} # Load from .env
+    depends_on:
+      app-db:
+        condition: service_healthy
+      app-redis:
+        condition: service_healthy
+    networks:
+      - stepzero-network
+
+  # ---------------------------------------------------------------------------
+  # Frontend Service (Next.js)
+  # ---------------------------------------------------------------------------
+  app-frontend:
+    build:
+      context: ./app-frontend
+      dockerfile: Dockerfile
+    container_name: stepzero-frontend
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./app-frontend:/app
+      - /app/node_modules # Avoid overwriting node_modules
+    environment:
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+    depends_on:
+      - app-backend
+    networks:
+      - stepzero-network
+
+volumes:
+  db_data:
+
+
+networks:
+  stepzero-network:
+    driver: bridge
