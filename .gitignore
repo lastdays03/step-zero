@@ -1,2 +1,85 @@
+# ---------------
+# OS & IDE
+# ---------------
 .DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# ---------------
+# Docker
+# ---------------
+.docker/
+*.log
+
+# ---------------
+# Secrets & Env
+# ---------------
+.env
+.env.*
+.venv/
+venv/
+ENV/
+env/
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# ---------------
+# Python (Backend)
+# ---------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Typing & Test
+.mypy_cache/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.nox/
+
+# ---------------
+# Node.js (Frontend)
+# ---------------
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Next.js
+.next/
+out/
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# ---------------
+# Project Specific
+# ---------------
+# Local DB Data (Docker Volume)
+data/
+pgdata/
