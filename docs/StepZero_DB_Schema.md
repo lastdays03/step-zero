@@ -174,33 +174,83 @@ MOLEG API(`org_code`)와 행정표준코드(`region_code`)를 연결하는 핵�
 
 ```mermaid
 erDiagram
-    TEAMS ||--o{ TEAM_MEMBERS : "has"
-    USERS ||--o{ TEAM_MEMBERS : "belongs_to"
-    
-    TEAMS ||--o{ ROADMAPS : "owns"
+    %% --- IAM Domain ---
+    users {
+        uuid id PK
+        string email UK
+        string full_name
+        string role
+    }
+    teams {
+        uuid id PK
+        string name
+        string plan_type
+    }
+    team_members {
+        uuid team_id FK
+        uuid user_id FK
+        string role
+    }
 
-    REGIONS ||--o{ LEGAL_DOCS_METADATA : "has"
-    REGIONS {
-        string region_code PK
-        string moleg_org_code
+    users ||--o{ team_members : "joins"
+    teams ||--o{ team_members : "has"
+
+    %% --- Business Domain ---
+    roadmaps {
+        uuid id PK
+        uuid team_id FK
+        string region_code FK
+        string category_id FK
+        string status
+    }
+    roadmap_steps {
+        uuid id PK
+        uuid roadmap_id FK
+        int step_order
+        string status
+        date due_date
     }
     
-    BIZ_CATEGORIES ||--o{ ROADMAP_TEMPLATES : "defines"
-    BIZ_CATEGORIES {
-        string category_id PK
+    teams ||--o{ roadmaps : "owns"
+    roadmaps ||--o{ roadmap_steps : "contains"
+
+    %% --- Master Data / Templates ---
+    template_roadmaps {
+        int id PK
+        string category_id FK
+        string title
+        int version
+        jsonb steps_json
     }
-    
-    ROADMAP_TEMPLATES ||--o{ ACTION_KITS : "linked_to"
-    ROADMAP_TEMPLATES {
-        int template_id PK
-        string step_name
-    }
-    
-    ACTION_KITS {
+    action_kits {
         int kit_id PK
+        string target_step_name
+        string region_code FK
         string form_file_url
         jsonb checklist
     }
+
+    %% --- Metadata ---
+    regions {
+        string region_code PK
+        string parent_code FK
+        string name_full
+        string moleg_org_code
+    }
+    biz_categories {
+        string id PK
+        string name
+        jsonb related_laws
+    }
+
+    %% Relationships (Master Data)
+    roadmaps }o--|| regions : "located_in"
+    roadmaps }o--|| biz_categories : "is_type"
+    
+    template_roadmaps }o--|| biz_categories : "defined_for"
+    action_kits }o--o| regions : "specific_to"
+    
+    regions |o--o{ regions : "parent_of"
 ```
 
 ---

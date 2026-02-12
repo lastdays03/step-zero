@@ -15,7 +15,7 @@ export const DashboardView = () => {
     }
 
     return (
-        <div className="flex-1 overflow-y-auto relative p-4 md:p-8 bg-[#f6f7f8] min-h-screen">
+        <div className="">
             {/* Main Grid: 4 Columns */}
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
