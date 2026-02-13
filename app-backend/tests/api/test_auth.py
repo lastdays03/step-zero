@@ -23,3 +23,5 @@ async def test_login_success(client: AsyncClient):
     data = response.json()
     assert "access_token" in data
     assert data["token_type"] == "bearer"
+    assert "user" in data
+    assert data["user"]["email"] == "test@example.com"

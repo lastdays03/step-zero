@@ -30,3 +30,9 @@ class UserRead(UserBase):
 
 class TokenWithUser(Token):
     user: UserRead
+
+
+class AuthenticatedUser(SQLModel):
+    id: int
+    email: str
+    full_name: Optional[str] = None

@@ -62,30 +62,21 @@ docker compose -f docker-compose.dev.yml up -d app-db app-redis
 ```bash
 cd app-backend
 
-# 1) 가상환경 생성 및 활성화
-## Mac/Linux
-python -m venv .venv
-source .venv/bin/activate 
+# 1) 개발환경 자동 초기화 (Python 3.11 + dev 의존성 + .env 생성)
+./scripts/setup_dev.sh
 
-## Windows (Powershell)
-# python -m venv .venv
-# .venv\Scripts\Activate.ps1
+# 2) 서버 실행
+make run
 
-# 2) 의존성 패키지 설치
-pip install -e ".[dev]"
-
-# 3) 환경변수 설정 (.env 파일 생성)
-# 아래 내용을 app-backend/.env 파일로 저장하세요.
-# ------------------------------------------------------------------
-# DATABASE_URL=postgresql+asyncpg://stepzero_admin:stepzero_password@localhost:5432/stepzero_db
-# REDIS_URL=redis://localhost:6379/0
-# SECRET_KEY=CHANGE_ME_LOCAL_DEV
-# ALGORITHM=HS256
-# ------------------------------------------------------------------
-
-# 4) 서버 실행
-uvicorn app.main:app --reload --port 8000
+# 3) 테스트 실행
+make test
 ```
+
+> 참고:
+> - 백엔드는 `app-backend/.python-version`으로 Python 3.11을 고정합니다.
+> - `uv` 버전은 `app-backend/.uv-version`으로 고정합니다.
+> - macOS(26 계열)에서는 `uv` 패닉 이슈를 우회하기 위해 `setup_dev.sh`가 기본적으로 `python/pip` 경로를 사용합니다.
+> - `uv`를 강제로 쓰려면 `FORCE_UV=1 ./scripts/setup_dev.sh`를 사용하세요.
 
 **3. Frontend 로컬 실행 (Node.js)**
 ```bash

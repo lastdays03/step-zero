@@ -1,141 +1,157 @@
 
 from datetime import timedelta
-from typing import Any, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Body
+from typing import Any
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from sqlmodel import Session, select
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 from pydantic import BaseModel
 from google.oauth2 import id_token
 from google.auth.transport import requests
 
 from app.core import security
 from app.core import config
-from app.models.user import User, Token, TokenWithUser
+from app.models.user import User, TokenWithUser, UserRead
 from app.core.db import get_session
+from app.core.logging import get_logger
 
 router = APIRouter()
 settings = config.get_settings()
+logger = get_logger("api.auth")
 
 class GoogleLoginRequest(BaseModel):
     id_token: str
 
-@router.post("/login", response_model=Token)
+@router.post("/login", response_model=TokenWithUser)
 async def login_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
-    # session: Session = Depends(get_session) # Uncomment when DB is ready
+    session: AsyncSession = Depends(get_session),
 ) -> Any:
     """
     OAuth2 compatible token login, get an access token for future requests
     """
-    if form_data.username == "test@example.com" and form_data.password == "password123":
-        access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-        access_token = security.create_access_token(
-            subject=form_data.username, expires_delta=access_token_expires
+    result = await session.execute(select(User).where(User.email == form_data.username))
+    user = result.scalar_one_or_none()
+    if not user or not security.verify_password(form_data.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password",
         )
-        return {
-            "access_token": access_token,
-            "token_type": "bearer",
-        }
-    
-    raise HTTPException(status_code=400, detail="Incorrect email or password")
+    if not user.is_active:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
+
+    access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = security.create_access_token(
+        subject=user.email, expires_delta=access_token_expires
+    )
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": UserRead.model_validate(user),
+    }
 
 @router.post("/login/google", response_model=TokenWithUser)
 async def login_google(
     request_data: GoogleLoginRequest,
-    session: Session = Depends(get_session)
+    session: AsyncSession = Depends(get_session)
 ) -> Any:
     """
-    Verify Google Token (ID Token or Access Token) and return access token
+    Verify Google ID token and return access token
     """
-    try:
-        email = None
-        name = None
-        
-        # 1. Try to verify as Google ID Token (JWT)
-        try:
-            idinfo = id_token.verify_oauth2_token(
-                request_data.id_token, 
-                requests.Request(), 
-                settings.GOOGLE_CLIENT_ID
-            )
-            email = idinfo['email']
-            name = idinfo.get('name')
-        except ValueError as e:
-            # 2. Fallback: Try to verify as Access Token by calling Google UserInfo API
-            import requests as py_requests
-            response = py_requests.get(
-                "https://www.googleapis.com/oauth2/v3/userinfo",
-                params={"access_token": request_data.id_token}
-            )
-            
-            if response.status_code == 200:
-                user_info = response.json()
-                email = user_info.get('email')
-                name = user_info.get('name')
-            else:
-                # Both failed
-                raise HTTPException(
-                    status_code=status.HTTP_401_UNAUTHORIZED,
-                    detail=f"Invalid Google token (tried ID & Access): {str(e)}",
-                )
+    if not settings.GOOGLE_CLIENT_ID:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Google login is not configured",
+        )
 
+    try:
+        idinfo = id_token.verify_oauth2_token(
+            request_data.id_token,
+            requests.Request(),
+            settings.GOOGLE_CLIENT_ID,
+        )
+        email = idinfo.get("email")
+        name = idinfo.get("name")
         if not email:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Could not retrieve email from Google token",
             )
 
-        # 3. User Handling: Check DB and create if not exists
+        # User handling: check DB and create if not exists
         query = select(User).where(User.email == email)
         result = await session.execute(query)
-        user = result.scalars().first()
-        
+        user = result.scalar_one_or_none()
+
         if not user:
             user = User(
-                email=email, 
-                full_name=name or email.split('@')[0], 
-                hashed_password="SOCIAL_AUTH" # Using social auth indicator
+                email=email,
+                full_name=name or email.split("@")[0],
+                hashed_password=security.get_password_hash("SOCIAL_AUTH_GOOGLE"),
             )
             session.add(user)
             await session.commit()
             await session.refresh(user)
 
-        # 4. Create internal JWT
+        # Create internal JWT
         access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = security.create_access_token(
             subject=email, expires_delta=access_token_expires
         )
-        
+
         return {
             "access_token": access_token,
             "token_type": "bearer",
-            "user": user
+            "user": UserRead.model_validate(user),
         }
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid Google token",
+        )
     except HTTPException:
         raise
-    except Exception as e:
-        import traceback
-        print(traceback.format_exc())
+    except Exception:
+        logger.exception("Google login failed")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=str(e),
+            detail="Login failed",
         )
 
-@router.post("/login/social/{provider}", response_model=Token)
+@router.post("/login/social/{provider}", response_model=TokenWithUser)
 async def login_social(
-    provider: str
+    provider: str,
+    session: AsyncSession = Depends(get_session),
 ) -> Any:
     """
     Mock Social Login for Google/Kakao (Legacy/Fallback)
     """
+    if not settings.ENABLE_SOCIAL_MOCK:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
+
     if provider not in ["google", "kakao"]:
         raise HTTPException(status_code=400, detail="Unsupported provider")
-    
+
+    email = f"social_{provider}_user@example.com"
+    result = await session.execute(select(User).where(User.email == email))
+    user = result.scalar_one_or_none()
+    if not user:
+        user = User(
+            email=email,
+            full_name=f"{provider.capitalize()} User",
+            hashed_password=security.get_password_hash("SOCIAL_AUTH_MOCK"),
+        )
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = security.create_access_token(
-        subject=f"social_{provider}_user@example.com", expires_delta=access_token_expires
+        subject=email, expires_delta=access_token_expires
     )
     return {
         "access_token": access_token,
         "token_type": "bearer",
+        "user": UserRead.model_validate(user),
     }

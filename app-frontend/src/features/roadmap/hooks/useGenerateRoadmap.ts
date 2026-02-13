@@ -30,7 +30,7 @@ export const useGenerateRoadmap = () => {
         setError(null);
         try {
             const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-            const response = await apiClient.post<GenerationResponse>('/roadmap/generate', params, {
+            const response = await apiClient.post<GenerationResponse>('/generate', params, {
                 headers: token ? { Authorization: `Bearer ${token}` } : undefined
             });
             return response.data;

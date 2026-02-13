@@ -78,7 +78,7 @@ services:
       - ./app-frontend:/app
       - /app/node_modules # Avoid overwriting node_modules
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000/api/v1
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
       - app-backend
     networks:

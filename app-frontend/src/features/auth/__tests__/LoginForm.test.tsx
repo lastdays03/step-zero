@@ -10,6 +10,13 @@ jest.mock('../hooks/useAuth', () => ({
     useAuth: jest.fn(),
 }));
 
+const mockPush = jest.fn();
+jest.mock('next/navigation', () => ({
+    useRouter: () => ({
+        push: mockPush,
+    }),
+}));
+
 describe('LoginForm', () => {
     const mockLogin = jest.fn();
 
@@ -18,6 +25,7 @@ describe('LoginForm', () => {
             login: mockLogin,
         });
         mockLogin.mockClear();
+        mockPush.mockClear();
     });
 
     it('renders login form correctly', () => {
