@@ -1,5 +1,5 @@
 
-from typing import Annotated
+from typing import Annotated, Any
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -22,5 +22,18 @@ async def get_current_user(token: Annotated[str, Depends(oauth2_scheme)]):
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-    # In real app: fetch user from DB. For MVP: return mock user object or just username.
     return {"username": username}
+
+async def get_optional_current_user(
+    token: Annotated[str | None, Depends(OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login", auto_error=False))] = None
+) -> Any | None:
+    if not token:
+        return None
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        username: str = payload.get("sub")
+        if username is None:
+            return None
+        return {"username": username}
+    except JWTError:
+        return None

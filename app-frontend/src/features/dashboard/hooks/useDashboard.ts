@@ -1,6 +1,5 @@
-
 import { useState, useEffect } from 'react';
-import { fetchDashboardMock } from '../mocks/dashboardMock';
+import { apiClient } from '@/lib/api-client';
 
 // Define return type interface (matching backend response)
 export interface DashboardData {
@@ -34,8 +33,9 @@ export const useDashboard = () => {
         const loadData = async () => {
             setLoading(true);
             try {
-                const dashboardData = await fetchDashboardMock();
-                setData(dashboardData);
+                // actual API call
+                const response = await apiClient.get('/dashboard');
+                setData(response.data);
             } catch (err) {
                 console.error('Failed to load dashboard data:', err);
                 setError('데이터를 불러오는 중 오류가 발생했습니다.');

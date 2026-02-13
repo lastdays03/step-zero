@@ -1,12 +1,16 @@
 "use client";
 
 import React from 'react';
+import { useAuth } from '@/providers/AuthProvider';
 import { useDashboard } from '../hooks/useDashboard';
-import { Bell, Search } from 'lucide-react';
+import { Bell } from 'lucide-react';
 
 export const Header = () => {
+    const { user } = useAuth();
     const { data } = useDashboard();
-    const userName = data?.user_name || 'Alex';
+
+    // Priority: Auth Context (Realtime) > Dashboard API > Fallback
+    const userName = user?.full_name || user?.username || data?.user_name || '게스트';
     const today = new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' });
 
     return (

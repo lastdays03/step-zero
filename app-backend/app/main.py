@@ -3,12 +3,15 @@ from contextlib import asynccontextmanager
 import time
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from fastapi.middleware.cors import CORSMiddleware
 from app.core import config, db
 from app.core.logging import setup_logging, get_logger
 
 # 로깅 설정 초기화
 setup_logging()
 logger = get_logger("app.main")
+
+settings = config.get_settings()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -17,13 +20,20 @@ async def lifespan(app: FastAPI):
     yield
     logger.info("Shutting down StepZero Backend...")
 
-settings = config.get_settings()
-
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
     lifespan=lifespan,
     openapi_url=f"{settings.API_V1_STR}/openapi.json"
+)
+
+# CORS 설정 추가
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 # 1. 로깅 미들웨어 추가

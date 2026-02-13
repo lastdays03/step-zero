@@ -24,3 +24,9 @@ class UserUpdate(UserBase):
 class Token(SQLModel):
     access_token: str
     token_type: str
+
+class UserRead(UserBase):
+    id: int
+
+class TokenWithUser(Token):
+    user: UserRead

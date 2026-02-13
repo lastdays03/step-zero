@@ -7,14 +7,39 @@ router = APIRouter()
 
 @router.get("", response_model=Any)
 async def get_dashboard_stats(
-    current_user: Any = Depends(deps.get_current_user)
+    current_user: Any = Depends(deps.get_optional_current_user)
 ) -> Any:
     """
     Get dashboard statistics and roadmap summary.
+    If no user is logged in, return guest data.
     """
-    # Mock Data matching the design
+    if not current_user:
+        # Guest Data
+        return {
+            "user_name": "Guest",
+            "current_phase": {
+                "title": "로드맵을 생성해 보세요",
+                "progress": 0,
+                "status": "GUEST"
+            },
+            "roadmap": [
+                {"title": "Step 1: 아이디어 검증", "status": "LOCKED", "date": "-"},
+                {"title": "Step 2: 법인 설립", "status": "LOCKED", "date": "-"},
+                {"title": "Step 3: 비즈니스 계좌", "status": "LOCKED", "date": "-"}
+            ],
+            "stats": {
+                "days_left": 0,
+                "tasks_completed": 0,
+                "total_tasks": 0
+            },
+            "growth_club": {
+                "founders_online": 1250 # Static Social Proof for guests
+            }
+        }
+
+    # Authenticated Member Data (Mock)
     return {
-        "user_name": "Alex",  # Or current_user['username']
+        "user_name": "Alex",
         "current_phase": {
             "title": "Business Registration",
             "progress": 20,
