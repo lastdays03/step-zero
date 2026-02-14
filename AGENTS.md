@@ -13,6 +13,7 @@
 - Commit message format must follow Conventional Commits: `type: subject`.
 - Allowed commit types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`, `revert`.
 - PR title and PR description must be written in Korean so team members can review consistently.
+- PR description should be concise and human-readable; do not paste raw terminal logs into PR body.
 
 ## Frontend Rules
 - Run frontend dev server with `npm run dev` (configured as `next dev --webpack`).
