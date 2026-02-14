@@ -175,6 +175,30 @@ git update-index --add --chmod=+x scripts/init_db.sh
   * Frontend: `Please use Prettier` (설정된 경우).
 * **문서:** 작업 전 `docs/` 폴더의 설계 문서를 먼저 읽어보세요.
 
+### 협업 규칙 (Git-Flow + Commit Convention)
+1. 브랜치 전략
+- `main`: 배포 가능한 안정 브랜치 (직접 push 금지, PR만 허용)
+- `develop`: 개발 통합 브랜치
+- `feature/*`: 기능 브랜치
+- 브랜치명: `feature/<issue-number>-<short-slug>` (예: `feature/1-login-page`)
+
+2. 커밋 메시지 규칙
+- 형식: `type: subject`
+- 허용 타입: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`, `revert`
+
+3. 로컬 훅 활성화
+```bash
+# 저장소 루트에서 1회 실행
+npm install
+```
+- `commit-msg`: Conventional Commits 검사
+- `pre-push`: backend 테스트 + frontend lint 검사
+
+4. CI 검사
+- PR 시 브랜치명 규칙 검사
+- PR 커밋 메시지(commitlint) 검사
+- backend `pytest`, frontend `lint` 검사
+
 ---
 
 Made with ❤️ by StepZero Team
