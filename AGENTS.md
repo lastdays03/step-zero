@@ -6,9 +6,9 @@
 
 ## Collaboration Rules
 - Use Git-Flow branch strategy:
-- `main`: production-ready only, no direct push.
-- `develop`: integration branch for ongoing development.
-- `feature/*`: feature development branches.
+- `main`: production-ready only, no direct push. Final merge must come from `develop` only.
+- `develop`: default branch and integration branch for ongoing development.
+- `feature/*`: feature development branches. Feature work must merge into `develop`.
 - Branch naming for features: `feature/<issue-number>-<short-slug>` (example: `feature/1-login-page`).
 - Commit message format must follow Conventional Commits: `type: subject`.
 - Allowed commit types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`, `revert`.

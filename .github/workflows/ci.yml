@@ -10,6 +10,44 @@ on:
       - develop
 
 jobs:
+  pr-flow-policy:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce branch flow policy
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
+          HEAD_BRANCH: ${{ github.head_ref }}
+        run: |
+          echo "Flow policy check: ${HEAD_BRANCH} -> ${BASE_BRANCH}"
+
+          # main receives changes only from develop
+          if [[ "${BASE_BRANCH}" == "main" ]]; then
+            if [[ "${HEAD_BRANCH}" != "develop" ]]; then
+              echo "Invalid flow: PR to main must come from develop."
+              exit 1
+            fi
+            exit 0
+          fi
+
+          # develop receives feature/hotfix/release branches
+          if [[ "${BASE_BRANCH}" == "develop" ]]; then
+            if [[ "${HEAD_BRANCH}" =~ ^feature/[0-9]+-[a-z0-9-]+$ ]]; then
+              exit 0
+            fi
+            if [[ "${HEAD_BRANCH}" =~ ^hotfix/[0-9]+-[a-z0-9-]+$ ]]; then
+              exit 0
+            fi
+            if [[ "${HEAD_BRANCH}" =~ ^release/[a-z0-9.-]+$ ]]; then
+              exit 0
+            fi
+            echo "Invalid flow: PR to develop must come from feature/*, hotfix/*, or release/*."
+            exit 1
+          fi
+
+          echo "Invalid base branch: ${BASE_BRANCH}"
+          exit 1
+
   pr-description-quality:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -77,7 +115,7 @@ jobs:
           if [[ "${BRANCH_NAME}" =~ ^release/[a-z0-9.-]+$ ]]; then
             exit 0
           fi
-          if [[ "${BRANCH_NAME}" == "develop" || "${BRANCH_NAME}" == "main" ]]; then
+          if [[ "${BRANCH_NAME}" == "develop" ]]; then
             exit 0
           fi
           echo "Invalid branch name: ${BRANCH_NAME}"
