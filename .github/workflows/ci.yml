@@ -10,6 +10,93 @@ on:
       - develop
 
 jobs:
+  pr-flow-policy:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enforce branch flow policy
+        env:
+          BASE_BRANCH: ${{ github.base_ref }}
+          HEAD_BRANCH: ${{ github.head_ref }}
+        run: |
+          echo "Flow policy check: ${HEAD_BRANCH} -> ${BASE_BRANCH}"
+
+          # main receives changes only from develop
+          if [[ "${BASE_BRANCH}" == "main" ]]; then
+            if [[ "${HEAD_BRANCH}" != "develop" ]]; then
+              echo "Invalid flow: PR to main must come from develop."
+              exit 1
+            fi
+            exit 0
+          fi
+
+          # develop receives feature/hotfix/release branches
+          if [[ "${BASE_BRANCH}" == "develop" ]]; then
+            if [[ "${HEAD_BRANCH}" =~ ^feature/[0-9]+-[a-z0-9-]+$ ]]; then
+              exit 0
+            fi
+            if [[ "${HEAD_BRANCH}" =~ ^hotfix/[0-9]+-[a-z0-9-]+$ ]]; then
+              exit 0
+            fi
+            if [[ "${HEAD_BRANCH}" =~ ^release/[a-z0-9.-]+$ ]]; then
+              exit 0
+            fi
+            echo "Invalid flow: PR to develop must come from feature/*, hotfix/*, or release/*."
+            exit 1
+          fi
+
+          echo "Invalid base branch: ${BASE_BRANCH}"
+          exit 1
+
+  pr-description-quality:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Soft-check PR description quality (warning only)
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: |
+          set +e
+          WARN=0
+
+          if [[ -z "${PR_BODY}" ]]; then
+            echo "::warning::PR 본문이 비어 있습니다. 한글 요약/변경 사항/검증 내용을 작성해 주세요."
+            WARN=1
+          fi
+
+          # 한글 포함 여부(제목/본문 중 하나라도 포함되면 통과)
+          if ! printf "%s\n%s" "${PR_TITLE}" "${PR_BODY}" | grep -Eq '[가-힣]'; then
+            echo "::warning::PR 제목 또는 본문을 한글로 작성해 주세요."
+            WARN=1
+          fi
+
+          # 터미널 출력이 본문에 섞이는 대표 패턴 경고
+          if printf "%s" "${PR_BODY}" | grep -Eq '(^> |^[0-9]+ passed|Traceback|npm run |pytest -q|eslint \.)'; then
+            echo "::warning::PR 본문에 실행 로그/터미널 출력이 포함된 것 같습니다. 요약 문장으로 정리해 주세요."
+            WARN=1
+          fi
+
+          # 템플릿 핵심 섹션 누락 경고
+          if ! printf "%s" "${PR_BODY}" | grep -q '## 요약'; then
+            echo "::warning::PR 본문에 '## 요약' 섹션을 추가해 주세요."
+            WARN=1
+          fi
+          if ! printf "%s" "${PR_BODY}" | grep -q '## 변경 사항'; then
+            echo "::warning::PR 본문에 '## 변경 사항' 섹션을 추가해 주세요."
+            WARN=1
+          fi
+          if ! printf "%s" "${PR_BODY}" | grep -q '## 검증'; then
+            echo "::warning::PR 본문에 '## 검증' 섹션을 추가해 주세요."
+            WARN=1
+          fi
+
+          if [[ "${WARN}" -eq 0 ]]; then
+            echo "PR description quality check passed."
+          else
+            echo "PR description quality check finished with warnings."
+          fi
+
   branch-name:
     if: github.event_name == 'pull_request'
     runs-on: ubuntu-latest
@@ -28,7 +115,7 @@ jobs:
           if [[ "${BRANCH_NAME}" =~ ^release/[a-z0-9.-]+$ ]]; then
             exit 0
           fi
-          if [[ "${BRANCH_NAME}" == "develop" || "${BRANCH_NAME}" == "main" ]]; then
+          if [[ "${BRANCH_NAME}" == "develop" ]]; then
             exit 0
           fi
           echo "Invalid branch name: ${BRANCH_NAME}"

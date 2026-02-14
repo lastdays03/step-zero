@@ -177,9 +177,9 @@ git update-index --add --chmod=+x scripts/init_db.sh
 
 ### 협업 규칙 (Git-Flow + Commit Convention)
 1. 브랜치 전략
-- `main`: 배포 가능한 안정 브랜치 (직접 push 금지, PR만 허용)
-- `develop`: 개발 통합 브랜치
-- `feature/*`: 기능 브랜치
+- `main`: 배포 가능한 안정 브랜치 (직접 push 금지, PR만 허용, `develop`에서만 머지)
+- `develop`: 기본 브랜치이자 개발 통합 브랜치
+- `feature/*`: 기능 브랜치 (작업 후 `develop`으로 PR)
 - 브랜치명: `feature/<issue-number>-<short-slug>` (예: `feature/1-login-page`)
 
 2. 커밋 메시지 규칙
