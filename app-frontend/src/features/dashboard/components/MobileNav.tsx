@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Map, Briefcase, Users, Settings, LogIn, UserCircle, Grid, FileText, CheckSquare, LogOut, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Map, Briefcase, Users, LogIn, UserCircle, LogOut, Sparkles } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { SocialAuthModal } from '@/features/auth/components/SocialAuthModal';
 import {

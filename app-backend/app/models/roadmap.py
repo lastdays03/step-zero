@@ -7,13 +7,16 @@ from sqlmodel import Field, SQLModel
 
 class Roadmap(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True, index=True)
-    user_id: int = Field(foreign_key="user.id", index=True)
+    team_id: UUID = Field(foreign_key="team.id", index=True)
     title: str
     business_type: str
     location: str
     description: str = ""
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    deleted_at: datetime | None = None
+    created_by: Optional[int] = Field(default=None, foreign_key="user.id")
+    updated_by: Optional[int] = Field(default=None, foreign_key="user.id")
 
 
 class RoadmapStep(SQLModel, table=True):

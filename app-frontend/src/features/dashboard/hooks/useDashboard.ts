@@ -1,28 +1,8 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
+import type { DashboardResponse } from '@/lib/api-types';
 
-// Define return type interface (matching backend response)
-export interface DashboardData {
-    user_name: string;
-    current_phase: {
-        title: string;
-        progress: number;
-        status: string;
-    };
-    roadmap: Array<{
-        title: string;
-        status: string;
-        date: string;
-    }>;
-    stats: {
-        days_left: number;
-        tasks_completed: number;
-        total_tasks: number;
-    };
-    growth_club: {
-        founders_online: number;
-    };
-}
+export type DashboardData = DashboardResponse;
 
 const GUEST_DASHBOARD_DATA: DashboardData = {
     user_name: 'Guest',

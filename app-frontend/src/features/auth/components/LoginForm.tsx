@@ -17,7 +17,7 @@ export const LoginForm = () => {
         try {
             await login(email, password);
             router.push('/dashboard');
-        } catch (err) {
+        } catch {
             setError('Login failed');
         }
     };

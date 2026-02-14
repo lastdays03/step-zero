@@ -7,7 +7,6 @@ import { RoadmapStepper } from './RoadmapStepper';
 import { GrowthClubCard } from './GrowthClubCard';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Sparkles, Clock, CheckSquare } from 'lucide-react';
 
 export const DashboardView = () => {

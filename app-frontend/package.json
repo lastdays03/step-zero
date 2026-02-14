@@ -3,12 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --webpack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "test": "jest",
-    "test:watch": "jest --watch"
+    "test:watch": "jest --watch",
+    "types:backend-openapi": "cd ../app-backend && .venv/bin/python scripts/export_openapi.py",
+    "types:generate": "node scripts/generate_api_types.mjs",
+    "types:sync": "npm run types:backend-openapi && npm run types:generate"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "^1.1.11",

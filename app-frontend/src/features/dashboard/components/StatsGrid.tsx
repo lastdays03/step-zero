@@ -1,11 +1,6 @@
-import { DashboardData } from '../hooks/useDashboard';
 import { FolderOpen, Users, Download } from 'lucide-react';
 
-interface StatsGridProps {
-    stats: DashboardData['stats'];
-}
-
-export const StatsGrid = ({ stats }: StatsGridProps) => {
+export const StatsGrid = () => {
     return (
         <div className="flex flex-col gap-6">
             {/* Action Kit Card - Stitch Style */}

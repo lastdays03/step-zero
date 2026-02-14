@@ -32,7 +32,7 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                 id_token: credentialResponse.credential,
             });
 
-            const { access_token, user } = response.data;
+            const { access_token, user, current_team_id } = response.data;
             const userData = {
                 id: user.id.toString(),
                 username: user.full_name || user.email.split('@')[0],
@@ -40,7 +40,7 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                 full_name: user.full_name,
             };
 
-            login(access_token, userData);
+            login(access_token, userData, current_team_id);
             onClose();
             window.location.reload();
         } catch (error) {

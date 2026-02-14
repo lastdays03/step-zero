@@ -70,6 +70,10 @@ make run
 
 # 3) 테스트 실행
 make test
+
+# 4) 마이그레이션 적용/검증
+make migrate-up
+make migrate-check
 ```
 
 > 참고:
@@ -83,6 +87,23 @@ make test
 cd app-frontend
 npm install
 npm run dev
+
+# 백엔드 OpenAPI 기반 타입 동기화
+npm run types:sync
+```
+
+### 5) 로컬 시크릿 관리 (권장)
+백엔드는 `app-backend/.env.local`을 `app-backend/.env`보다 우선해서 읽습니다.
+
+1. `app-backend/.env`:
+- 공유 가능한 기본값만 유지 (민감키 금지)
+2. `app-backend/.env.local`:
+- 로컬 전용 비밀값 저장 (Git 추적 제외)
+3. 최소 예시:
+```bash
+cd app-backend
+cp .env.example .env.local
+# .env.local에 OPENAI_API_KEY, GOOGLE_CLIENT_ID 등 실제 값 입력
 ```
 
 ---

@@ -12,11 +12,6 @@ interface ProgressCardProps {
 }
 
 export const ProgressCard = ({ phase }: ProgressCardProps) => {
-    // Determine progress color based on value
-    const radius = 35;
-    const circumference = 2 * Math.PI * radius;
-    const offset = circumference - (phase.progress / 100) * circumference;
-
     return (
         <Card className="bg-white rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group h-full transition-all hover:shadow-md">
             <div className="absolute -right-6 -top-6 w-32 h-32 bg-primary/5 rounded-full blur-3xl transition-all duration-500 group-hover:bg-primary/10"></div>

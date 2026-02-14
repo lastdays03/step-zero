@@ -18,6 +18,7 @@ export default function RootLayout({
     children: React.ReactNode
 }) {
     const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+    const hasGoogleClientId = googleClientId.trim().length > 0;
 
     return (
         <html lang="en" suppressHydrationWarning>
@@ -25,11 +26,17 @@ export default function RootLayout({
                 "min-h-screen bg-background font-sans antialiased",
                 inter.variable
             )}>
-                <GoogleOAuthProvider clientId={googleClientId}>
+                {hasGoogleClientId ? (
+                    <GoogleOAuthProvider clientId={googleClientId}>
+                        <AuthProvider>
+                            {children}
+                        </AuthProvider>
+                    </GoogleOAuthProvider>
+                ) : (
                     <AuthProvider>
                         {children}
                     </AuthProvider>
-                </GoogleOAuthProvider>
+                )}
             </body>
         </html>
     )

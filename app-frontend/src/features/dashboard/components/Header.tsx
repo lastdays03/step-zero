@@ -11,7 +11,6 @@ export const Header = () => {
 
     // Priority: Auth Context (Realtime) > Dashboard API > Fallback
     const userName = user?.full_name || user?.username || data?.user_name || '게스트';
-    const today = new Date().toLocaleDateString('ko-KR', { month: 'long', day: 'numeric', weekday: 'long' });
 
     return (
         <header className="h-20 flex items-center justify-between px-8 bg-background/80 backdrop-blur-md sticky top-0 z-30 border-b border-transparent">

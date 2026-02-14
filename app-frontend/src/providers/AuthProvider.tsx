@@ -1,7 +1,8 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, ReactNode } from 'react';
 import { apiClient } from '@/lib/api-client';
+import type { TokenWithTeams } from '@/lib/api-types';
 
 interface User {
     id: string;
@@ -10,20 +11,10 @@ interface User {
     full_name?: string;
 }
 
-interface LoginResponse {
-    access_token: string;
-    token_type: string;
-    user?: {
-        id: number | string;
-        email: string;
-        full_name?: string | null;
-    };
-}
-
 interface AuthContextType {
     user: User | null;
     isLoggedIn: boolean;
-    login: (token: string, userData: User) => void;
+    login: (token: string, userData: User, currentTeamId?: string) => void;
     loginWithCredentials: (email: string, password: string) => Promise<void>;
     logout: () => void;
     isGuest: boolean;
@@ -31,29 +22,42 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+const asOptionalString = (value: unknown): string | undefined =>
+    typeof value === 'string' && value.trim() ? value : undefined;
+
+const getInitialAuthState = (): { user: User | null; isLoggedIn: boolean } => {
+    if (typeof window === 'undefined') {
+        return { user: null, isLoggedIn: false };
+    }
+
+    const storedToken = localStorage.getItem('token');
+    const storedUser = localStorage.getItem('user');
+    if (!storedToken || !storedUser) {
+        return { user: null, isLoggedIn: false };
+    }
+
+    try {
+        return { user: JSON.parse(storedUser) as User, isLoggedIn: true };
+    } catch (e) {
+        console.error("Failed to parse user data", e);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('current_team_id');
+        return { user: null, isLoggedIn: false };
+    }
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
-    const [isLoggedIn, setIsLoggedIn] = useState(false);
+    const initialAuthState = getInitialAuthState();
+    const [user, setUser] = useState<User | null>(initialAuthState.user);
+    const [isLoggedIn, setIsLoggedIn] = useState(initialAuthState.isLoggedIn);
 
-    useEffect(() => {
-        // Load auth from local storage on mount
-        const storedToken = localStorage.getItem('token');
-        const storedUser = localStorage.getItem('user');
-        if (storedToken && storedUser) {
-            try {
-                setUser(JSON.parse(storedUser));
-                setIsLoggedIn(true);
-            } catch (e) {
-                console.error("Failed to parse user data", e);
-                localStorage.removeItem('token');
-                localStorage.removeItem('user');
-            }
-        }
-    }, []);
-
-    const login = (token: string, userData: User) => {
+    const login = (token: string, userData: User, currentTeamId?: string) => {
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userData));
+        if (currentTeamId) {
+            localStorage.setItem('current_team_id', currentTeamId);
+        }
         setUser(userData);
         setIsLoggedIn(true);
     };
@@ -69,30 +73,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             },
         });
 
-        const data = response.data as LoginResponse;
+        const data = response.data as TokenWithTeams;
         const accessToken = data?.access_token;
         if (!accessToken) {
             throw new Error('Login token is missing in response');
         }
 
+        const fullName = asOptionalString(data.user?.full_name);
         const userData: User = data.user
             ? {
                 id: String(data.user.id),
-                username: data.user.full_name || data.user.email.split('@')[0] || data.user.email,
+                username: fullName || data.user.email.split('@')[0] || data.user.email,
                 email: data.user.email,
-                full_name: data.user.full_name || undefined,
+                full_name: fullName,
             }
             : {
                 id: email,
                 username: email.split('@')[0] || email,
                 email,
             };
-        login(accessToken, userData);
+        login(accessToken, userData, data.current_team_id);
     };
 
     const logout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
+        localStorage.removeItem('current_team_id');
         setUser(null);
         setIsLoggedIn(false);
     };
