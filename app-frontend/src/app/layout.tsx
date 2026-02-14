@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { cn } from '@/lib/utils'
+import { AuthProvider } from '@/providers/AuthProvider'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 
 const inter = Inter({ subsets: ['latin'], variable: "--font-sans" })
 
@@ -15,12 +17,27 @@ export default function RootLayout({
 }: {
     children: React.ReactNode
 }) {
+    const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '';
+    const hasGoogleClientId = googleClientId.trim().length > 0;
+
     return (
         <html lang="en" suppressHydrationWarning>
             <body className={cn(
                 "min-h-screen bg-background font-sans antialiased",
                 inter.variable
-            )}>{children}</body>
+            )}>
+                {hasGoogleClientId ? (
+                    <GoogleOAuthProvider clientId={googleClientId}>
+                        <AuthProvider>
+                            {children}
+                        </AuthProvider>
+                    </GoogleOAuthProvider>
+                ) : (
+                    <AuthProvider>
+                        {children}
+                    </AuthProvider>
+                )}
+            </body>
         </html>
     )
 }

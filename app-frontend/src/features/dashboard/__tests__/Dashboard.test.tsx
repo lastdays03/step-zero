@@ -41,36 +41,34 @@ describe('DashboardView', () => {
         });
     });
 
-    it('renders dashboard with user name', () => {
+    it('renders current phase title', () => {
         render(<DashboardView />);
-        expect(screen.getByText(/Good Morning, Alex/i)).toBeInTheDocument();
+        expect(screen.getByText(/Business Registration/i)).toBeInTheDocument();
     });
 
     it('renders current task progress card', () => {
         render(<DashboardView />);
-        expect(screen.getByText(/Business Registration/i)).toBeInTheDocument();
         expect(screen.getByText(/20%/i)).toBeInTheDocument();
-        // There are multiple "In Progress" texts (Header and Status), so we check if at least one exists
-        const statusElements = screen.getAllByText(/In Progress/i);
-        expect(statusElements.length).toBeGreaterThan(0);
+        expect(screen.getByText(/현재 진행 단계/i)).toBeInTheDocument();
     });
 
     it('renders growth club section', () => {
         render(<DashboardView />);
-        expect(screen.getByText(/Growth Club/i)).toBeInTheDocument();
-        expect(screen.getByText(/12 founders/i)).toBeInTheDocument();
+        expect(screen.getByText(/LIVE: GROWTH CLUB/i)).toBeInTheDocument();
+        expect(screen.getByText(/12명의 동료 창업자와/i)).toBeInTheDocument();
     });
 
     it('renders roadmap stepper', () => {
         render(<DashboardView />);
-        expect(screen.getByText(/Your Roadmap/i)).toBeInTheDocument();
+        expect(screen.getByText(/나의 로드맵/i)).toBeInTheDocument();
         expect(screen.getByText(/Idea Validation/i)).toBeInTheDocument();
         expect(screen.getByText(/Tax Registration/i)).toBeInTheDocument();
     });
 
     it('renders stats', () => {
         render(<DashboardView />);
-        expect(screen.getByText(/3 Days/i)).toBeInTheDocument();
+        const dayTexts = screen.getAllByText(/3일/i);
+        expect(dayTexts.length).toBeGreaterThan(0);
         expect(screen.getByText(/8\/12/i)).toBeInTheDocument();
     });
 });

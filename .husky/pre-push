@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+echo "[pre-push] backend tests"
+cd app-backend && .venv/bin/pytest -q || exit 1
+
+echo "[pre-push] frontend lint"
+cd ../app-frontend && npm run lint || exit 1

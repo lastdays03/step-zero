@@ -2,9 +2,10 @@
 
 import React, { useState } from 'react';
 import { useGenerateRoadmap } from '../hooks/useGenerateRoadmap';
+import type { GenerationResponse } from '../hooks/useGenerateRoadmap';
 
 interface GenerationFormProps {
-    onSuccess: (data: any) => void;
+    onSuccess: (data: GenerationResponse) => void;
     onCancel: () => void;
 }
 

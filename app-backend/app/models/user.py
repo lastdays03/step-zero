@@ -24,3 +24,15 @@ class UserUpdate(UserBase):
 class Token(SQLModel):
     access_token: str
     token_type: str
+
+class UserRead(UserBase):
+    id: int
+
+class TokenWithUser(Token):
+    user: UserRead
+
+
+class AuthenticatedUser(SQLModel):
+    id: int
+    email: str
+    full_name: Optional[str] = None

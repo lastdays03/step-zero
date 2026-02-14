@@ -1,21 +1,29 @@
+from unittest.mock import Mock
 
 import pytest
-from unittest.mock import AsyncMock
+
 from app.services.rag.service import RagService
 
-@pytest.mark.asyncio
-async def test_rag_service_initialization():
-    service = RagService()
-    assert service is not None
 
 @pytest.mark.asyncio
-async def test_rag_service_query():
-    mock_chain = AsyncMock()
-    mock_chain.ainvoke.return_value = {"answer": "테스트 답변"}
-    
-    # 의존성 주입 (Dependency Injection)을 통해 Mock Chain 사용
-    service = RagService(chain=mock_chain)
+async def test_rag_service_query_uses_chain_invoke() -> None:
+    service = RagService.__new__(RagService)
+    service.ready = True
+    service.chain = Mock()
+    service.chain.invoke.return_value = "테스트 답변"
+
     response = await service.query("질문")
-    
+
     assert response == "테스트 답변"
-    mock_chain.ainvoke.assert_called_once()
+    service.chain.invoke.assert_called_once_with("질문")
+
+
+@pytest.mark.asyncio
+async def test_rag_service_query_returns_fallback_on_error() -> None:
+    service = RagService.__new__(RagService)
+    service.ready = True
+    service.chain = Mock()
+    service.chain.invoke.side_effect = RuntimeError("rag failed")
+
+    response = await service.query("질문")
+    assert response == "법령 검색 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."

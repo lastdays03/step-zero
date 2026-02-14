@@ -62,36 +62,48 @@ docker compose -f docker-compose.dev.yml up -d app-db app-redis
 ```bash
 cd app-backend
 
-# 1) 가상환경 생성 및 활성화
-## Mac/Linux
-python -m venv .venv
-source .venv/bin/activate 
+# 1) 개발환경 자동 초기화 (Python 3.11 + dev 의존성 + .env 생성)
+./scripts/setup_dev.sh
 
-## Windows (Powershell)
-# python -m venv .venv
-# .venv\Scripts\Activate.ps1
+# 2) 서버 실행
+make run
 
-# 2) 의존성 패키지 설치
-pip install -e ".[dev]"
+# 3) 테스트 실행
+make test
 
-# 3) 환경변수 설정 (.env 파일 생성)
-# 아래 내용을 app-backend/.env 파일로 저장하세요.
-# ------------------------------------------------------------------
-# DATABASE_URL=postgresql+asyncpg://stepzero_admin:stepzero_password@localhost:5432/stepzero_db
-# REDIS_URL=redis://localhost:6379/0
-# SECRET_KEY=CHANGE_ME_LOCAL_DEV
-# ALGORITHM=HS256
-# ------------------------------------------------------------------
-
-# 4) 서버 실행
-uvicorn app.main:app --reload --port 8000
+# 4) 마이그레이션 적용/검증
+make migrate-up
+make migrate-check
 ```
+
+> 참고:
+> - 백엔드는 `app-backend/.python-version`으로 Python 3.11을 고정합니다.
+> - `uv` 버전은 `app-backend/.uv-version`으로 고정합니다.
+> - macOS(26 계열)에서는 `uv` 패닉 이슈를 우회하기 위해 `setup_dev.sh`가 기본적으로 `python/pip` 경로를 사용합니다.
+> - `uv`를 강제로 쓰려면 `FORCE_UV=1 ./scripts/setup_dev.sh`를 사용하세요.
 
 **3. Frontend 로컬 실행 (Node.js)**
 ```bash
 cd app-frontend
 npm install
 npm run dev
+
+# 백엔드 OpenAPI 기반 타입 동기화
+npm run types:sync
+```
+
+### 5) 로컬 시크릿 관리 (권장)
+백엔드는 `app-backend/.env.local`을 `app-backend/.env`보다 우선해서 읽습니다.
+
+1. `app-backend/.env`:
+- 공유 가능한 기본값만 유지 (민감키 금지)
+2. `app-backend/.env.local`:
+- 로컬 전용 비밀값 저장 (Git 추적 제외)
+3. 최소 예시:
+```bash
+cd app-backend
+cp .env.example .env.local
+# .env.local에 OPENAI_API_KEY, GOOGLE_CLIENT_ID 등 실제 값 입력
 ```
 
 ---
@@ -162,6 +174,30 @@ git update-index --add --chmod=+x scripts/init_db.sh
   * Backend: `black`, `isort` 포맷터를 사용합니다.
   * Frontend: `Please use Prettier` (설정된 경우).
 * **문서:** 작업 전 `docs/` 폴더의 설계 문서를 먼저 읽어보세요.
+
+### 협업 규칙 (Git-Flow + Commit Convention)
+1. 브랜치 전략
+- `main`: 배포 가능한 안정 브랜치 (직접 push 금지, PR만 허용)
+- `develop`: 개발 통합 브랜치
+- `feature/*`: 기능 브랜치
+- 브랜치명: `feature/<issue-number>-<short-slug>` (예: `feature/1-login-page`)
+
+2. 커밋 메시지 규칙
+- 형식: `type: subject`
+- 허용 타입: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`, `revert`
+
+3. 로컬 훅 활성화
+```bash
+# 저장소 루트에서 1회 실행
+npm install
+```
+- `commit-msg`: Conventional Commits 검사
+- `pre-push`: backend 테스트 + frontend lint 검사
+
+4. CI 검사
+- PR 시 브랜치명 규칙 검사
+- PR 커밋 메시지(commitlint) 검사
+- backend `pytest`, frontend `lint` 검사
 
 ---
 

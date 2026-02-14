@@ -30,4 +30,4 @@ async def test_generate_roadmap_mock(client: AsyncClient):
     assert "roadmap_id" in data
     assert "steps" in data
     assert len(data["steps"]) > 0
-    assert data["title"] == "Mock Roadmap for Cafe"
+    assert data["title"] == "Cafe 창업 로드맵"

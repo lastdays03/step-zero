@@ -2,24 +2,10 @@
 
 import { useState } from 'react';
 import { apiClient } from '@/lib/api-client';
+import type { RoadmapCreateRequest, RoadmapResponse } from '@/lib/api-types';
 
-export interface GenerationRequest {
-    business_type: string;
-    location: string;
-    description: string;
-}
-
-export interface RoadmapStep {
-    id: number;
-    title: string;
-    status: string;
-}
-
-export interface GenerationResponse {
-    roadmap_id: string;
-    title: string;
-    steps: RoadmapStep[];
-}
+export type GenerationRequest = RoadmapCreateRequest;
+export type GenerationResponse = RoadmapResponse;
 
 export const useGenerateRoadmap = () => {
     const [loading, setLoading] = useState(false);
@@ -29,10 +15,7 @@ export const useGenerateRoadmap = () => {
         setLoading(true);
         setError(null);
         try {
-            const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-            const response = await apiClient.post<GenerationResponse>('/roadmap/generate', params, {
-                headers: token ? { Authorization: `Bearer ${token}` } : undefined
-            });
+            const response = await apiClient.post<GenerationResponse>('/roadmaps', params);
             return response.data;
         } catch (err) {
             setError('로드맵 생성에 실패했습니다.');
