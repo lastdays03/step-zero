@@ -12,6 +12,7 @@
 - Branch naming for features: `feature/<issue-number>-<short-slug>` (example: `feature/1-login-page`).
 - Commit message format must follow Conventional Commits: `type: subject`.
 - Allowed commit types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`, `revert`.
+- PR title and PR description must be written in Korean so team members can review consistently.
 
 ## Frontend Rules
 - Run frontend dev server with `npm run dev` (configured as `next dev --webpack`).
