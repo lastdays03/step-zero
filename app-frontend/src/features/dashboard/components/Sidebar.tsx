@@ -73,9 +73,12 @@ export const Sidebar = () => {
 
                 <div className="p-4 mt-auto">
                     {isLoggedIn ? (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <div className="bg-white rounded-2xl p-4 flex items-center justify-between group cursor-pointer hover:bg-slate-50 transition-all border border-slate-100 shadow-sm">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button
+                                        type="button"
+                                        className="w-full bg-white rounded-2xl p-4 flex items-center justify-between group cursor-pointer hover:bg-slate-50 transition-all border border-slate-100 shadow-sm text-left"
+                                    >
                                     <div className="flex items-center gap-3">
                                         <div className="relative">
                                             <Avatar className="w-10 h-10 border-2 border-white shadow-sm">
@@ -90,7 +93,7 @@ export const Sidebar = () => {
                                         </div>
                                     </div>
                                     <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-450 group-hover:translate-x-0.5 transition-all" />
-                                </div>
+                                    </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-64 p-2 rounded-2xl bg-white/95 backdrop-blur-xl border-slate-200/60 shadow-2xl animate-in fade-in zoom-in duration-200">
                                 <DropdownMenuLabel className="px-3 py-2 text-xs font-semibold text-slate-400">내 계정</DropdownMenuLabel>

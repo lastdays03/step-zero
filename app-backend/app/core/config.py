@@ -39,18 +39,36 @@ class Settings(BaseSettings):
     OPENAI_CHAT_MODEL: str = "gpt-4o-mini"
     OPENAI_EMBED_MODEL: str = "text-embedding-3-small"
 
+    @staticmethod
+    def _normalize_optional_secret(value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            return None
+        placeholders = {
+            "REPLACE_ME",
+            "CHANGE_ME",
+            "CHANGE_ME_IN_PROD",
+            "YOUR_API_KEY",
+        }
+        return None if cleaned in placeholders else cleaned
+
     @model_validator(mode="after")
     def validate_security(self) -> "Settings":
         if not self.SECRET_KEY.strip():
             raise ValueError("SECRET_KEY must be set")
         if self.ENVIRONMENT.lower() == "production" and self.SECRET_KEY == "CHANGE_ME_IN_PROD":
             raise ValueError("SECRET_KEY must not use a default value in production")
+        self.OPENAI_API_KEY = self._normalize_optional_secret(self.OPENAI_API_KEY)
+        self.GOOGLE_CLIENT_ID = self._normalize_optional_secret(self.GOOGLE_CLIENT_ID)
         return self
     
     model_config = SettingsConfigDict(
-        case_sensitive=True, 
-        env_file=(".env.local", ".env"),
-        env_file_encoding='utf-8', 
+        case_sensitive=True,
+        # Load shared defaults first, then let local secrets override them.
+        env_file=(".env", ".env.local"),
+        env_file_encoding='utf-8',
         extra="ignore"
     )
 

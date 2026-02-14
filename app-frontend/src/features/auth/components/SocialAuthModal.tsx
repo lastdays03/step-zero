@@ -43,9 +43,20 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
             login(access_token, userData, current_team_id);
             onClose();
             window.location.reload();
-        } catch (error) {
+        } catch (error: unknown) {
+            const status = (error as { response?: { status?: number } })?.response?.status;
+            const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+
             console.error('Google login verification failed:', error);
-            alert('구글 로그인 검증에 실패했습니다.');
+            if (status === 401) {
+                alert('구글 로그인 토큰 검증에 실패했습니다. Google Client ID 설정과 토큰 발급 계정을 확인해주세요.');
+                return;
+            }
+            if (status === 503) {
+                alert('서버의 구글 로그인 설정이 비어 있습니다. 운영 설정을 확인해주세요.');
+                return;
+            }
+            alert(detail || '구글 로그인 검증에 실패했습니다.');
         }
     };
 

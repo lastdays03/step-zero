@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useSyncExternalStore, ReactNode } from 'react';
 import { apiClient } from '@/lib/api-client';
 import type { TokenWithTeams } from '@/lib/api-types';
 
@@ -20,37 +20,82 @@ interface AuthContextType {
     isGuest: boolean;
 }
 
+type AuthState = { user: User | null; isLoggedIn: boolean };
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AUTH_STORAGE_EVENT = 'auth-storage-changed';
+const LOGGED_OUT_STATE: AuthState = { user: null, isLoggedIn: false };
+let lastTokenSnapshot: string | null = null;
+let lastUserSnapshot: string | null = null;
+let lastAuthStateSnapshot: AuthState = LOGGED_OUT_STATE;
 
 const asOptionalString = (value: unknown): string | undefined =>
     typeof value === 'string' && value.trim() ? value : undefined;
 
-const getInitialAuthState = (): { user: User | null; isLoggedIn: boolean } => {
+const getStoredAuthState = (): AuthState => {
     if (typeof window === 'undefined') {
-        return { user: null, isLoggedIn: false };
+        return LOGGED_OUT_STATE;
     }
 
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
+    if (storedToken === lastTokenSnapshot && storedUser === lastUserSnapshot) {
+        return lastAuthStateSnapshot;
+    }
+
     if (!storedToken || !storedUser) {
-        return { user: null, isLoggedIn: false };
+        lastTokenSnapshot = storedToken;
+        lastUserSnapshot = storedUser;
+        lastAuthStateSnapshot = LOGGED_OUT_STATE;
+        return LOGGED_OUT_STATE;
     }
 
     try {
-        return { user: JSON.parse(storedUser) as User, isLoggedIn: true };
+        lastTokenSnapshot = storedToken;
+        lastUserSnapshot = storedUser;
+        lastAuthStateSnapshot = { user: JSON.parse(storedUser) as User, isLoggedIn: true };
+        return lastAuthStateSnapshot;
     } catch (e) {
         console.error("Failed to parse user data", e);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('current_team_id');
-        return { user: null, isLoggedIn: false };
+        lastTokenSnapshot = null;
+        lastUserSnapshot = null;
+        lastAuthStateSnapshot = LOGGED_OUT_STATE;
+        return LOGGED_OUT_STATE;
     }
 };
 
+const getServerAuthState = (): AuthState => LOGGED_OUT_STATE;
+
+const subscribeAuthState = (onStoreChange: () => void): (() => void) => {
+    if (typeof window === 'undefined') {
+        return () => {};
+    }
+
+    const onChange = () => onStoreChange();
+    window.addEventListener('storage', onChange);
+    window.addEventListener(AUTH_STORAGE_EVENT, onChange);
+
+    return () => {
+        window.removeEventListener('storage', onChange);
+        window.removeEventListener(AUTH_STORAGE_EVENT, onChange);
+    };
+};
+
+const notifyAuthStateChanged = () => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
+};
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const initialAuthState = getInitialAuthState();
-    const [user, setUser] = useState<User | null>(initialAuthState.user);
-    const [isLoggedIn, setIsLoggedIn] = useState(initialAuthState.isLoggedIn);
+    const authState = useSyncExternalStore(
+        subscribeAuthState,
+        getStoredAuthState,
+        getServerAuthState
+    );
+    const { user, isLoggedIn } = authState;
 
     const login = (token: string, userData: User, currentTeamId?: string) => {
         localStorage.setItem('token', token);
@@ -58,8 +103,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (currentTeamId) {
             localStorage.setItem('current_team_id', currentTeamId);
         }
-        setUser(userData);
-        setIsLoggedIn(true);
+        notifyAuthStateChanged();
     };
 
     const loginWithCredentials = async (email: string, password: string) => {
@@ -99,8 +143,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('current_team_id');
-        setUser(null);
-        setIsLoggedIn(false);
+        notifyAuthStateChanged();
     };
 
     return (
