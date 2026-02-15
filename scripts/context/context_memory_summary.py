@@ -86,6 +86,11 @@ def main():
         default="text",
         help="Output format",
     )
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Show daily completion check for validation entries",
+    )
     args = parser.parse_args()
 
     path = Path(args.file)
@@ -114,6 +119,27 @@ def main():
 
     median_text = median if median is not None else "N/A"
     success_text = round(success_rate, 2) if success_rate is not None else "N/A"
+
+    if args.check:
+        total_slots = len(entries)
+        filled_slots = len(filled_entries)
+        pending_dates = [e["date"] for e in entries if not e["is_filled"]]
+        today_text = date.today().isoformat()
+        today_entry = next((e for e in entries if e["date"] == today_text), None)
+        today_done = "Y" if today_entry and today_entry["is_filled"] else "N"
+        completion = round((filled_slots / total_slots) * 100.0, 2) if total_slots else 0.0
+
+        print("Context Memory Validation Check")
+        print(f"- today({today_text}) 기록 완료: {today_done}")
+        print(f"- 전체 완료율: {filled_slots}/{total_slots} ({completion}%)")
+        print(f"- 목표 대비: {filled_slots}/{args.target_days}")
+        print("- 미기록 날짜:")
+        if pending_dates:
+            for d in pending_dates:
+                print(f"  - {d}")
+        else:
+            print("  - 없음")
+        return
 
     if args.format == "text":
         print(f"기록 충족 여부({len(filled_entries)}/{args.target_days})")

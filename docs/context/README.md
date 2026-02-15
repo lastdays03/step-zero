@@ -26,6 +26,7 @@
 - 위치: `docs/context/context-memory-validation-log.md`
 - 원칙: 운영 검증은 기능 개발을 멈추지 않고 병행 수행한다.
 - 매일 최소 1회 기록: 복구 시간, 누락 유형, 작성 시간, 이어서 작업 성공 여부
+- 일일 누락 점검: `scripts/context/context_memory_summary.py --check`
 - 중간 집계: `scripts/context/context_memory_summary.py`
 - 주간 요약 초안: `scripts/context/context_memory_summary.py --format markdown`
 
