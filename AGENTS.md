@@ -66,5 +66,5 @@
 - If the user explicitly says `핸드오프`, `마무리`, or `종료`, execute this sequence before final response:
 1. Update `docs/context/handoff.md`
 2. Commit the handoff-related changes
-3. Push the current branch to origin
+3. Report commit result and wait for explicit push request
 - If commit/push fails, report the failure reason and current git state.
