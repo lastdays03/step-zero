@@ -16,6 +16,7 @@
 
 ## In Progress
 - Context memory upgrade Phase 1 문서 고정 적용 완료, Phase 1 운영 검증 준비 중
+- Context memory 운영 검증 Day 1 기록 완료(`context-memory-validation-log.md`)
 - `/ops` 권한 가드(프론트+백엔드) 최소 구현 착수 예정
 
 ## Risks And Blockers
