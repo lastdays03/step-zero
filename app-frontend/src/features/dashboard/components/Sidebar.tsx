@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, Map, Briefcase, Users, Settings, LogOut, Sparkles, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Map, Briefcase, Users, Settings, LogOut, Sparkles, ChevronRight, Shield } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 import { useAuth } from '@/providers/AuthProvider';
@@ -21,7 +21,7 @@ import {
 
 export const Sidebar = () => {
     const pathname = usePathname();
-    const { isLoggedIn, user, logout } = useAuth();
+    const { isLoggedIn, user, logout, canAccessOps } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
 
     const menuItems = [
@@ -29,6 +29,7 @@ export const Sidebar = () => {
         { icon: Map, label: '나의 로드맵', href: '/roadmap' },
         { icon: Briefcase, label: '액션 키트', href: '/actionkit' },
         { icon: Users, label: '그로스 클럽', href: '/growth-club', badge: 'New' },
+        ...(canAccessOps ? [{ icon: Shield, label: '운영 콘솔', href: '/ops' }] : []),
         { icon: Settings, label: '설정', href: '/settings' },
     ];
 

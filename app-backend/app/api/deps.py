@@ -50,7 +50,12 @@ async def get_current_user(
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
-    return AuthenticatedUser(id=user.id, email=user.email, full_name=user.full_name)
+    return AuthenticatedUser(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        is_superuser=user.is_superuser,
+    )
 
 
 async def get_current_team(
@@ -120,4 +125,20 @@ async def get_optional_current_user(
         return None
     if not user.is_active:
         return None
-    return AuthenticatedUser(id=user.id, email=user.email, full_name=user.full_name)
+    return AuthenticatedUser(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        is_superuser=user.is_superuser,
+    )
+
+
+async def require_platform_admin(
+    current_user: Annotated[AuthenticatedUser, Depends(get_current_user)],
+) -> AuthenticatedUser:
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Platform admin access denied",
+        )
+    return current_user

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutDashboard, Map, Briefcase, Users, LogIn, UserCircle, LogOut, Sparkles } from 'lucide-react';
+import { LayoutDashboard, Map, Briefcase, Users, LogIn, UserCircle, LogOut, Sparkles, Shield } from 'lucide-react';
 import { useAuth } from '@/providers/AuthProvider';
 import { SocialAuthModal } from '@/features/auth/components/SocialAuthModal';
 import {
@@ -17,13 +17,14 @@ import {
 
 export const MobileNav = () => {
     const pathname = usePathname();
-    const { isLoggedIn, user, logout } = useAuth();
+    const { isLoggedIn, user, logout, canAccessOps } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
 
     const navItems = [
         { icon: LayoutDashboard, label: '홈', href: '/dashboard' },
         { icon: Map, label: '로드맵', href: '/roadmap' },
         { icon: Briefcase, label: '서류함', href: '/actionkit' },
+        ...(canAccessOps ? [{ icon: Shield, label: '운영', href: '/ops' }] : []),
         {
             icon: isLoggedIn ? UserCircle : LogIn,
             label: isLoggedIn ? (user?.full_name || user?.username || '마이') : '로그인',

@@ -25,6 +25,8 @@ env/
 .env.development.local
 .env.test.local
 .env.production.local
+!app-backend/.env.example
+!app-frontend/.env.example
 
 # ---------------
 # Python (Backend)
@@ -51,6 +53,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+!app-frontend/src/lib/
+!app-frontend/src/lib/**
 
 # Typing & Test
 .mypy_cache/

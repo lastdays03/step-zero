@@ -9,11 +9,13 @@ interface User {
     username: string;
     email: string;
     full_name?: string;
+    is_superuser?: boolean;
 }
 
 interface AuthContextType {
     user: User | null;
     isLoggedIn: boolean;
+    canAccessOps: boolean;
     login: (token: string, userData: User, currentTeamId?: string) => void;
     loginWithCredentials: (email: string, password: string) => Promise<void>;
     logout: () => void;
@@ -96,6 +98,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         getServerAuthState
     );
     const { user, isLoggedIn } = authState;
+    const canAccessOps = Boolean(user?.is_superuser);
 
     const login = (token: string, userData: User, currentTeamId?: string) => {
         localStorage.setItem('token', token);
@@ -130,6 +133,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 username: fullName || data.user.email.split('@')[0] || data.user.email,
                 email: data.user.email,
                 full_name: fullName,
+                is_superuser: Boolean((data.user as { is_superuser?: boolean }).is_superuser),
             }
             : {
                 id: email,
@@ -150,6 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         <AuthContext.Provider value={{
             user,
             isLoggedIn,
+            canAccessOps,
             login,
             loginWithCredentials,
             logout,

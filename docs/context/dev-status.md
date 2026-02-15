@@ -19,20 +19,20 @@
 - Context memory 운영 검증 Day 1 기록 완료(`context-memory-validation-log.md`)
 - Context memory는 `Phase 1` 진행 중이며 `Phase 2`는 게이트 조건 충족 전 잠금 상태
 - 공통 규칙 원천은 `team-standards`(Git)로 고정 운영
-- `/ops` 권한 가드(프론트+백엔드) 최소 구현 착수 예정
+- `/ops` 권한 가드(플랫폼 운영자 기준) 프론트+백엔드 최소 구현 진행 중
 
 ## Risks And Blockers
 - 실제 데이터 연동 전 placeholder 제거 범위가 커질 수 있음
-- `/ops` 권한 가드 구현 시 프론트/백엔드 정책 불일치 가능성
+- `/ops` 하위 화면은 기본 골격만 구현되어 실제 운영 데이터 지표 정의가 필요
 
 ## Next 3 Actions
 1. `team-standards` 기준 공통 규칙을 현재 프로젝트 문서와 동기화
-2. `/ops` 권한 가드(프론트+백엔드) 최소 구현
+2. `/ops/users`, `/ops/reports` 운영 지표/필드 정의 확정 및 실제 데이터 연동
 3. `roadmap`/`actionkit` 페이지 placeholder를 실제 데이터 로딩 화면으로 교체
 
 ## Test Status
-- Backend pytest: 미실행(이번 변경은 문서 작업)
-- Frontend lint: 미실행(이번 변경은 문서 작업)
+- Backend pytest: 실행 실패(`app-backend/.venv/bin/pytest` 없음)
+- Frontend lint: 실행 실패(`eslint` 미설치, `node_modules` 없음)
 - Migration check: 미해당
 
 ## Sync Notes
@@ -40,3 +40,6 @@
 - 2026-02-15: 새 프로젝트 일괄 적용용 래퍼 스크립트 `scripts/bootstrap-from-standards.sh` 추가, `/tmp/team-standards` 초기 커밋 완료
 - 2026-02-15: 외부 공통 규칙 채널 제거, 공통 규칙은 `team-standards`(Git) 단일 원천으로 재정의
 - 2026-02-15: NotebookLM 연동(MCP/문서)을 운영 범위에서 제거
+- 2026-02-15: `/ops` 권한 모델을 팀 단위에서 플랫폼 운영자(`User.is_superuser`) 단일 모델로 확정
+- 2026-02-15: `app-frontend/src/lib` 누락 복구(`api-client.ts`, `api-types.ts`, `utils.ts`)로 모듈 해석 오류 정리
+- 2026-02-16: 백엔드 실행 필수값 누락 방지를 위해 `app-backend/.env.example` 추가 및 `.gitignore` 예외 반영

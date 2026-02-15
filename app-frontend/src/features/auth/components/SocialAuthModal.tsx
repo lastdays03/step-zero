@@ -38,6 +38,7 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                 username: user.full_name || user.email.split('@')[0],
                 email: user.email,
                 full_name: user.full_name,
+                is_superuser: Boolean(user.is_superuser),
             };
 
             login(access_token, userData, current_team_id);
