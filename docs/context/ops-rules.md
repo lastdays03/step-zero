@@ -31,6 +31,19 @@
 - 파일: `docs/context/context-memory-validation-log.md`
 - 규칙: 하루 최소 1회 기록, 검증은 기능 개발과 병행(개발 비차단)
 
+## NotebookLM Analysis-to-Action Routine
+- 목적: NotebookLM 분석 결과를 프로젝트 실행 문서(L1)로 확정 반영한다.
+- 공통 표준은 NotebookLM에서 관리하되, 프로젝트 실행 기준은 항상 L1 문서로 확정한다.
+- 실행 순서:
+1. NotebookLM 질의/분석 수행
+2. 반영 대상 문서 결정(`docs/context/dev-status.md`, `docs/context/decisions.md`, `docs/planning/*`)
+3. 반영 후 `docs/context/notebooklm-analysis-action-log.md`에 1줄 기록
+- 최소 기록 항목:
+1. 날짜
+2. 분석 주제
+3. 반영 문서 경로
+4. 반영 요약 1~2줄
+
 ## Handoff Trigger
 - 사용자가 `핸드오프`, `마무리`, `종료`를 요청하면:
 1. `docs/context/handoff.md` 갱신

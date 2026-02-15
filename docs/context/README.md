@@ -46,6 +46,12 @@
 - `ops-rules.md`
   - 역할: 협업 절차와 문서 운영 규칙 정의
   - 갱신 트리거: 운영 방식/체크리스트 변경 시
+- `notebooklm-query-templates.md`
+  - 역할: NotebookLM 분석 질의 템플릿 표준 관리
+  - 갱신 트리거: 분석 패턴/질문 포맷 개선 시
+- `notebooklm-analysis-action-log.md`
+  - 역할: NotebookLM 분석 결과의 L1 반영 이력 추적
+  - 갱신 트리거: 분석 결과를 문서/계획/결정에 반영한 직후
 
 ## Writing Policy
 - 전체 로그 대신 결론/상태만 기록한다.
