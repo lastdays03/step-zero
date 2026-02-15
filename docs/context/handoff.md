@@ -6,18 +6,17 @@
 - Latest pushed commit: `31ad53d` (pre-handoff)
 
 ## 이번 세션 완료
-- `docs/context/tooling-setup.md`를 신규 작성해 MCP/Skills 설치/인증/검증 runbook을 추가
-- `docs/context/tooling-state.md`에 setup runbook 참조 섹션을 추가
-- `gh` 설치 및 로그인 검증 완료(권한 모드 기준 `gh auth status` 정상)
-- MCP 서버 설정 반영: `context7`, `filesystem`, `github-mcp-server`, `linear`, `notion-mcp`, `playwright-mcp`, `sequential-thinking`(+기존 `pencil`)
-- Skills 설치 반영: `gh-address-comments`, `gh-fix-ci`, `api-design-principles`, `architecture-patterns`, `linear`, `notion-meeting-intelligence`, `openai-docs`, `playwright`, `python-testing-patterns`, `security-best-practices`, `security-threat-model`
-- `tooling-state.md` 체크박스를 실제 설치 상태 기준으로 갱신(`stitch`는 미설치로 유지)
+- `stitch` MCP 서버 실호출 검증 완료(`list_projects` 응답 확인)
+- Session-available 스킬 목록 로컬 설치 상태 전수 확인(누락 없음)
+- Notion 연동 토큰 유효성 확인 완료(`notion-get-users(user_id=self)` 성공)
+- Linear는 OAuth 로그인 성공했으나 MCP initialize 단계 핸드셰이크 오류 지속(`Unexpected content type: text/plain;charset=UTF-8`)
+- `docs/context/tooling-state.md`의 Auth/Access Check를 단일 항목에서 Notion/Linear 분리 상태로 갱신
 
 ## 다음 세션 시작점
-1. `stitch` MCP 서버의 설치 소스(URL/command) 확정 후 등록
-2. Codex 재시작 후 세션-available 스킬 인식 상태 확인
+1. Codex 재시작 후 Linear MCP 재검증(세션 초기화 후 핸드셰이크 재확인)
+2. Linear 핸드셰이크 오류 지속 시 endpoint/계정 권한/서비스 상태 원인 분리 점검
 3. `/ops` 권한 가드 실제 구현 착수
 
 ## 리스크/메모
-- 현재 환경에서는 네트워크 제약 여부에 따라 `gh auth status` 결과가 달라질 수 있어, 최종 확인은 권한 모드 기준으로 판단 필요
-- `tooling-state.md`는 상태 목록이고 실제 실행 절차는 `tooling-setup.md` 기준으로 유지
+- Linear는 `enabled + login 성공` 상태여도 실제 MCP initialize가 실패할 수 있어 기능 검증 호출이 필요
+- `tooling-state.md`의 Auth/Access Check는 서버별로 분리 유지(Notion 확인 완료, Linear 미해결)

@@ -18,7 +18,7 @@
 - [x] `pencil`
 - [x] `playwright-mcp`
 - [x] `sequential-thinking`
-- [ ] `stitch`
+- [x] `stitch`
 
 ## Skills (Always-on, installed)
 - [x] `gh-address-comments`
@@ -53,7 +53,8 @@
 ## Auth/Access Check
 - [x] GitHub CLI 로그인 (`gh auth status`)
 - [x] Codex MCP 로그인 (`codex mcp list` 확인 가능)
-- [ ] Linear/Notion 연동 토큰 유효
+- [x] Notion 연동 토큰 유효 (`notion-get-users` 호출 성공)
+- [ ] Linear 연동 토큰/세션 유효 (OAuth 로그인 성공, 현재 세션 MCP 핸드셰이크 이슈 확인 필요)
 
 ## 새 PC 복구 시 사용 문구
 `tooling-state.md 기준으로 MCP/Skills 설치 및 로그인 상태 점검해줘`
