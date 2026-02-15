@@ -1,4 +1,4 @@
-# DECISIONS
+# Decisions
 
 - Backend API HTTP 계층은 `app/api/v2/<feature>/<function>.py`로 운영한다.
 - Backend 비즈니스 계층은 `app/features/<feature>/{domain,application}`에 둔다.
@@ -6,4 +6,4 @@
 - Frontend 피처는 public entry(`index.ts`)를 유지하되, 서버 컴포넌트에서는 hook export를 직접 import하지 않는다.
 - 루트(`/`)는 랜딩 페이지 대신 `/dashboard`로 리다이렉트한다.
 - 관리자 진입 기본 URL은 `/ops`로 유지한다.
-- `핸드오프/마무리/종료` 요청 시 `HANDOFF` 갱신 후 커밋/푸시까지 한 번에 수행한다.
+- `핸드오프/마무리/종료` 요청 시 `handoff.md` 갱신 후 커밋/푸시까지 한 번에 수행한다.
