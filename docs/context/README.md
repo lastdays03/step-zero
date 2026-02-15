@@ -52,6 +52,9 @@
 - `notebooklm-analysis-action-log.md`
   - 역할: NotebookLM 분석 결과의 L1 반영 이력 추적
   - 갱신 트리거: 분석 결과를 문서/계획/결정에 반영한 직후
+- `notebooklm-mcp-runbook.md`
+  - 역할: NotebookLM MCP 등록/점검/대체 루틴 운영 가이드
+  - 갱신 트리거: MCP 인증/호출 방식 변경 시
 
 ## Writing Policy
 - 전체 로그 대신 결론/상태만 기록한다.

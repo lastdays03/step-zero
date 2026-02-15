@@ -145,6 +145,8 @@
 - `docs/context/notebooklm-query-templates.md` 생성
 - `docs/context/notebooklm-analysis-action-log.md` 생성
 - `docs/context/ops-rules.md`에 Analysis-to-Action 루틴 고정
+- NotebookLM MCP 서버 등록(`codex mcp add notebooklm -- npx -y notebooklm-mcp@latest`)
+- 런타임 검증 체크 항목 추가(호출 가능/인증 방식/실패 시 대체 루틴)
 
 ## 리스크
 - 경량 문서가 오래되면 무용화

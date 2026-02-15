@@ -19,6 +19,7 @@
 - Context memory 운영 검증 Day 1 기록 완료(`context-memory-validation-log.md`)
 - Context memory는 `Phase 1` 진행 중이며 `Phase 2`는 게이트 조건 충족 전 잠금 상태
 - Phase 3 구현 시작: NotebookLM Analysis-to-Action 루틴/템플릿/반영 로그 도입
+- NotebookLM MCP 서버 전역 등록 완료(`notebooklm`), 런타임 호출 검증/인증 절차는 다음 단계
 - `/ops` 권한 가드(프론트+백엔드) 최소 구현 착수 예정
 
 ## Risks And Blockers
