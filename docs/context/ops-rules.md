@@ -26,6 +26,11 @@
 - 운영 규칙 변경 시: `ops-rules.md` 갱신
 - 세션 종료 직전: `handoff.md` 갱신
 
+## Validation Routine
+- 기간: 2026-02-15 ~ 2026-02-21
+- 파일: `docs/context/context-memory-validation-log.md`
+- 규칙: 하루 최소 1회 기록, 검증은 기능 개발과 병행(개발 비차단)
+
 ## Handoff Trigger
 - 사용자가 `핸드오프`, `마무리`, `종료`를 요청하면:
 1. `docs/context/handoff.md` 갱신

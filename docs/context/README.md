@@ -22,6 +22,11 @@
 3. `handoff.md` 갱신
 4. 사용자 트리거(`핸드오프`, `마무리`, `종료`)가 있으면 커밋/푸시까지 완료
 
+## Background Validation (2026-02-15 ~ 2026-02-21)
+- 위치: `docs/context/context-memory-validation-log.md`
+- 원칙: 운영 검증은 기능 개발을 멈추지 않고 병행 수행한다.
+- 매일 최소 1회 기록: 복구 시간, 누락 유형, 작성 시간, 이어서 작업 성공 여부
+
 ## File Roles And Triggers
 - `dev-status.md`
   - 역할: 현재 상태, 진행 중, 리스크, 다음 액션 유지
