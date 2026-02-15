@@ -9,6 +9,7 @@
 - `main`: production-ready only, no direct push. Final merge must come from `develop` only.
 - `develop`: default branch and integration branch for ongoing development.
 - `feature/*`: feature development branches. Feature work must merge into `develop`.
+- Before commit/push, sync with remote first (`git fetch` + `git pull --rebase` when behind) to minimize conflicts.
 - Branch naming for features: `feature/<issue-number>-<short-slug>` (example: `feature/1-login-page`).
 - Commit message format must follow Conventional Commits: `type: subject`.
 - Allowed commit types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `ci`, `build`, `revert`.

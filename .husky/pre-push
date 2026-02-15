@@ -1,4 +1,24 @@
 #!/usr/bin/env sh
+branch="$(git branch --show-current)"
+
+if [ -n "$branch" ]; then
+  echo "[pre-push] sync check ($branch)"
+  if git show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+    counts="$(git rev-list --left-right --count HEAD...origin/$branch)"
+    ahead="$(echo "$counts" | awk '{print $1}')"
+    behind="$(echo "$counts" | awk '{print $2}')"
+
+    if [ "$behind" -gt 0 ]; then
+      echo "[pre-push] rejected: local branch is behind origin/$branch (ahead=$ahead, behind=$behind)"
+      echo "Run: git fetch origin $branch && git pull --rebase origin $branch"
+      exit 1
+    fi
+  else
+    echo "[pre-push] warning: no origin/$branch tracking ref found locally"
+    echo "Run: git fetch origin $branch"
+  fi
+fi
+
 echo "[pre-push] backend tests"
 cd app-backend && .venv/bin/pytest -q || exit 1
 
