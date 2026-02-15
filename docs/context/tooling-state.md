@@ -6,6 +6,9 @@
 - Date: 2026-02-15
 - Updated by: Codex
 
+## 참조 문서
+- 설치/인증/검증 실행 절차: `docs/context/tooling-setup.md`
+
 ## MCP Servers
 - [x] `context7`
 - [x] `filesystem`
@@ -15,7 +18,7 @@
 - [x] `pencil`
 - [x] `playwright-mcp`
 - [x] `sequential-thinking`
-- [x] `stitch`
+- [ ] `stitch`
 
 ## Skills (Always-on, installed)
 - [x] `gh-address-comments`
@@ -48,8 +51,8 @@
 - `skill-installer`
 
 ## Auth/Access Check
-- [ ] GitHub CLI 로그인 (`gh auth status`)
-- [ ] Codex MCP 로그인 (`codex mcp list` 확인 가능)
+- [x] GitHub CLI 로그인 (`gh auth status`)
+- [x] Codex MCP 로그인 (`codex mcp list` 확인 가능)
 - [ ] Linear/Notion 연동 토큰 유효
 
 ## 새 PC 복구 시 사용 문구
