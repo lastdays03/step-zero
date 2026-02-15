@@ -3,14 +3,13 @@
 ## 마지막 업데이트
 - Date: 2026-02-15
 - Branch: `develop`
-- Latest pushed commit: `8ea1257`
+- Latest pushed commit: `13fca8f`
 
 ## 이번 세션 완료
-- 경량 컨텍스트 메모리 최소 기능 구현(`docs/context/*`)
-- 프로젝트 룰(AGENTS)에 `마무리/종료` 시 `HANDOFF` 우선 갱신 규칙 추가
-- 컨텍스트 운영 가이드(`docs/context/README.md`) 작성
-- 컨텍스트 고도화 로드맵 문서(`docs/planning/PLAN-context-memory-upgrade.md`) 작성
-- 운영 인덱스에 경량 컨텍스트 문서 링크 반영
+- 경량 컨텍스트 메모리 최소 기능 구현 완료(`docs/context/*`)
+- 프로젝트 룰에 컨텍스트 연속성 규칙 추가(`AGENTS.md`)
+- 관리자 진입/피처 경계/라우팅 정비 작업을 `develop`에 푸시 완료
+- pre-push에 원격 동기화(behind 차단) 규칙 추가 및 푸시 검증 완료
 
 ## 다음 세션 시작점
 1. `/ops` 권한 가드 실제 구현
