@@ -8,3 +8,6 @@
 
 - `StepZero_소셜로그인_관리자진입_컨셉_v20260215.md`
 - 소셜로그인 전용 인증 모델에서 관리자(`/ops`) 진입, 권한, UX, 보안/감사 기준
+
+- `../context/README.md`
+- 경량 컨텍스트 메모리(`NOW`, `DECISIONS`, `HANDOFF`) 운영 가이드

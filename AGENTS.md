@@ -45,3 +45,10 @@
 - Store test/debug artifacts under `.temp/artifacts/` instead of repository root.
 - Prefer removing one-off artifacts after verification; keep only files needed for follow-up debugging.
 - If artifact retention is needed, keep them grouped by purpose in a single subfolder.
+
+## Context Continuity Rules
+- Use lightweight project memory files under `docs/context/`:
+- `NOW.md`: current state and next 3 actions (actively updated during work)
+- `DECISIONS.md`: confirmed rules/decisions only
+- `HANDOFF.md`: session-end handoff summary
+- If the user explicitly says `마무리` or `종료`, update `docs/context/HANDOFF.md` before final response.
