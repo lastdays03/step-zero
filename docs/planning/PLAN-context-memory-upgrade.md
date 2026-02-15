@@ -62,6 +62,7 @@
 - 운영 기간: 2026-02-15 ~ 2026-02-21 (7일)
 - 기록 위치: `docs/context/context-memory-validation-log.md`
 - 실행 정책: 운영 검증은 개발을 차단하지 않는다. 기능 개발과 병행한다.
+- 일일 기록 입력: `scripts/context/context_memory_log_update.py --date <YYYY-MM-DD> --recovery <분> --missing <유형> --writing <분> --success <성공|부분성공|실패> --notes <메모>`
 - 일일 누락 점검: `scripts/context/context_memory_summary.py --check`
 - 집계 명령: `scripts/context/context_memory_summary.py`
 - 주간 요약 초안 생성: `scripts/context/context_memory_summary.py --format markdown`
