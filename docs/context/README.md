@@ -15,6 +15,11 @@
 2. `DECISIONS.md`
 3. `HANDOFF.md`
 순서로 읽고 바로 작업 시작
+- 세션 진행 중 다른 PC로 이어서 작업(종료 없이):
+1. 현재 PC 변경사항 커밋/푸시
+2. 새 PC에서 `git fetch origin && git pull --rebase`
+3. `NOW.md`와 `HANDOFF.md` 재확인
+4. 차이가 있을 때만 `NOW.md`에 1~2줄 Sync Note 기록
 - 세션 종료:
 1. `HANDOFF.md` 갱신
 2. 필요 시 `NOW.md` 정리
