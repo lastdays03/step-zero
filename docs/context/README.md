@@ -21,7 +21,7 @@
 1. `dev-status.md`의 상태/다음 액션 갱신
 2. 이번 세션 신규 확정사항을 `decisions.md`에 반영
 3. `handoff.md` 갱신
-4. 사용자 트리거(`핸드오프`, `마무리`, `종료`)가 있으면 커밋까지 완료 후 `푸시` 요청 대기
+4. 사용자 트리거(`핸드오프`, `마무리`, `종료`)가 있으면 갱신 내용 공유 후 `커밋`/`푸시` 요청 대기
 
 ## Background Validation (2026-02-15 ~ 2026-02-21)
 - 위치: `docs/context/context-memory-validation-log.md`

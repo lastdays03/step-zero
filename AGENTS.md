@@ -65,6 +65,5 @@
 4. Append a 1-2 line "Sync Note" to `docs/context/dev-status.md` only when there is meaningful delta
 - If the user explicitly says `핸드오프`, `마무리`, or `종료`, execute this sequence before final response:
 1. Update `docs/context/handoff.md`
-2. Commit the handoff-related changes
-3. Report commit result and wait for explicit push request
+2. Report handoff summary and wait for explicit `커밋` / `푸시` commands
 - If commit/push fails, report the failure reason and current git state.
