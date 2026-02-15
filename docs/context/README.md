@@ -29,6 +29,7 @@
 - 일일 누락 점검: `scripts/context/context_memory_summary.py --check`
 - 중간 집계: `scripts/context/context_memory_summary.py`
 - 주간 요약 초안: `scripts/context/context_memory_summary.py --format markdown`
+- 주간 요약 반영: `scripts/context/context_memory_summary.py --write-weekly`
 
 ## File Roles And Triggers
 - `dev-status.md`
