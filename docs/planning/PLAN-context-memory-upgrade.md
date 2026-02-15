@@ -32,6 +32,7 @@
 - `dev-status.md` 고정 섹션 템플릿 도입(상태/리스크/테스트/Sync Notes)
 - `decisions.md`를 `날짜 | 결정 | 근거` 포맷으로 통일
 - `handoff.md`/`ops-rules.md`를 트리거 기반 운영 형태로 정리
+- `context-memory-validation-log.md`에 7일 입력 슬롯 + 주간 집계 템플릿 추가
 
 ## Phase 2 (Validation)
 - 기간: 1~2주
