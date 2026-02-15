@@ -49,20 +49,22 @@
 
 ## Context Continuity Rules
 - Use lightweight project memory files under `docs/context/`:
-- `NOW.md`: current state and next 3 actions (actively updated during work)
-- `DECISIONS.md`: confirmed rules/decisions only
-- `HANDOFF.md`: session-end handoff summary
+- `dev-status.md`: current development state and next actions (actively updated during work)
+- `ops-rules.md`: operation/collaboration rules
+- `decisions.md`: confirmed technical decisions only
+- `handoff.md`: session-end handoff summary
 - At session start, always restore context in this exact order before starting work:
-1. Read `docs/context/NOW.md`
-2. Read `docs/context/DECISIONS.md`
-3. Read `docs/context/HANDOFF.md`
+1. Read `docs/context/dev-status.md`
+2. Read `docs/context/decisions.md`
+3. Read `docs/context/handoff.md`
+4. Read `docs/context/ops-rules.md`
 - If switching PCs without ending the session, run this mid-session sync sequence before continuing:
 1. `git fetch origin`
 2. `git pull --rebase`
-3. Re-read `docs/context/NOW.md` and `docs/context/HANDOFF.md`
-4. Append a 1-2 line "Sync Note" to `docs/context/NOW.md` only when there is meaningful delta
+3. Re-read `docs/context/dev-status.md` and `docs/context/handoff.md`
+4. Append a 1-2 line "Sync Note" to `docs/context/dev-status.md` only when there is meaningful delta
 - If the user explicitly says `핸드오프`, `마무리`, or `종료`, execute this sequence before final response:
-1. Update `docs/context/HANDOFF.md`
+1. Update `docs/context/handoff.md`
 2. Commit the handoff-related changes
 3. Push the current branch to origin
 - If commit/push fails, report the failure reason and current git state.

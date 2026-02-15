@@ -1,4 +1,4 @@
-# NOW
+# Dev Status
 
 ## 현재 상태
 - Backend API 구조를 `app/api/v2/<feature>/<function>.py`로 통일했다.

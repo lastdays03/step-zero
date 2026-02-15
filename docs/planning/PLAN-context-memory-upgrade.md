@@ -7,14 +7,16 @@
 
 ## Phase 1 (Now): Lightweight Memory Only
 - 범위:
-1. `docs/context/NOW.md`
-2. `docs/context/DECISIONS.md`
-3. `docs/context/HANDOFF.md`
-4. `docs/context/README.md`
+1. `docs/context/dev-status.md`
+2. `docs/context/ops-rules.md`
+3. `docs/context/decisions.md`
+4. `docs/context/handoff.md`
+5. `docs/context/README.md`
 - 운영:
-1. 작업 중 `NOW` 갱신
-2. 확정 사항은 `DECISIONS` 반영
-3. 세션 종료 시 `HANDOFF` 갱신
+1. 작업 중 `dev-status.md` 갱신
+2. 운영 규칙 변경 시 `ops-rules.md` 갱신
+3. 확정 사항은 `decisions.md` 반영
+4. 세션 종료 시 `handoff.md` 갱신
 - 성공 기준:
 1. 다른 PC에서 10분 내 맥락 복구 가능
 2. 1주간 운영 중 누락 없이 핸드오프 유지
@@ -47,6 +49,6 @@
 - 외부 보조기억 도입 시 출처 단일화 실패 가능성
 
 ## 대응
-- `마무리/종료` 트리거로 `HANDOFF` 강제 갱신
-- 주 1회 `NOW`/`DECISIONS` 정리
+- `마무리/종료` 트리거로 `handoff.md` 강제 갱신
+- 주 1회 `dev-status.md`/`decisions.md` 정리
 - 외부 도구 도입 시 “레포 문서 우선” 원칙 유지
