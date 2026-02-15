@@ -4,7 +4,7 @@
 - [x] Phase 1 문서 구조 고정(README 단일 진입점 + 컨텍스트 4종 템플릿 정리)
 - [ ] Phase 1 운영 검증(1주, 개발과 병행)
 - [ ] Phase 2 Validation 착수
-- [x] Phase 3 전략 재정의(공통 표준 + 프로젝트별 보조기억 이중 레이어)
+- [x] Phase 3 전략 재정의(공통 규칙 team-standards + 프로젝트 분석 NotebookLM 역할 분리)
 - [ ] Phase 3 운영 활성화
 - [x] Phase 3 구현 시작(분석→반영 루틴/템플릿/로그 파일 생성)
 
@@ -25,7 +25,7 @@
 ## 목표
 - PC 변경 시 작업 맥락 복구 시간을 최소화한다.
 - 과도한 기록 없이 경량 메모리 중심으로 운영한다.
-- NotebookLM을 프로젝트 자료 탐색/분석 도구로 활용하고, 분석 결과를 실행 문서(L1)에 반영한다.
+- 공통 규칙은 `team-standards`(Git)에서 관리하고, NotebookLM은 프로젝트 자료 탐색/분석에 활용해 결과를 실행 문서(L1)에 반영한다.
 
 ## Phase 1 (Now): Lightweight Memory Only
 - 범위:
@@ -99,13 +99,14 @@
 - [ ] 보정안 확정(템플릿 필드 승격/삭제) 후 `decisions.md` 반영
 - [ ] 본 문서의 `진행 상태`에서 Phase 1 운영 검증 완료 체크
 
-## Phase 3 (Strategy): NotebookLM Analysis-to-Action Model
-- 목적: 공통 표준은 유지하면서, 프로젝트 자료 탐색/분석 결과를 즉시 실행 문서에 반영한다.
+## Phase 3 (Strategy): Shared Rules + NotebookLM Analysis-to-Action Model
+- 목적: 공통 규칙은 `team-standards`(Git)에서 관리하고, 프로젝트 자료 탐색/분석 결과를 즉시 실행 문서에 반영한다.
 
 ### Layer Model
 - L1 (Project Source Of Truth): 레포 문서(`AGENTS.md`, `docs/context/*`)
-- L2 (Shared Knowledge Base): NotebookLM
-- 충돌 규칙: L1 우선, L2는 보조/분석 역할
+- L2-A (Shared Rules): `team-standards`(Git 공통 규칙)
+- L2-B (Project Analysis): NotebookLM(프로젝트 자료 탐색/분석)
+- 충돌 규칙: 실행 기준은 L1 우선, L2-A/L2-B는 보조 참조
 
 ### Track A: 공통 표준 관리 (Cross-Project)
 - 범위:
@@ -113,8 +114,8 @@
 2. 운영/협업 가이드
 3. 품질/테스트 기준
 4. API 설계 기준
-- 산출:
-1. 공통 표준 문서 세트(NotebookLM 소스)
+-- 산출:
+1. 공통 표준 문서 세트(`team-standards` 템플릿/스크립트)
 2. 새 작업 시작 체크리스트 템플릿
 3. 프로젝트 예외 기록 템플릿
 
@@ -132,7 +133,7 @@
 - `Track A` 설계/정의는 Phase 1~2와 병행 가능
 - `Track B` 운영 활성화는 Phase 2 보정안 확정 후 착수
 - 활성화 최소 조건:
-1. L1/L2 충돌 규칙 문서화 완료
+1. L1/L2-A/L2-B 충돌 규칙 문서화 완료
 2. 표준 체크리스트/예외 템플릿 준비 완료
 3. 분석 결과의 L1 반영 루틴 정의 완료
 

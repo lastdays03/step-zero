@@ -50,7 +50,7 @@
 2. Skills 검증
 - `~/.codex/skills` 디렉터리에 대상 스킬 존재 확인
 3. 기능 검증(선택)
-- GitHub/Notion/Playwright 등 실제 연동이 필요한 서버는 최소 1회 호출 테스트
+- GitHub/Linear/Playwright 등 실제 연동이 필요한 서버는 최소 1회 호출 테스트
 
 ## 5) 실패 대응
 1. 명령 미지원/형식 불일치
