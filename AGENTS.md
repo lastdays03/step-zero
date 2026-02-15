@@ -52,4 +52,8 @@
 - `NOW.md`: current state and next 3 actions (actively updated during work)
 - `DECISIONS.md`: confirmed rules/decisions only
 - `HANDOFF.md`: session-end handoff summary
-- If the user explicitly says `마무리` or `종료`, update `docs/context/HANDOFF.md` before final response.
+- If the user explicitly says `핸드오프`, `마무리`, or `종료`, execute this sequence before final response:
+1. Update `docs/context/HANDOFF.md`
+2. Commit the handoff-related changes
+3. Push the current branch to origin
+- If commit/push fails, report the failure reason and current git state.
