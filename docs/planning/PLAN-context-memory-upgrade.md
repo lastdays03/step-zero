@@ -4,7 +4,8 @@
 - [x] Phase 1 문서 구조 고정(README 단일 진입점 + 컨텍스트 4종 템플릿 정리)
 - [ ] Phase 1 운영 검증(1주, 개발과 병행)
 - [ ] Phase 2 Validation 착수
-- [ ] Phase 3 Optional 검토
+- [x] Phase 3 전략 재정의(공통 표준 + 프로젝트별 보조기억 이중 레이어)
+- [ ] Phase 3 운영 활성화
 
 ### Phase Gate (명시)
 - 현재 활성 페이즈: `Phase 1`
@@ -97,17 +98,47 @@
 - [ ] 보정안 확정(템플릿 필드 승격/삭제) 후 `decisions.md` 반영
 - [ ] 본 문서의 `진행 상태`에서 Phase 1 운영 검증 완료 체크
 
-## Phase 3 (Optional): NotebookLM Augmentation
-- 목적: 회의록/기획서/아키텍처 원문 검색 성능 보강
-- 원칙:
-1. 실행 규칙의 진실 원천은 레포 문서(`AGENTS.md`, `docs/context/*`)
-2. NotebookLM은 탐색/질의 보조 역할
-- 도입 범위:
-1. 소스 업로드: 운영규칙, 아키텍처, 기획서, 회의 메모
-2. 질의 패턴: “결정 근거”, “관련 문서 찾기”, “과거 합의 재확인”
-- 종료 기준:
-1. 세션 재시작 시 추가 검색 시간이 실질적으로 단축
-2. 문서 중복 관리 비용이 증가하지 않음
+## Phase 3 (Strategy): NotebookLM Dual-Layer Expansion
+- 목적: 보조기억 강화 + 공통 표준 관리 체계를 동시에 구축한다.
+
+### Layer Model
+- L1 (Project Source Of Truth): 레포 문서(`AGENTS.md`, `docs/context/*`)
+- L2 (Shared Knowledge Base): NotebookLM
+- 충돌 규칙: L1 우선, L2는 보조/분석 역할
+
+### Track A: 공통 표준 관리 (Cross-Project)
+- 범위:
+1. 개발 아키텍처 원칙
+2. 운영/협업 가이드
+3. 품질/테스트 기준
+4. API 설계 기준
+- 산출:
+1. 공통 표준 문서 세트(NotebookLM 소스)
+2. 새 작업 시작 체크리스트 템플릿
+3. 프로젝트 예외 기록 템플릿
+
+### Track B: 프로젝트별 보조기억 (Per-Project)
+- 범위:
+1. 프로젝트 컨텍스트 상세 기록(결정 근거/리스크/테스트 히스토리)
+2. NotebookLM 기반 질의/요약/근거 추적
+3. 경량 컨텍스트(`docs/context/*`)의 상세 보강
+- 산출:
+1. 프로젝트별 소스 목록(업데이트 주기 포함)
+2. 질의 패턴 세트(예: 결정 근거 재확인, 과거 합의 탐색)
+3. 주간 drift 점검 로그(L1 ↔ L2 불일치)
+
+### Phase 3 Gate
+- `Track A` 설계/정의는 Phase 1~2와 병행 가능
+- `Track B` 운영 활성화는 Phase 2 보정안 확정 후 착수
+- 활성화 최소 조건:
+1. L1/L2 충돌 규칙 문서화 완료
+2. 표준 체크리스트/예외 템플릿 준비 완료
+3. 주간 drift 점검 루틴 정의 완료
+
+### Phase 3 Success Criteria
+1. 새 프로젝트 시작 시 표준 적용 시작 시간이 단축됨
+2. 프로젝트 재시작/인수 시 컨텍스트 탐색 시간이 단축됨
+3. L1/L2 불일치가 주간 루틴으로 관리됨
 
 ## 리스크
 - 경량 문서가 오래되면 무용화
