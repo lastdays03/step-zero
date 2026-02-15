@@ -4,6 +4,7 @@ import statistics
 from collections import Counter
 from pathlib import Path
 import argparse
+from datetime import date
 
 STATUS_SCORE = {"성공": 1.0, "부분성공": 0.5, "실패": 0.0}
 IGNORE_MISSING = {"", "없음", "-", "N/A", "na", "none"}
@@ -79,6 +80,12 @@ def main():
         default=7,
         help="Expected number of daily records",
     )
+    parser.add_argument(
+        "--format",
+        choices=["text", "markdown"],
+        default="text",
+        help="Output format",
+    )
     args = parser.parse_args()
 
     path = Path(args.file)
@@ -99,19 +106,49 @@ def main():
             missing_counter[m] += 1
 
     top2 = missing_counter.most_common(2)
+    if filled_entries:
+        dates = sorted(e["date"] for e in filled_entries)
+        period_text = f"{dates[0]} ~ {dates[-1]}"
+    else:
+        period_text = "N/A"
 
-    print(f"기록 충족 여부({len(filled_entries)}/{args.target_days})")
-    print(f"복구 시간 중앙값(분): {median if median is not None else 'N/A'}")
-    print(
-        f"이어서 작업 성공률(%): {round(success_rate, 2) if success_rate is not None else 'N/A'}"
-    )
-    print("누락 정보 유형 상위 2개:")
+    median_text = median if median is not None else "N/A"
+    success_text = round(success_rate, 2) if success_rate is not None else "N/A"
+
+    if args.format == "text":
+        print(f"기록 충족 여부({len(filled_entries)}/{args.target_days})")
+        print(f"복구 시간 중앙값(분): {median_text}")
+        print(f"이어서 작업 성공률(%): {success_text}")
+        print("누락 정보 유형 상위 2개:")
+        if top2:
+            for idx, (name, count) in enumerate(top2, start=1):
+                print(f"{idx}. {name} ({count})")
+        else:
+            print("1. 없음")
+            print("2. 없음")
+        return
+
+    print(f"## Weekly Summary (작성일: {date.today().isoformat()})")
+    print(f"- 대상 기간: {period_text}")
+    print(f"- 기록 충족 여부(7/7): {len(filled_entries)}/{args.target_days}")
+    print(f"- 복구 시간 중앙값(분): {median_text}")
+    print(f"- 이어서 작업 성공률(%): {success_text}")
+    print("- 누락 정보 유형 상위 2개:")
     if top2:
         for idx, (name, count) in enumerate(top2, start=1):
             print(f"{idx}. {name} ({count})")
     else:
         print("1. 없음")
         print("2. 없음")
+    print("- 합격 기준 충족 여부:")
+    pass_median = "Y" if median is not None and median <= 10 else "N"
+    pass_coverage = "Y" if len(filled_entries) >= args.target_days else "N"
+    pass_success = "Y" if success_rate is not None and success_rate >= 80 else "N"
+    print(f"1. 복구 시간 중앙값 10분 이하: ({pass_median})")
+    print(f"2. `handoff.md` 누락 0회: ({pass_coverage})")
+    print(f"3. 이어서 작업 성공률 80% 이상: ({pass_success})")
+    print("- 최종 판단: (유지 / 보정 필요)")
+    print("- 보정안(필드 승격/삭제, 트리거 수정):")
 
 
 if __name__ == "__main__":

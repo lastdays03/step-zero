@@ -56,6 +56,7 @@
 - 기록 위치: `docs/context/context-memory-validation-log.md`
 - 실행 정책: 운영 검증은 개발을 차단하지 않는다. 기능 개발과 병행한다.
 - 집계 명령: `scripts/context/context_memory_summary.py`
+- 주간 요약 초안 생성: `scripts/context/context_memory_summary.py --format markdown`
 - 일일 기록 항목:
 1. 세션 시작 맥락 복구 시간(분)
 2. 누락 정보 유형(없음/결정 근거/남은 리스크/테스트 상태/기타)
