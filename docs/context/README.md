@@ -1,38 +1,42 @@
 # Context Memory (Lightweight)
 
-목표: PC를 옮겨도 최소 비용으로 작업 맥락을 복구한다.
+목적: PC 전환/세션 재시작 시 10분 안에 작업 맥락을 복구한다.
 
-## 파일 구성
-- `dev-status.md`: 개발 진행 상태(완료/진행/다음 액션)
-- `ops-rules.md`: 운영/협업 규칙(핸드오프, 동기화, 브랜치/PR)
-- `decisions.md`: 확정된 기술/구조 결정만 누적
-- `handoff.md`: 세션 종료 시점 요약
+## Source Of Truth
+- 실행 규칙 우선순위:
+1. `AGENTS.md`
+2. `docs/context/ops-rules.md`
+3. `docs/context/dev-status.md`, `docs/context/decisions.md`, `docs/context/handoff.md`
+- 외부 보조 도구(예: NotebookLM)는 검색 보조만 수행한다.
 
-## 운영 규칙
-- 로그 전체를 저장하지 않는다.
-- 최신성과 간결성을 우선한다.
-- 세션 시작:
-1. `dev-status.md`
-2. `decisions.md`
-3. `handoff.md`
-4. `ops-rules.md`
-순서로 읽고 바로 작업 시작
-- 세션 진행 중 다른 PC로 이어서 작업(종료 없이):
-1. 현재 PC 변경사항 커밋/푸시
-2. 새 PC에서 `git fetch origin && git pull --rebase`
-3. `dev-status.md`와 `handoff.md` 재확인
-4. 차이가 있을 때만 `dev-status.md`에 1~2줄 Sync Note 기록
-- 세션 종료:
-1. `handoff.md` 갱신
-2. 필요 시 `dev-status.md` 정리
-3. 코드 변경과 함께 커밋/푸시
-- 트리거 규칙:
-1. 사용자가 `핸드오프`, `마무리`, `종료`를 요청하면
-2. `handoff.md` 갱신 후 즉시 커밋/푸시까지 수행
-3. 실패 시 원인을 보고하고 중단 상태를 명시
+## 30-Second Start Checklist
+1. `docs/context/dev-status.md` 읽기
+2. `docs/context/decisions.md` 읽기
+3. `docs/context/handoff.md` 읽기
+4. `docs/context/ops-rules.md` 읽기
+5. `dev-status.md`의 `Next 3 Actions` 기준으로 첫 작업 1개 선택
 
-## 작성 기준
-- `dev-status.md`: 15~25줄
-- `ops-rules.md`: 20줄 내외
-- `decisions.md`: 항목당 1~2줄
-- `handoff.md`: 6~12줄
+## 30-Second End Checklist
+1. `dev-status.md`의 상태/다음 액션 갱신
+2. 이번 세션 신규 확정사항을 `decisions.md`에 반영
+3. `handoff.md` 갱신
+4. 사용자 트리거(`핸드오프`, `마무리`, `종료`)가 있으면 커밋/푸시까지 완료
+
+## File Roles And Triggers
+- `dev-status.md`
+  - 역할: 현재 상태, 진행 중, 리스크, 다음 액션 유지
+  - 갱신 트리거: 작업 단위 완료/우선순위 변경/PC 동기화 직후
+- `decisions.md`
+  - 역할: 확정된 기술 결정과 근거 기록
+  - 갱신 트리거: 롤백 가능성이 낮은 구조/운영 결정 확정 시
+- `handoff.md`
+  - 역할: 세션 종료 시점의 다음 시작점 전달
+  - 갱신 트리거: 세션 종료 직전, 또는 사용자 종료 트리거 입력 시
+- `ops-rules.md`
+  - 역할: 협업 절차와 문서 운영 규칙 정의
+  - 갱신 트리거: 운영 방식/체크리스트 변경 시
+
+## Writing Policy
+- 전체 로그 대신 결론/상태만 기록한다.
+- 문서는 짧게 유지하되, 다음 행동과 리스크는 항상 남긴다.
+- 템플릿 섹션 제목은 유지하고, 내용만 갱신한다.

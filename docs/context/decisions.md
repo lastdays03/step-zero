@@ -1,9 +1,15 @@
 # Decisions
 
-- Backend API HTTP 계층은 `app/api/v2/<feature>/<function>.py`로 운영한다.
-- Backend 비즈니스 계층은 `app/features/<feature>/{domain,application}`에 둔다.
-- 운영콘솔 네이밍은 `ops`로 통일한다(`ops-console`, `ops_console` 사용 금지).
-- Frontend 피처는 public entry(`index.ts`)를 유지하되, 서버 컴포넌트에서는 hook export를 직접 import하지 않는다.
-- 루트(`/`)는 랜딩 페이지 대신 `/dashboard`로 리다이렉트한다.
-- 관리자 진입 기본 URL은 `/ops`로 유지한다.
-- `핸드오프/마무리/종료` 요청 시 `handoff.md` 갱신 후 커밋/푸시까지 한 번에 수행한다.
+## 기록 규칙
+- 확정된 사항만 기록한다.
+- 항목 형식은 `날짜 | 결정 | 근거`를 유지한다.
+
+## Entries
+- 2026-02-15 | Backend API HTTP 계층은 `app/api/v2/<feature>/<function>.py`로 운영 | API 모듈 경로 일관성 확보
+- 2026-02-15 | Backend 비즈니스 계층은 `app/features/<feature>/{domain,application}`에 배치 | 기능별 경계 명확화
+- 2026-02-15 | 운영콘솔 네이밍은 `ops`로 통일(`ops-console`, `ops_console` 금지) | 경로/용어 혼선 방지
+- 2026-02-15 | Frontend 피처는 public entry(`index.ts`) 유지, 서버 컴포넌트에서 hook export 직접 import 금지 | 레이어 의존성 규칙 유지
+- 2026-02-15 | 루트(`/`)는 랜딩 대신 `/dashboard`로 리다이렉트 | 기본 진입 동선 단순화
+- 2026-02-15 | 관리자 기본 URL은 `/ops` 유지 | 운영 진입점 단일화
+- 2026-02-15 | `핸드오프/마무리/종료` 요청 시 `handoff.md` 갱신 후 커밋/푸시까지 수행 | 세션 종료 누락 방지
+- 2026-02-15 | Context memory 문서는 `README` 단일 진입점 + 고정 템플릿 섹션으로 운영 | PC 전환 시 복구 시간 단축

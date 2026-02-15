@@ -1,5 +1,11 @@
 # PLAN: Context Memory Upgrade
 
+## 진행 상태 (2026-02-15)
+- [x] Phase 1 문서 구조 고정(README 단일 진입점 + 컨텍스트 4종 템플릿 정리)
+- [ ] Phase 1 운영 검증(1주)
+- [ ] Phase 2 Validation 착수
+- [ ] Phase 3 Optional 검토
+
 ## 목표
 - PC 변경 시 작업 맥락 복구 시간을 최소화한다.
 - 과도한 기록 없이 경량 메모리 중심으로 운영한다.
@@ -20,6 +26,12 @@
 - 성공 기준:
 1. 다른 PC에서 10분 내 맥락 복구 가능
 2. 1주간 운영 중 누락 없이 핸드오프 유지
+
+### Phase 1 적용 메모 (2026-02-15)
+- `docs/context/README.md`에 시작/종료 30초 체크리스트 추가
+- `dev-status.md` 고정 섹션 템플릿 도입(상태/리스크/테스트/Sync Notes)
+- `decisions.md`를 `날짜 | 결정 | 근거` 포맷으로 통일
+- `handoff.md`/`ops-rules.md`를 트리거 기반 운영 형태로 정리
 
 ## Phase 2 (Validation)
 - 기간: 1~2주
