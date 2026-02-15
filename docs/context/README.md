@@ -8,6 +8,7 @@
 2. `docs/context/ops-rules.md`
 3. `docs/context/dev-status.md`, `docs/context/decisions.md`, `docs/context/handoff.md`
 - 외부 보조 도구(예: NotebookLM)는 검색 보조만 수행한다.
+- NotebookLM 분석 결과는 반드시 L1 문서(`docs/context/*`, 계획/결정 문서)에 반영해 실행 기준으로 고정한다.
 
 ## 30-Second Start Checklist
 1. `docs/context/dev-status.md` 읽기
