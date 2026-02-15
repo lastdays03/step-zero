@@ -7,8 +7,6 @@
 1. `AGENTS.md`
 2. `docs/context/ops-rules.md`
 3. `docs/context/dev-status.md`, `docs/context/decisions.md`, `docs/context/handoff.md`
-- 외부 보조 도구(예: NotebookLM)는 검색 보조만 수행한다.
-- NotebookLM 분석 결과는 반드시 L1 문서(`docs/context/*`, 계획/결정 문서)에 반영해 실행 기준으로 고정한다.
 
 ## 30-Second Start Checklist
 1. `docs/context/dev-status.md` 읽기
@@ -46,15 +44,6 @@
 - `ops-rules.md`
   - 역할: 협업 절차와 문서 운영 규칙 정의
   - 갱신 트리거: 운영 방식/체크리스트 변경 시
-- `notebooklm-query-templates.md`
-  - 역할: NotebookLM 분석 질의 템플릿 표준 관리
-  - 갱신 트리거: 분석 패턴/질문 포맷 개선 시
-- `notebooklm-analysis-action-log.md`
-  - 역할: NotebookLM 분석 결과의 L1 반영 이력 추적
-  - 갱신 트리거: 분석 결과를 문서/계획/결정에 반영한 직후
-- `notebooklm-mcp-runbook.md`
-  - 역할: NotebookLM MCP 등록/점검/대체 루틴 운영 가이드
-  - 갱신 트리거: MCP 인증/호출 방식 변경 시
 
 ## Writing Policy
 - 전체 로그 대신 결론/상태만 기록한다.

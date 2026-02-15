@@ -4,7 +4,7 @@
 - [x] Phase 1 문서 구조 고정(README 단일 진입점 + 컨텍스트 4종 템플릿 정리)
 - [ ] Phase 1 운영 검증(1주, 개발과 병행)
 - [ ] Phase 2 Validation 착수
-- [x] Phase 3 전략 재정의(공통 규칙 team-standards + 프로젝트 분석 NotebookLM 역할 분리)
+- [x] Phase 3 전략 재정의(공통 규칙 team-standards + 프로젝트 실행 문서 중심 운영)
 - [ ] Phase 3 운영 활성화
 - [x] Phase 3 구현 시작(분석→반영 루틴/템플릿/로그 파일 생성)
 
@@ -25,7 +25,7 @@
 ## 목표
 - PC 변경 시 작업 맥락 복구 시간을 최소화한다.
 - 과도한 기록 없이 경량 메모리 중심으로 운영한다.
-- 공통 규칙은 `team-standards`(Git)에서 관리하고, NotebookLM은 프로젝트 자료 탐색/분석에 활용해 결과를 실행 문서(L1)에 반영한다.
+- 공통 규칙은 `team-standards`(Git)에서 관리하고, 결과 반영은 실행 문서(L1) 중심으로 운영한다.
 
 ## Phase 1 (Now): Lightweight Memory Only
 - 범위:
@@ -99,14 +99,13 @@
 - [ ] 보정안 확정(템플릿 필드 승격/삭제) 후 `decisions.md` 반영
 - [ ] 본 문서의 `진행 상태`에서 Phase 1 운영 검증 완료 체크
 
-## Phase 3 (Strategy): Shared Rules + NotebookLM Analysis-to-Action Model
-- 목적: 공통 규칙은 `team-standards`(Git)에서 관리하고, 프로젝트 자료 탐색/분석 결과를 즉시 실행 문서에 반영한다.
+## Phase 3 (Strategy): Shared Rules + L1 Action Model
+- 목적: 공통 규칙은 `team-standards`(Git)에서 관리하고, 프로젝트 실행 문서를 즉시 반영 가능한 형태로 유지한다.
 
 ### Layer Model
 - L1 (Project Source Of Truth): 레포 문서(`AGENTS.md`, `docs/context/*`)
 - L2-A (Shared Rules): `team-standards`(Git 공통 규칙)
-- L2-B (Project Analysis): NotebookLM(프로젝트 자료 탐색/분석)
-- 충돌 규칙: 실행 기준은 L1 우선, L2-A/L2-B는 보조 참조
+- 충돌 규칙: 실행 기준은 L1 우선, L2-A는 보조 참조
 
 ### Track A: 공통 표준 관리 (Cross-Project)
 - 범위:
@@ -119,35 +118,31 @@
 2. 새 작업 시작 체크리스트 템플릿
 3. 프로젝트 예외 기록 템플릿
 
-### Track B: 프로젝트별 자료 탐색/분석 (Per-Project)
+### Track B: 프로젝트 실행 반영 (Per-Project)
 - 범위:
-1. 프로젝트 관련 자료(기획/회의/아키텍처/이슈) 탐색
-2. NotebookLM 기반 질의/요약/근거 추적/비교 분석
-3. 분석 결과를 `docs/context/*`와 실행 계획/결정에 반영
+1. 프로젝트 관련 실행 문서(`docs/context/*`, `docs/planning/*`) 정합성 유지
+2. 결정/상태/리스크를 작업 단위 기준으로 반영
 - 산출:
-1. 프로젝트별 분석 소스 목록(우선순위/갱신 주기 포함)
-2. 질의 패턴 세트(예: 결정 근거 재확인, 관련 자료 찾기, 대안 비교)
-3. `Analysis -> Action` 반영 로그(무엇을 어떤 문서에 반영했는지)
+1. 프로젝트별 실행 문서 갱신 로그
+2. 작업 단위 기준의 변경 근거 기록
 
 ### Phase 3 Gate
 - `Track A` 설계/정의는 Phase 1~2와 병행 가능
 - `Track B` 운영 활성화는 Phase 2 보정안 확정 후 착수
 - 활성화 최소 조건:
-1. L1/L2-A/L2-B 충돌 규칙 문서화 완료
+1. L1/L2-A 충돌 규칙 문서화 완료
 2. 표준 체크리스트/예외 템플릿 준비 완료
 3. 분석 결과의 L1 반영 루틴 정의 완료
 
 ### Phase 3 Success Criteria
 1. 새 프로젝트 시작 시 표준 적용 시작 시간이 단축됨
-2. 프로젝트 자료 탐색/비교 분석 시간이 단축됨
-3. 분석 결과가 L1 문서(결정/계획/상태)에 누락 없이 반영됨
+2. 프로젝트 실행 문서(결정/계획/상태)의 갱신 누락이 줄어듦
+3. 실행 문서 변경 근거가 누락 없이 기록됨
 
 ### Phase 3 Initial Implementation (2026-02-15)
-- `docs/context/notebooklm-query-templates.md` 생성
-- `docs/context/notebooklm-analysis-action-log.md` 생성
-- `docs/context/ops-rules.md`에 Analysis-to-Action 루틴 고정
-- NotebookLM MCP 서버 등록(`codex mcp add notebooklm -- npx -y notebooklm-mcp@latest`)
-- 런타임 검증 체크 항목 추가(호출 가능/인증 방식/실패 시 대체 루틴)
+- `docs/context/ops-rules.md`에 Shared Rules Sync 루틴 고정
+- `team-standards` 기반 공통 규칙 적용 스크립트 추가
+- 실행 문서 반영 루틴 체크 항목 추가
 
 ## 리스크
 - 경량 문서가 오래되면 무용화

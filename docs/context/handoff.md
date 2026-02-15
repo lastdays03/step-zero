@@ -3,24 +3,22 @@
 ## 마지막 업데이트
 - Date: 2026-02-15
 - Branch: `develop`
-- Latest pushed commit: `fbb01fc`
+- Latest pushed commit: `7898297`
 
 ## 이번 세션 완료
 - 공통 규칙 운영 모델 정리:
   - Notion 기반 공통 규칙 운영 문구/참조 제거
   - 공통 규칙 원천을 `team-standards`(Git)로 단일화
-  - 프로젝트 분석 도구는 NotebookLM 중심으로 유지
+- NotebookLM 연동 제거:
+  - NotebookLM MCP 글로벌 등록 제거(`codex mcp remove notebooklm`)
+  - NotebookLM 관련 컨텍스트 문서/운영 루틴 제거
 - `step-zero` 문서 정비:
   - `docs/context/ops-rules.md`, `docs/context/README.md`, `docs/context/dev-status.md`, `docs/context/decisions.md` 업데이트
-  - `docs/planning/PLAN-context-memory-upgrade.md`에서 Notion 기반 표현 제거
-  - `docs/context/notion-common-rules-template.md` 삭제
-- 부트스트랩 자동화:
-  - `scripts/bootstrap-from-standards.sh` 추가
-  - 새 프로젝트에 규칙/컨텍스트를 일괄 적용하는 흐름 검증
+  - `docs/planning/PLAN-context-memory-upgrade.md`에서 NotebookLM 운영 모델 표현 제거
+  - `docs/context/notebooklm-*.md` 3종 삭제
 - `team-standards` 원격 반영 완료:
-  - curl 설치 스크립트/현재 경로 기본 설치 지원
-  - 글로벌 룰 템플릿 추가
-  - Notion 규칙 제거 후, 요청에 따라 tooling 기본셋의 `notion-mcp`/`notion-meeting-intelligence` 재추가
+  - Notion MCP/스킬 기본셋 재추가 반영(`22afeec`)
+  - NotebookLM 관련 기본 템플릿/적용 항목 제거 반영(`f9b1c10`)
 
 ## 다음 세션 시작점
 1. `/ops` 권한 가드(프론트+백엔드) 최소 구현 착수
