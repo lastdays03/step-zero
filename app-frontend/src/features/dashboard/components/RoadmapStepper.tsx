@@ -11,12 +11,23 @@ interface RoadmapStepperProps {
 }
 
 export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
+    const normalizedSteps = steps.map((step) => ({
+        ...step,
+        status: String(step.status || "").toLowerCase(),
+    }));
+
     return (
         <Card className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] border border-white/50 relative overflow-hidden group">
             <CardContent className="p-8">
                 <div className="flex justify-between items-center mb-8">
                     <h3 className="font-bold text-lg text-slate-800">나의 로드맵</h3>
-                    <button className="text-sm text-[#36a4f2] font-medium hover:underline flex items-center">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            window.location.href = "/roadmap";
+                        }}
+                        className="text-sm text-[#36a4f2] font-medium hover:underline flex items-center"
+                    >
                         전체 계획 보기
                     </button>
                 </div>
@@ -29,7 +40,7 @@ export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
                             {/* Timeline Line - Positioned absolute relative to the scrollable content width */}
                             <div className="absolute top-[24px] left-6 right-6 h-[2.5px] bg-slate-100 z-0" />
 
-                            {steps.map((step, index) => (
+                            {normalizedSteps.map((step, index) => (
                                 <div key={index} className={`flex flex-col items-start md:items-center text-left md:text-center relative z-10 w-[120px] flex-shrink-0 group transition-all duration-500 ${step.status === 'locked' ? 'opacity-50' : 'opacity-100'}`}>
                                     <div className="relative mb-3 w-full flex justify-start md:justify-center">
                                         {step.status === 'current' && (
@@ -58,7 +69,7 @@ export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
                                                 </Badge>
                                             ) : (
                                                 <p className="text-[10px] font-medium truncate text-slate-400">
-                                                    {step.status === 'completed' ? '완료됨' : '예상일 2월 10일'}
+                                                    {step.status === 'completed' ? (step.date || '완료됨') : '잠금 해제 대기'}
                                                 </p>
                                             )}
                                         </div>

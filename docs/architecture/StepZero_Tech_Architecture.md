@@ -2,7 +2,7 @@
 # StepZero Technical Architecture (Option A - All-in-One Docker)
 
 ## 1. Overview
-StepZero는 **개발 속도와 운영 단순화**를 최우선으로 하여, 모든 서비스(Frontend, Backend, DB)를 **단일 서버(VPS) 내 Docker Compose**로 통합 배포하는 **Monolithic Deployment** 아키텍처를 채택합니다.
+StepZero는 **개발 속도와 운영 단순화**를 최우선으로 하여, 모든 서비스(Frontend, Backend, Worker, DB, Redis)를 **단일 서버(VPS) 내 Docker Compose**로 통합 배포하는 **Monolithic Deployment** 아키텍처를 채택합니다.
 
 이 구조는 초기 비용을 최소화하고, 내부 네트워크를 통한 고성능 데이터 처리를 보장하며, 향후 트래픽 증가 시 각 컴포넌트를 분리하기 쉬운 구조입니다.
 
@@ -21,6 +21,9 @@ graph TD
         subgraph "Docker Internal Network"
             FE_Container --> |"SSR Data Fetching"| BE_Container
             BE_Container --> |"SQL/Vectors"| DB_Container[("PostgreSQL + pgvector")]
+            BE_Container --> |"enqueue job"| Redis_Container[("Redis")]
+            Worker_Container["Worker (ARQ)"] --> |"dequeue job"| Redis_Container
+            Worker_Container --> |"write result"| DB_Container
             
             BE_Container --> |"Internal Logic"| RAG["RAG Engine"]
             BE_Container --> |"Internal Logic"| Parser["HWP Parser"]
@@ -40,24 +43,34 @@ graph TD
 ## 3. Technology Stack & Docker Configuration
 
 ### 3.1. Frontend Service (`app-frontend`)
-*   **Tech:** Next.js 14 (App Router)
+*   **Tech:** Next.js 16 (App Router)
 *   **Mode:** Standalone Output (`output: 'standalone'`) - Docker 이미지 경량화
 *   **Role:** UI 렌더링, 사용자 상호작용
 *   **Port:** Internal 3000
 
 ### 3.2. Backend Service (`app-backend`)
 *   **Tech:** FastAPI (Python 3.11)
-*   **Role:** REST API, RAG 로직, HWP 파싱
+*   **Role:** REST API, RAG 로직, Job enqueue
 *   **Port:** Internal 8000
-*   **Workers:** Uvicorn with Gunicorn (Production)
+*   **Runtime:** Uvicorn (Dev)
 
-### 3.3. Database Service (`app-db`)
+### 3.3. Worker Service (`app-worker`)
+*   **Tech:** ARQ Worker (Python 3.11)
+*   **Role:** 로드맵 생성 비동기 잡 처리
+*   **Queue:** Redis (`REDIS_URL`)
+
+### 3.4. Database Service (`app-db`)
 *   **Tech:** PostgreSQL 16 + `pgvector`
-*   **Image:** `ankane/pgvector:latest`
+*   **Image:** `pgvector/pgvector:pg16`
 *   **Role:** 정형 데이터(회원, 로드맵) 및 비정형 데이터(법령 벡터) 저장
 *   **Port:** Internal 5432 (외부 노출 X)
 
-### 3.4. Reverse Proxy (`app-proxy`)
+### 3.5. Cache/Queue Service (`app-redis`)
+*   **Tech:** Redis
+*   **Role:** 작업 큐/캐시
+*   **Port:** Internal 6379
+
+### 3.6. Reverse Proxy (`app-proxy`)
 *   **Tech:** Nginx
 *   **Role:** SSL Termination (LetsEncrypt), 경로 라우팅, 정적 파일 캐싱
 *   **Config:**
@@ -77,7 +90,7 @@ graph TD
 2.  **GitHub Actions:**
     *   SSH로 VPS 접속.
     *   `git pull`
-    *   `docker-compose up -d --build`
+    *   `docker compose -f docker-compose.dev.yml up -d --build`
     *   오래된 이미지 정리 (`docker image prune`).
 
 ---

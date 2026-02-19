@@ -1,10 +1,13 @@
-.PHONY: setup run test migrate-up migrate-revision migrate-check
+.PHONY: setup run worker test migrate-up migrate-revision migrate-check
 
 setup:
 	@./scripts/setup_dev.sh
 
 run:
 	@.venv/bin/uvicorn app.main:app --reload --port 8000
+
+worker:
+	@.venv/bin/python -m arq app.workers.roadmap_worker.WorkerSettings
 
 test:
 	@.venv/bin/python -m pytest -q
