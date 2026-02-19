@@ -12,6 +12,31 @@
 - 프론트 변경: `cd app-frontend && npm run lint`
 5. PR 작성(한국어): `요약 / 변경 사항 / 검증`
 
+## 백엔드 구현 순서 (필수)
+1. 도메인 규칙 정리: `app-backend/app/features/<feature>/domain`
+2. 유스케이스 구현: `app-backend/app/features/<feature>/application`
+3. 라우터 구현: `app-backend/app/api/v1/<feature>/router.py`
+4. 엔드포인트 등록: `app-backend/app/api/v1/api.py`에 `include_router`
+5. 스키마 반영: `app-backend/app/api/v1/schemas.py` 또는 feature 로컬 스키마
+
+## API 라우터 적용 규칙
+- 엔드포인트 함수는 feature 라우터 파일에만 만든다.
+- `api.py`에서는 prefix 조합과 include만 담당한다.
+- prefix는 기능명 기준으로 고정한다.
+- `Depends`는 라우터 계층에서만 선언하고 비즈니스 로직은 application 계층으로 넘긴다.
+
+## 모델/리포지토리 적용 규칙
+- DB 테이블 모델은 `app-backend/app/models`에서만 관리한다.
+- DB 조회/저장은 `app-backend/app/repositories`에서만 수행한다.
+- feature `application`은 repository를 주입받아 사용한다.
+- 라우터에서 SQL 쿼리를 직접 작성하지 않는다.
+- 공용 모델/리포지토리 변경 시 PR 본문에 영향 범위를 반드시 기록한다.
+
+## 인증/권한 wiring 규칙
+- 사용자 인증은 `app-backend/app/api/deps.py`의 의존성으로 처리한다.
+- 팀 컨텍스트가 필요한 API는 `X-Team-Id` 처리 포함 여부를 확인한다.
+- 운영자 전용 API는 `require_platform_admin` 의존성을 명시한다.
+
 ## Vibe Coding 규칙
 - 작은 단위로 자주 커밋한다.
 - 한 PR은 한 목적만 담는다.
