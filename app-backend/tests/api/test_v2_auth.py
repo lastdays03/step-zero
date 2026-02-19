@@ -3,9 +3,9 @@ from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_v2_login_returns_team_context(client: AsyncClient):
+async def test_v1_login_returns_team_context(client: AsyncClient):
     response = await client.post(
-        "/api/v2/auth/login",
+        "/api/v1/auth/login",
         data={"username": "test@example.com", "password": "password123"},
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )

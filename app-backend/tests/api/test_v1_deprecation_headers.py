@@ -3,18 +3,18 @@ from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_v1_endpoints_include_deprecation_headers(client: AsyncClient):
+async def test_v1_endpoints_do_not_include_deprecation_headers(client: AsyncClient):
     response = await client.get("/api/v1/dashboard")
 
     assert response.status_code == 200
-    assert response.headers.get("Deprecation") == "true"
-    assert response.headers.get("Sunset") == "Tue, 30 Jun 2026 00:00:00 GMT"
-    assert response.headers.get("Link") == '</api/v2/dashboard>; rel="successor-version"'
-    assert "Deprecated API v1" in response.headers.get("Warning", "")
+    assert response.headers.get("Deprecation") is None
+    assert response.headers.get("Sunset") is None
+    assert response.headers.get("Link") is None
+    assert response.headers.get("Warning") is None
 
 
 @pytest.mark.asyncio
-async def test_v1_generate_has_roadmaps_successor_link(client: AsyncClient):
+async def test_v1_generate_has_no_successor_link_header(client: AsyncClient):
     login_response = await client.post(
         "/api/v1/auth/login",
         data={"username": "test@example.com", "password": "password123"},
@@ -28,4 +28,4 @@ async def test_v1_generate_has_roadmaps_successor_link(client: AsyncClient):
     )
 
     assert response.status_code == 200
-    assert response.headers.get("Link") == '</api/v2/roadmaps>; rel="successor-version"'
+    assert response.headers.get("Link") is None

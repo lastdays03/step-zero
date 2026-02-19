@@ -12,9 +12,9 @@ from app.models.team import Team, TeamMember
 from app.models.user import AuthenticatedUser, User
 from app.core.security import settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v2/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 optional_oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/api/v2/auth/login",
+    tokenUrl="/api/v1/auth/login",
     auto_error=False,
 )
 
@@ -37,7 +37,7 @@ async def get_current_user(
         raise credentials_exception
 
     user: User | None = None
-    # v2: sub is user_id, v1 fallback: sub may be user email.
+    # Current token subject is user_id; keep email fallback for legacy tokens.
     if str(subject).isdigit():
         result = await session.execute(select(User).where(User.id == int(subject)))
         user = result.scalar_one_or_none()

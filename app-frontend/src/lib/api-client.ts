@@ -4,7 +4,7 @@ const explicitBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
 const apiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
 
 const baseURL = explicitBaseUrl
-    || (apiUrl ? `${apiUrl.replace(/\/$/, "")}/api/v2` : "http://localhost:8000/api/v2");
+    || (apiUrl ? `${apiUrl.replace(/\/$/, "")}/api/v1` : "http://localhost:8000/api/v1");
 
 export const apiClient = axios.create({
     baseURL,

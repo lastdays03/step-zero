@@ -22,6 +22,25 @@ interface SocialAuthModalProps {
 export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
     const { login } = useAuth();
 
+    const completeLogin = (payload: {
+        access_token: string;
+        user: { id: number | string; full_name?: string | null; email: string; is_superuser?: boolean | null };
+        current_team_id?: string;
+    }) => {
+        const { access_token, user, current_team_id } = payload;
+        const userData = {
+            id: user.id.toString(),
+            username: user.full_name || user.email.split('@')[0],
+            email: user.email,
+            full_name: user.full_name,
+            is_superuser: Boolean(user.is_superuser),
+        };
+
+        login(access_token, userData, current_team_id);
+        onClose();
+        window.location.reload();
+    };
+
     const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
         if (!credentialResponse.credential) {
             alert('구글 로그인 토큰을 받지 못했습니다.');
@@ -31,19 +50,7 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
             const response = await apiClient.post('/auth/login/google', {
                 id_token: credentialResponse.credential,
             });
-
-            const { access_token, user, current_team_id } = response.data;
-            const userData = {
-                id: user.id.toString(),
-                username: user.full_name || user.email.split('@')[0],
-                email: user.email,
-                full_name: user.full_name,
-                is_superuser: Boolean(user.is_superuser),
-            };
-
-            login(access_token, userData, current_team_id);
-            onClose();
-            window.location.reload();
+            completeLogin(response.data);
         } catch (error: unknown) {
             const status = (error as { response?: { status?: number } })?.response?.status;
             const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
@@ -54,8 +61,23 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                 return;
             }
             if (status === 503) {
-                alert('서버의 구글 로그인 설정이 비어 있습니다. 운영 설정을 확인해주세요.');
-                return;
+                if (detail === 'Authentication backend unavailable') {
+                    alert('로그인 서버가 데이터베이스에 연결되지 않았습니다. 백엔드/DB 상태를 먼저 확인해주세요.');
+                    return;
+                }
+                try {
+                    const fallback = await apiClient.post('/auth/login/social/google');
+                    completeLogin(fallback.data);
+                    return;
+                } catch (fallbackError: unknown) {
+                    const fallbackDetail =
+                        (fallbackError as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+                    alert(
+                        fallbackDetail
+                        || '구글 인증 서비스 연결에 실패했습니다. 잠시 후 다시 시도하거나 일반 로그인으로 진행해주세요.',
+                    );
+                    return;
+                }
             }
             alert(detail || '구글 로그인 검증에 실패했습니다.');
         }

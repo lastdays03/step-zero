@@ -11,26 +11,13 @@ from app.api.problem import (
 )
 from app.core import config
 from app.core.logging import setup_logging, get_logger
-from app.services.rag.deps import get_rag_service
+from app.features.rag.application.deps import get_rag_service
 
 # 로깅 설정 초기화
 setup_logging()
 logger = get_logger("app.main")
 
 settings = config.get_settings()
-V1_SUNSET = "Tue, 30 Jun 2026 00:00:00 GMT"
-
-
-def get_v2_successor(path: str) -> str:
-    if path.startswith("/api/v1/auth"):
-        return path.replace("/api/v1/auth", "/api/v2/auth", 1)
-    if path.startswith("/api/v1/dashboard"):
-        return path.replace("/api/v1/dashboard", "/api/v2/dashboard", 1)
-    if path.startswith("/api/v1/generate"):
-        return path.replace("/api/v1/generate", "/api/v2/roadmaps", 1)
-    if path.startswith("/api/v1/rag"):
-        return path.replace("/api/v1/rag", "/api/v2/rag", 1)
-    return path.replace("/api/v1", "/api/v2", 1)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -66,15 +53,6 @@ async def log_request_response(request: Request, call_next):
     
     response = await call_next(request)
 
-    if request.url.path.startswith("/api/v1"):
-        successor = get_v2_successor(request.url.path)
-        response.headers["Deprecation"] = "true"
-        response.headers["Sunset"] = V1_SUNSET
-        response.headers["Link"] = f'<{successor}>; rel="successor-version"'
-        response.headers["Warning"] = (
-            f'299 stepzero-api "Deprecated API v1. Migrate to {successor} before {V1_SUNSET}."'
-        )
-    
     # 응답 시간 및 상태 코드 로깅
     process_time = time.time() - start_time
     logger.info(
@@ -103,11 +81,9 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 from app.api.v1.api import api_router as api_v1_router
-from app.api.v2.api import api_router as api_v2_router
 
 @app.get("/health")
 async def health_check():
     return {"status": "ok"}
 
 app.include_router(api_v1_router, prefix="/api/v1")
-app.include_router(api_v2_router, prefix="/api/v2")

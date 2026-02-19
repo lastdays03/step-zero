@@ -28,9 +28,9 @@
 - Alembic migrations must be safe on pre-existing local DBs (idempotent where needed).
 
 ## API Rules
-- Keep v1 compatibility for existing clients.
-- Implement new endpoints/features in v2 first.
-- When deprecating v1 behavior, add explicit deprecation signals in API responses/docs.
+- Backend HTTP API base path is `/api/v1`.
+- New endpoints must be added under `app/api/v1/<feature>/`.
+- Keep response schema compatibility for existing frontend clients unless a change is explicitly approved.
 
 ## Quality Gates
 - Before concluding backend changes, run `cd app-backend && .venv/bin/pytest -q`.

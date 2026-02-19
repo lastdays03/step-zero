@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from app.services.rag.service import RagService
+from app.features.rag.application.rag_service import RagService
 
 
 @pytest.mark.asyncio
