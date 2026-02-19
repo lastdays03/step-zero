@@ -3,42 +3,35 @@
 ## 마지막 업데이트
 - Date: 2026-02-19
 - Branch: `develop`
-- Latest local commit: `cbc68db`
+- Latest pushed commit: `46578c0`
 
 ## 이번 세션 완료
-- 로드맵 생성 비동기 파이프라인 구축:
-  - ARQ + Redis 기반 Jobs API (`/api/v1/roadmaps/jobs`, 상태/결과 조회)
-  - 워커 엔트리 추가(`app.workers.roadmap_worker`)
-  - `docker-compose.dev.yml`에 `app-worker` 서비스 반영
-- 로드맵 상세 데이터 모델/조회 확장:
-  - `roadmap_step_details`, `roadmap_step_actions` 모델/리포지토리/마이그레이션 추가
-  - `GET /api/v1/roadmaps/{id}/detail`, `GET /api/v1/roadmaps/latest/detail` 구현
-- 입력 검증 강화:
-  - `/api/v1/roadmaps/jobs/validate` 추가
-  - 생성 API에서 서버 측 검증 강제(프론트 우회 차단)
-- 실행형 로드맵 기능 구현:
-  - Step 상태 전이 API: `PATCH /api/v1/roadmaps/tasks/{step_id}`
-  - Action 완료 토글 API: `PATCH /api/v1/roadmaps/tasks/{step_id}/actions/{action_id}`
-  - 체크리스트/문서 완료 시 step 자동 완료 + 다음 step 자동 진행
-- 프론트 `/roadmap` 실행형 화면 전환:
-  - 생성 전/생성 중/생성 후 상태 분리
-  - phase/task/action 렌더 + 체크리스트/문서 토글
-  - 로드맵 존재 시 생성 폼 우선 노출 버그 수정
-- 대시보드 정합화:
-  - roadmap 리스트를 phase 요약(`completed/current/locked`) 기준으로 계산
-  - current phase 제목을 step detail phase와 동기화
-- 문서 정비:
-  - README/아키텍처/tech foundation 실행 명령 `docker compose -f docker-compose.dev.yml up -d --build` 기준으로 갱신
-  - 실행형 로드맵 계획 문서 추가(`docs/planning/PLAN-roadmap-execution-screen.md`)
+- 로드맵 생성 UX 단일화:
+  - `/roadmap`, `/dashboard` 모두 동일 공통 패널(`RoadmapGenerationPanel`) 사용
+  - 분리된 유도/생성 화면을 채팅형 단일 플로우(질문 수집 -> AI 검증 -> 사용자 확인 -> 생성)로 통합
+- 비로그인 사용자 유도 개선:
+  - 생성화면은 그대로 노출
+  - 질문 입력/질문 진행/검증/생성 시도 시 기존 `SocialAuthModal` 즉시 오픈
+  - 로그인 페이지 리다이렉트 제거
+- 대시보드 필요 서류 연동:
+  - `GET /roadmaps/latest/detail` 기반으로 `DOCUMENT` 액션 렌더링
+  - 현재 단계 기준 문서만 표시
+  - 문서 상태(필수/완료) 표시 + 다운로드 링크(`download_url/file_url/template_url/source_url`) 지원
+- 로드맵 화면 기본 선택 개선:
+  - 페이즈 기본 선택을 현재 진행중(`IN_PROGRESS`) 단계 페이즈로 설정
+  - 진행중이 없으면 `PENDING` -> 미완료 -> 첫 페이즈 순으로 fallback
+
+## 검증
+- Frontend: `cd app-frontend && npm run lint` 통과
+- Frontend: `cd app-frontend && npm run build` 통과
 
 ## 다음 세션 시작점
-1. `/roadmap` 실행형 UI를 시안 기준으로 디테일 튜닝(타이포/간격/컴포넌트 스타일)
-2. action 완료 규칙 최종 정책 확정(문서 필수 유지 여부, 법적근거 제외 유지)
-3. 대시보드 카드(서류/일정)를 실제 roadmap action 데이터로 연동
-4. OpenAPI 타입 재동기화(`app-frontend` `types:sync`) 및 프론트 타입 정리
-5. 커밋 단위 분리(백엔드 기능, 프론트 UI, 문서) 후 푸시/PR
+1. 대시보드 필요 서류 카드에서 전체 보기/로드맵 딥링크 여부 결정
+2. 다운로드 링크 없는 문서 항목의 생성 규칙(백엔드 프롬프트/정규화) 보강
+3. 채팅형 생성 UI 시각 디테일(버블/타이포/상태 메시지) 정제
+4. OpenAPI 타입 동기화 및 미사용 컴포넌트 정리
 
 ## 리스크/메모
-- 로드맵 생성은 `app-worker` 미기동 시 `QUEUED`에서 진행 정지됨
-- 인증 없는(guest) 상태에서 `/roadmap/latest/detail` 호출 시 401이므로, 프론트 상태 분기 유지 필요
-- 현재 워킹트리에 변경 파일이 많아 커밋 전 논리적 단위 분리가 필요함
+- 문서 다운로드 링크는 데이터 소스에 URL이 있어야 활성화됨
+- 로드맵 생성은 `app-worker`/Redis 미기동 시 진행되지 않음
+- 워킹트리에 다수 변경이 누적되어 있어 PR 분리 전략이 필요함

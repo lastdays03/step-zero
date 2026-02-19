@@ -81,8 +81,21 @@ export const RoadmapExecutionView = ({
         });
     }, [data.steps]);
 
-    const [selectedPhase, setSelectedPhase] = useState<string>(phaseGroups[0]?.phase || "기본");
-    const currentPhase = phaseGroups.find((group) => group.phase === selectedPhase) ?? phaseGroups[0];
+    const preferredPhase = useMemo(() => {
+        const inProgress = data.steps.find((step) => step.status === "IN_PROGRESS");
+        if (inProgress?.detail?.phase) return inProgress.detail.phase;
+        const pending = data.steps.find((step) => step.status === "PENDING");
+        if (pending?.detail?.phase) return pending.detail.phase;
+        const next = data.steps.find((step) => step.status !== "COMPLETED");
+        if (next?.detail?.phase) return next.detail.phase;
+        return phaseGroups[0]?.phase || "기본";
+    }, [data.steps, phaseGroups]);
+
+    const [selectedPhase, setSelectedPhase] = useState<string>(preferredPhase);
+    const resolvedSelectedPhase = phaseGroups.some((group) => group.phase === selectedPhase)
+        ? selectedPhase
+        : preferredPhase;
+    const currentPhase = phaseGroups.find((group) => group.phase === resolvedSelectedPhase) ?? phaseGroups[0];
     const totalCompleted = data.steps.filter((step) => step.status === "COMPLETED").length;
     const overallProgress = data.steps.length ? Math.round((totalCompleted / data.steps.length) * 100) : 0;
 
@@ -112,7 +125,7 @@ export const RoadmapExecutionView = ({
                                     type="button"
                                     onClick={() => setSelectedPhase(group.phase)}
                                     className={`w-full rounded-xl border px-3 py-2 text-left ${
-                                        selectedPhase === group.phase
+                                        resolvedSelectedPhase === group.phase
                                             ? "border-blue-400 bg-blue-50"
                                             : "border-slate-200 bg-white hover:bg-slate-50"
                                     }`}

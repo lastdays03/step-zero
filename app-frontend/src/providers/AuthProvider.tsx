@@ -26,6 +26,7 @@ type AuthState = { user: User | null; isLoggedIn: boolean };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const AUTH_STORAGE_EVENT = 'auth-storage-changed';
+const ROADMAP_JOB_STORAGE_KEY = "roadmap_polling_job_id";
 const LOGGED_OUT_STATE: AuthState = { user: null, isLoggedIn: false };
 let lastTokenSnapshot: string | null = null;
 let lastUserSnapshot: string | null = null;
@@ -107,6 +108,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             localStorage.setItem('current_team_id', currentTeamId);
         }
         notifyAuthStateChanged();
+        window.location.assign('/dashboard');
     };
 
     const loginWithCredentials = async (email: string, password: string) => {
@@ -147,7 +149,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('current_team_id');
+        localStorage.removeItem(ROADMAP_JOB_STORAGE_KEY);
         notifyAuthStateChanged();
+        window.location.assign('/dashboard');
     };
 
     return (
