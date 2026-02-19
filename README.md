@@ -16,7 +16,7 @@ StepZero 프로젝트의 **Core Engine(백엔드 + 기본 프론트엔드)** 레
 | 구분         | 기술                             | 설명                                        |
 | :----------- | :------------------------------- | :------------------------------------------ |
 | **Backend**  | **FastAPI** (Python 3.11)        | 고성능 비동기 웹 프레임워크. API 서버 담당. |
-| **Frontend** | **Next.js 14** (App Router)      | React 기반 웹 프레임워크. UI/UX 담당.       |
+| **Frontend** | **Next.js 16.1.6** (App Router)  | React 기반 웹 프레임워크. UI/UX 담당.       |
 | **Database** | **PostgreSQL 16** + **pgvector** | 관계형 데이터 및 벡터 임베딩 저장소.        |
 | **Cache**    | **Redis**                        | 세션 관리, 작업 큐, 캐싱 용도.              |
 | **Deploy**   | **Docker Compose**               | 로컬 개발 환경 통일 및 배포 관리.           |
@@ -84,6 +84,7 @@ make migrate-check
 
 **3. Frontend 로컬 실행 (Node.js)**
 ```bash
+# Node.js 20.9.0 이상 권장 (Next.js 16 요구사항)
 cd app-frontend
 npm install
 npm run dev
@@ -164,6 +165,16 @@ chmod +x scripts/init_db.sh
 git update-index --add --chmod=+x scripts/init_db.sh
 # 이후 commit & push를 하면 레포지토리에 권한이 반영됩니다.
 ```
+
+### Q4. "For Next.js, Node.js version >=20.9.0 is required" 오류가 나요.
+프론트 실행 Node 버전이 낮은 경우입니다.
+
+```bash
+# 로컬 실행 시 Node 20.9.0 이상 사용
+node -v
+```
+
+- Docker 실행 시에는 `app-frontend/Dockerfile`의 베이스 이미지를 `node:20-alpine`으로 유지하세요.
 
 ---
 
