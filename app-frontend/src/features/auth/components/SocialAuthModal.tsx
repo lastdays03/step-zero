@@ -28,11 +28,12 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
         current_team_id?: string;
     }) => {
         const { access_token, user, current_team_id } = payload;
+        const fullName = typeof user.full_name === 'string' ? user.full_name : undefined;
         const userData = {
             id: user.id.toString(),
-            username: user.full_name || user.email.split('@')[0],
+            username: fullName || user.email.split('@')[0],
             email: user.email,
-            full_name: user.full_name,
+            full_name: fullName,
             is_superuser: Boolean(user.is_superuser),
         };
 
