@@ -39,7 +39,6 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
 
         login(access_token, userData, current_team_id);
         onClose();
-        window.location.reload();
     };
 
     const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {

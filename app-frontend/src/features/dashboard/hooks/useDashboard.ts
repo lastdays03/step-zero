@@ -31,23 +31,35 @@ export const useDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
+    const loadData = async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await apiClient.get('/dashboard');
+            setData(response.data);
+        } catch (err) {
+            console.error('Failed to load dashboard data:', err);
+            setError('데이터를 불러오는 중 오류가 발생했습니다.');
+            setData(GUEST_DASHBOARD_DATA);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            try {
-                // actual API call
-                const response = await apiClient.get('/dashboard');
-                setData(response.data);
-            } catch (err) {
-                console.error('Failed to load dashboard data:', err);
-                setError('데이터를 불러오는 중 오류가 발생했습니다.');
-                setData(GUEST_DASHBOARD_DATA);
-            } finally {
-                setLoading(false);
-            }
+        void loadData();
+
+        const handleAuthChange = () => {
+            void loadData();
         };
 
-        loadData();
+        window.addEventListener('auth-storage-changed', handleAuthChange);
+        window.addEventListener('storage', handleAuthChange);
+
+        return () => {
+            window.removeEventListener('auth-storage-changed', handleAuthChange);
+            window.removeEventListener('storage', handleAuthChange);
+        };
     }, []);
 
     return { data, loading, error };

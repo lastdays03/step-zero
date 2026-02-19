@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { DashboardData } from '../hooks/useDashboard';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,10 +11,49 @@ interface RoadmapStepperProps {
 }
 
 export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
+    const scrollRef = useRef<HTMLDivElement | null>(null);
+    const dragStateRef = useRef<{ pointerId: number | null; startX: number; startScrollLeft: number }>({
+        pointerId: null,
+        startX: 0,
+        startScrollLeft: 0,
+    });
+    const [isDragging, setIsDragging] = useState(false);
+
     const normalizedSteps = steps.map((step) => ({
         ...step,
         status: String(step.status || "").toLowerCase(),
     }));
+
+    const handlePointerDown: React.PointerEventHandler<HTMLDivElement> = (event) => {
+        const container = scrollRef.current;
+        if (!container) return;
+        dragStateRef.current = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startScrollLeft: container.scrollLeft,
+        };
+        setIsDragging(true);
+        container.setPointerCapture(event.pointerId);
+    };
+
+    const handlePointerMove: React.PointerEventHandler<HTMLDivElement> = (event) => {
+        const container = scrollRef.current;
+        if (!container || !isDragging) return;
+        const deltaX = event.clientX - dragStateRef.current.startX;
+        container.scrollLeft = dragStateRef.current.startScrollLeft - deltaX;
+    };
+
+    const handlePointerEnd: React.PointerEventHandler<HTMLDivElement> = (event) => {
+        const container = scrollRef.current;
+        if (!container || dragStateRef.current.pointerId === null) return;
+        try {
+            container.releasePointerCapture(event.pointerId);
+        } catch {
+            // no-op
+        }
+        dragStateRef.current.pointerId = null;
+        setIsDragging(false);
+    };
 
     return (
         <Card className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] border border-white/50 relative overflow-hidden group">
@@ -34,7 +73,15 @@ export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
 
                 <div className="relative">
                     {/* Horizontal Scroll Container */}
-                    <div className="overflow-x-auto pb-4 -mx-4 px-4 hide-scrollbar scroll-smooth">
+                    <div
+                        ref={scrollRef}
+                        onPointerDown={handlePointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerEnd}
+                        onPointerCancel={handlePointerEnd}
+                        onPointerLeave={handlePointerEnd}
+                        className={`overflow-x-auto pb-4 -mx-4 px-4 hide-scrollbar scroll-smooth select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+                    >
                         <div className="flex items-start md:items-center space-x-8 min-w-max relative">
 
                             {/* Timeline Line - Positioned absolute relative to the scrollable content width */}
