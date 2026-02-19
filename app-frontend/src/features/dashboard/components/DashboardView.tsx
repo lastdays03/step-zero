@@ -1,19 +1,118 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useDashboard } from '../hooks/useDashboard';
 import { ProgressCard } from './ProgressCard';
 import { RoadmapStepper } from './RoadmapStepper';
 import { GrowthClubCard } from './GrowthClubCard';
+import { RoadmapEmptyHero, RoadmapGeneratingState } from '@/features/roadmap/components';
+import { useRoadmapJob } from '@/features/roadmap/hooks';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Clock, CheckSquare } from 'lucide-react';
 
+const ROADMAP_JOB_STORAGE_KEY = "roadmap_polling_job_id";
+
+const mapJobFailureMessage = (errorCode?: string | null, errorMessage?: string | null): string => {
+    if (errorMessage?.trim()) return errorMessage;
+    switch (errorCode) {
+        case "QUEUE_UNAVAILABLE":
+            return "작업 대기열 연결이 불안정합니다. 잠시 후 다시 시도해 주세요.";
+        case "VALIDATION_FAILED":
+            return "입력값 검증에 실패했습니다. 업종/지역 정보를 다시 확인해 주세요.";
+        case "GENERATION_TIMEOUT":
+            return "로드맵 생성 시간이 초과되었습니다. 다시 시도해 주세요.";
+        case "GENERATION_FAILED":
+            return "AI 로드맵 생성 중 오류가 발생했습니다. 다시 시도해 주세요.";
+        default:
+            return "로드맵 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+    }
+};
+
 export const DashboardView = () => {
     const { data, loading: isLoading } = useDashboard();
+    const { job, fetchJob, fetchResult } = useRoadmapJob();
+    const [pollingJobId, setPollingJobId] = useState<string | null>(() => {
+        if (typeof window === "undefined") return null;
+        return window.localStorage.getItem(ROADMAP_JOB_STORAGE_KEY);
+    });
+    const [generationError, setGenerationError] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!pollingJobId) return;
+        let cancelled = false;
+        let timer: ReturnType<typeof setTimeout> | null = null;
+        const startedAt = Date.now();
+
+        const poll = async () => {
+            if (cancelled) return;
+            try {
+                const status = await fetchJob(pollingJobId);
+                if (status.status === "SUCCEEDED") {
+                    const result = await fetchResult(pollingJobId);
+                    if (result.roadmap_id) {
+                        window.localStorage.removeItem(ROADMAP_JOB_STORAGE_KEY);
+                        window.location.reload();
+                        return;
+                    }
+                }
+                if (status.status === "FAILED") {
+                    if (!cancelled) {
+                        setGenerationError(mapJobFailureMessage(status.error_code, status.error_message));
+                        setPollingJobId(null);
+                        window.localStorage.removeItem(ROADMAP_JOB_STORAGE_KEY);
+                    }
+                    return;
+                }
+                const elapsed = Date.now() - startedAt;
+                const nextInterval = elapsed > 30_000 ? 3000 : 2000;
+                timer = setTimeout(() => void poll(), nextInterval);
+            } catch (e) {
+                console.error(e);
+                if (!cancelled) {
+                    setGenerationError("생성 상태를 확인하는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.");
+                    setPollingJobId(null);
+                    window.localStorage.removeItem(ROADMAP_JOB_STORAGE_KEY);
+                }
+            }
+        };
+        void poll();
+
+        return () => {
+            cancelled = true;
+            if (timer) clearTimeout(timer);
+        };
+    }, [pollingJobId, fetchJob, fetchResult]);
 
     if (isLoading || !data) {
         return <div className="p-8 text-center">Loading...</div>;
+    }
+
+    if (data.roadmap.length === 0) {
+        if (pollingJobId) {
+            return (
+                <RoadmapGeneratingState
+                    onCancel={() => {
+                        setPollingJobId(null);
+                        window.localStorage.removeItem(ROADMAP_JOB_STORAGE_KEY);
+                    }}
+                    status={job?.status}
+                    stage={job?.stage}
+                    progress={job?.progress}
+                    errorMessage={generationError || job?.error_message}
+                />
+            );
+        }
+        return (
+            <RoadmapEmptyHero
+                title="StepZero와 함께 당신의 비즈니스 여정을 시작하세요"
+                subtitle="아직 생성된 로드맵이 없습니다. 첫 로드맵을 생성하면 대시보드 진행 현황이 자동으로 채워집니다."
+                onPrimaryClick={() => {
+                    window.location.href = "/roadmap?start=1";
+                }}
+                primaryLabel="로드맵 생성하러 가기"
+            />
+        );
     }
 
     return (
