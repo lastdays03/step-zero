@@ -7,6 +7,7 @@ from app.models.roadmap import (
 )
 from app.models.team import Team, TeamMember
 from app.models.user import AuthenticatedUser, TokenWithUser, User, UserRead
+from app.models.profile import UserProfile, UserProfileRead, UserProfileUpdate
 
 __all__ = [
     "AuthenticatedUser",
@@ -20,4 +21,7 @@ __all__ = [
     "TokenWithUser",
     "User",
     "UserRead",
+    "UserProfile",
+    "UserProfileRead",
+    "UserProfileUpdate",
 ]
