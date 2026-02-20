@@ -6,8 +6,10 @@ from app.models.actionkit import (
     ActionKitRelatedLaw,
 )
 from app.models.growth_club import (
+    GrowthClubAttachmentRead,
     GrowthClubComment,
     GrowthClubCommentRead,
+    GrowthClubPostAttachment,
     GrowthClubPost,
     GrowthClubPostLike,
     GrowthClubPostRead,
@@ -30,8 +32,10 @@ __all__ = [
     "ActionKitItemHighlight",
     "ActionKitRelatedLaw",
     "AuthenticatedUser",
+    "GrowthClubAttachmentRead",
     "GrowthClubComment",
     "GrowthClubCommentRead",
+    "GrowthClubPostAttachment",
     "GrowthClubPost",
     "GrowthClubPostLike",
     "GrowthClubPostRead",

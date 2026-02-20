@@ -34,8 +34,6 @@ class GrowthClubPostBase(SQLModel):
     category: str
     neighborhood: Optional[str] = None
     industry: Optional[str] = None
-    image_path: Optional[str] = None
-    file_path: Optional[str] = None
 
 class GrowthClubPostLike(SQLModel, table=True):
     post_id: int = Field(foreign_key="growthclubpost.id", primary_key=True)
@@ -56,6 +54,23 @@ class GrowthClubPost(GrowthClubPostBase, table=True):
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
     likes: list[GrowthClubPostLike] = Relationship(sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    attachments: list["GrowthClubPostAttachment"] = Relationship(
+        back_populates="post",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
+
+
+class GrowthClubPostAttachment(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    post_id: int = Field(foreign_key="growthclubpost.id", index=True)
+    kind: str = Field(default="file", index=True)  # image | file
+    object_key: str
+    original_filename: Optional[str] = None
+    mime_type: Optional[str] = None
+    size_bytes: Optional[int] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    post: GrowthClubPost = Relationship(back_populates="attachments")
 
 
 class GrowthClubCommentBase(SQLModel):
@@ -81,12 +96,23 @@ class GrowthClubCommentRead(GrowthClubCommentBase):
     author: AuthorRead
 
 
+class GrowthClubAttachmentRead(SQLModel):
+    id: int
+    kind: str
+    object_key: str
+    original_filename: Optional[str] = None
+    mime_type: Optional[str] = None
+    size_bytes: Optional[int] = None
+    created_at: datetime
+
+
 class GrowthClubPostRead(GrowthClubPostBase):
     id: int
     author_id: int
     created_at: datetime
     author: AuthorRead
     comments: list[GrowthClubCommentRead] = Field(default_factory=list)
+    attachments: list[GrowthClubAttachmentRead] = Field(default_factory=list)
     report_count: int
     likes_count: int = 0
     is_liked: bool = False

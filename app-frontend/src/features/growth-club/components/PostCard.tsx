@@ -50,6 +50,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
     const [liked, setLiked] = useState(post.is_liked);
     const [likesCount, setLikesCount] = useState(post.likes_count);
     const [isLiking, setIsLiking] = useState(false);
+    const attachments = post.attachments ?? [];
+    const imageAttachments = attachments.filter((it) => it.kind === "image");
+    const fileAttachments = attachments.filter((it) => it.kind === "file");
 
     const isAuthor = user && String(user.id) === String(post.author_id);
 
@@ -156,23 +159,34 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
                 {post.content}
             </p>
 
-            {post.image_path && (
-                <div className="mb-4 rounded-lg overflow-hidden border border-zinc-100 dark:border-zinc-800">
-                    <img src={resolveUploadUrl(post.image_path)} alt="Post content" className="w-full object-cover max-h-96" />
+            {imageAttachments.length > 0 && (
+                <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {imageAttachments.map((attachment) => (
+                        <div key={attachment.id} className="rounded-lg overflow-hidden border border-zinc-100 dark:border-zinc-800">
+                            <img
+                                src={resolveUploadUrl(attachment.object_key)}
+                                alt={attachment.original_filename || "Post content"}
+                                className="w-full object-cover max-h-96"
+                            />
+                        </div>
+                    ))}
                 </div>
             )}
 
-            {post.file_path && (
-                <div className="mb-4">
-                    <a
-                        href={resolveUploadUrl(post.file_path)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                    >
-                        <Paperclip size={14} />
-                        <span>첨부 파일 다운로드</span>
-                    </a>
+            {fileAttachments.length > 0 && (
+                <div className="mb-4 flex flex-col gap-2">
+                    {fileAttachments.map((attachment) => (
+                        <a
+                            key={attachment.id}
+                            href={resolveUploadUrl(attachment.object_key)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-2 px-3 py-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg text-xs text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
+                        >
+                            <Paperclip size={14} />
+                            <span>{attachment.original_filename || "첨부 파일 다운로드"}</span>
+                        </a>
+                    ))}
                 </div>
             )}
 

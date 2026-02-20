@@ -16,40 +16,40 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // 파일 업로드 상태
-    const [imageFile, setImageFile] = useState<File | null>(null);
-    const [imagePreview, setImagePreview] = useState<string | null>(null);
-    const [otherFile, setOtherFile] = useState<File | null>(null);
+    const [imageFiles, setImageFiles] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    const [otherFiles, setOtherFiles] = useState<File[]>([]);
 
     const imageInputRef = useRef<HTMLInputElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setImageFile(file);
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+        setImageFiles((prev) => [...prev, ...files]);
+        files.forEach((file) => {
             const reader = new FileReader();
             reader.onloadend = () => {
-                setImagePreview(reader.result as string);
+                setImagePreviews((prev) => [...prev, String(reader.result || "")]);
             };
             reader.readAsDataURL(file);
-        }
+        });
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setOtherFile(file);
-        }
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
+        setOtherFiles((prev) => [...prev, ...files]);
     };
 
-    const removeImage = () => {
-        setImageFile(null);
-        setImagePreview(null);
+    const removeImage = (index: number) => {
+        setImageFiles((prev) => prev.filter((_, i) => i !== index));
+        setImagePreviews((prev) => prev.filter((_, i) => i !== index));
         if (imageInputRef.current) imageInputRef.current.value = '';
     };
 
-    const removeFile = () => {
-        setOtherFile(null);
+    const removeFile = (index: number) => {
+        setOtherFiles((prev) => prev.filter((_, i) => i !== index));
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
@@ -64,18 +64,17 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
             formData.append('content', content);
             formData.append('category', category);
 
-            if (imageFile) {
-                formData.append('image', imageFile);
-            }
-            if (otherFile) {
-                formData.append('file', otherFile);
-            }
+            imageFiles.forEach((it) => formData.append('images', it));
+            otherFiles.forEach((it) => formData.append('files', it));
 
             await growthClubApi.createPost(formData);
             setTitle('');
             setContent('');
-            removeImage();
-            removeFile();
+            setImageFiles([]);
+            setImagePreviews([]);
+            setOtherFiles([]);
+            if (imageInputRef.current) imageInputRef.current.value = '';
+            if (fileInputRef.current) fileInputRef.current.value = '';
             onSuccess();
         } catch (error: unknown) {
             console.error('Failed to create post:', error);
@@ -126,35 +125,35 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
                 />
 
                 {/* 이미지 미리보기 및 파일 목록 */}
-                {(imagePreview || otherFile) && (
+                {(imagePreviews.length > 0 || otherFiles.length > 0) && (
                     <div className="flex flex-wrap gap-3 py-2">
-                        {imagePreview && (
-                            <div className="relative group w-24 h-24">
-                                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover rounded-lg border border-zinc-100 dark:border-zinc-800" />
+                        {imagePreviews.map((preview, index) => (
+                            <div key={`img-${index}`} className="relative group w-24 h-24">
+                                <img src={preview} alt="Preview" className="w-full h-full object-cover rounded-lg border border-zinc-100 dark:border-zinc-800" />
                                 <button
                                     type="button"
-                                    onClick={removeImage}
+                                    onClick={() => removeImage(index)}
                                     className="absolute -top-2 -right-2 bg-zinc-900/80 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                                 >
                                     <X size={12} />
                                 </button>
                             </div>
-                        )}
-                        {otherFile && (
-                            <div className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 rounded-lg border border-zinc-100 dark:border-zinc-700 group">
+                        ))}
+                        {otherFiles.map((otherFile, index) => (
+                            <div key={`file-${index}-${otherFile.name}`} className="flex items-center gap-2 bg-zinc-50 dark:bg-zinc-800 px-3 py-2 rounded-lg border border-zinc-100 dark:border-zinc-700 group">
                                 <FileText size={16} className="text-zinc-400" />
                                 <span className="text-xs text-zinc-600 dark:text-zinc-400 max-w-[150px] truncate">
                                     {otherFile.name}
                                 </span>
                                 <button
                                     type="button"
-                                    onClick={removeFile}
+                                    onClick={() => removeFile(index)}
                                     className="text-zinc-400 hover:text-red-500 transition-colors"
                                 >
                                     <X size={14} />
                                 </button>
                             </div>
-                        )}
+                        ))}
                     </div>
                 )}
 
@@ -163,6 +162,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
                         <input
                             type="file"
                             accept="image/*"
+                            multiple
                             className="hidden"
                             ref={imageInputRef}
                             onChange={handleImageChange}
@@ -170,7 +170,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
                         <button
                             type="button"
                             onClick={() => imageInputRef.current?.click()}
-                            className={`text-zinc-400 hover:text-blue-500 transition-colors ${imageFile ? 'text-blue-500' : ''}`}
+                            className={`text-zinc-400 hover:text-blue-500 transition-colors ${imageFiles.length > 0 ? 'text-blue-500' : ''}`}
                             title="이미지 추가"
                         >
                             <Camera size={20} />
@@ -178,6 +178,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
 
                         <input
                             type="file"
+                            multiple
                             className="hidden"
                             ref={fileInputRef}
                             onChange={handleFileChange}
@@ -185,7 +186,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
                         <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className={`text-zinc-400 hover:text-blue-500 transition-colors ${otherFile ? 'text-blue-500' : ''}`}
+                            className={`text-zinc-400 hover:text-blue-500 transition-colors ${otherFiles.length > 0 ? 'text-blue-500' : ''}`}
                             title="파일 추가"
                         >
                             <Paperclip size={20} />

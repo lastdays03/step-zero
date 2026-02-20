@@ -1,6 +1,7 @@
 import os
 import shutil
-import time
+import uuid
+from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
@@ -15,6 +16,7 @@ from app.core.config import get_settings
 from app.core.db import get_session
 from app.models.growth_club import (
     GrowthClubComment,
+    GrowthClubPostAttachment,
     GrowthClubPost,
     GrowthClubPostLike,
     GrowthClubPostRead,
@@ -23,8 +25,23 @@ from app.models.user import AuthenticatedUser
 
 router = APIRouter()
 
-UPLOAD_DIR = get_settings().STORAGE_ROOT_PATH / "growth-club"
-UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+def _generate_upload_name(kind: str, filename: Optional[str]) -> str:
+    extension = os.path.splitext(filename or "")[1]
+    if not extension:
+        extension = ".bin"
+    return f"{uuid.uuid4().hex}_{kind}{extension.lower()}"
+
+
+def _build_upload_path(kind: str, filename: Optional[str]) -> tuple[Path, str]:
+    # Keep storage manageable by sharding under kind/year/month.
+    now = datetime.utcnow()
+    relative_dir = Path("growth-club") / kind / f"{now.year}" / f"{now.month:02d}"
+    generated_name = _generate_upload_name(kind, filename)
+    relative_path = relative_dir / generated_name
+    absolute_path = get_settings().STORAGE_ROOT_PATH / relative_path
+    return absolute_path, relative_path.as_posix()
+
 
 @router.get("", response_model=list[GrowthClubPostRead])
 async def list_posts(
@@ -41,7 +58,8 @@ async def list_posts(
         .options(
             selectinload(GrowthClubPost.author),
             selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author),
-            selectinload(GrowthClubPost.likes)
+            selectinload(GrowthClubPost.likes),
+            selectinload(GrowthClubPost.attachments),
         )
     )
 
@@ -73,29 +91,48 @@ async def create_post(
     title: str = Form(...),
     content: str = Form(...),
     category: str = Form("free"),
-    image: Optional[UploadFile] = File(None),
-    file: Optional[UploadFile] = File(None),
+    images: list[UploadFile] = File(default=[]),
+    files: list[UploadFile] = File(default=[]),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
     """새 게시글 작성"""
-    image_url: Optional[str] = None
-    if image:
-        file_extension = os.path.splitext(image.filename or "")[1]
-        file_name = f"{int(time.time())}_img{file_extension}"
-        file_path = UPLOAD_DIR / file_name
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(image.file, buffer)
-        image_url = f"growth-club/{file_name}"
+    image_uploads = [u for u in images if u is not None]
+    file_uploads = [u for u in files if u is not None]
 
-    other_file_url: Optional[str] = None
-    if file:
-        file_extension = os.path.splitext(file.filename or "")[1]
-        file_name = f"{int(time.time())}_file{file_extension}"
-        file_path = UPLOAD_DIR / file_name
+    attachment_rows: list[GrowthClubPostAttachment] = []
+
+    for upload in image_uploads:
+        file_path, object_key = _build_upload_path("img", upload.filename)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
         with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-        other_file_url = f"growth-club/{file_name}"
+            shutil.copyfileobj(upload.file, buffer)
+        size_bytes = file_path.stat().st_size
+        attachment_rows.append(
+            GrowthClubPostAttachment(
+                kind="image",
+                object_key=object_key,
+                original_filename=upload.filename,
+                mime_type=upload.content_type,
+                size_bytes=size_bytes,
+            )
+        )
+
+    for upload in file_uploads:
+        file_path, object_key = _build_upload_path("file", upload.filename)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(upload.file, buffer)
+        size_bytes = file_path.stat().st_size
+        attachment_rows.append(
+            GrowthClubPostAttachment(
+                kind="file",
+                object_key=object_key,
+                original_filename=upload.filename,
+                mime_type=upload.content_type,
+                size_bytes=size_bytes,
+            )
+        )
 
     db_post = GrowthClubPost(
         title=title,
@@ -104,9 +141,8 @@ async def create_post(
         author_id=current_user.id,
         neighborhood=getattr(current_user, 'neighborhood', '미지정'),
         industry=getattr(current_user, 'industry', '기타'),
-        image_path=image_url,
-        file_path=other_file_url
     )
+    db_post.attachments = attachment_rows
     session.add(db_post)
     await session.flush()
     post_id = db_post.id
@@ -120,7 +156,8 @@ async def create_post(
         .options(
             selectinload(GrowthClubPost.author),
             selectinload(GrowthClubPost.comments),
-            selectinload(GrowthClubPost.likes)
+            selectinload(GrowthClubPost.likes),
+            selectinload(GrowthClubPost.attachments),
         )
     )
     result = await session.execute(query)

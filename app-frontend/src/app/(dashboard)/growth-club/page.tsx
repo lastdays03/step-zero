@@ -3,8 +3,10 @@
 import React, { useState } from 'react';
 import { PostCard, CreatePostForm } from '@/features/growth-club';
 import { usePosts } from '@/features/growth-club';
+import { useAuth } from '@/providers/AuthProvider';
 
 export default function GrowthClubPage() {
+    const { isLoggedIn } = useAuth();
     const [category, setCategory] = useState('all');
     const { posts, isLoading, error, refetch } = usePosts(category);
 
@@ -20,9 +22,11 @@ export default function GrowthClubPage() {
             </header>
 
             <div className="grid grid-cols-1 gap-8">
-                <section>
-                    <CreatePostForm onSuccess={refetch} />
-                </section>
+                {isLoggedIn ? (
+                    <section>
+                        <CreatePostForm onSuccess={refetch} />
+                    </section>
+                ) : null}
 
                 <nav className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
                     {[
