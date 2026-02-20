@@ -169,13 +169,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         notifyAuthStateChanged();
     };
 
-    const updateUser = (data: Partial<User>) => {
-        if (!user) return;
-        const updatedUser = { ...user, ...data };
-        localStorage.setItem('user', JSON.stringify(updatedUser));
-        notifyAuthStateChanged();
-    };
-
     return (
         <AuthContext.Provider value={{
             user,
