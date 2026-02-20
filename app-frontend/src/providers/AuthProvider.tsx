@@ -18,6 +18,7 @@ interface AuthContextType {
     canAccessOps: boolean;
     login: (token: string, userData: User, currentTeamId?: string) => void;
     loginWithCredentials: (email: string, password: string) => Promise<void>;
+    updateUser: (data: Partial<User>) => void;
     logout: () => void;
     isGuest: boolean;
 }
@@ -150,6 +151,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         notifyAuthStateChanged();
     };
 
+    const updateUser = (data: Partial<User>) => {
+        if (!user) return;
+        const updatedUser = { ...user, ...data };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        notifyAuthStateChanged();
+    };
+
     return (
         <AuthContext.Provider value={{
             user,
@@ -157,6 +165,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             canAccessOps,
             login,
             loginWithCredentials,
+            updateUser,
             logout,
             isGuest: !isLoggedIn
         }}>
