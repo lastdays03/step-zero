@@ -27,11 +27,20 @@ interface RoadmapChatIntakeProps {
     onCancelGenerating?: () => void;
 }
 
-type FieldKey = "business_type" | "location" | "description";
+type FieldKey =
+    | "business_type"
+    | "location"
+    | "startup_type"
+    | "open_timeline"
+    | "budget_range"
+    | "description";
 
 export interface RoadmapRawInput {
     business_type: string;
     location: string;
+    startup_type: string;
+    open_timeline: string;
+    budget_range: string;
     description: string;
 }
 
@@ -43,6 +52,9 @@ export interface RoadmapValidationResult {
 const QUESTIONS: Array<{ key: FieldKey; prompt: string; required: boolean }> = [
     { key: "business_type", prompt: "어떤 업종으로 창업을 준비하시나요?", required: true },
     { key: "location", prompt: "어느 지역에서 시작하시나요?", required: true },
+    { key: "startup_type", prompt: "창업 형태는 무엇인가요? (개인사업자/법인/미정)", required: true },
+    { key: "open_timeline", prompt: "오픈 목표 시점은 언제인가요? (예: 3개월 내)", required: true },
+    { key: "budget_range", prompt: "초기 예산 범위는 어느 정도인가요?", required: true },
     { key: "description", prompt: "추가로 고려 중인 조건이나 설명이 있나요? (선택)", required: false },
 ];
 
@@ -61,6 +73,9 @@ export const RoadmapChatIntake = ({
     const [answers, setAnswers] = useState<Record<FieldKey, string>>({
         business_type: "",
         location: "",
+        startup_type: "",
+        open_timeline: "",
+        budget_range: "",
         description: "",
     });
     const [input, setInput] = useState("");
@@ -73,8 +88,20 @@ export const RoadmapChatIntake = ({
     const isLast = stepIndex === QUESTIONS.length - 1;
 
     const requiredMissing = useMemo(() => {
-        return !answers.business_type.trim() || !answers.location.trim();
-    }, [answers.business_type, answers.location]);
+        return (
+            !answers.business_type.trim()
+            || !answers.location.trim()
+            || !answers.startup_type.trim()
+            || !answers.open_timeline.trim()
+            || !answers.budget_range.trim()
+        );
+    }, [
+        answers.business_type,
+        answers.location,
+        answers.startup_type,
+        answers.open_timeline,
+        answers.budget_range,
+    ]);
 
     useEffect(() => {
         if (!current) return;
@@ -112,10 +139,19 @@ export const RoadmapChatIntake = ({
         const rawInput: RoadmapRawInput = {
             business_type: (answers.business_type || (current?.key === "business_type" ? input : "")).trim(),
             location: (answers.location || (current?.key === "location" ? input : "")).trim(),
+            startup_type: (answers.startup_type || (current?.key === "startup_type" ? input : "")).trim(),
+            open_timeline: (answers.open_timeline || (current?.key === "open_timeline" ? input : "")).trim(),
+            budget_range: (answers.budget_range || (current?.key === "budget_range" ? input : "")).trim(),
             description: (answers.description || (current?.key === "description" ? input : "")).trim(),
         };
-        if (!rawInput.business_type || !rawInput.location) {
-            setError("업종과 지역은 필수입니다.");
+        if (
+            !rawInput.business_type
+            || !rawInput.location
+            || !rawInput.startup_type
+            || !rawInput.open_timeline
+            || !rawInput.budget_range
+        ) {
+            setError("업종, 지역, 창업 형태, 오픈 시점, 예산은 필수입니다.");
             return;
         }
         setValidating(true);
@@ -308,7 +344,7 @@ export const RoadmapChatIntake = ({
             <div className="mt-4 text-xs text-slate-500">
                 <span className="inline-flex items-center gap-1">
                     <Sparkles className="h-3 w-3 text-blue-500" />
-                    필수 정보: 업종, 지역
+                    필수 정보: 업종, 지역, 창업 형태, 오픈 시점, 예산
                 </span>
             </div>
         </section>
