@@ -2,12 +2,10 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 import time
-import os
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from app.api.problem import (
     http_exception_to_problem,
     problem_response,
@@ -90,10 +88,14 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 # Static files for ActionKit
-STORAGE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "storage")
-if not os.path.exists(STORAGE_DIR):
-    os.makedirs(STORAGE_DIR)
-app.mount("/api/v1/actionkits/files", StaticFiles(directory=os.path.join(STORAGE_DIR, "actionkit")), name="actionkit-files")
+actionkit_storage_dir = settings.ACTIONKIT_STORAGE_PATH
+actionkit_storage_dir.mkdir(parents=True, exist_ok=True)
+logger.info("ActionKit storage mounted at: %s", actionkit_storage_dir)
+app.mount(
+    "/api/v1/actionkits/files",
+    StaticFiles(directory=str(actionkit_storage_dir)),
+    name="actionkit-files",
+)
 
 from app.api.v1.api import api_router as api_v1_router
 

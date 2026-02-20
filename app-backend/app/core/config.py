@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import model_validator
 from functools import lru_cache
 from typing import List
+from pathlib import Path
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "StepZero API"
@@ -39,6 +40,9 @@ class Settings(BaseSettings):
     OPENAI_CHAT_MODEL: str = "gpt-4o-mini"
     OPENAI_EMBED_MODEL: str = "text-embedding-3-small"
 
+    # Storage (local only for now)
+    STORAGE_LOCAL_ROOT: str | None = None
+
     @staticmethod
     def _normalize_optional_secret(value: str | None) -> str | None:
         if value is None:
@@ -63,6 +67,18 @@ class Settings(BaseSettings):
         self.OPENAI_API_KEY = self._normalize_optional_secret(self.OPENAI_API_KEY)
         self.GOOGLE_CLIENT_ID = self._normalize_optional_secret(self.GOOGLE_CLIENT_ID)
         return self
+
+    @property
+    def STORAGE_ROOT_PATH(self) -> Path:
+        if self.STORAGE_LOCAL_ROOT and self.STORAGE_LOCAL_ROOT.strip():
+            return Path(self.STORAGE_LOCAL_ROOT).expanduser()
+
+        backend_root = Path(__file__).resolve().parents[2]
+        return backend_root / "uploads"
+
+    @property
+    def ACTIONKIT_STORAGE_PATH(self) -> Path:
+        return self.STORAGE_ROOT_PATH / "actionkit"
     
     model_config = SettingsConfigDict(
         case_sensitive=True,

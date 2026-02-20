@@ -1,3 +1,10 @@
+from app.models.actionkit import (
+    ActionKitCategory,
+    ActionKitFile,
+    ActionKitItem,
+    ActionKitItemHighlight,
+    ActionKitRelatedLaw,
+)
 from app.models.roadmap import (
     Roadmap,
     RoadmapGenerationJob,
@@ -10,6 +17,11 @@ from app.models.user import AuthenticatedUser, TokenWithUser, User, UserRead
 from app.models.profile import UserProfile, UserProfileRead, UserProfileUpdate
 
 __all__ = [
+    "ActionKitCategory",
+    "ActionKitFile",
+    "ActionKitItem",
+    "ActionKitItemHighlight",
+    "ActionKitRelatedLaw",
     "AuthenticatedUser",
     "Roadmap",
     "RoadmapGenerationJob",

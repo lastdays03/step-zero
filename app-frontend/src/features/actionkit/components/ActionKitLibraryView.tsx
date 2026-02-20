@@ -12,16 +12,15 @@ import {
     Info,
     Calendar,
     Layers,
-    FileText,
     Briefcase,
     TrendingUp,
-    ChevronRight,
     Sparkles,
-    Gavel
+    Gavel,
+    LucideIcon,
 } from 'lucide-react';
-import { ActionKitItem, ActionKitCategory } from '../types';
+import { RelatedLaw } from '../types';
 
-const CATEGORY_ICONS: Record<string, any> = {
+const CATEGORY_ICONS: Record<string, LucideIcon> = {
     all: Layers,
     legal: Gavel,
     tax: TrendingUp,
@@ -37,12 +36,14 @@ const CATEGORY_COLORS: Record<string, string> = {
     grant: 'bg-orange-100 text-orange-600',
 };
 
+const isRelatedLawObject = (law: string | RelatedLaw): law is RelatedLaw => {
+    return typeof law === "object" && law !== null && "name" in law;
+};
+
 export const ActionKitLibraryView = () => {
     const { data, loading, error } = useActionKit();
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [searchQuery, setSearchQuery] = useState("");
-
-    const [selectedItem, setSelectedItem] = useState<ActionKitItem | null>(null);
 
     if (loading) return <div className="p-8 text-center text-slate-500">액션 키트 라이브러리를 불러오는 중...</div>;
     if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
@@ -174,9 +175,8 @@ export const ActionKitLibraryView = () => {
                                                 </p>
                                                 <div className="space-y-1.5">
                                                     {item.relatedLaws.map((law, i) => {
-                                                        const isObject = typeof law === 'object';
-                                                        const name = isObject ? (law as any).name : law;
-                                                        const summary = isObject ? (law as any).summary : null;
+                                                        const name = isRelatedLawObject(law) ? law.name : law;
+                                                        const summary = isRelatedLawObject(law) ? law.summary : null;
 
                                                         return (
                                                             <div key={i} className="group/law">

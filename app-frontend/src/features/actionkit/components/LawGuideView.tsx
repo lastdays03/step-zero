@@ -6,23 +6,21 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-    Gavel,
     FileText,
     Search,
     Download,
     CheckCircle2,
     Info,
-    ChevronRight,
     Sparkles
 } from 'lucide-react';
-import { LawItem, LawChapter } from '../types';
+import { LawItem } from '../types';
+
+type LawItemWithChapter = LawItem & { chapterTitle: string };
 
 export const LawGuideView = () => {
     const { data, loading, error } = useLawGuide();
     const [activeChapter, setActiveChapter] = useState<string>("1");
     const [searchQuery, setSearchQuery] = useState("");
-
-    const [selectedItem, setSelectedItem] = useState<LawItem | null>(null);
 
     if (loading) return <div className="p-8 text-center text-slate-500">법령 가이드를 불러오는 중...</div>;
     if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
@@ -58,14 +56,16 @@ export const LawGuideView = () => {
         }
     };
 
-    const filteredItems = Object.values(data).flatMap(chapter =>
+    const filteredItems: LawItemWithChapter[] = Object.values(data).flatMap(chapter =>
         chapter.items.map(item => ({ ...item, chapterTitle: chapter.title }))
     ).filter(item =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.summary.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
-    const displayItems = searchQuery ? filteredItems : (currentChapter?.items || []);
+    const displayItems: Array<LawItem & { chapterTitle?: string }> = searchQuery
+        ? filteredItems
+        : (currentChapter?.items ?? []);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -116,9 +116,9 @@ export const LawGuideView = () => {
                                     <FileText className="w-5 h-5" />
                                 </div>
                                 <div className="flex flex-col items-end gap-1">
-                                    {'chapterTitle' in item && (
+                                    {item.chapterTitle && (
                                         <Badge variant="secondary" className="text-[9px] px-1.5 py-0 bg-[#36a4f2]/5 text-[#36a4f2] uppercase">
-                                            {(item as any).chapterTitle.split(' ')[0]}
+                                            {item.chapterTitle.split(' ')[0]}
                                         </Badge>
                                     )}
                                     <Badge variant="outline" className="text-[10px] font-bold text-slate-400 uppercase">
