@@ -42,6 +42,11 @@ class Settings(BaseSettings):
 
     # Storage (local only for now)
     STORAGE_LOCAL_ROOT: str | None = None
+    GROWTH_CLUB_MAX_IMAGE_MB: int = 20
+    GROWTH_CLUB_MAX_FILE_MB: int = 50
+    GROWTH_CLUB_MAX_TOTAL_MB: int = 200
+    GROWTH_CLUB_MAX_IMAGE_COUNT: int = 10
+    GROWTH_CLUB_MAX_FILE_COUNT: int = 10
 
     @staticmethod
     def _normalize_optional_secret(value: str | None) -> str | None:

@@ -9,6 +9,22 @@ interface CreatePostFormProps {
     onSuccess: () => void;
 }
 
+const MAX_IMAGE_MB = 20;
+const MAX_FILE_MB = 50;
+const MAX_TOTAL_MB = 200;
+const MAX_IMAGE_COUNT = 10;
+const MAX_FILE_COUNT = 10;
+const MAX_IMAGE_BYTES = MAX_IMAGE_MB * 1024 * 1024;
+const MAX_FILE_BYTES = MAX_FILE_MB * 1024 * 1024;
+const MAX_TOTAL_BYTES = MAX_TOTAL_MB * 1024 * 1024;
+const IMAGE_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp"]);
+const FILE_EXTENSIONS = new Set([".pdf", ".doc", ".docx", ".hwp", ".xls", ".xlsx", ".ppt", ".pptx", ".txt"]);
+
+const getExt = (name: string) => {
+    const idx = name.lastIndexOf(".");
+    return idx >= 0 ? name.slice(idx).toLowerCase() : "";
+};
+
 export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => {
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
@@ -24,10 +40,50 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
-        if (files.length === 0) return;
-        setImageFiles((prev) => [...prev, ...files]);
-        files.forEach((file) => {
+        const incoming = Array.from(e.target.files || []);
+        if (incoming.length === 0) return;
+
+        if (imageFiles.length + incoming.length > MAX_IMAGE_COUNT) {
+            alert(`이미지는 최대 ${MAX_IMAGE_COUNT}개까지 첨부할 수 있습니다.`);
+            if (imageInputRef.current) imageInputRef.current.value = '';
+            return;
+        }
+
+        const currentTotalBytes = imageFiles.reduce((sum, file) => sum + file.size, 0)
+            + otherFiles.reduce((sum, file) => sum + file.size, 0);
+        let totalBytes = currentTotalBytes;
+
+        const accepted: File[] = [];
+        const rejected: string[] = [];
+        incoming.forEach((file) => {
+            const ext = getExt(file.name);
+            const isImageType = (file.type || "").startsWith("image/");
+            if (!isImageType || !IMAGE_EXTENSIONS.has(ext)) {
+                rejected.push(`${file.name}: 허용되지 않은 이미지 형식`);
+                return;
+            }
+            if (file.size > MAX_IMAGE_BYTES) {
+                rejected.push(`${file.name}: ${MAX_IMAGE_MB}MB 초과`);
+                return;
+            }
+            if (totalBytes + file.size > MAX_TOTAL_BYTES) {
+                rejected.push(`${file.name}: 전체 첨부 ${MAX_TOTAL_MB}MB 초과`);
+                return;
+            }
+            totalBytes += file.size;
+            accepted.push(file);
+        });
+
+        if (rejected.length > 0) {
+            alert(rejected.join("\n"));
+        }
+        if (accepted.length === 0) {
+            if (imageInputRef.current) imageInputRef.current.value = '';
+            return;
+        }
+
+        setImageFiles((prev) => [...prev, ...accepted]);
+        accepted.forEach((file) => {
             const reader = new FileReader();
             reader.onloadend = () => {
                 setImagePreviews((prev) => [...prev, String(reader.result || "")]);
@@ -37,9 +93,48 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
     };
 
     const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
-        if (files.length === 0) return;
-        setOtherFiles((prev) => [...prev, ...files]);
+        const incoming = Array.from(e.target.files || []);
+        if (incoming.length === 0) return;
+
+        if (otherFiles.length + incoming.length > MAX_FILE_COUNT) {
+            alert(`일반 파일은 최대 ${MAX_FILE_COUNT}개까지 첨부할 수 있습니다.`);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+
+        const currentTotalBytes = imageFiles.reduce((sum, file) => sum + file.size, 0)
+            + otherFiles.reduce((sum, file) => sum + file.size, 0);
+        let totalBytes = currentTotalBytes;
+
+        const accepted: File[] = [];
+        const rejected: string[] = [];
+        incoming.forEach((file) => {
+            const ext = getExt(file.name);
+            if (!FILE_EXTENSIONS.has(ext)) {
+                rejected.push(`${file.name}: 허용되지 않은 파일 형식`);
+                return;
+            }
+            if (file.size > MAX_FILE_BYTES) {
+                rejected.push(`${file.name}: ${MAX_FILE_MB}MB 초과`);
+                return;
+            }
+            if (totalBytes + file.size > MAX_TOTAL_BYTES) {
+                rejected.push(`${file.name}: 전체 첨부 ${MAX_TOTAL_MB}MB 초과`);
+                return;
+            }
+            totalBytes += file.size;
+            accepted.push(file);
+        });
+
+        if (rejected.length > 0) {
+            alert(rejected.join("\n"));
+        }
+        if (accepted.length === 0) {
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            return;
+        }
+
+        setOtherFiles((prev) => [...prev, ...accepted]);
     };
 
     const removeImage = (index: number) => {
@@ -161,7 +256,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
                     <div className="flex items-center gap-4">
                         <input
                             type="file"
-                            accept="image/*"
+                            accept=".jpg,.jpeg,.png,.webp,image/*"
                             multiple
                             className="hidden"
                             ref={imageInputRef}
@@ -178,6 +273,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
 
                         <input
                             type="file"
+                            accept=".pdf,.doc,.docx,.hwp,.xls,.xlsx,.ppt,.pptx,.txt"
                             multiple
                             className="hidden"
                             ref={fileInputRef}

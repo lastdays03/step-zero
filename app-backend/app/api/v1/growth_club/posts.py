@@ -1,9 +1,5 @@
-import os
-import shutil
-import uuid
-from datetime import datetime
 from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import func
@@ -14,9 +10,9 @@ from sqlmodel import select
 from app.api.deps import get_current_user, get_optional_current_user
 from app.core.config import get_settings
 from app.core.db import get_session
+from app.features.growth_club.application.post_service import GrowthClubPostService
 from app.models.growth_club import (
     GrowthClubComment,
-    GrowthClubPostAttachment,
     GrowthClubPost,
     GrowthClubPostLike,
     GrowthClubPostRead,
@@ -24,23 +20,85 @@ from app.models.growth_club import (
 from app.models.user import AuthenticatedUser
 
 router = APIRouter()
+settings = get_settings()
+
+IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
+FILE_EXTENSIONS = {
+    ".pdf",
+    ".doc",
+    ".docx",
+    ".hwp",
+    ".xls",
+    ".xlsx",
+    ".ppt",
+    ".pptx",
+    ".txt",
+}
 
 
-def _generate_upload_name(kind: str, filename: Optional[str]) -> str:
-    extension = os.path.splitext(filename or "")[1]
-    if not extension:
-        extension = ".bin"
-    return f"{uuid.uuid4().hex}_{kind}{extension.lower()}"
+def _extract_extension(filename: Optional[str]) -> str:
+    return Path(filename or "").suffix.lower()
 
 
-def _build_upload_path(kind: str, filename: Optional[str]) -> tuple[Path, str]:
-    # Keep storage manageable by sharding under kind/year/month.
-    now = datetime.utcnow()
-    relative_dir = Path("growth-club") / kind / f"{now.year}" / f"{now.month:02d}"
-    generated_name = _generate_upload_name(kind, filename)
-    relative_path = relative_dir / generated_name
-    absolute_path = get_settings().STORAGE_ROOT_PATH / relative_path
-    return absolute_path, relative_path.as_posix()
+async def _validate_and_read_uploads(
+    *,
+    kind: Literal["image", "file"],
+    uploads: list[UploadFile],
+    running_total_bytes: int,
+) -> tuple[list[tuple[UploadFile, bytes]], int]:
+    if kind == "image":
+        max_count = settings.GROWTH_CLUB_MAX_IMAGE_COUNT
+        max_bytes = settings.GROWTH_CLUB_MAX_IMAGE_MB * 1024 * 1024
+        allowed_extensions = IMAGE_EXTENSIONS
+        label = "이미지"
+    else:
+        max_count = settings.GROWTH_CLUB_MAX_FILE_COUNT
+        max_bytes = settings.GROWTH_CLUB_MAX_FILE_MB * 1024 * 1024
+        allowed_extensions = FILE_EXTENSIONS
+        label = "파일"
+
+    if len(uploads) > max_count:
+        raise HTTPException(
+            status_code=400,
+            detail=f"{label}는 최대 {max_count}개까지 첨부할 수 있습니다.",
+        )
+
+    prepared: list[tuple[UploadFile, bytes]] = []
+    total_bytes = running_total_bytes
+    max_total_bytes = settings.GROWTH_CLUB_MAX_TOTAL_MB * 1024 * 1024
+
+    for upload in uploads:
+        extension = _extract_extension(upload.filename)
+        if extension not in allowed_extensions:
+            allowed = ", ".join(sorted(allowed_extensions))
+            raise HTTPException(
+                status_code=400,
+                detail=f"허용되지 않은 {label} 확장자입니다: {extension or '(none)'} (허용: {allowed})",
+            )
+
+        data = await upload.read()
+        size_bytes = len(data)
+        if size_bytes > max_bytes:
+            max_mb = settings.GROWTH_CLUB_MAX_IMAGE_MB if kind == "image" else settings.GROWTH_CLUB_MAX_FILE_MB
+            raise HTTPException(
+                status_code=413,
+                detail=f"{label} 한 개의 최대 크기는 {max_mb}MB 입니다.",
+            )
+
+        if kind == "image":
+            content_type = (upload.content_type or "").lower()
+            if content_type and not content_type.startswith("image/"):
+                raise HTTPException(status_code=400, detail="이미지 MIME 타입이 올바르지 않습니다.")
+
+        total_bytes += size_bytes
+        if total_bytes > max_total_bytes:
+            raise HTTPException(
+                status_code=413,
+                detail=f"첨부 파일 총 용량은 {settings.GROWTH_CLUB_MAX_TOTAL_MB}MB를 초과할 수 없습니다.",
+            )
+        prepared.append((upload, data))
+
+    return prepared, total_bytes
 
 
 @router.get("", response_model=list[GrowthClubPostRead])
@@ -99,54 +157,26 @@ async def create_post(
     """새 게시글 작성"""
     image_uploads = [u for u in images if u is not None]
     file_uploads = [u for u in files if u is not None]
+    prepared_images, total_bytes = await _validate_and_read_uploads(
+        kind="image",
+        uploads=image_uploads,
+        running_total_bytes=0,
+    )
+    prepared_files, _ = await _validate_and_read_uploads(
+        kind="file",
+        uploads=file_uploads,
+        running_total_bytes=total_bytes,
+    )
 
-    attachment_rows: list[GrowthClubPostAttachment] = []
-
-    for upload in image_uploads:
-        file_path, object_key = _build_upload_path("img", upload.filename)
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(upload.file, buffer)
-        size_bytes = file_path.stat().st_size
-        attachment_rows.append(
-            GrowthClubPostAttachment(
-                kind="image",
-                object_key=object_key,
-                original_filename=upload.filename,
-                mime_type=upload.content_type,
-                size_bytes=size_bytes,
-            )
-        )
-
-    for upload in file_uploads:
-        file_path, object_key = _build_upload_path("file", upload.filename)
-        file_path.parent.mkdir(parents=True, exist_ok=True)
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(upload.file, buffer)
-        size_bytes = file_path.stat().st_size
-        attachment_rows.append(
-            GrowthClubPostAttachment(
-                kind="file",
-                object_key=object_key,
-                original_filename=upload.filename,
-                mime_type=upload.content_type,
-                size_bytes=size_bytes,
-            )
-        )
-
-    db_post = GrowthClubPost(
+    service = GrowthClubPostService(session)
+    post_id = await service.create_post(
+        current_user=current_user,
         title=title,
         content=content,
         category=category,
-        author_id=current_user.id,
-        neighborhood=getattr(current_user, 'neighborhood', '미지정'),
-        industry=getattr(current_user, 'industry', '기타'),
+        prepared_images=prepared_images,
+        prepared_files=prepared_files,
     )
-    db_post.attachments = attachment_rows
-    session.add(db_post)
-    await session.flush()
-    post_id = db_post.id
-    await session.commit()
 
     
     # Refresh with relationships to satisfy response model.
@@ -179,18 +209,16 @@ async def delete_post(
 
     logger = get_logger("app.api.growth_club.posts")
 
-    db_post = await session.get(GrowthClubPost, post_id)
-    if not db_post:
-        logger.warning(f"Delete attempt for non-existent post: {post_id}")
-        raise HTTPException(status_code=404, detail="Post not found")
-
-    if db_post.author_id != current_user.id and not current_user.is_superuser:
-        logger.warning(f"Unauthorized delete attempt: post_id={post_id}, user_id={current_user.id}")
-        raise HTTPException(status_code=403, detail="Not authorized to delete this post")
-
+    service = GrowthClubPostService(session)
     logger.info(f"Deleting post: {post_id} by user: {current_user.id}")
-    await session.delete(db_post)
-    await session.commit()
+    try:
+        await service.delete_post(post_id=post_id, current_user=current_user)
+    except HTTPException as exc:
+        if exc.status_code == 404:
+            logger.warning(f"Delete attempt for non-existent post: {post_id}")
+        elif exc.status_code == 403:
+            logger.warning(f"Unauthorized delete attempt: post_id={post_id}, user_id={current_user.id}")
+        raise
     return {"status": "success", "message": "Post deleted successfully"}
 
 @router.post("/{post_id}/report")
