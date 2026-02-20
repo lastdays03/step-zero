@@ -4,10 +4,23 @@ import { render, screen } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { DashboardView } from '../components/DashboardView';
 import { useDashboard } from '../hooks/useDashboard';
+import { apiClient } from '../../../lib/api-client';
 
 // Mock the useDashboard hook
 jest.mock('../hooks/useDashboard', () => ({
     useDashboard: jest.fn(),
+}));
+jest.mock('../../../providers/AuthProvider', () => ({
+    useAuth: () => ({
+        isLoggedIn: true,
+        user: { username: 'Alex' },
+    }),
+}));
+jest.mock('../../../lib/api-client', () => ({
+    apiClient: {
+        get: jest.fn(),
+        post: jest.fn(),
+    },
 }));
 
 const mockData = {
@@ -35,9 +48,60 @@ const mockData = {
 
 describe('DashboardView', () => {
     beforeEach(() => {
+        (apiClient.get as jest.Mock).mockResolvedValue({
+            data: {
+                roadmap_id: "r-1",
+                title: "테스트 로드맵",
+                steps: [
+                    {
+                        id: 1,
+                        title: "현재 단계",
+                        status: "IN_PROGRESS",
+                        detail: {
+                            id: 1,
+                            phase: "Business Registration",
+                            objective: "현재 단계 목표",
+                            estimated_days: 3,
+                            actions: [
+                                {
+                                    id: 101,
+                                    action_type: "DOCUMENT",
+                                    title: "사업자등록 신청서",
+                                    description: "필수",
+                                    source_url: "https://gov.kr/doc-1.pdf",
+                                    metadata_json: { completed: false },
+                                },
+                            ],
+                        },
+                    },
+                    {
+                        id: 2,
+                        title: "다음 단계",
+                        status: "PENDING",
+                        detail: {
+                            id: 2,
+                            phase: "Opening",
+                            objective: "다음 단계 목표",
+                            estimated_days: 3,
+                            actions: [
+                                {
+                                    id: 201,
+                                    action_type: "DOCUMENT",
+                                    title: "노출되면 안 되는 다음 단계 문서",
+                                    description: "다음 단계",
+                                    source_url: "https://gov.kr/doc-2.pdf",
+                                    metadata_json: { completed: false },
+                                },
+                            ],
+                        },
+                    },
+                ],
+            },
+        });
         (useDashboard as jest.Mock).mockReturnValue({
             data: mockData,
-            loading: false
+            loading: false,
+            reload: jest.fn(),
         });
     });
 
@@ -67,8 +131,13 @@ describe('DashboardView', () => {
 
     it('renders stats', () => {
         render(<DashboardView />);
-        const dayTexts = screen.getAllByText(/3일/i);
-        expect(dayTexts.length).toBeGreaterThan(0);
+        expect(screen.getByText(/D-3/i)).toBeInTheDocument();
         expect(screen.getByText(/8\/12/i)).toBeInTheDocument();
+    });
+
+    it('shows only current-step documents in dashboard card', async () => {
+        render(<DashboardView />);
+        expect(await screen.findByText(/사업자등록 신청서/i)).toBeInTheDocument();
+        expect(screen.queryByText(/노출되면 안 되는 다음 단계 문서/i)).not.toBeInTheDocument();
     });
 });

@@ -14,6 +14,28 @@ import { Sparkles, Clock, CheckSquare } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { RoadmapDetailResponse } from '@/features/roadmap/components/RoadmapExecutionView';
 
+const URL_PATTERN = /(https?:\/\/[^\s]+)/g;
+
+const renderAnswerLine = (line: string, keyPrefix: string) => {
+    const parts = line.split(URL_PATTERN);
+    return parts.map((part, idx) => {
+        if (/^https?:\/\//.test(part)) {
+            return (
+                <a
+                    key={`${keyPrefix}-link-${idx}`}
+                    href={part}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-blue-600 underline"
+                >
+                    {part}
+                </a>
+            );
+        }
+        return <span key={`${keyPrefix}-text-${idx}`}>{part}</span>;
+    });
+};
+
 export const DashboardView = () => {
     const { isLoggedIn } = useAuth();
     const { data, loading: isLoading, reload } = useDashboard();
@@ -328,7 +350,14 @@ export const DashboardView = () => {
                         ) : null}
                         {legalAnswer ? (
                             <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 whitespace-pre-wrap">
-                                {legalAnswer}
+                                {legalAnswer
+                                    .split("\n")
+                                    .filter((line) => line.trim().length > 0)
+                                    .map((line, idx) => (
+                                        <p key={`legal-line-${idx}`} className="mb-2 last:mb-0 leading-relaxed">
+                                            {renderAnswerLine(line, `legal-line-${idx}`)}
+                                        </p>
+                                    ))}
                             </div>
                         ) : null}
                     </div>
