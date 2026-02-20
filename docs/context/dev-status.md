@@ -45,3 +45,4 @@
 - 2026-02-16: 백엔드 실행 필수값 누락 방지를 위해 `app-backend/.env.example` 추가 및 `.gitignore` 예외 반영
 - 2026-02-20: ActionKit 로컬 스토리지 경로를 `STORAGE_LOCAL_ROOT` 단일 변수 + fallback(`app-backend/uploads`)로 단순화
 - 2026-02-20: ActionKit 데이터/파일 관리 전환 플랜 문서 `docs/planning/PLAN-actionkit-data-file-management.md` 추가
+- 2026-02-20: 운영 콘솔에 `액션 키트 관리` 카드 및 `/ops/actionkit` 화면 추가
