@@ -1,6 +1,13 @@
 import pytest
 from httpx import AsyncClient
 
+class _MockRagService:
+    def __init__(self, response_text: str):
+        self.response_text = response_text
+
+    async def query(self, _question: str) -> str:
+        return self.response_text
+
 
 async def _login_headers(client: AsyncClient) -> dict[str, str]:
     login_response = await client.post(
@@ -18,15 +25,13 @@ async def _login_headers(client: AsyncClient) -> dict[str, str]:
 
 @pytest.mark.asyncio
 async def test_validate_input_success(client: AsyncClient, monkeypatch: pytest.MonkeyPatch):
-    async def _mock_query(_self, _question: str) -> str:
-        return (
-            '{"valid": true, "normalized_business_type": "휴게음식점", '
-            '"normalized_location": "서울특별시 강남구", "reason": null, "confidence": 0.95}'
-        )
-
+    mock_service = _MockRagService(
+        '{"valid": true, "normalized_business_type": "휴게음식점", '
+        '"normalized_location": "서울특별시 강남구", "reason": null, "confidence": 0.95}'
+    )
     monkeypatch.setattr(
-        "app.features.rag.application.rag_service.RagService.query",
-        _mock_query,
+        "app.features.roadmaps.application.roadmap_generation_service.get_rag_service",
+        lambda: mock_service,
     )
     headers = await _login_headers(client)
     response = await client.post(
@@ -47,15 +52,13 @@ async def test_validate_input_success(client: AsyncClient, monkeypatch: pytest.M
 
 @pytest.mark.asyncio
 async def test_validate_input_invalid(client: AsyncClient, monkeypatch: pytest.MonkeyPatch):
-    async def _mock_query(_self, _question: str) -> str:
-        return (
-            '{"valid": false, "normalized_business_type": null, '
-            '"normalized_location": null, "reason": "지역 정보가 모호합니다.", "confidence": 0.4}'
-        )
-
+    mock_service = _MockRagService(
+        '{"valid": false, "normalized_business_type": null, '
+        '"normalized_location": null, "reason": "지역 정보가 모호합니다.", "confidence": 0.4}'
+    )
     monkeypatch.setattr(
-        "app.features.rag.application.rag_service.RagService.query",
-        _mock_query,
+        "app.features.roadmaps.application.roadmap_generation_service.get_rag_service",
+        lambda: mock_service,
     )
     headers = await _login_headers(client)
     response = await client.post(
@@ -75,15 +78,13 @@ async def test_validate_input_invalid(client: AsyncClient, monkeypatch: pytest.M
 
 @pytest.mark.asyncio
 async def test_create_job_blocks_invalid_input(client: AsyncClient, monkeypatch: pytest.MonkeyPatch):
-    async def _mock_query(_self, _question: str) -> str:
-        return (
-            '{"valid": false, "normalized_business_type": null, '
-            '"normalized_location": null, "reason": "입력값이 불명확합니다.", "confidence": 0.3}'
-        )
-
+    mock_service = _MockRagService(
+        '{"valid": false, "normalized_business_type": null, '
+        '"normalized_location": null, "reason": "입력값이 불명확합니다.", "confidence": 0.3}'
+    )
     monkeypatch.setattr(
-        "app.features.rag.application.rag_service.RagService.query",
-        _mock_query,
+        "app.features.roadmaps.application.roadmap_generation_service.get_rag_service",
+        lambda: mock_service,
     )
     headers = await _login_headers(client)
     response = await client.post(
