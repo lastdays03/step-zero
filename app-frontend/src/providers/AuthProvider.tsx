@@ -15,6 +15,7 @@ interface User {
 interface AuthContextType {
     user: User | null;
     isLoggedIn: boolean;
+    isAuthReady: boolean;
     canAccessOps: boolean;
     login: (token: string, userData: User, currentTeamId?: string) => void;
     loginWithCredentials: (email: string, password: string) => Promise<void>;
@@ -93,6 +94,12 @@ const notifyAuthStateChanged = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    const [isAuthReady, setIsAuthReady] = React.useState(false);
+
+    React.useEffect(() => {
+        setIsAuthReady(true);
+    }, []);
+
     const authState = useSyncExternalStore(
         subscribeAuthState,
         getStoredAuthState,
@@ -158,6 +165,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         <AuthContext.Provider value={{
             user,
             isLoggedIn,
+            isAuthReady,
             canAccessOps,
             login,
             loginWithCredentials,

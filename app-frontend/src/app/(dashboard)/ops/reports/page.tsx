@@ -15,12 +15,13 @@ type OpsSummary = {
 
 export default function OpsReportsPage() {
     const router = useRouter();
-    const { isLoggedIn, canAccessOps } = useAuth();
+    const { isLoggedIn, isAuthReady, canAccessOps } = useAuth();
     const [summary, setSummary] = useState<OpsSummary | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (!isAuthReady) return;
         if (!isLoggedIn) {
             router.replace("/login");
             return;
@@ -42,9 +43,9 @@ export default function OpsReportsPage() {
         };
 
         void load();
-    }, [canAccessOps, isLoggedIn, router]);
+    }, [canAccessOps, isAuthReady, isLoggedIn, router]);
 
-    if (isLoading) {
+    if (!isAuthReady || isLoading) {
         return <p className="text-sm text-slate-600">운영 지표를 불러오는 중입니다...</p>;
     }
     if (error) {

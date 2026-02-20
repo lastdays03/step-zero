@@ -17,12 +17,13 @@ type OpsUser = {
 
 export default function OpsUsersPage() {
     const router = useRouter();
-    const { isLoggedIn, canAccessOps } = useAuth();
+    const { isLoggedIn, isAuthReady, canAccessOps } = useAuth();
     const [users, setUsers] = useState<OpsUser[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
+        if (!isAuthReady) return;
         if (!isLoggedIn) {
             router.replace("/login");
             return;
@@ -44,9 +45,9 @@ export default function OpsUsersPage() {
         };
 
         void load();
-    }, [canAccessOps, isLoggedIn, router]);
+    }, [canAccessOps, isAuthReady, isLoggedIn, router]);
 
-    if (isLoading) {
+    if (!isAuthReady || isLoading) {
         return <p className="text-sm text-slate-600">사용자 목록을 불러오는 중입니다...</p>;
     }
     if (error) {
