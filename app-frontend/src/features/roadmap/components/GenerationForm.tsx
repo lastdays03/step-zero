@@ -7,9 +7,10 @@ import type { GenerationResponse } from '../hooks/useGenerateRoadmap';
 interface GenerationFormProps {
     onSuccess: (data: GenerationResponse) => void;
     onCancel: () => void;
+    onGeneratingChange?: (generating: boolean) => void;
 }
 
-export const GenerationForm = ({ onSuccess, onCancel }: GenerationFormProps) => {
+export const GenerationForm = ({ onSuccess, onCancel, onGeneratingChange }: GenerationFormProps) => {
     const { generate, loading, error } = useGenerateRoadmap();
     const [formData, setFormData] = useState({
         business_type: '',
@@ -19,10 +20,12 @@ export const GenerationForm = ({ onSuccess, onCancel }: GenerationFormProps) => 
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        onGeneratingChange?.(true);
         const result = await generate(formData);
         if (result) {
             onSuccess(result);
         }
+        onGeneratingChange?.(false);
     };
 
     return (

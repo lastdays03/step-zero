@@ -11,7 +11,7 @@ StepZero MVP 개발을 위해 시니어 엔지니어(Tech Lead)가 4명의 주�
 ---
 
 ## Technical Context
-- **Stack:** Next.js 14 (FE), FastAPI 0.109+ (BE), PostgreSQL 16 + pgvector (DB)
+- **Stack:** Next.js 16 (FE), FastAPI 0.109+ (BE), PostgreSQL 16 + pgvector (DB)
 - **Repo:** Monorepo (Simplified Folders: `app-frontend`, `app-backend`)
 - **Deployment:** Docker Compose (All-in-One Monolith)
 - **Architecture:** Clean Architecture (Layered: Router -> Service -> Repository -> Model)
@@ -29,7 +29,7 @@ StepZero MVP 개발을 위해 시니어 엔지니어(Tech Lead)가 4명의 주�
 ---
 
 ## 📅 Phase 1: Project Scaffolding (Day 0-1)
-> **Goal:** " Clone 받고 `docker-compose up` 하면 끝"인 상태 만들기.
+> **Goal:** " Clone 받고 `docker compose -f docker-compose.dev.yml up -d --build` 하면 끝"인 상태 만들기.
 
 ### [Core Setup]
 #### [NEW] `docker-compose.dev.yml`
@@ -63,7 +63,7 @@ StepZero MVP 개발을 위해 시니어 엔지니어(Tech Lead)가 4명의 주�
 - [ ] **TDD Environment:**
     - Jest + React Testing Library 설정.
     - `msw` (Mock Service Worker) API 모킹 설정.
-- [ ] Next.js 14 App Router 초기화 (`npx create-next-app`)
+- [ ] Next.js 16 App Router 초기화 (`npx create-next-app`)
 - [ ] TailwindCSS v3 + Shadcn UI 초기 설정
 - [ ] ESLint, Prettier, Husky (pre-commit) 설정
 - [ ] API Fetch Wrapper (`lib/api-client.ts` - 토큰 자동 주입, 에러 처리)
@@ -122,7 +122,7 @@ StepZero MVP 개발을 위해 시니어 엔지니어(Tech Lead)가 4명의 주�
     - Backend Pydantic 모델과 필드명 동기화.
 
 ### 4.2. Developer Guide (README.md)
-- [ ] **Onboarding:** "git clone -> docker compose up" 3단계 실행 가이드.
+- [ ] **Onboarding:** "git clone -> docker compose -f docker-compose.dev.yml up -d --build" 3단계 실행 가이드.
 - [ ] **Convention:** 폴더 구조 설명, 커밋 메시지 규칙(Conventional Commits), 에러 핸들링 패턴.
 - [ ] **Troubleshooting:** 자주 발생하는 예상 에러(DB 연결 실패, 포트 충돌) 및 해결법.
 
@@ -131,7 +131,7 @@ StepZero MVP 개발을 위해 시니어 엔지니어(Tech Lead)가 4명의 주�
 ## Verification Plan (Success Criteria)
 
 ### Automated Checks
-- [ ] `docker-compose up` 실행 시 모든 컨테이너(FE, BE, DB, Redis)가 `Healthy` 상태여야 함.
+- [ ] `docker compose -f docker-compose.dev.yml up -d --build` 실행 시 모든 컨테이너(FE, BE, Worker, DB, Redis)가 `Healthy` 상태여야 함.
 - [ ] Backend: `pytest` 실행 시 Auth 관련 테스트 통과 (`tests/api/test_auth.py`).
 - [ ] Frontend: `npm run lint` 실행 시 에러 0개.
 

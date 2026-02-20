@@ -1,35 +1,37 @@
 # Handoff
 
 ## 마지막 업데이트
-- Date: 2026-02-16
+- Date: 2026-02-19
 - Branch: `develop`
-- Latest pushed commit: `32ca234`
+- Latest pushed commit: `46578c0`
 
 ## 이번 세션 완료
-- `/ops` 권한 모델을 팀 단위가 아닌 플랫폼 운영자(`User.is_superuser`) 단일 모델로 확정
-- 백엔드 `/api/v2/ops/*` 공통 가드(`require_platform_admin`) 적용
-- 운영콘솔 MVP 화면 추가:
-  - `/ops`
-  - `/ops/users`
-  - `/ops/reports`
-- 운영 API 최소 구현:
-  - `GET /api/v2/ops/users`
-  - `GET /api/v2/ops/reports/summary`
-- 프론트 인증 상태에 `canAccessOps` 추가 및 메뉴 노출 제어 반영
-- `app-backend/scripts/setup_dev.sh` 개선:
-  - Python 3.11 미만 환경 즉시 실패 처리
-  - macOS에서 `python3.11`이 없고 `uv`가 있으면 `uv` 자동 사용
-- 환경 템플릿/경로 복구:
-  - `app-backend/.env.example` 추가
-  - `app-frontend/src/lib` 복구(`api-client.ts`, `api-types.ts`, `utils.ts`)
-  - `.gitignore` 예외 규칙 보정(`app-frontend/src/lib`, `app-backend/.env.example`)
+- 로드맵 생성 UX 단일화:
+  - `/roadmap`, `/dashboard` 모두 동일 공통 패널(`RoadmapGenerationPanel`) 사용
+  - 분리된 유도/생성 화면을 채팅형 단일 플로우(질문 수집 -> AI 검증 -> 사용자 확인 -> 생성)로 통합
+- 비로그인 사용자 유도 개선:
+  - 생성화면은 그대로 노출
+  - 질문 입력/질문 진행/검증/생성 시도 시 기존 `SocialAuthModal` 즉시 오픈
+  - 로그인 페이지 리다이렉트 제거
+- 대시보드 필요 서류 연동:
+  - `GET /roadmaps/latest/detail` 기반으로 `DOCUMENT` 액션 렌더링
+  - 현재 단계 기준 문서만 표시
+  - 문서 상태(필수/완료) 표시 + 다운로드 링크(`download_url/file_url/template_url/source_url`) 지원
+- 로드맵 화면 기본 선택 개선:
+  - 페이즈 기본 선택을 현재 진행중(`IN_PROGRESS`) 단계 페이즈로 설정
+  - 진행중이 없으면 `PENDING` -> 미완료 -> 첫 페이즈 순으로 fallback
+
+## 검증
+- Frontend: `cd app-frontend && npm run lint` 통과
+- Frontend: `cd app-frontend && npm run build` 통과
 
 ## 다음 세션 시작점
-1. `/ops/users`, `/ops/reports` 실제 운영 지표/필드 확정 및 데이터 연동
-2. `roadmap`/`actionkit` placeholder를 실제 데이터 로딩 화면으로 교체
-3. 백엔드/프론트 품질 게이트 재실행(환경 준비 후 `pytest`, `lint`)
-4. Context memory 운영 검증 Day 2~7 기록 누적
+1. 대시보드 필요 서류 카드에서 전체 보기/로드맵 딥링크 여부 결정
+2. 다운로드 링크 없는 문서 항목의 생성 규칙(백엔드 프롬프트/정규화) 보강
+3. 채팅형 생성 UI 시각 디테일(버블/타이포/상태 메시지) 정제
+4. OpenAPI 타입 동기화 및 미사용 컴포넌트 정리
 
 ## 리스크/메모
-- 로컬 실행 시 백엔드 미기동(`DATABASE_URL`, `SECRET_KEY` 누락 또는 DB 미기동)일 때 프론트 `Network Error` 발생
-- Google Font fetch 실패 시 네트워크 제한 환경에서 `next build` 실패 가능
+- 문서 다운로드 링크는 데이터 소스에 URL이 있어야 활성화됨
+- 로드맵 생성은 `app-worker`/Redis 미기동 시 진행되지 않음
+- 워킹트리에 다수 변경이 누적되어 있어 PR 분리 전략이 필요함

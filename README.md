@@ -36,10 +36,11 @@ Docker가 설치되어 있어야 합니다.
 터미널에서 프로젝트 루트 경로로 이동한 뒤 아래 명령어를 입력하세요.
 
 ```bash
-# 컨테이너 빌드 및 실행 (로그 확인 가능)
-docker compose -f docker-compose.dev.yml up --build
+# 컨테이너 빌드 및 백그라운드 실행
+docker compose -f docker-compose.dev.yml up -d --build
 ```
-> **💡 Tip:** 백그라운드에서 실행하려면 뒤에 `-d` 옵션을 붙이세요. (`up --build -d`)
+> **💡 Tip:** 로그 확인이 필요하면 서비스별로 조회하세요.
+> `docker compose -f docker-compose.dev.yml logs -f app-backend app-worker app-frontend`
 
 ### 3) 접속 확인
 실행이 완료되면 브라우저에서 아래 주소로 접속해보세요.
@@ -47,6 +48,9 @@ docker compose -f docker-compose.dev.yml up --build
 * **Frontend (메인 앱):** [http://localhost:3000](http://localhost:3000)
 * **Backend (API 문서):** [http://localhost:8000/docs](http://localhost:8000/docs)
 * **DB 관리 (필요 시):** 별도 DB 툴(DBeaver 등) 사용 (Port: `5432`)
+* **상태 확인:** `docker compose -f docker-compose.dev.yml ps`
+
+> 참고: 로드맵 비동기 생성은 `app-worker`가 실행 중이어야 진행됩니다.
 
 
 ### 4) (심화) DB/Cache만 띄우고 앱은 로컬에서 실행하기
@@ -117,9 +121,12 @@ cp .env.example .env.local
 step-zero/
 ├── app-backend/            # 🐍 FastAPI 백엔드 코드
 │   ├── app/                # 실제 애플리케이션 로직
-│   │   ├── api/            # API 라우터 (Endpoints)
-│   │   ├── core/           # 설정(Config), DB 연결 등 핵심 로직
-│   │   └── services/       # 비즈니스 로직 (RAG, AI 처리 등)
+│   │   ├── api/            # API 라우터 (v1)
+│   │   ├── features/       # feature 단위 도메인/애플리케이션 로직
+│   │   ├── repositories/   # 데이터 접근 계층
+│   │   ├── models/         # SQLModel/ORM 모델
+│   │   ├── workers/        # ARQ 비동기 워커
+│   │   └── core/           # 설정(Config), DB 연결 등 핵심 로직
 │   ├── tests/              # 테스트 코드 (Pytest)
 │   └── Dockerfile          # 백엔드 이미지 빌드 설정
 │
@@ -149,7 +156,7 @@ Docker 설정 파일 문제일 수 있습니다. `~/.docker/config.json` 파일�
 PostgreSQL 버전이 안 맞거나 데이터가 꼬인 경우입니다. 아래 명령어로 **볼륨을 싹 지우고 다시 시작**하세요.
 ```bash
 docker compose -f docker-compose.dev.yml down -v
-docker compose -f docker-compose.dev.yml up --build
+docker compose -f docker-compose.dev.yml up -d --build
 ```
 
 ### Q3. "permission denied" (scripts/init_db.sh) 오류가 나요.
