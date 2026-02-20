@@ -299,6 +299,38 @@ ACTION_KIT_DATA = {
                 "relatedLaws": [
                     { "name": "다중이용업소법 제8조", "summary": "화재배상책임보험 가입 의무화 및 관련 신고" }
                 ] 
+            },
+            {
+                "tag": "[행정 원칙]",
+                "name": "행정기본법 및 시행령 (행정의 원칙)",
+                "summary": "행정 작용의 원칙과 인허가 의제 등 실체적 규정 안내",
+                "type": "PDF",
+                "path": "actionkits/files/legal/행정기본법(법률)(제20824호)(20260319).pdf",
+                "relatedLaws": [
+                    { "name": "행정기본법", "summary": "비례/신뢰보호 등 행정의 법 원칙 정의" },
+                    { "name": "행정기본법 시행령", "summary": "과징금, 이행강제금 등의 부과 기준" }
+                ]
+            },
+            {
+                "tag": "[행정 조사]",
+                "name": "행정조사기본법 및 대응 가이드",
+                "summary": "위생점검 등 행정조사 시 사업자의 권리와 대응 방법",
+                "type": "PDF",
+                "path": "actionkits/files/legal/행정조사기본법(법률)(제19213호)(20240118).pdf",
+                "relatedLaws": [
+                    { "name": "행정조사기본법", "summary": "조사의 사전 통지 및 조사원 신분 표기 의무" },
+                    { "name": "행정조사기본법 시행령", "summary": "조사 연기 신청 및 공동조사 절차" }
+                ]
+            },
+            {
+                "tag": "[행정 소송]",
+                "name": "행정소송법 (소송 절차)",
+                "summary": "처분의 취소 및 무효를 다투는 행정소송 제기 요건",
+                "type": "PDF",
+                "path": "actionkits/files/legal/행정소송법(법률)(제14839호)(20170726).pdf",
+                "relatedLaws": [
+                    { "name": "행정소송법", "summary": "취소소송의 제기 기간 및 집행정지 요건" }
+                ]
             }
         ]
     },
@@ -430,9 +462,39 @@ ACTION_KIT_DATA = {
     "grant": {
         "title": "공고문 키트 (Grant & Notice)",
         "items": [
-            { "tag": "[정부지원]", "name": "2026년 예비창업패키지 모집 공고", "summary": "요약본 + 사업계획서 뼈대 양식 (3월 마감)", "type": "PDF", "dday": "D-15", "path": "actionkits/files/grant/행정기본법(법률)(제20824호)(20260319).pdf", "relatedLaws": ["중소기업창업 지원법 제4조"] },
-            { "tag": "[정책자금]", "name": "소상공인 시장진흥공단 정책자금 안내", "summary": "저금리 대출 신청 자격 자가 진단표", "type": "PDF", "dday": "상시", "path": "actionkits/files/grant/행정기본법 시행령(대통령령)(제35711호)(20250919).pdf", "relatedLaws": ["소상공인 보호 및 지원에 관한 법률 제9조"] },
-            { "tag": "[공간지원]", "name": "지역별 창업보육센터 입주 모집 안내", "summary": "입주 신청서 샘플 및 센터별 혜택 비교", "type": "PDF", "dday": "D-3", "path": "actionkits/files/grant/행정기본법(법률)(제20824호)(20260319).pdf", "relatedLaws": ["중소기업창업 지원법 제8조"] }
+            { 
+                "tag": "[정책자금]", 
+                "name": "2026년 소상공인 정책자금 융자사업 공고", 
+                "summary": "중소벤처기업부 공고 제2025–656호, 저금리 융자 지원사업 안내", 
+                "type": "PDF", 
+                "dday": "D-20", 
+                "path": "actionkits/files/grant/2026년_중소벤처기업부_소상공인_정책자금_융자사업_공고(중소벤처기업부_공고_제2025–656호).pdf", 
+                "relatedLaws": [
+                    { "name": "소상공인 보호 및 지원에 관한 법률 제9조", "summary": "소상공인 창업 및 경영안정 자금 지원 근거" }
+                ] 
+            },
+            { 
+                "tag": "[경영안정]", 
+                "name": "소상공인 경영안정 바우처 지원사업 공고", 
+                "summary": "마케팅, 회계, 법률 등 경영 애로 해결을 위한 바우처 지원 안내", 
+                "type": "PDF", 
+                "dday": "D-10", 
+                "path": "actionkits/files/grant/소상공인_경영안정_바우처_지원사업.pdf", 
+                "relatedLaws": [
+                    { "name": "중소기업창업 지원법 제4조", "summary": "창업기업 및 소상공인에 대한 지원 계획 수립" }
+                ] 
+            },
+            { 
+                "tag": "[바우처]", 
+                "name": "소상공인 경영안정 바우처 메뉴얼", 
+                "summary": "바우처 시스템 사용법 및 증빙 서류 제출 가이드", 
+                "type": "PDF", 
+                "dday": "상시", 
+                "path": "actionkits/files/grant/소상공인_경영안정_바우처_메뉴얼.pdf", 
+                "relatedLaws": [
+                    { "name": "보조금 관리에 관한 법률 제26조", "summary": "보조금의 사용 및 정산 절차 준수 의무" }
+                ] 
+            }
         ]
     }
 }
