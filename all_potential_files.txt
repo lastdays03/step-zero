@@ -1,0 +1,9 @@
+./.temp/startup-dashboard/actionkit/library/resources/hr/(공통서식)+사업장+성립신고서.hwp
+./.temp/startup-dashboard/actionkit/library/resources/hr/[별지+제5호서식]+[(임의¸+임의계속)가입자+(가입¸+탈퇴)]신청서(국민연금법+시행규칙).hwp
+./.temp/startup-dashboard/actionkit/library/resources/hr/[별지+제8호서식]+국민연금+지역가입자+자격취득신고서¸+건강보험+지역가입자+자격취득ㆍ변동신고서(국민연금법+시행규칙).hwp
+./app-backend/storage/actionkit/hr/(공통서식)+사업장+성립신고서.hwp
+./app-backend/storage/actionkit/hr/[별지+제5호서식]+[(임의¸+임의계속)가입자+(가입¸+탈퇴)]신청서(국민연금법+시행규칙).hwp
+./app-backend/storage/actionkit/hr/[별지+제8호서식]+국민연금+지역가입자+자격취득신고서¸+건강보험+지역가입자+자격취득ㆍ변동신고서(국민연금법+시행규칙).hwp
+./액션키트_자료/HR_자료/(공통서식)+사업장+성립신고서.hwp
+./액션키트_자료/HR_자료/[별지+제5호서식]+[(임의¸+임의계속)가입자+(가입¸+탈퇴)]신청서(국민연금법+시행규칙).hwp
+./액션키트_자료/HR_자료/[별지+제8호서식]+국민연금+지역가입자+자격취득신고서¸+건강보험+지역가입자+자격취득ㆍ변동신고서(국민연금법+시행규칙).hwp

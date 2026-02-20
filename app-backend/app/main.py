@@ -2,7 +2,9 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 import time
+import os
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -86,6 +88,12 @@ async def global_exception_handler(request: Request, exc: Exception):
         type_uri="https://stepzero.dev/problems/internal-error",
     )
 
+
+# Static files for ActionKit
+STORAGE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "storage")
+if not os.path.exists(STORAGE_DIR):
+    os.makedirs(STORAGE_DIR)
+app.mount("/api/v1/actionkits/files", StaticFiles(directory=os.path.join(STORAGE_DIR, "actionkit")), name="actionkit-files")
 
 from app.api.v1.api import api_router as api_v1_router
 
