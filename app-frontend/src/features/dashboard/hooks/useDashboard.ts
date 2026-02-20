@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
 import type { DashboardResponse } from '@/lib/api-types';
 
@@ -31,7 +31,7 @@ export const useDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    const loadData = async () => {
+    const loadData = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
@@ -44,7 +44,7 @@ export const useDashboard = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     useEffect(() => {
         void loadData();
@@ -60,7 +60,7 @@ export const useDashboard = () => {
             window.removeEventListener('auth-storage-changed', handleAuthChange);
             window.removeEventListener('storage', handleAuthChange);
         };
-    }, []);
+    }, [loadData]);
 
-    return { data, loading, error };
+    return { data, loading, error, reload: loadData };
 };
