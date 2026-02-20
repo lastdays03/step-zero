@@ -1,9 +1,11 @@
 
 from contextlib import asynccontextmanager
+from pathlib import Path
 import time
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.api.problem import (
     http_exception_to_problem,
     problem_response,
@@ -42,6 +44,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Ensure upload directory exists for profile image uploads.
+upload_dir = Path("static/uploads")
+upload_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/api/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
 
 # 1. 로깅 미들웨어 추가
 @app.middleware("http")
