@@ -28,5 +28,9 @@ async def create_roadmap(
         business_type=request.business_type,
         location=request.location,
         description=request.description,
+        startup_type=request.startup_type,
+        open_timeline=request.open_timeline,
+        budget_range=request.budget_range,
+        additional_notes=request.additional_notes,
     )
     return result.__dict__

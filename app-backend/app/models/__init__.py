@@ -5,6 +5,15 @@ from app.models.actionkit import (
     ActionKitItemHighlight,
     ActionKitRelatedLaw,
 )
+from app.models.growth_club import (
+    GrowthClubAttachmentRead,
+    GrowthClubComment,
+    GrowthClubCommentRead,
+    GrowthClubPostAttachment,
+    GrowthClubPost,
+    GrowthClubPostLike,
+    GrowthClubPostRead,
+)
 from app.models.roadmap import (
     Roadmap,
     RoadmapGenerationJob,
@@ -23,6 +32,13 @@ __all__ = [
     "ActionKitItemHighlight",
     "ActionKitRelatedLaw",
     "AuthenticatedUser",
+    "GrowthClubAttachmentRead",
+    "GrowthClubComment",
+    "GrowthClubCommentRead",
+    "GrowthClubPostAttachment",
+    "GrowthClubPost",
+    "GrowthClubPostLike",
+    "GrowthClubPostRead",
     "Roadmap",
     "RoadmapGenerationJob",
     "RoadmapStep",

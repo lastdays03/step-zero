@@ -8,7 +8,7 @@
 - `features/roadmaps/`
 - `features/rag/`
 - `features/actionkit/`
-- `features/community/`
+- `features/growth_club/`
 - `features/ops/`
 
 각 피처는 아래 계층을 사용한다.

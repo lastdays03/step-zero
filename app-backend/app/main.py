@@ -1,6 +1,5 @@
 
 from contextlib import asynccontextmanager
-from pathlib import Path
 import time
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
@@ -39,14 +38,15 @@ app = FastAPI(
 # CORS 설정 추가
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+    # allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Ensure upload directory exists for profile image uploads.
-upload_dir = Path("static/uploads")
+# Serve user-uploaded files from the shared storage root.
+upload_dir = settings.STORAGE_ROOT_PATH
 upload_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/api/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
 

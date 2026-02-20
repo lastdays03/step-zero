@@ -13,8 +13,8 @@
 - Frontend: `features/roadmap`, `features/dashboard`
 
 3. Junior C
-- Backend: `features/actionkit`, `features/community`
-- Frontend: `features/actionkit`, `features/community`
+- Backend: `features/actionkit`, `features/growth_club`
+- Frontend: `features/actionkit`, `features/growth-club`
 
 4. Junior D
 - Backend: `features/ops`, `features/rag`

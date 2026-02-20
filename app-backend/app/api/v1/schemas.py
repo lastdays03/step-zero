@@ -51,7 +51,11 @@ class DashboardResponse(BaseModel):
 class RoadmapCreateRequest(BaseModel):
     business_type: str
     location: str
-    description: str
+    description: str = ""
+    startup_type: str | None = None
+    open_timeline: str | None = None
+    budget_range: str | None = None
+    additional_notes: str = ""
     goal_horizon_days: int = 30
     experience_level: str = "BEGINNER"
 
@@ -112,6 +116,10 @@ class RoadmapJobCreateRequest(BaseModel):
     business_type: str
     location: str
     description: str = ""
+    startup_type: str | None = None
+    open_timeline: str | None = None
+    budget_range: str | None = None
+    additional_notes: str = ""
     goal_horizon_days: int = 30
     experience_level: str = "BEGINNER"
 

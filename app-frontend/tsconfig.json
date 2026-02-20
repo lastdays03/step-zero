@@ -32,7 +32,7 @@
         "./src/features/actionkit"
       ],
       "@feature/community": [
-        "./src/features/community"
+        "./src/features/growth-club"
       ],
       "@feature/ops": [
         "./src/features/ops"

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
 import type { DashboardResponse } from '@/lib/api-types';
+import { AxiosError } from 'axios';
 
 export type DashboardData = DashboardResponse;
 
@@ -39,8 +40,15 @@ export const useDashboard = () => {
             setData(response.data);
         } catch (err) {
             console.error('Failed to load dashboard data:', err);
-            setError('데이터를 불러오는 중 오류가 발생했습니다.');
-            setData(GUEST_DASHBOARD_DATA);
+            const status = err instanceof AxiosError ? err.response?.status : undefined;
+            if (status === 401) {
+                setError('로그인이 만료되었습니다. 다시 로그인해 주세요.');
+                setData(GUEST_DASHBOARD_DATA);
+            } else {
+                setError('데이터를 불러오는 중 오류가 발생했습니다.');
+                // Keep previously loaded roadmap data on transient errors.
+                setData((prev) => prev ?? GUEST_DASHBOARD_DATA);
+            }
         } finally {
             setLoading(false);
         }
