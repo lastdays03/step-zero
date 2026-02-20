@@ -9,6 +9,14 @@ class RoadmapRepository:
     def __init__(self, session: AsyncSession):
         self.session = session
 
+    @staticmethod
+    def _resolve_document_source_url(item: dict) -> str | None:
+        for key in ("source_url", "download_url", "template_url", "file_url"):
+            value = item.get(key)
+            if isinstance(value, str) and value.strip():
+                return value
+        return None
+
     async def get_latest_for_team(self, team_id: UUID) -> Roadmap | None:
         stmt = (
             select(Roadmap)
@@ -158,12 +166,13 @@ class RoadmapRepository:
                 self.session.add(action)
 
             for item in payload.get("documents", []):
+                source_url = self._resolve_document_source_url(item)
                 action = RoadmapStepAction(
                     roadmap_step_id=step.id,
                     action_type="DOCUMENT",
                     title=str(item.get("name", "서류")),
                     description=str(item.get("type", "")),
-                    source_url=item.get("source_url"),
+                    source_url=source_url,
                     metadata_json=item,
                 )
                 self.session.add(action)

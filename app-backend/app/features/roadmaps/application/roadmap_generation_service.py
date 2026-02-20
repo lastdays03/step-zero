@@ -22,6 +22,9 @@ class DocumentItem(BaseModel):
     name: str
     type: str = "FORM"
     source_url: str | None = None
+    download_url: str | None = None
+    template_url: str | None = None
+    file_url: str | None = None
 
 
 class StepDetail(BaseModel):
@@ -174,7 +177,7 @@ class RoadmapGenerationService:
         prompt = (
             "다음 phase의 상세 실행 단계를 JSON으로 생성해 주세요.\n"
             "필수 키: phase, title, objective, checklist(array), legal_basis(array[{title,snippet,source_url}]),"
-            " documents(array[{name,type,source_url}]), estimated_days, risk_notes(array)\n"
+            " documents(array[{name,type,source_url,download_url,template_url,file_url}]), estimated_days, risk_notes(array)\n"
             f"phase: {phase_name}\n업종: {payload.business_type}\n지역: {payload.location}\n설명: {payload.description}"
         )
         for _ in range(2):
@@ -183,10 +186,19 @@ class RoadmapGenerationService:
             if not parsed:
                 continue
             try:
-                return StepDetail(**parsed)
+                detail = StepDetail(**parsed)
+                return self._normalize_document_urls(detail)
             except ValidationError:
                 continue
         return self._fallback_detail(phase_name)
+
+    @staticmethod
+    def _normalize_document_urls(detail: StepDetail) -> StepDetail:
+        for doc in detail.documents:
+            preferred = doc.source_url or doc.download_url or doc.template_url or doc.file_url
+            if preferred:
+                doc.source_url = preferred
+        return detail
 
     @staticmethod
     def _parse_json(raw: str) -> dict[str, Any] | None:

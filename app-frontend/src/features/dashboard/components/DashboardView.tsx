@@ -11,20 +11,27 @@ import { useAuth } from "@/providers/AuthProvider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Sparkles, Clock, CheckSquare } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { RoadmapDetailResponse } from '@/features/roadmap/components/RoadmapExecutionView';
 
 export const DashboardView = () => {
     const { isLoggedIn } = useAuth();
-    const { data, loading: isLoading } = useDashboard();
+    const { data, loading: isLoading, reload } = useDashboard();
     const [roadmapDetail, setRoadmapDetail] = useState<RoadmapDetailResponse | null>(null);
     const [documentsLoading, setDocumentsLoading] = useState(false);
     const [documentsError, setDocumentsError] = useState<string | null>(null);
+    const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+    const [legalQuestion, setLegalQuestion] = useState("");
+    const [legalAnswer, setLegalAnswer] = useState<string | null>(null);
+    const [legalError, setLegalError] = useState<string | null>(null);
+    const [legalLoading, setLegalLoading] = useState(false);
 
     const isRoadmapNotReady =
         !data ||
         data.current_phase.status === "GUEST" ||
         data.current_phase.status === "READY" ||
         data.roadmap.length === 0;
+    const dashboardPhaseTitle = data?.current_phase.title?.trim();
 
     useEffect(() => {
         if (isRoadmapNotReady) {
@@ -63,18 +70,48 @@ export const DashboardView = () => {
         };
     }, [isRoadmapNotReady]);
 
-    const documentActions = useMemo(() => {
-        if (!roadmapDetail) return [];
-
-        const currentStep =
-            roadmapDetail.steps.find((step) => step.status === "IN_PROGRESS")
+    const currentStep = useMemo(() => {
+        if (!roadmapDetail) return null;
+        return (
+            roadmapDetail.steps.find(
+                (step) =>
+                    dashboardPhaseTitle
+                    && (step.detail?.phase === dashboardPhaseTitle || step.title === dashboardPhaseTitle)
+            )
+            || roadmapDetail.steps.find((step) => step.status === "IN_PROGRESS")
             || roadmapDetail.steps.find((step) => step.status === "PENDING")
             || roadmapDetail.steps.find((step) => step.status !== "COMPLETED")
-            || roadmapDetail.steps[0];
+            || roadmapDetail.steps[0]
+            || null
+        );
+    }, [roadmapDetail, dashboardPhaseTitle]);
 
+    const nextRoadmapTitle = useMemo(() => {
+        if (!roadmapDetail || !currentStep) {
+            const currentRoadmapIndex = data?.roadmap.findIndex((step) => step.status === "current") ?? -1;
+            return currentRoadmapIndex >= 0 && data?.roadmap[currentRoadmapIndex + 1]
+                ? data.roadmap[currentRoadmapIndex + 1].title
+                : null;
+        }
+        const currentIndex = roadmapDetail.steps.findIndex((step) => step.id === currentStep.id);
+        if (currentIndex < 0) return null;
+        const nextStep = roadmapDetail.steps
+            .slice(currentIndex + 1)
+            .find((step) => step.status !== "COMPLETED");
+        return nextStep?.title || null;
+    }, [roadmapDetail, currentStep, data?.roadmap]);
+
+    const documentActions = useMemo(() => {
         if (!currentStep) return [];
 
-        return (currentStep.detail?.actions || [])
+        return ((currentStep.detail?.actions || []) as Array<{
+            id: number;
+            title: string;
+            description: string;
+            source_url?: string | null;
+            metadata_json?: Record<string, unknown>;
+            action_type: string;
+        }>)
             .filter((action) => action.action_type === "DOCUMENT")
             .map((doc) => {
                 const meta = (doc.metadata_json || {}) as Record<string, unknown>;
@@ -95,7 +132,27 @@ export const DashboardView = () => {
                     downloadUrl,
                 };
             });
-    }, [roadmapDetail]);
+    }, [currentStep]);
+
+    const handleAskLegal = async () => {
+        const question = legalQuestion.trim();
+        if (!question) {
+            setLegalError("질문을 입력해 주세요.");
+            return;
+        }
+        setLegalLoading(true);
+        setLegalError(null);
+        setLegalAnswer(null);
+        try {
+            const response = await apiClient.post<{ answer: string }>("/rag/query", { question });
+            setLegalAnswer(response.data.answer);
+        } catch (e) {
+            console.error("Failed to query legal assistant", e);
+            setLegalError("법률 AI 응답을 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.");
+        } finally {
+            setLegalLoading(false);
+        }
+    };
 
     if (isLoading || !data) {
         return <div className="p-8 text-center">Loading...</div>;
@@ -105,8 +162,8 @@ export const DashboardView = () => {
         return (
             <RoadmapGenerationPanel
                 isAuthenticated={isLoggedIn}
-                onRefresh={() => window.location.reload()}
-                onGenerated={() => window.location.reload()}
+                onRefresh={() => void reload()}
+                onGenerated={() => void reload()}
             />
         );
     }
@@ -118,7 +175,11 @@ export const DashboardView = () => {
 
                 {/* 1. Progress Card (Span 3) */}
                 <div className="md:col-span-3 lg:col-span-3 h-full">
-                    <ProgressCard phase={data.current_phase} />
+                    <ProgressCard
+                        phase={data.current_phase}
+                        daysLeft={data.stats.days_left}
+                        nextTitle={nextRoadmapTitle}
+                    />
                 </div>
 
                 {/* 2. Growth Club (Span 1) */}
@@ -218,13 +279,61 @@ export const DashboardView = () => {
 
             {/* Floating FAB */}
             <div className="fixed bottom-28 md:bottom-8 right-6 md:right-8 z-50">
-                <Button className="w-14 h-14 md:w-auto md:h-auto group flex items-center justify-center md:justify-start md:gap-3 bg-slate-900 hover:bg-slate-800 text-white p-0 md:pl-4 md:pr-6 md:py-4 rounded-full shadow-[0_4px_20px_rgba(54,164,242,0.4)] transition-all hover:scale-105 active:scale-95 border-none">
+                <Button
+                    onClick={() => {
+                        setIsLegalModalOpen(true);
+                    }}
+                    className="w-14 h-14 md:w-auto md:h-auto group flex items-center justify-center md:justify-start md:gap-3 bg-slate-900 hover:bg-slate-800 text-white p-0 md:pl-4 md:pr-6 md:py-4 rounded-full shadow-[0_4px_20px_rgba(54,164,242,0.4)] transition-all hover:scale-105 active:scale-95 border-none"
+                >
                     <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#36a4f2] to-purple-400 flex items-center justify-center shrink-0">
                         <Sparkles className="w-4 h-4 text-white" />
                     </div>
                     <span className="hidden md:block font-bold text-sm tracking-tight text-white">법률 AI에게 물어보기</span>
                 </Button>
             </div>
+            <Dialog open={isLegalModalOpen} onOpenChange={setIsLegalModalOpen}>
+                <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>법률 AI 질의</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                        <textarea
+                            value={legalQuestion}
+                            onChange={(e) => setLegalQuestion(e.target.value)}
+                            rows={4}
+                            placeholder="예: 강남구 휴게음식점 창업 시 영업신고/위생 관련 필수 절차는?"
+                            className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none focus:border-blue-400"
+                        />
+                        <div className="flex items-center gap-2">
+                            <Button
+                                onClick={() => void handleAskLegal()}
+                                disabled={legalLoading}
+                                className="bg-slate-900 text-white hover:bg-slate-800"
+                            >
+                                {legalLoading ? "질의 중..." : "질의하기"}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                onClick={() => {
+                                    setLegalQuestion("");
+                                    setLegalAnswer(null);
+                                    setLegalError(null);
+                                }}
+                            >
+                                초기화
+                            </Button>
+                        </div>
+                        {legalError ? (
+                            <p className="text-sm text-red-600">{legalError}</p>
+                        ) : null}
+                        {legalAnswer ? (
+                            <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700 whitespace-pre-wrap">
+                                {legalAnswer}
+                            </div>
+                        ) : null}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </div>
     );
 };

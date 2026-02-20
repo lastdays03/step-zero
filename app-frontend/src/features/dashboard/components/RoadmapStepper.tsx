@@ -116,7 +116,7 @@ export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
                                                 </Badge>
                                             ) : (
                                                 <p className="text-[10px] font-medium truncate text-slate-400">
-                                                    {step.status === 'completed' ? (step.date || '완료됨') : '잠금 해제 대기'}
+                                                    {step.status === 'completed' ? '완료' : '잠금 해제 대기'}
                                                 </p>
                                             )}
                                         </div>
