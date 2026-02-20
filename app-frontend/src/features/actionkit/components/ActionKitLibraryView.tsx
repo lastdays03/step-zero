@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useActionKit } from '../hooks/useActionKit';
+import { Disclaimer } from '@/components/ui/Disclaimer';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -228,6 +229,7 @@ export const ActionKitLibraryView = () => {
                 )}
             </div>
 
+            <Disclaimer />
         </div>
     );
 };

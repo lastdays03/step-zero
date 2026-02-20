@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useLawGuide } from '../hooks/useLawGuide';
+import { Disclaimer } from '@/components/ui/Disclaimer';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -188,6 +189,7 @@ export const LawGuideView = () => {
                     </Button>
                 </div>
             </div>
+            <Disclaimer />
         </div>
     );
 };
