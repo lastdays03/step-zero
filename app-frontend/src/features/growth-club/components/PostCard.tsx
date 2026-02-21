@@ -8,6 +8,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { growthClubApi } from '../api';
 import { CommentSection } from './CommentSection';
 import { resolveUploadUrl } from '../utils/upload-url';
+import { useTimeAgo } from '../hooks';
 
 interface PostCardProps {
     post: Post;
@@ -15,17 +16,7 @@ interface PostCardProps {
     onReportSuccess?: () => void;
 }
 
-const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return '방금 전';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
-    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}일 전`;
-    return date.toLocaleDateString('ko-KR');
-};
 
 export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onReportSuccess }) => {
     const { user } = useAuth();
@@ -39,6 +30,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
     const attachments = post.attachments ?? [];
     const imageAttachments = attachments.filter((it) => it.kind === "image");
     const fileAttachments = attachments.filter((it) => it.kind === "file");
+
+    const timeAgo = useTimeAgo(post.created_at);
+
 
     const isAuthor = user && String(user.id) === String(post.author_id);
 
@@ -115,8 +109,9 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
                     <div>
                         <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{post.author.username}</h3>
                         <p className="text-xs text-zinc-500">
-                            {formatTimeAgo(post.created_at)} · {post.neighborhood}
+                            {timeAgo} · {post.neighborhood}
                         </p>
+
                     </div>
                 </div>
 
