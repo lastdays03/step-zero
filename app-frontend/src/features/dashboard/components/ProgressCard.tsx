@@ -9,9 +9,11 @@ import { Timer, ArrowRight } from 'lucide-react';
 
 interface ProgressCardProps {
     phase: DashboardData['current_phase'];
+    daysLeft: number;
+    nextTitle: string | null;
 }
 
-export const ProgressCard = ({ phase }: ProgressCardProps) => {
+export const ProgressCard = ({ phase, daysLeft, nextTitle }: ProgressCardProps) => {
     return (
         <Card className="bg-white rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group h-full transition-all hover:shadow-md">
             <div className="absolute -right-6 -top-6 w-32 h-32 bg-primary/5 rounded-full blur-3xl transition-all duration-500 group-hover:bg-primary/10"></div>
@@ -61,13 +63,18 @@ export const ProgressCard = ({ phase }: ProgressCardProps) => {
                 <div className="flex items-center space-x-3 text-sm text-slate-500 font-medium relative z-10 mb-8">
                     <div className="flex items-center space-x-1.5">
                         <Timer className="w-4 h-4 text-primary" />
-                        <span>예상 3일</span>
+                        <span>D-{Math.max(daysLeft, 0)}</span>
                     </div>
                     <div className="w-1 h-1 bg-slate-300 rounded-full"></div>
-                    <span>다음: 법인 계좌 개설</span>
+                    <span>다음: {nextTitle || "다음 단계를 확인하세요"}</span>
                 </div>
 
-                <Button className="w-full bg-slate-900 text-white py-6 rounded-2xl font-bold text-sm flex items-center justify-center hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 active:scale-[0.98] group/btn">
+                <Button
+                    onClick={() => {
+                        window.location.href = "/roadmap";
+                    }}
+                    className="w-full bg-slate-900 text-white py-6 rounded-2xl font-bold text-sm flex items-center justify-center hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 active:scale-[0.98] group/btn"
+                >
                     <span>신청 계속하기</span>
                     <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover/btn:translate-x-1" />
                 </Button>

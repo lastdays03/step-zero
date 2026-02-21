@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { apiClient } from '@/lib/api-client';
-import { LawData, LawChapter } from '../types';
+import { LawData } from '../types';
 
 export const useLawGuide = () => {
     const [data, setData] = useState<LawData | null>(null);

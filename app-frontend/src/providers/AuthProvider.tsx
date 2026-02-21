@@ -15,9 +15,11 @@ interface User {
 interface AuthContextType {
     user: User | null;
     isLoggedIn: boolean;
+    isAuthReady: boolean;
     canAccessOps: boolean;
     login: (token: string, userData: User, currentTeamId?: string) => void;
     loginWithCredentials: (email: string, password: string) => Promise<void>;
+    updateUser: (data: Partial<User>) => void;
     logout: () => void;
     isGuest: boolean;
 }
@@ -26,6 +28,7 @@ type AuthState = { user: User | null; isLoggedIn: boolean };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 const AUTH_STORAGE_EVENT = 'auth-storage-changed';
+const ROADMAP_JOB_STORAGE_KEY = "roadmap_polling_job_id";
 const LOGGED_OUT_STATE: AuthState = { user: null, isLoggedIn: false };
 let lastTokenSnapshot: string | null = null;
 let lastUserSnapshot: string | null = null;
@@ -92,6 +95,12 @@ const notifyAuthStateChanged = () => {
 };
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    const [isAuthReady, setIsAuthReady] = React.useState(false);
+
+    React.useEffect(() => {
+        setIsAuthReady(true);
+    }, []);
+
     const authState = useSyncExternalStore(
         subscribeAuthState,
         getStoredAuthState,
@@ -107,6 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             localStorage.setItem('current_team_id', currentTeamId);
         }
         notifyAuthStateChanged();
+        window.location.assign('/dashboard');
     };
 
     const loginWithCredentials = async (email: string, password: string) => {
@@ -147,6 +157,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('current_team_id');
+        localStorage.removeItem(ROADMAP_JOB_STORAGE_KEY);
+        notifyAuthStateChanged();
+        window.location.assign('/dashboard');
+    };
+
+    const updateUser = (data: Partial<User>) => {
+        if (!user) return;
+        const updatedUser = { ...user, ...data };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
         notifyAuthStateChanged();
     };
 
@@ -154,9 +173,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         <AuthContext.Provider value={{
             user,
             isLoggedIn,
+            isAuthReady,
             canAccessOps,
             login,
             loginWithCredentials,
+            updateUser,
             logout,
             isGuest: !isLoggedIn
         }}>

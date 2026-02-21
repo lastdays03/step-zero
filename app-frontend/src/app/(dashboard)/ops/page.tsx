@@ -8,9 +8,10 @@ import { useAuth } from "@/providers/AuthProvider";
 
 export default function OpsPage() {
     const router = useRouter();
-    const { isLoggedIn, canAccessOps } = useAuth();
+    const { isLoggedIn, isAuthReady, canAccessOps } = useAuth();
 
     useEffect(() => {
+        if (!isAuthReady) return;
         if (!isLoggedIn) {
             router.replace("/login");
             return;
@@ -18,9 +19,9 @@ export default function OpsPage() {
         if (!canAccessOps) {
             router.replace("/dashboard");
         }
-    }, [canAccessOps, isLoggedIn, router]);
+    }, [canAccessOps, isAuthReady, isLoggedIn, router]);
 
-    if (!isLoggedIn || !canAccessOps) {
+    if (!isAuthReady || !isLoggedIn || !canAccessOps) {
         return (
             <section className="rounded-2xl border border-slate-200 bg-white p-6">
                 <p className="text-sm text-slate-600">권한을 확인하는 중입니다...</p>
@@ -52,6 +53,24 @@ export default function OpsPage() {
                         최근 7일 서비스 핵심 지표 확인
                     </p>
                     <Link href="/ops/reports" className="mt-4 inline-block text-sm font-semibold text-blue-600">
+                        열기
+                    </Link>
+                </article>
+                <article className="rounded-2xl border border-slate-200 bg-white p-5">
+                    <h2 className="text-base font-semibold text-slate-900">그로스 클럽 관리</h2>
+                    <p className="mt-1 text-sm text-slate-600">
+                        신고 콘텐츠 검토 및 블라인드/해제 운영
+                    </p>
+                    <Link href="/ops/growth-club" className="mt-4 inline-block text-sm font-semibold text-blue-600">
+                        열기
+                    </Link>
+                </article>
+                <article className="rounded-2xl border border-slate-200 bg-white p-5">
+                    <h2 className="text-base font-semibold text-slate-900">액션 키트 관리</h2>
+                    <p className="mt-1 text-sm text-slate-600">
+                        문서 라이브러리 운영과 업로드 정책 점검
+                    </p>
+                    <Link href="/ops/actionkit" className="mt-4 inline-block text-sm font-semibold text-blue-600">
                         열기
                     </Link>
                 </article>

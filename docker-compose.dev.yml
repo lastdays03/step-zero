@@ -66,6 +66,29 @@ services:
   # ---------------------------------------------------------------------------
   # Frontend Service (Next.js)
   # ---------------------------------------------------------------------------
+  app-worker:
+    build:
+      context: ./app-backend
+      dockerfile: Dockerfile
+    container_name: stepzero-worker
+    command: python -m arq app.workers.roadmap_worker.WorkerSettings
+    volumes:
+      - ./app-backend:/app
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://stepzero_admin:stepzero_password@app-db:5432/stepzero_db
+      - REDIS_URL=redis://app-redis:6379
+      # - OPENAI_API_KEY=${OPENAI_API_KEY} # Load from .env
+    depends_on:
+      app-db:
+        condition: service_healthy
+      app-redis:
+        condition: service_healthy
+    networks:
+      - stepzero-network
+
+  # ---------------------------------------------------------------------------
+  # Frontend Service (Next.js)
+  # ---------------------------------------------------------------------------
   app-frontend:
     build:
       context: ./app-frontend
@@ -81,6 +104,7 @@ services:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
       - app-backend
+      - app-worker
     networks:
       - stepzero-network
 

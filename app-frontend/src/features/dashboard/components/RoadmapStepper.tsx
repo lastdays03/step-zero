@@ -1,6 +1,6 @@
 "use client";
 
-import React from 'react';
+import React, { useRef, useState } from 'react';
 import { DashboardData } from '../hooks/useDashboard';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,25 +11,83 @@ interface RoadmapStepperProps {
 }
 
 export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
+    const scrollRef = useRef<HTMLDivElement | null>(null);
+    const dragStateRef = useRef<{ pointerId: number | null; startX: number; startScrollLeft: number }>({
+        pointerId: null,
+        startX: 0,
+        startScrollLeft: 0,
+    });
+    const [isDragging, setIsDragging] = useState(false);
+
+    const normalizedSteps = steps.map((step) => ({
+        ...step,
+        status: String(step.status || "").toLowerCase(),
+    }));
+
+    const handlePointerDown: React.PointerEventHandler<HTMLDivElement> = (event) => {
+        const container = scrollRef.current;
+        if (!container) return;
+        dragStateRef.current = {
+            pointerId: event.pointerId,
+            startX: event.clientX,
+            startScrollLeft: container.scrollLeft,
+        };
+        setIsDragging(true);
+        container.setPointerCapture(event.pointerId);
+    };
+
+    const handlePointerMove: React.PointerEventHandler<HTMLDivElement> = (event) => {
+        const container = scrollRef.current;
+        if (!container || !isDragging) return;
+        const deltaX = event.clientX - dragStateRef.current.startX;
+        container.scrollLeft = dragStateRef.current.startScrollLeft - deltaX;
+    };
+
+    const handlePointerEnd: React.PointerEventHandler<HTMLDivElement> = (event) => {
+        const container = scrollRef.current;
+        if (!container || dragStateRef.current.pointerId === null) return;
+        try {
+            container.releasePointerCapture(event.pointerId);
+        } catch {
+            // no-op
+        }
+        dragStateRef.current.pointerId = null;
+        setIsDragging(false);
+    };
+
     return (
         <Card className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] border border-white/50 relative overflow-hidden group">
             <CardContent className="p-8">
                 <div className="flex justify-between items-center mb-8">
                     <h3 className="font-bold text-lg text-slate-800">나의 로드맵</h3>
-                    <button className="text-sm text-[#36a4f2] font-medium hover:underline flex items-center">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            window.location.href = "/roadmap";
+                        }}
+                        className="text-sm text-[#36a4f2] font-medium hover:underline flex items-center"
+                    >
                         전체 계획 보기
                     </button>
                 </div>
 
                 <div className="relative">
                     {/* Horizontal Scroll Container */}
-                    <div className="overflow-x-auto pb-4 -mx-4 px-4 hide-scrollbar scroll-smooth">
+                    <div
+                        ref={scrollRef}
+                        onPointerDown={handlePointerDown}
+                        onPointerMove={handlePointerMove}
+                        onPointerUp={handlePointerEnd}
+                        onPointerCancel={handlePointerEnd}
+                        onPointerLeave={handlePointerEnd}
+                        className={`overflow-x-auto pb-4 -mx-4 px-4 hide-scrollbar scroll-smooth select-none ${isDragging ? "cursor-grabbing" : "cursor-grab"}`}
+                    >
                         <div className="flex items-start md:items-center space-x-8 min-w-max relative">
 
                             {/* Timeline Line - Positioned absolute relative to the scrollable content width */}
                             <div className="absolute top-[24px] left-6 right-6 h-[2.5px] bg-slate-100 z-0" />
 
-                            {steps.map((step, index) => (
+                            {normalizedSteps.map((step, index) => (
                                 <div key={index} className={`flex flex-col items-start md:items-center text-left md:text-center relative z-10 w-[120px] flex-shrink-0 group transition-all duration-500 ${step.status === 'locked' ? 'opacity-50' : 'opacity-100'}`}>
                                     <div className="relative mb-3 w-full flex justify-start md:justify-center">
                                         {step.status === 'current' && (
@@ -58,7 +116,7 @@ export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
                                                 </Badge>
                                             ) : (
                                                 <p className="text-[10px] font-medium truncate text-slate-400">
-                                                    {step.status === 'completed' ? '완료됨' : '예상일 2월 10일'}
+                                                    {step.status === 'completed' ? '완료' : '잠금 해제 대기'}
                                                 </p>
                                             )}
                                         </div>

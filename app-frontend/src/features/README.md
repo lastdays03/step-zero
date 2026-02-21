@@ -4,7 +4,7 @@
 
 - `profile/`: 프로필 기능 전용
 - `actionkit/`: 액션키트 기능 전용
-- `community/`: 커뮤니티 기능 전용
+- `growth-club/`: 커뮤니티(그로스 클럽) 기능 전용
 - `ops/`: 운영콘솔 기능 전용
 - `dashboard/`: 대시보드 기능 전용
 - `roadmap/`: 로드맵 기능 전용
