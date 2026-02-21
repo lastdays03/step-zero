@@ -17,6 +17,7 @@
 1. `/ops/actionkit`
 - 상위 탭: `법령 가이드(laws)` / `액션키트(kits)`
 - 보조 필터: 카테고리, 상태(active/inactive), 검색어
+- 상태 용어 매핑: 현재 스키마는 `is_active`를 사용하며, 운영 UI에서 `게시중/중단`으로 라벨링한다.
 
 2. `/ops/actionkit/items/:id`
 - 기본 정보 섹션: 이름, 요약, 태그, 정렬, 상태
@@ -51,12 +52,20 @@
 4. `PATCH /api/v1/ops/actionkit/items/{item_id}` (메타 수정)
 5. `GET /api/v1/ops/actionkit/items/{item_id}/files` (버전 히스토리)
 
+## API 네임스페이스 기준
+- 운영 API는 `/api/v1/ops/*` 기준으로 구현한다.
+- 공개 사용자 API(`/api/v1/actionkits/*`)와 분리 유지한다.
+
 ## 구현 단계
 1. Ops API 스펙/응답 타입 정의
-2. 백엔드 Ops ActionKit endpoint 구현
-3. 프론트 `/ops/actionkit` 목록 화면 구현
-4. 프론트 상세/업로드 화면 구현
-5. 통합 검증(권한/업로드/버전 반영)
+2. 감사로그 기록 인프라(테이블/유틸) 선반영 여부 확인
+3. 백엔드 Ops ActionKit endpoint 구현
+4. 프론트 `/ops/actionkit` 목록 화면 구현
+5. 프론트 상세/업로드 화면 구현
+6. 통합 검증(권한/업로드/버전 반영)
+
+## 구현 게이트
+- 파일 업로드/활성상태 변경 API는 감사로그 연동 없이 배포하지 않는다.
 
 ## 검증 항목
 1. 권한 없는 사용자 접근 차단 확인
