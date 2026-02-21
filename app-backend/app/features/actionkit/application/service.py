@@ -4,7 +4,7 @@ from pathlib import Path
 from fastapi import UploadFile
 from app.api.v1.actionkit.schemas import ActionKitCategory, ActionKitItem, LawChapter, LawItem, RelatedLaw
 from app.core.config import get_settings
-from app.features.actionkit.application.file_pipeline import (
+from .file_pipeline import (
     build_object_key,
     detect_mime_type,
     save_upload_to_path,

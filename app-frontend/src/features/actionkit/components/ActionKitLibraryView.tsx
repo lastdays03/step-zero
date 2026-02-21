@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useActionKit } from '../hooks/useActionKit';
 import { Disclaimer } from '@/components/ui/Disclaimer';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,7 +20,7 @@ import {
     Gavel,
     LucideIcon,
 } from 'lucide-react';
-import { RelatedLaw } from '../types';
+import { ActionKitItem, RelatedLaw } from '../types';
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
     all: Layers,
@@ -45,6 +46,7 @@ export const ActionKitLibraryView = () => {
     const { data, loading, error } = useActionKit();
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [searchQuery, setSearchQuery] = useState("");
+    const [previewItem, setPreviewItem] = useState<ActionKitItem | null>(null);
 
     if (loading) return <div className="p-8 text-center text-slate-500">액션 키트 라이브러리를 불러오는 중...</div>;
     if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
@@ -141,7 +143,11 @@ export const ActionKitLibraryView = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {displayItems.length > 0 ? (
                     displayItems.map((item, index) => (
-                        <Card key={`${item.name}-${index}`} className="group hover:border-[#36a4f2] transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between overflow-hidden">
+                        <Card
+                            key={`${item.name}-${index}`}
+                            className="group hover:border-[#36a4f2] transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between overflow-hidden"
+                            onClick={() => setPreviewItem(item)}
+                        >
                             <CardContent className="p-0 flex flex-col h-full">
                                 <div className="p-6 pb-0">
                                     <div className="flex justify-between items-start mb-4">
@@ -228,6 +234,92 @@ export const ActionKitLibraryView = () => {
                     </div>
                 )}
             </div>
+
+            <Dialog open={!!previewItem} onOpenChange={(open) => !open && setPreviewItem(null)}>
+                <DialogContent className="max-w-4xl w-full p-0 overflow-hidden bg-white/95 backdrop-blur-xl border-white/20">
+                    {previewItem && (
+                        <div className="flex flex-col md:flex-row h-full max-h-[85vh]">
+                            {/* Left Side: Visual Preview */}
+                            <div className="w-full md:w-1/2 bg-slate-50 p-8 flex flex-col items-center justify-center border-r border-slate-100 relative">
+                                <div className="absolute inset-0 bg-gradient-to-br from-[#36a4f2]/5 to-transparent pointer-events-none" />
+                                <div className="relative z-10 w-full aspect-[1/1.4] max-w-sm bg-white rounded-xl shadow-xl overflow-hidden flex items-center justify-center border border-slate-200">
+                                    <div className="text-center p-6 bg-slate-50/50 w-full h-full flex flex-col items-center justify-center">
+                                        <FolderOpen className="w-16 h-16 text-slate-300 mb-4" />
+                                        <p className="text-sm font-bold text-slate-500 mb-2">프리뷰 이미지가 제공되지 않았습니다.</p>
+                                        <p className="text-xs text-slate-400">파일을 다운로드하여 확인해 주세요.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Right Side: Information & Action */}
+                            <div className="w-full md:w-1/2 p-8 flex flex-col h-full overflow-y-auto">
+                                <DialogHeader className="mb-6">
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <Badge variant="outline" className="text-[10px] font-black text-[#36a4f2] bg-[#36a4f2]/5 border-[#36a4f2]/10 uppercase py-0.5 px-2">
+                                            {previewItem.tag || '[실무]'}
+                                        </Badge>
+                                        <Badge variant="secondary" className="text-[10px] font-bold text-slate-400 py-0 h-5 mt-0">
+                                            {previewItem.type}
+                                        </Badge>
+                                        {previewItem.dday && (
+                                            <Badge className="bg-orange-500 hover:bg-orange-600 text-[10px] font-bold py-0 h-5 mt-0">
+                                                {previewItem.dday}
+                                            </Badge>
+                                        )}
+                                    </div>
+                                    <DialogTitle className="text-2xl font-bold text-slate-800 leading-tight">
+                                        {previewItem.name}
+                                    </DialogTitle>
+                                    <DialogDescription className="text-sm text-slate-500 mt-2 leading-relaxed">
+                                        {previewItem.summary}
+                                    </DialogDescription>
+                                </DialogHeader>
+
+                                <div className="space-y-6 flex-1">
+                                    <div className="p-4 bg-[#36a4f2]/5 rounded-xl border border-[#36a4f2]/10">
+                                        <h4 className="flex items-center gap-2 text-sm font-bold text-slate-700 mb-3">
+                                            <Sparkles className="w-4 h-4 text-[#36a4f2]" />
+                                            💡 사용 팁 (How to Use)
+                                        </h4>
+                                        <ul className="space-y-2 text-xs text-slate-600">
+                                            {previewItem.usageTips ? (
+                                                previewItem.usageTips.map((tip, i) => (
+                                                    <li key={i} className="flex gap-2"  >
+                                                        <span className="text-[#36a4f2] font-bold">{i + 1}.</span> {tip}
+                                                    </li>
+                                                ))
+                                            ) : (
+                                                <>
+                                                    <li className="flex gap-2"><span className="text-[#36a4f2] font-bold">1.</span> 다운로드 버튼을 눌러 파일을 저장합니다.</li>
+                                                    <li className="flex gap-2"><span className="text-[#36a4f2] font-bold">2.</span> 파일 내 빈칸(노란색 셀 또는 괄호)을 양식에 맞게 입력합니다.</li>
+                                                    <li className="flex gap-2"><span className="text-[#36a4f2] font-bold">3.</span> 작성 완료 후, 필요한 곳에 즉시 활용하세요.</li>
+                                                </>
+                                            )}
+                                        </ul>
+                                    </div>
+                                </div>
+
+                                <div className="pt-6 mt-6 border-t border-slate-100">
+                                    <Button
+                                        size="lg"
+                                        className="w-full rounded-xl bg-[#36a4f2] hover:bg-[#258bd1] text-white shadow-lg shadow-[#36a4f2]/25 font-bold h-14 text-base"
+                                        onClick={() => {
+                                            handleDownload(previewItem.path, previewItem.name);
+                                            setPreviewItem(null); // 모달 닫기
+                                        }}
+                                    >
+                                        <Download className="w-5 h-5 mr-2" />
+                                        파일 다운로드 ({previewItem.type})
+                                    </Button>
+                                    <p className="text-[11px] text-slate-400 text-center mt-3">
+                                        다운로드 시 <span className="font-semibold text-slate-500">Disclaimer(면책조항)</span>에 동의한 것으로 간주됩니다.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
 
             <Disclaimer />
         </div>

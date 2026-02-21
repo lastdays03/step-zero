@@ -10,7 +10,19 @@ from sqlmodel import select
 
 from app.core.config import get_settings
 from app.core.db import async_session
-from app.features.actionkit.application.file_pipeline import detect_mime_type, file_checksum
+import hashlib
+import mimetypes
+
+def detect_mime_type(filename: str, fallback: str | None = None) -> str:
+    guessed, _ = mimetypes.guess_type(filename)
+    return guessed or fallback or "application/octet-stream"
+
+def file_checksum(path: Path) -> str:
+    sha = hashlib.sha256()
+    with path.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            sha.update(chunk)
+    return sha.hexdigest()
 from app.models.actionkit import (
     ActionKitCategory,
     ActionKitFile,

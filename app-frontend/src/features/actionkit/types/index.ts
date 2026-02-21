@@ -25,6 +25,8 @@ export interface ActionKitItem {
     path: string;
     relatedLaws?: (string | RelatedLaw)[];
     dday?: string;
+    previewImageUrl?: string;
+    usageTips?: string[];
 }
 
 export interface ActionKitCategory {
