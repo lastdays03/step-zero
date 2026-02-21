@@ -5,7 +5,7 @@ import { useEffect } from "react";
 
 import { useAuth } from "@/providers/AuthProvider";
 
-export default function OpsGrowthClubPage() {
+export default function OpsAnnouncementsPage() {
     const router = useRouter();
     const { isLoggedIn, isAuthReady, canAccessOps } = useAuth();
 
@@ -31,13 +31,13 @@ export default function OpsGrowthClubPage() {
     return (
         <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
             <header>
-                <h1 className="text-xl font-bold text-slate-900">그로스 클럽 관리</h1>
+                <h1 className="text-xl font-bold text-slate-900">공지 관리</h1>
                 <p className="mt-2 text-sm text-slate-600">
-                    신고 게시글/댓글 검토, 블라인드/해제, 운영 조치를 관리하는 화면입니다.
+                    공지 작성/수정/게시/내림 운영을 위한 화면입니다.
                 </p>
             </header>
             <div className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
-                구현 예정: 신고 큐 조회, 콘텐츠 조치(블라인드/해제), 조치 이력.
+                구현 예정: 공지 목록, 작성/수정 에디터, 게시/내림 상태 전환.
             </div>
         </section>
     );

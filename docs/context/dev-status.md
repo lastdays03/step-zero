@@ -58,3 +58,5 @@
 - 2026-02-21: 컨테이너별 env 분리 정책 적용(백/워커=`app-backend/.env*`, 프론트=`app-frontend/.env*`) 및 dev/prod compose를 `env_file` 기반으로 전환
 - 2026-02-21: Ops 운영관리 플랜을 마스터+상세 구조로 재편(`PLAN-ops-admin-menu-master` + users/reports/announcements/audit-logs)하고 기존 actionkit/growth 플랜을 감사로그 선행 게이트 기준으로 보강
 - 2026-02-21: `docs/planning/` 레거시/참조 문서 9개를 `docs/planning/completed/`로 이동해 실행 문서 범위를 현재 플랜 중심으로 정리
+- 2026-02-21: `/ops` 홈 카드에 `공지 관리`/`운영 감사로그`를 추가하고 `/ops/announcements`, `/ops/audit-logs` 라우트를 신설
+- 2026-02-21: `/ops*` 가드에서 비로그인 시 `/login`으로 이동하던 흐름을 제거하고 `/dashboard` 리다이렉트로 통일해 재발 이슈 대응

@@ -23,7 +23,7 @@ export default function OpsReportsPage() {
     useEffect(() => {
         if (!isAuthReady) return;
         if (!isLoggedIn) {
-            router.replace("/login");
+            router.replace("/dashboard");
             return;
         }
         if (!canAccessOps) {
