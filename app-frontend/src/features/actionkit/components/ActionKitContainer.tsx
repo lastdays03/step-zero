@@ -8,13 +8,24 @@ import { Gavel, FolderOpen } from 'lucide-react';
 
 export const ActionKitContainer = () => {
     const [activeTab, setActiveTab] = useState<'laws' | 'kits'>('laws');
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const handleNavigateToLaw = (lawTitle: string) => {
+        setSearchQuery(lawTitle);
+        setActiveTab('laws');
+    };
+
+    const handleTabChange = (tab: 'laws' | 'kits') => {
+        setSearchQuery(""); // Clear search when manually switching tabs
+        setActiveTab(tab);
+    };
 
     return (
         <div className="p-8 pb-32">
             {/* Tab Header */}
             <div className="flex p-1 bg-slate-100 rounded-2xl w-full max-w-md mx-auto mb-12 shadow-inner">
                 <button
-                    onClick={() => setActiveTab('laws')}
+                    onClick={() => handleTabChange('laws')}
                     className={cn(
                         "flex items-center justify-center gap-2 flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all",
                         activeTab === 'laws'
@@ -26,7 +37,7 @@ export const ActionKitContainer = () => {
                     창업 법령 가이드
                 </button>
                 <button
-                    onClick={() => setActiveTab('kits')}
+                    onClick={() => handleTabChange('kits')}
                     className={cn(
                         "flex items-center justify-center gap-2 flex-1 py-3 px-4 rounded-xl text-sm font-bold transition-all",
                         activeTab === 'kits'
@@ -41,7 +52,11 @@ export const ActionKitContainer = () => {
 
             {/* View Content */}
             <div className="max-w-7xl mx-auto">
-                {activeTab === 'laws' ? <LawGuideView /> : <ActionKitLibraryView />}
+                {activeTab === 'laws' ? (
+                    <LawGuideView initialSearch={searchQuery} />
+                ) : (
+                    <ActionKitLibraryView onNavigateToLaw={handleNavigateToLaw} />
+                )}
             </div>
         </div>
     );

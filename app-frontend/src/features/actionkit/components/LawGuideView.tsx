@@ -18,10 +18,20 @@ import { LawItem } from '../types';
 
 type LawItemWithChapter = LawItem & { chapterTitle: string };
 
-export const LawGuideView = () => {
+interface LawGuideViewProps {
+    initialSearch?: string;
+}
+
+export const LawGuideView = ({ initialSearch = "" }: LawGuideViewProps) => {
     const { data, loading, error } = useLawGuide();
     const [activeChapter, setActiveChapter] = useState<string>("1");
-    const [searchQuery, setSearchQuery] = useState("");
+    const [searchQuery, setSearchQuery] = useState(initialSearch);
+
+    React.useEffect(() => {
+        if (initialSearch) {
+            setSearchQuery(initialSearch);
+        }
+    }, [initialSearch]);
 
     if (loading) return <div className="p-8 text-center text-slate-500">법령 가이드를 불러오는 중...</div>;
     if (error) return <div className="p-8 text-center text-red-500">{error}</div>;

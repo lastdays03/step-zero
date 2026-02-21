@@ -42,11 +42,22 @@ const isRelatedLawObject = (law: string | RelatedLaw): law is RelatedLaw => {
     return typeof law === "object" && law !== null && "name" in law;
 };
 
-export const ActionKitLibraryView = () => {
+interface ActionKitLibraryViewProps {
+    onNavigateToLaw?: (lawTitle: string) => void;
+}
+
+export const ActionKitLibraryView = ({ onNavigateToLaw }: ActionKitLibraryViewProps) => {
     const { data, loading, error } = useActionKit();
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [searchQuery, setSearchQuery] = useState("");
     const [previewItem, setPreviewItem] = useState<ActionKitItem | null>(null);
+
+    const handleLawClick = (e: React.MouseEvent, lawName: string) => {
+        e.stopPropagation();
+        if (onNavigateToLaw) {
+            onNavigateToLaw(lawName);
+        }
+    };
 
     if (loading) return <div className="p-8 text-center text-slate-500">액션 키트 라이브러리를 불러오는 중...</div>;
     if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
@@ -186,9 +197,9 @@ export const ActionKitLibraryView = () => {
                                                         const summary = isRelatedLawObject(law) ? law.summary : null;
 
                                                         return (
-                                                            <div key={i} className="group/law">
+                                                            <div key={i} className="group/law" onClick={(e) => handleLawClick(e, name)}>
                                                                 <div className="flex flex-wrap items-center gap-1.5">
-                                                                    <span className="text-[10px] font-bold text-[#36a4f2] bg-[#36a4f2]/5 px-1.5 py-0.5 rounded border border-[#36a4f2]/10 transition-colors group-hover/law:bg-[#36a4f2]/10">
+                                                                    <span className="text-[10px] font-bold text-[#36a4f2] bg-[#36a4f2]/5 px-1.5 py-0.5 rounded border border-[#36a4f2]/10 transition-colors group-hover/law:bg-[#36a4f2]/20 group-hover/law:border-[#36a4f2]/30">
                                                                         #{name}
                                                                     </span>
                                                                     {summary && (
@@ -297,6 +308,33 @@ export const ActionKitLibraryView = () => {
                                             )}
                                         </ul>
                                     </div>
+
+                                    {previewItem.relatedLaws && previewItem.relatedLaws.length > 0 && (
+                                        <div className="space-y-3">
+                                            <h4 className="flex items-center gap-2 text-sm font-bold text-slate-700">
+                                                <Gavel className="w-4 h-4 text-[#36a4f2]" />
+                                                관련 법령 가이드
+                                            </h4>
+                                            <div className="flex flex-wrap gap-2">
+                                                {previewItem.relatedLaws.map((law, i) => {
+                                                    const name = isRelatedLawObject(law) ? law.name : law;
+                                                    return (
+                                                        <Badge
+                                                            key={i}
+                                                            variant="outline"
+                                                            className="cursor-pointer hover:bg-[#36a4f2]/10 hover:border-[#36a4f2]/30 transition-colors text-[10px] py-1 px-3 border-slate-200 text-slate-600"
+                                                            onClick={(e) => {
+                                                                handleLawClick(e, name);
+                                                                setPreviewItem(null);
+                                                            }}
+                                                        >
+                                                            #{name}
+                                                        </Badge>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="pt-6 mt-6 border-t border-slate-100">
