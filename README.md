@@ -100,12 +100,10 @@ ACTIONKIT_BOOTSTRAP_MODE=docker ./scripts/bootstrap_actionkit.sh
 # [방법 B] 이미 컨테이너가 실행 중일 때: 필요 시에만 exec로 적용
 cd ..
 # 마이그레이션만 필요할 때
-docker exec -it stepzero-backend \
-  bash -lc "cd /app && ./scripts/run_alembic.sh upgrade head"
+docker exec -it stepzero-backend bash -lc "cd /app && ./scripts/run_alembic.sh upgrade head"
 
 # 시드가 필요할 때만 별도 실행
-docker exec -it stepzero-backend \
-  bash -lc "cd /app && python scripts/seed_actionkit.py"
+docker exec -it stepzero-backend bash -lc "cd /app && python scripts/seed_actionkit.py"
 ```
 
 > 참고:
