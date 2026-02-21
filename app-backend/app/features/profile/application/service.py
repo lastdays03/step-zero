@@ -6,6 +6,7 @@ from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
+from app.core.config import get_settings
 from app.models.profile import UserProfile, UserProfileUpdate
 from app.models.user import User
 
@@ -13,7 +14,8 @@ from app.models.user import User
 class ProfileService:
     def __init__(self, session: AsyncSession):
         self.session = session
-        self.upload_dir = Path("static/uploads")
+        settings = get_settings()
+        self.upload_dir = settings.STORAGE_ROOT_PATH / "profile"
         self.upload_dir.mkdir(parents=True, exist_ok=True)
 
     async def get_profile(self, user_id: int) -> UserProfile:
@@ -69,7 +71,7 @@ class ProfileService:
             buffer.write(content)
             
         # Update profile
-        profile.profile_img = filename
+        profile.profile_img = f"profile/{filename}"
         profile.updated_at = datetime.utcnow()
         self.session.add(profile)
         await self.session.commit()

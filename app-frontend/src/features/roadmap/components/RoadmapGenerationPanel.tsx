@@ -103,21 +103,12 @@ export const RoadmapGenerationPanel = ({
 
     const handleValidateInput = async (input: RoadmapRawInput): Promise<RoadmapValidationResult> => {
         setGenerationError(null);
-        const structuredDescription = [
-            `창업 형태: ${input.startup_type}`,
-            `오픈 목표 시점: ${input.open_timeline}`,
-            `초기 예산 범위: ${input.budget_range}`,
-            input.description ? `추가 설명: ${input.description}` : "",
-        ]
-            .filter(Boolean)
-            .join("\n");
-
         const validateResponse = await apiClient.post<RoadmapInputValidateResponse>(
             "/roadmaps/jobs/validate",
             {
                 business_type: input.business_type.trim(),
                 location: input.location.trim(),
-                description: structuredDescription,
+                description: input.description.trim(),
             }
         );
         const validation = validateResponse.data;
@@ -132,7 +123,11 @@ export const RoadmapGenerationPanel = ({
             payload: {
                 business_type: normalizedBusiness,
                 location: normalizedLocation,
-                description: structuredDescription,
+                description: input.description.trim(),
+                startup_type: input.startup_type.trim(),
+                open_timeline: input.open_timeline.trim(),
+                budget_range: input.budget_range.trim(),
+                additional_notes: input.description.trim(),
                 goal_horizon_days: 30,
                 experience_level: "BEGINNER",
             },

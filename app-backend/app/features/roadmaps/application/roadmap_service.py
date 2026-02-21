@@ -31,6 +31,10 @@ class RoadmapService:
         business_type: str,
         location: str,
         description: str,
+        startup_type: str | None = None,
+        open_timeline: str | None = None,
+        budget_range: str | None = None,
+        additional_notes: str = "",
     ) -> RoadmapCreationResult:
         title = f"{business_type} 창업 로드맵"
         roadmap = await self.roadmap_repo.create_roadmap(
@@ -39,6 +43,10 @@ class RoadmapService:
             business_type=business_type,
             location=location,
             description=description,
+            startup_type=startup_type,
+            open_timeline=open_timeline,
+            budget_range=budget_range,
+            additional_notes=additional_notes,
             created_by=user_id,
         )
         steps = await self.roadmap_repo.create_steps(

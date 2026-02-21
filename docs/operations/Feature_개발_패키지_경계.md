@@ -5,14 +5,14 @@
 ## 담당별 수정 경로(Frontend)
 - 프로필 담당: `app-frontend/src/features/profile/**`
 - 액션키트 담당: `app-frontend/src/features/actionkit/**`
-- 커뮤니티 담당: `app-frontend/src/features/community/**`
+- 커뮤니티 담당: `app-frontend/src/features/growth-club/**`
 - 운영콘솔 담당: `app-frontend/src/features/ops/**`
 - 공용 계약(리드 승인): `app-frontend/src/features/shared/contracts/**`
 
 ## 담당별 수정 경로(Backend)
 - 프로필 담당: `app-backend/app/api/v2/profile/**`, `app-backend/app/features/profile/**`
 - 액션키트 담당: `app-backend/app/api/v2/actionkit/**`, `app-backend/app/features/actionkit/**`
-- 커뮤니티 담당: `app-backend/app/api/v2/community/**`, `app-backend/app/features/community/**`
+- 커뮤니티 담당: `app-backend/app/api/v1/growth_club/**`, `app-backend/app/features/growth_club/**`
 - 운영콘솔 담당: `app-backend/app/api/v2/ops/**`, `app-backend/app/features/ops/**`
 - 대시보드 담당: `app-backend/app/api/v2/dashboard/**`, `app-backend/app/application/dashboard_service.py`
 - 로드맵 담당: `app-backend/app/api/v2/roadmaps/**`, `app-backend/app/application/roadmap_service.py`

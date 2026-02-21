@@ -13,6 +13,10 @@ class Roadmap(SQLModel, table=True):
     business_type: str
     location: str
     description: str = ""
+    startup_type: str | None = None
+    open_timeline: str | None = None
+    budget_range: str | None = None
+    additional_notes: str = ""
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
     deleted_at: datetime | None = None

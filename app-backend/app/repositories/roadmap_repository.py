@@ -88,6 +88,10 @@ class RoadmapRepository:
         location: str,
         description: str,
         created_by: int,
+        startup_type: str | None = None,
+        open_timeline: str | None = None,
+        budget_range: str | None = None,
+        additional_notes: str = "",
     ) -> Roadmap:
         roadmap = Roadmap(
             team_id=team_id,
@@ -95,6 +99,10 @@ class RoadmapRepository:
             business_type=business_type,
             location=location,
             description=description,
+            startup_type=startup_type,
+            open_timeline=open_timeline,
+            budget_range=budget_range,
+            additional_notes=additional_notes,
             created_by=created_by,
             updated_by=created_by,
         )

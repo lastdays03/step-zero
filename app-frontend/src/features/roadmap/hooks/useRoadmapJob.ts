@@ -7,6 +7,10 @@ export interface RoadmapIntakePayload {
     business_type: string;
     location: string;
     description: string;
+    startup_type: string;
+    open_timeline: string;
+    budget_range: string;
+    additional_notes: string;
     goal_horizon_days: number;
     experience_level: string;
 }

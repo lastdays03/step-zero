@@ -26,9 +26,9 @@
 - `/ops` 하위 화면은 기본 골격만 구현되어 실제 운영 데이터 지표 정의가 필요
 
 ## Next 3 Actions
-1. `team-standards` 기준 공통 규칙을 현재 프로젝트 문서와 동기화
-2. `/ops/users`, `/ops/reports` 운영 지표/필드 정의 확정 및 실제 데이터 연동
-3. `roadmap`/`actionkit` 페이지 placeholder를 실제 데이터 로딩 화면으로 교체
+1. ActionKit DB 스키마(`actionkit_*`) 마이그레이션 생성 및 적용
+2. ActionKit repository/application service 구현 후 v1 API를 service 기반으로 전환
+3. `domain/data.py` -> DB seed 스크립트 분리 및 다운로드 경로 정합성 검증
 
 ## Test Status
 - Backend pytest: 실행 실패(`app-backend/.venv/bin/pytest` 없음)
@@ -43,3 +43,6 @@
 - 2026-02-15: `/ops` 권한 모델을 팀 단위에서 플랫폼 운영자(`User.is_superuser`) 단일 모델로 확정
 - 2026-02-15: `app-frontend/src/lib` 누락 복구(`api-client.ts`, `api-types.ts`, `utils.ts`)로 모듈 해석 오류 정리
 - 2026-02-16: 백엔드 실행 필수값 누락 방지를 위해 `app-backend/.env.example` 추가 및 `.gitignore` 예외 반영
+- 2026-02-20: ActionKit 로컬 스토리지 경로를 `STORAGE_LOCAL_ROOT` 단일 변수 + fallback(`app-backend/uploads`)로 단순화
+- 2026-02-20: ActionKit 데이터/파일 관리 전환 플랜 문서 `docs/planning/PLAN-actionkit-data-file-management.md` 추가
+- 2026-02-20: 운영 콘솔에 `액션 키트 관리` 카드 및 `/ops/actionkit` 화면 추가

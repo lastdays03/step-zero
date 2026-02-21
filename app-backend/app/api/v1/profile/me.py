@@ -34,7 +34,13 @@ async def _build_profile_read(
     )
 
 
-@router.get("/me", response_model=UserProfileRead)
+@router.get(
+    "/me",
+    response_model=UserProfileRead,
+    summary="내 프로필 조회",
+    description="현재 로그인한 사용자의 프로필 정보를 조회합니다.",
+    response_description="프로필 상세 정보와 완성도 정보를 반환합니다.",
+)
 async def get_my_profile(
     current_user: Annotated[AuthenticatedUser, Depends(deps.get_current_user)],
     session: AsyncSession = Depends(get_session),
@@ -44,7 +50,13 @@ async def get_my_profile(
     return await _build_profile_read(session, service, current_user)
 
 
-@router.put("/me", response_model=UserProfileRead)
+@router.put(
+    "/me",
+    response_model=UserProfileRead,
+    summary="내 프로필 수정",
+    description="현재 로그인한 사용자의 프로필 정보를 수정합니다.",
+    response_description="수정된 최신 프로필 정보를 반환합니다.",
+)
 async def update_my_profile(
     profile_update: UserProfileUpdate,
     current_user: Annotated[AuthenticatedUser, Depends(deps.get_current_user)],
@@ -56,11 +68,17 @@ async def update_my_profile(
     return await _build_profile_read(session, service, current_user)
 
 
-@router.post("/me/image", response_model=UserProfileRead)
+@router.post(
+    "/me/image",
+    response_model=UserProfileRead,
+    summary="프로필 이미지 업로드",
+    description="현재 로그인한 사용자의 프로필 이미지를 업로드/교체합니다.",
+    response_description="이미지 반영 후 최신 프로필 정보를 반환합니다.",
+)
 async def upload_my_profile_image(
     current_user: Annotated[AuthenticatedUser, Depends(deps.get_current_user)],
     session: Annotated[AsyncSession, Depends(get_session)],
-    file: UploadFile = File(...),
+    file: UploadFile = File(..., description="업로드할 프로필 이미지 파일"),
 ):
     service = ProfileService(session)
     await service.save_profile_image(current_user.id, file)

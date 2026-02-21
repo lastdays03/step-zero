@@ -1,37 +1,30 @@
 # Handoff
 
 ## 마지막 업데이트
-- Date: 2026-02-19
+- Date: 2026-02-20
 - Branch: `develop`
-- Latest pushed commit: `46578c0`
+- Latest pushed commit: `3a84f31`
 
 ## 이번 세션 완료
-- 로드맵 생성 UX 단일화:
-  - `/roadmap`, `/dashboard` 모두 동일 공통 패널(`RoadmapGenerationPanel`) 사용
-  - 분리된 유도/생성 화면을 채팅형 단일 플로우(질문 수집 -> AI 검증 -> 사용자 확인 -> 생성)로 통합
-- 비로그인 사용자 유도 개선:
-  - 생성화면은 그대로 노출
-  - 질문 입력/질문 진행/검증/생성 시도 시 기존 `SocialAuthModal` 즉시 오픈
-  - 로그인 페이지 리다이렉트 제거
-- 대시보드 필요 서류 연동:
-  - `GET /roadmaps/latest/detail` 기반으로 `DOCUMENT` 액션 렌더링
-  - 현재 단계 기준 문서만 표시
-  - 문서 상태(필수/완료) 표시 + 다운로드 링크(`download_url/file_url/template_url/source_url`) 지원
-- 로드맵 화면 기본 선택 개선:
-  - 페이즈 기본 선택을 현재 진행중(`IN_PROGRESS`) 단계 페이즈로 설정
-  - 진행중이 없으면 `PENDING` -> 미완료 -> 첫 페이즈 순으로 fallback
+- `feature/0-community-integration`를 `develop`에 병합 완료
+- 임시 브랜치 정리 완료:
+  - 로컬 `feature/0-community-integration` 삭제
+  - 원격 `origin/feature/0-community-integration` 삭제
+- 운영 콘솔 ActionKit 진입 추가:
+  - Ops 메인 카드에 `액션 키트 관리` 추가
+  - 신규 페이지 `/ops/actionkit` 추가(운영자 권한 가드 적용)
+- 컨텍스트 문서 반영:
+  - `docs/context/dev-status.md` Sync Note 업데이트
 
 ## 검증
-- Frontend: `cd app-frontend && npm run lint` 통과
-- Frontend: `cd app-frontend && npm run build` 통과
+- Frontend: `cd app-frontend && npm run lint` 통과 (경고 2건: `no-img-element`)
+- Pre-push hook: Backend `pytest -q` 통과 (`24 passed`)
+- Pre-push hook: Frontend lint 통과 (동일 경고 2건)
 
 ## 다음 세션 시작점
-1. 대시보드 필요 서류 카드에서 전체 보기/로드맵 딥링크 여부 결정
-2. 다운로드 링크 없는 문서 항목의 생성 규칙(백엔드 프롬프트/정규화) 보강
-3. 채팅형 생성 UI 시각 디테일(버블/타이포/상태 메시지) 정제
-4. OpenAPI 타입 동기화 및 미사용 컴포넌트 정리
+1. `/ops/actionkit` 실제 관리 기능(업로드 승인/반려, 변경 이력, 카테고리 상태) 구현
+2. `/ops/growth-club` 신고 큐/조치 API 및 화면 구현
+3. Ops IA 재정의(운영 리포트 명칭/카드 구성 확정)
 
 ## 리스크/메모
-- 문서 다운로드 링크는 데이터 소스에 URL이 있어야 활성화됨
-- 로드맵 생성은 `app-worker`/Redis 미기동 시 진행되지 않음
-- 워킹트리에 다수 변경이 누적되어 있어 PR 분리 전략이 필요함
+- `/ops/actionkit`는 현재 화면 골격 단계이며 백엔드 전용 Ops API는 아직 미구현

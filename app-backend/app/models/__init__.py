@@ -1,3 +1,19 @@
+from app.models.actionkit import (
+    ActionKitCategory,
+    ActionKitFile,
+    ActionKitItem,
+    ActionKitItemHighlight,
+    ActionKitRelatedLaw,
+)
+from app.models.growth_club import (
+    GrowthClubAttachmentRead,
+    GrowthClubComment,
+    GrowthClubCommentRead,
+    GrowthClubPostAttachment,
+    GrowthClubPost,
+    GrowthClubPostLike,
+    GrowthClubPostRead,
+)
 from app.models.roadmap import (
     Roadmap,
     RoadmapGenerationJob,
@@ -10,7 +26,19 @@ from app.models.user import AuthenticatedUser, TokenWithUser, User, UserRead
 from app.models.profile import UserProfile, UserProfileRead, UserProfileUpdate
 
 __all__ = [
+    "ActionKitCategory",
+    "ActionKitFile",
+    "ActionKitItem",
+    "ActionKitItemHighlight",
+    "ActionKitRelatedLaw",
     "AuthenticatedUser",
+    "GrowthClubAttachmentRead",
+    "GrowthClubComment",
+    "GrowthClubCommentRead",
+    "GrowthClubPostAttachment",
+    "GrowthClubPost",
+    "GrowthClubPostLike",
+    "GrowthClubPostRead",
     "Roadmap",
     "RoadmapGenerationJob",
     "RoadmapStep",

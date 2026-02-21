@@ -57,6 +57,10 @@ class GenerationPayload:
     business_type: str
     location: str
     description: str
+    startup_type: str | None = None
+    open_timeline: str | None = None
+    budget_range: str | None = None
+    additional_notes: str = ""
     goal_horizon_days: int = 30
     experience_level: str = "BEGINNER"
 
@@ -122,6 +126,10 @@ class RoadmapGenerationService:
                 business_type=payload.business_type,
                 location=payload.location,
                 description=payload.description,
+                startup_type=payload.startup_type,
+                open_timeline=payload.open_timeline,
+                budget_range=payload.budget_range,
+                additional_notes=payload.additional_notes,
                 created_by=job.user_id,
             )
             await self.roadmap_repo.create_steps_with_details(
@@ -142,7 +150,12 @@ class RoadmapGenerationService:
         prompt = (
             "업종/지역 기반 창업 로드맵 상위 단계를 JSON만으로 생성해 주세요.\n"
             "필수 키: title, summary, phases(list of phase string).\n"
-            f"업종: {payload.business_type}\n지역: {payload.location}\n설명: {payload.description}"
+            f"업종: {payload.business_type}\n지역: {payload.location}\n"
+            f"창업 형태: {payload.startup_type or '미입력'}\n"
+            f"오픈 목표: {payload.open_timeline or '미입력'}\n"
+            f"예산 범위: {payload.budget_range or '미입력'}\n"
+            f"추가 설명: {payload.description}\n"
+            f"추가 메모: {payload.additional_notes}"
         )
         for _ in range(2):
             raw = await self.rag_service.query(prompt)
@@ -178,7 +191,12 @@ class RoadmapGenerationService:
             "다음 phase의 상세 실행 단계를 JSON으로 생성해 주세요.\n"
             "필수 키: phase, title, objective, checklist(array), legal_basis(array[{title,snippet,source_url}]),"
             " documents(array[{name,type,source_url,download_url,template_url,file_url}]), estimated_days, risk_notes(array)\n"
-            f"phase: {phase_name}\n업종: {payload.business_type}\n지역: {payload.location}\n설명: {payload.description}"
+            f"phase: {phase_name}\n업종: {payload.business_type}\n지역: {payload.location}\n"
+            f"창업 형태: {payload.startup_type or '미입력'}\n"
+            f"오픈 목표: {payload.open_timeline or '미입력'}\n"
+            f"예산 범위: {payload.budget_range or '미입력'}\n"
+            f"추가 설명: {payload.description}\n"
+            f"추가 메모: {payload.additional_notes}"
         )
         for _ in range(2):
             raw = await self.rag_service.query(prompt)

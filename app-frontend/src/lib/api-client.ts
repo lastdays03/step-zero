@@ -2,6 +2,8 @@ import axios from "axios";
 
 const explicitBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
 const apiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
+const AUTH_STORAGE_EVENT = "auth-storage-changed";
+const ROADMAP_JOB_STORAGE_KEY = "roadmap_polling_job_id";
 
 const baseURL = explicitBaseUrl
     || (apiUrl ? `${apiUrl.replace(/\/$/, "")}/api/v1` : "http://localhost:8000/api/v1");
@@ -27,3 +29,21 @@ apiClient.interceptors.request.use((config) => {
 
     return config;
 });
+
+apiClient.interceptors.response.use(
+    (response) => response,
+    (error) => {
+        if (
+            typeof window !== "undefined"
+            && error?.response?.status === 401
+            && localStorage.getItem("token")
+        ) {
+            localStorage.removeItem("token");
+            localStorage.removeItem("user");
+            localStorage.removeItem("current_team_id");
+            localStorage.removeItem(ROADMAP_JOB_STORAGE_KEY);
+            window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
+        }
+        return Promise.reject(error);
+    }
+);

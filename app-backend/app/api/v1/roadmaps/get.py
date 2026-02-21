@@ -1,7 +1,7 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
@@ -83,7 +83,13 @@ async def _serialize_roadmap_detail(
     )
 
 
-@router.get("/latest/detail", response_model=RoadmapDetailResponse)
+@router.get(
+    "/latest/detail",
+    response_model=RoadmapDetailResponse,
+    summary="최신 로드맵 상세 조회",
+    description="현재 팀의 최신 로드맵과 단계/액션 상세를 조회합니다.",
+    response_description="최신 로드맵 상세 정보를 반환합니다.",
+)
 async def get_latest_roadmap_detail(
     current_team: Team = Depends(deps.get_current_team),
     session: AsyncSession = Depends(get_session),
@@ -95,9 +101,15 @@ async def get_latest_roadmap_detail(
     return await _serialize_roadmap_detail(repo=repo, roadmap=roadmap)
 
 
-@router.get("/{roadmap_id}", response_model=RoadmapResponse)
+@router.get(
+    "/{roadmap_id}",
+    response_model=RoadmapResponse,
+    summary="로드맵 조회",
+    description="로드맵 ID로 기본 단계 목록을 조회합니다.",
+    response_description="로드맵 기본 정보와 단계 목록을 반환합니다.",
+)
 async def get_roadmap(
-    roadmap_id: UUID,
+    roadmap_id: UUID = Path(description="조회할 로드맵 ID"),
     current_team: Team = Depends(deps.get_current_team),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
@@ -113,9 +125,15 @@ async def get_roadmap(
     }
 
 
-@router.get("/{roadmap_id}/detail", response_model=RoadmapDetailResponse)
+@router.get(
+    "/{roadmap_id}/detail",
+    response_model=RoadmapDetailResponse,
+    summary="로드맵 상세 조회",
+    description="로드맵 ID로 단계 상세와 액션 목록까지 포함해 조회합니다.",
+    response_description="로드맵 상세 정보를 반환합니다.",
+)
 async def get_roadmap_detail(
-    roadmap_id: UUID,
+    roadmap_id: UUID = Path(description="상세 조회할 로드맵 ID"),
     current_team: Team = Depends(deps.get_current_team),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
@@ -126,10 +144,16 @@ async def get_roadmap_detail(
     return await _serialize_roadmap_detail(repo=repo, roadmap=roadmap)
 
 
-@router.patch("/tasks/{step_id}", response_model=RoadmapStepResponse)
+@router.patch(
+    "/tasks/{step_id}",
+    response_model=RoadmapStepResponse,
+    summary="로드맵 단계 상태 변경",
+    description="특정 단계의 진행 상태를 변경합니다.",
+    response_description="변경된 단계 정보를 반환합니다.",
+)
 async def update_roadmap_step_status(
-    step_id: int,
     request: RoadmapStepStatusUpdateRequest,
+    step_id: int = Path(description="상태를 변경할 로드맵 단계 ID"),
     current_team: Team = Depends(deps.get_current_team),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
@@ -155,11 +179,17 @@ async def update_roadmap_step_status(
     return RoadmapStepResponse(id=step.id, title=step.title, status=step.status)
 
 
-@router.patch("/tasks/{step_id}/actions/{action_id}", response_model=RoadmapStepActionResponse)
+@router.patch(
+    "/tasks/{step_id}/actions/{action_id}",
+    response_model=RoadmapStepActionResponse,
+    summary="로드맵 액션 완료 상태 변경",
+    description="특정 단계의 액션 완료 여부를 변경합니다.",
+    response_description="변경된 액션 정보를 반환합니다.",
+)
 async def update_roadmap_step_action(
-    step_id: int,
-    action_id: int,
     request: RoadmapStepActionUpdateRequest,
+    step_id: int = Path(description="액션이 속한 로드맵 단계 ID"),
+    action_id: int = Path(description="완료 상태를 변경할 액션 ID"),
     current_team: Team = Depends(deps.get_current_team),
     session: AsyncSession = Depends(get_session),
 ) -> Any:

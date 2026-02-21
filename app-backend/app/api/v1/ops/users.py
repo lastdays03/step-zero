@@ -20,7 +20,13 @@ class OpsUserRead(BaseModel):
     created_at: datetime
 
 
-@router.get("", response_model=list[OpsUserRead])
+@router.get(
+    "",
+    response_model=list[OpsUserRead],
+    summary="운영 사용자 목록 조회",
+    description="최근 생성된 사용자 목록(최대 50건)을 운영자 화면용으로 조회합니다.",
+    response_description="운영 사용자 목록을 반환합니다.",
+)
 async def list_ops_users(
     session: AsyncSession = Depends(get_session),
 ) -> list[OpsUserRead]:
