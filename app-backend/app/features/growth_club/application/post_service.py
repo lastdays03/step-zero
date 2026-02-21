@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
 from app.core.config import get_settings
-from app.models.growth_club import GrowthClubPost, GrowthClubPostAttachment
+from app.models.growth_club import GrowthClubPost, GrowthClubPostAttachment, GrowthClubTag
 from app.models.profile import UserProfile
 from app.models.user import AuthenticatedUser
 
@@ -64,6 +64,7 @@ class GrowthClubPostService:
         category: str,
         prepared_images: list[tuple[UploadFile, bytes]],
         prepared_files: list[tuple[UploadFile, bytes]],
+        tags: list[str] = [],
     ) -> int:
         attachment_rows: list[GrowthClubPostAttachment] = []
         saved_object_keys: list[str] = []
@@ -114,6 +115,23 @@ class GrowthClubPostService:
                 industry=industry,
             )
             db_post.attachments = attachment_rows
+            
+            # 태그 처리
+            if tags:
+                tag_rows = []
+                for tag_name in tags:
+                    tag_name = tag_name.strip()
+                    if not tag_name:
+                        continue
+                    tag_stmt = select(GrowthClubTag).where(GrowthClubTag.name == tag_name)
+                    tag_result = await self.session.execute(tag_stmt)
+                    tag_obj = tag_result.scalar_one_or_none()
+                    if not tag_obj:
+                        tag_obj = GrowthClubTag(name=tag_name)
+                        self.session.add(tag_obj)
+                    tag_rows.append(tag_obj)
+                db_post.tags = tag_rows
+
             self.session.add(db_post)
             await self.session.flush()
             post_id = db_post.id

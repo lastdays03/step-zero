@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Post } from '../types';
 import { growthClubApi } from '../api';
 
-export const usePosts = (category: string = 'all', search?: string) => {
+export const usePosts = (category: string = 'all', search?: string, searchType: string = 'all') => {
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);
@@ -10,7 +10,7 @@ export const usePosts = (category: string = 'all', search?: string) => {
     const fetchPosts = useCallback(async () => {
         setIsLoading(true);
         try {
-            const data = await growthClubApi.getPosts(category, search);
+            const data = await growthClubApi.getPosts(category, search, searchType);
             setPosts(data);
             setError(null);
         } catch (err) {
@@ -18,7 +18,7 @@ export const usePosts = (category: string = 'all', search?: string) => {
         } finally {
             setIsLoading(false);
         }
-    }, [category, search]);
+    }, [category, search, searchType]);
 
     useEffect(() => {
         fetchPosts();

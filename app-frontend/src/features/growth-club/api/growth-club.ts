@@ -2,9 +2,12 @@ import { apiClient } from '@/lib/api-client';
 import { Post } from '../types';
 
 export const growthClubApi = {
-    getPosts: async (category: string = 'all', search?: string): Promise<Post[]> => {
-        const params: { category: string; search?: string } = { category };
-        if (search) params.search = search;
+    getPosts: async (category: string = 'all', search?: string, searchType: string = 'all'): Promise<Post[]> => {
+        const params: { category: string; search?: string; search_type?: string } = { category };
+        if (search) {
+            params.search = search;
+            params.search_type = searchType;
+        }
         try {
             const res = await apiClient.get<Post[]>('/growth-club/posts', { params });
             return res.data;

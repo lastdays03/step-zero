@@ -67,6 +67,23 @@ class GrowthClubPostReport(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+class GrowthClubPostTagLink(SQLModel, table=True):
+    post_id: Optional[int] = Field(
+        default=None, foreign_key="growthclubpost.id", primary_key=True
+    )
+    tag_id: Optional[int] = Field(
+        default=None, foreign_key="growthclubtag.id", primary_key=True
+    )
+
+class GrowthClubTag(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    
+    posts: list["GrowthClubPost"] = Relationship(
+        back_populates="tags", link_model=GrowthClubPostTagLink
+    )
+
 class GrowthClubPost(GrowthClubPostBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     author_id: int = Field(foreign_key="user.id")
@@ -85,6 +102,9 @@ class GrowthClubPost(GrowthClubPostBase, table=True):
     attachments: list["GrowthClubPostAttachment"] = Relationship(
         back_populates="post",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
+    tags: list[GrowthClubTag] = Relationship(
+        back_populates="posts", link_model=GrowthClubPostTagLink
     )
 
 
@@ -150,7 +170,18 @@ class GrowthClubPostRead(GrowthClubPostBase):
     author: AuthorRead
     comments: list[GrowthClubCommentRead] = Field(default_factory=list)
     attachments: list[GrowthClubAttachmentRead] = Field(default_factory=list)
+    tags: list[str] = Field(default_factory=list)
     report_count: int
     likes_count: int = 0
     is_liked: bool = False
     is_reported: bool = False
+
+    @model_validator(mode="before")
+    @classmethod
+    def extract_tag_names(cls, data: Any) -> Any:
+        if hasattr(data, "tags") and data.tags:
+            # If it's an ORM object, convert tags to list of strings
+            obj_dict = dict(data) if isinstance(data, dict) else {k: getattr(data, k) for k in data.__class__.__table__.columns.keys()}
+            obj_dict["tags"] = [tag.name for tag in data.tags]
+            return obj_dict
+        return data

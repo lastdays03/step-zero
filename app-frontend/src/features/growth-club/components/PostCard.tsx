@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { Post } from '../types';
-import { MessageSquare, ThumbsUp, Trash2, AlertCircle, Paperclip } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Trash2, AlertCircle, Paperclip, Hash } from 'lucide-react';
 
 import { useAuth } from '@/providers/AuthProvider';
 import { growthClubApi } from '../api';
@@ -171,6 +171,17 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
                 {post.content}
             </p>
 
+            {post.tags && post.tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                    {post.tags.map((tag) => (
+                        <span key={tag} className="flex items-center text-blue-600 dark:text-blue-400 text-sm hover:underline cursor-pointer">
+                            <Hash size={14} className="mr-0.5" />
+                            {tag}
+                        </span>
+                    ))}
+                </div>
+            )}
+
             {imageAttachments.length > 0 && (
                 <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {imageAttachments.map((attachment) => (
@@ -224,8 +235,8 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
                         onClick={handleReport}
                         disabled={isReported || isReporting}
                         className={`flex items-center gap-2 text-sm ml-auto transition-colors ${isReported
-                                ? 'text-red-500 cursor-default opacity-80'
-                                : 'text-zinc-500 hover:text-red-500'
+                            ? 'text-red-500 cursor-default opacity-80'
+                            : 'text-zinc-500 hover:text-red-500'
                             }`}
                         title={isReported ? '이미 신고한 게시글입니다' : '게시글 신고'}
                     >

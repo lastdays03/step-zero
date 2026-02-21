@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
-import { Camera, Paperclip, Send, X, FileText } from 'lucide-react';
+import { Camera, Paperclip, Send, X, FileText, Hash } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { growthClubApi } from '../api';
 
@@ -29,6 +29,8 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [category, setCategory] = useState('free');
+    const [tagInput, setTagInput] = useState('');
+    const [tags, setTags] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     // 파일 업로드 상태
@@ -148,6 +150,23 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
+    const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            const val = tagInput.trim().replace(/^#/, '').replace(/,$/, '');
+            if (val && !tags.includes(val)) {
+                setTags([...tags, val]);
+            }
+            setTagInput('');
+        } else if (e.key === 'Backspace' && !tagInput && tags.length > 0) {
+            setTags(tags.slice(0, -1));
+        }
+    };
+
+    const removeTag = (tagToRemove: string) => {
+        setTags(tags.filter(t => t !== tagToRemove));
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title || !content) return;
@@ -158,6 +177,9 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
             formData.append('title', title);
             formData.append('content', content);
             formData.append('category', category);
+            if (tags.length > 0) {
+                formData.append('tags', tags.join(','));
+            }
 
             imageFiles.forEach((it) => formData.append('images', it));
             otherFiles.forEach((it) => formData.append('files', it));
@@ -168,6 +190,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
             setImageFiles([]);
             setImagePreviews([]);
             setOtherFiles([]);
+            setTags([]);
             if (imageInputRef.current) imageInputRef.current.value = '';
             if (fileInputRef.current) fileInputRef.current.value = '';
             onSuccess();
@@ -218,6 +241,29 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
                     rows={4}
                     className="w-full bg-transparent text-sm placeholder:text-zinc-400 focus:outline-none resize-none dark:text-zinc-300"
                 />
+
+                {/* 태그 입력 영역 */}
+                <div className="flex flex-wrap items-center gap-2 p-2 bg-zinc-50 dark:bg-zinc-800/50 rounded-xl border border-dashed border-zinc-200 dark:border-zinc-700">
+                    <div className="flex items-center gap-1 text-zinc-400">
+                        <Hash size={16} />
+                    </div>
+                    {tags.map((tag) => (
+                        <span key={tag} className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-medium rounded-md">
+                            #{tag}
+                            <button type="button" onClick={() => removeTag(tag)} className="hover:text-blue-800">
+                                <X size={10} />
+                            </button>
+                        </span>
+                    ))}
+                    <input
+                        type="text"
+                        placeholder="태그 입력 (엔터 또는 쉼표)"
+                        value={tagInput}
+                        onChange={(e) => setTagInput(e.target.value)}
+                        onKeyDown={handleTagKeyDown}
+                        className="flex-1 bg-transparent text-xs focus:outline-none placeholder:text-zinc-400 min-w-[120px]"
+                    />
+                </div>
 
                 {/* 이미지 미리보기 및 파일 목록 */}
                 {(imagePreviews.length > 0 || otherFiles.length > 0) && (

@@ -2,6 +2,7 @@ import pathlib
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Path, Query, UploadFile
+from sqlalchemy import or_
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -111,11 +112,11 @@ async def _validate_and_read_uploads(
 )
 async def list_posts(
     category: str = Query(default="all", description="카테고리 필터 (`all`이면 전체)"),
-    search: Optional[str] = Query(default=None, description="제목/내용 검색어"),
+    search: Optional[str] = Query(default=None, description="검색어"),
+    search_type: str = Query(default="all", description="검색 유형 (all, title, content, tag)"),
     current_user: Optional[AuthenticatedUser] = Depends(get_optional_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-
     """게시글 목록 조회 (검색 및 카테고리 필터링 포함)"""
     query = (
         select(GrowthClubPost)
@@ -126,16 +127,29 @@ async def list_posts(
             selectinload(GrowthClubPost.likes),
             selectinload(GrowthClubPost.reports),
             selectinload(GrowthClubPost.attachments),
+            selectinload(GrowthClubPost.tags),
         )
     )
 
     if category != "all":
         query = query.where(GrowthClubPost.category == category)
+        
     if search:
-        query = query.where(
-            (GrowthClubPost.title.contains(search))
-            | (GrowthClubPost.content.contains(search))
-        )
+        search = search.strip()
+        if search_type == "title":
+            query = query.where(GrowthClubPost.title.contains(search))
+        elif search_type == "content":
+            query = query.where(GrowthClubPost.content.contains(search))
+        elif search_type == "tag":
+            from app.models.growth_club import GrowthClubTag
+            query = query.join(GrowthClubPost.tags).where(GrowthClubTag.name.contains(search))
+        else:
+            query = query.where(
+                or_(
+                    GrowthClubPost.title.contains(search),
+                    GrowthClubPost.content.contains(search)
+                )
+            )
     
     query = query.order_by(GrowthClubPost.created_at.desc())
     result = await session.execute(query)
@@ -164,12 +178,18 @@ async def create_post(
     title: str = Form(..., description="게시글 제목"),
     content: str = Form(..., description="게시글 본문"),
     category: str = Form("free", description="게시글 카테고리"),
+    tags: Optional[str] = Form(None, description="쉼표로 구분된 태그 목록"),
     images: list[UploadFile] = File(default=[], description="첨부 이미지 목록"),
     files: list[UploadFile] = File(default=[], description="첨부 문서 파일 목록"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
     """새 게시글 작성"""
+    # 태그 파싱
+    parsed_tags = []
+    if tags:
+        parsed_tags = [t.strip() for t in tags.split(",") if t.strip()]
+
     image_uploads = [u for u in images if u is not None]
     file_uploads = [u for u in files if u is not None]
     prepared_images, total_bytes = await _validate_and_read_uploads(
@@ -191,6 +211,7 @@ async def create_post(
         category=category,
         prepared_images=prepared_images,
         prepared_files=prepared_files,
+        tags=parsed_tags,
     )
 
     

@@ -4,11 +4,19 @@ import React, { useState } from 'react';
 import { PostCard, CreatePostForm } from '@/features/growth-club';
 import { usePosts } from '@/features/growth-club';
 import { useAuth } from '@/providers/AuthProvider';
+import { Search, ChevronDown } from 'lucide-react';
 
 export default function GrowthClubPage() {
     const { isLoggedIn } = useAuth();
     const [category, setCategory] = useState('all');
-    const { posts, isLoading, error, refetch } = usePosts(category);
+    const [search, setSearch] = useState('');
+    const [searchType, setSearchType] = useState('all');
+    const { posts, isLoading, error, refetch } = usePosts(category, search, searchType);
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        refetch();
+    };
 
     return (
         <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
@@ -21,7 +29,37 @@ export default function GrowthClubPage() {
                 </p>
             </header>
 
-            <div className="grid grid-cols-1 gap-8">
+            <div className="grid grid-cols-1 gap-6">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    {/* 게시물 작성 버튼/폼 공간의 상단/우측에 검색창 배치 */}
+                    <div className="flex-1 max-w-sm ml-auto relative group">
+                        <form onSubmit={handleSearch} className="relative flex items-center">
+                            <div className="absolute left-3 p-1.5 pointer-events-none">
+                                <Search size={18} className="text-zinc-400 group-focus-within:text-blue-500 transition-colors" />
+                            </div>
+                            <div className="flex w-full items-center bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500 transition-all shadow-sm">
+                                <select
+                                    value={searchType}
+                                    onChange={(e) => setSearchType(e.target.value)}
+                                    className="pl-10 pr-2 py-2.5 text-xs font-semibold bg-zinc-50 dark:bg-zinc-800/50 border-r border-zinc-200 dark:border-zinc-800 focus:outline-none text-zinc-600 dark:text-zinc-400 cursor-pointer appearance-none"
+                                >
+                                    <option value="all">전체</option>
+                                    <option value="title">제목</option>
+                                    <option value="content">내용</option>
+                                    <option value="tag">태그</option>
+                                </select>
+                                <input
+                                    type="text"
+                                    placeholder="무엇을 찾으시나요?"
+                                    value={search}
+                                    onChange={(e) => setSearch(e.target.value)}
+                                    className="w-full pl-3 pr-4 py-2.5 text-sm bg-transparent focus:outline-none dark:text-white"
+                                />
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
                 {isLoggedIn ? (
                     <section>
                         <CreatePostForm onSuccess={refetch} />

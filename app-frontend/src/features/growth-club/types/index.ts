@@ -42,4 +42,5 @@ export interface Post {
     likes_count: number;
     is_liked: boolean;
     is_reported: boolean;
+    tags: string[];
 }
