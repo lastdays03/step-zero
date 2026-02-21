@@ -9,6 +9,8 @@ from sqlmodel import select
 from app.core.config import get_settings
 from app.models.profile import UserProfile, UserProfileUpdate
 from app.models.user import User
+from app.models.roadmap import Roadmap
+from sqlalchemy import desc
 
 
 class ProfileService:
@@ -29,6 +31,24 @@ class ProfileService:
             self.session.add(profile)
             await self.session.commit()
             await self.session.refresh(profile)
+            
+        # UX Data Binding: 대시보드에서 입력한 업종/지역 정보 연동
+        if not profile.category or not profile.region:
+            roadmap_stmt = (
+                select(Roadmap)
+                .where(Roadmap.created_by == user_id)
+                .where(Roadmap.deleted_at.is_(None))
+                .order_by(desc(Roadmap.created_at))
+                .limit(1)
+            )
+            roadmap_result = await self.session.execute(roadmap_stmt)
+            latest_roadmap = roadmap_result.scalar_one_or_none()
+            
+            if latest_roadmap:
+                if not profile.category and latest_roadmap.business_type:
+                    profile.category = latest_roadmap.business_type
+                if not profile.region and latest_roadmap.location:
+                    profile.region = latest_roadmap.location
         
         return profile
 
