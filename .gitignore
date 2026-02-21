@@ -25,8 +25,11 @@ env/
 .env.development.local
 .env.test.local
 .env.production.local
+!.env.example
 !app-backend/.env.example
+!app-backend/.env.docker.local.example
 !app-frontend/.env.example
+!app-frontend/.env.docker.local.example
 
 # ---------------
 # Python (Backend)

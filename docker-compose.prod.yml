@@ -1,0 +1,102 @@
+services:
+  app-db:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    env_file:
+      - path: ./app-backend/.env
+        required: true
+      - path: ./app-backend/.env.local
+        required: false
+      - path: ./app-backend/.env.docker.local
+        required: false
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - stepzero-network
+
+  app-redis:
+    image: redis:alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+    networks:
+      - stepzero-network
+
+  app-backend:
+    build:
+      context: ./app-backend
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: ./app-backend/.env
+        required: true
+      - path: ./app-backend/.env.local
+        required: false
+      - path: ./app-backend/.env.docker.local
+        required: false
+    depends_on:
+      app-db:
+        condition: service_healthy
+      app-redis:
+        condition: service_healthy
+    networks:
+      - stepzero-network
+
+  app-worker:
+    build:
+      context: ./app-backend
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    command: python -m arq app.workers.roadmap_worker.WorkerSettings
+    env_file:
+      - path: ./app-backend/.env
+        required: true
+      - path: ./app-backend/.env.local
+        required: false
+      - path: ./app-backend/.env.docker.local
+        required: false
+    depends_on:
+      app-db:
+        condition: service_healthy
+      app-redis:
+        condition: service_healthy
+    networks:
+      - stepzero-network
+
+  app-frontend:
+    build:
+      context: ./app-frontend
+      dockerfile: Dockerfile.prod
+    restart: unless-stopped
+    env_file:
+      - path: ./app-frontend/.env
+        required: true
+      - path: ./app-frontend/.env.local
+        required: false
+      - path: ./app-frontend/.env.docker.local
+        required: false
+    ports:
+      - "3000:3000"
+    depends_on:
+      - app-backend
+      - app-worker
+    networks:
+      - stepzero-network
+
+volumes:
+  db_data:
+
+networks:
+  stepzero-network:
+    driver: bridge
