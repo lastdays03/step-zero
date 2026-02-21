@@ -61,6 +61,12 @@ class GrowthClubPostLike(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id", primary_key=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
+
+class GrowthClubPostReport(SQLModel, table=True):
+    post_id: int = Field(foreign_key="growthclubpost.id", primary_key=True)
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
 class GrowthClubPost(GrowthClubPostBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     author_id: int = Field(foreign_key="user.id")
@@ -75,6 +81,7 @@ class GrowthClubPost(GrowthClubPostBase, table=True):
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
     likes: list[GrowthClubPostLike] = Relationship(sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    reports: list["GrowthClubPostReport"] = Relationship(sa_relationship_kwargs={"cascade": "all, delete-orphan"})
     attachments: list["GrowthClubPostAttachment"] = Relationship(
         back_populates="post",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
@@ -146,3 +153,4 @@ class GrowthClubPostRead(GrowthClubPostBase):
     report_count: int
     likes_count: int = 0
     is_liked: bool = False
+    is_reported: bool = False

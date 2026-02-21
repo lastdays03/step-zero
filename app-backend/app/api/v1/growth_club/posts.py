@@ -16,6 +16,7 @@ from app.models.growth_club import (
     GrowthClubPost,
     GrowthClubPostLike,
     GrowthClubPostRead,
+    GrowthClubPostReport,
 )
 from app.models.user import AuthenticatedUser, User
 
@@ -123,6 +124,7 @@ async def list_posts(
             selectinload(GrowthClubPost.author).selectinload(User.profile),
             selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author).selectinload(User.profile),
             selectinload(GrowthClubPost.likes),
+            selectinload(GrowthClubPost.reports),
             selectinload(GrowthClubPost.attachments),
         )
     )
@@ -146,6 +148,7 @@ async def list_posts(
         post_read.likes_count = len(post.likes)
         if current_user:
             post_read.is_liked = any(like.user_id == current_user.id for like in post.likes)
+            post_read.is_reported = any(r.user_id == current_user.id for r in post.reports)
         read_posts.append(post_read)
         
     return read_posts
@@ -199,6 +202,7 @@ async def create_post(
             selectinload(GrowthClubPost.author).selectinload(User.profile),
             selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author).selectinload(User.profile),
             selectinload(GrowthClubPost.likes),
+            selectinload(GrowthClubPost.reports),
             selectinload(GrowthClubPost.attachments),
         )
     )
@@ -208,6 +212,8 @@ async def create_post(
     post_read = GrowthClubPostRead.model_validate(post)
     post_read.likes_count = len(post.likes)
     post_read.is_liked = any(like.user_id == current_user.id for like in post.likes)
+    post_reported_user_ids = [r.user_id for r in post.reports]
+    post_read.is_reported = current_user.id in post_reported_user_ids
     return post_read
 
 @router.delete(
@@ -249,10 +255,23 @@ async def report_post(
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    """게시글 신고 (5회 이상 신고 시 자동 블라인드)"""
+    """게시글 신고 (중복 신고 불가, 5회 이상 신고 시 자동 블라인드)"""
     db_post = await session.get(GrowthClubPost, post_id)
     if not db_post:
         raise HTTPException(status_code=404, detail="Post not found")
+
+    # 이미 신고했는지 확인
+    existing_report_query = select(GrowthClubPostReport).where(
+        GrowthClubPostReport.post_id == post_id,
+        GrowthClubPostReport.user_id == current_user.id
+    )
+    existing_report_result = await session.execute(existing_report_query)
+    if existing_report_result.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="이미 신고한 게시글입니다.")
+
+    # 신고 기록 생성
+    new_report = GrowthClubPostReport(post_id=post_id, user_id=current_user.id)
+    session.add(new_report)
 
     # 신고 횟수 증가
     db_post.report_count += 1

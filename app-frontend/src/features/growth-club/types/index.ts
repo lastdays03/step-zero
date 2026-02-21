@@ -41,4 +41,5 @@ export interface Post {
     report_count: number;
     likes_count: number;
     is_liked: boolean;
+    is_reported: boolean;
 }

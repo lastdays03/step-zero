@@ -27,6 +27,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
     const [liked, setLiked] = useState(post.is_liked);
     const [likesCount, setLikesCount] = useState(post.likes_count);
     const [isLiking, setIsLiking] = useState(false);
+
+    // 신고 상태 관리를 위한 로컬 스테이트
+    const [isReported, setIsReported] = useState(post.is_reported);
+    const [isReporting, setIsReporting] = useState(false);
     const attachments = post.attachments ?? [];
     const imageAttachments = attachments.filter((it) => it.kind === "image");
     const fileAttachments = attachments.filter((it) => it.kind === "file");
@@ -54,19 +58,38 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
     };
 
     const handleReport = async () => {
+        if (!user) {
+            alert('게시글을 신고하려면 로그인해야 합니다.');
+            return;
+        }
+
+        if (isReported) {
+            alert('이미 신고한 게시글입니다.');
+            return;
+        }
+
         if (!window.confirm('이 게시물을 신고하시겠습니까?')) return;
 
+        setIsReporting(true);
         try {
             const result = await growthClubApi.reportPost(post.id);
+            setIsReported(true);
             alert(result.message);
             if (result.is_blinded && onDeleteSuccess) {
-                onDeleteSuccess(); // 블라인드 처리되면 목록에서 제거하기 위해 같은 콜백 사용
+                onDeleteSuccess();
             } else if (onReportSuccess) {
                 onReportSuccess();
             }
-        } catch (error) {
-            console.error('Failed to report post:', error);
-            alert('게시글 신고에 실패했습니다.');
+        } catch (error: any) {
+            if (error.response?.status === 409) {
+                alert('이미 신고한 게시글입니다.');
+                setIsReported(true);
+            } else {
+                console.error('Failed to report post:', error);
+                alert('게시글 신고에 실패했습니다.');
+            }
+        } finally {
+            setIsReporting(false);
         }
     };
 
@@ -199,11 +222,15 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
                 {!isAuthor && (
                     <button
                         onClick={handleReport}
-                        className="flex items-center gap-2 text-zinc-500 hover:text-red-500 text-sm ml-auto"
-                        title="게시글 신고"
+                        disabled={isReported || isReporting}
+                        className={`flex items-center gap-2 text-sm ml-auto transition-colors ${isReported
+                                ? 'text-red-500 cursor-default opacity-80'
+                                : 'text-zinc-500 hover:text-red-500'
+                            }`}
+                        title={isReported ? '이미 신고한 게시글입니다' : '게시글 신고'}
                     >
-                        <AlertCircle size={18} />
-                        <span>신고</span>
+                        <AlertCircle size={18} fill={isReported ? "currentColor" : "none"} />
+                        <span>{isReported ? '신고됨' : '신고'}</span>
                     </button>
                 )}
             </div>
