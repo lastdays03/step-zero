@@ -78,6 +78,34 @@ make test
 # 4) 마이그레이션 적용/검증
 make migrate-up
 make migrate-check
+
+# 5) ActionKit DB 데이터 동기화(팀 공통, Docker 권장)
+# [방법 A] 처음 세팅/재기동 시: 빌드 + 컨테이너 기동 후 적용
+cd ..
+docker compose -f docker-compose.dev.yml build app-backend
+docker compose -f docker-compose.dev.yml up -d app-db app-redis app-backend
+
+# (1) 마이그레이션 적용 (컨테이너 내부)
+docker exec -it stepzero-backend \
+  bash -lc "cd /app && ./scripts/run_alembic.sh upgrade head"
+
+# (2) ActionKit 시드 적용 (컨테이너 내부, 초기 1회 또는 데이터 리셋 후)
+docker exec -it stepzero-backend \
+  bash -lc "cd /app && python scripts/seed_actionkit.py"
+
+# (옵션) 위 (b)+(c)를 한 번에 실행
+cd app-backend
+ACTIONKIT_BOOTSTRAP_MODE=docker ./scripts/bootstrap_actionkit.sh
+
+# [방법 B] 이미 컨테이너가 실행 중일 때: 필요 시에만 exec로 적용
+cd ..
+# 마이그레이션만 필요할 때
+docker exec -it stepzero-backend \
+  bash -lc "cd /app && ./scripts/run_alembic.sh upgrade head"
+
+# 시드가 필요할 때만 별도 실행
+docker exec -it stepzero-backend \
+  bash -lc "cd /app && python scripts/seed_actionkit.py"
 ```
 
 > 참고:
@@ -85,6 +113,10 @@ make migrate-check
 > - `uv` 버전은 `app-backend/.uv-version`으로 고정합니다.
 > - macOS(26 계열)에서는 `uv` 패닉 이슈를 우회하기 위해 `setup_dev.sh`가 기본적으로 `python/pip` 경로를 사용합니다.
 > - `uv`를 강제로 쓰려면 `FORCE_UV=1 ./scripts/setup_dev.sh`를 사용하세요.
+> - 팀 공통 기준은 Docker 컨테이너 내부 실행 방식(방법 A/B)을 권장합니다.
+> - 시드(`seed_actionkit.py`)는 데이터가 이미 존재하면 skip 하므로 초기 적재/리셋 후에 주로 실행하면 됩니다.
+> - `bootstrap_actionkit.sh` 모드 강제: `ACTIONKIT_BOOTSTRAP_MODE=docker|local|auto`
+> - 본 저장소는 `app-backend` 컨테이너 이름을 `stepzero-backend`로 고정하므로 `docker exec` 기준 명령을 사용합니다.
 
 **3. Frontend 로컬 실행 (Node.js)**
 ```bash
