@@ -7,10 +7,13 @@ services:
     container_name: stepzero-db
     ports:
       - "5432:5432"
-    environment:
-      - POSTGRES_USER=stepzero_admin
-      - POSTGRES_PASSWORD=stepzero_password
-      - POSTGRES_DB=stepzero_db
+    env_file:
+      - path: ./app-backend/.env
+        required: true
+      - path: ./app-backend/.env.local
+        required: false
+      - path: ./app-backend/.env.docker.local
+        required: false
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./scripts/init_db.sh:/docker-entrypoint-initdb.d/init_db.sh
@@ -51,10 +54,13 @@ services:
       - "8000:8000"
     volumes:
       - ./app-backend:/app
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://stepzero_admin:stepzero_password@app-db:5432/stepzero_db
-      - REDIS_URL=redis://app-redis:6379
-      # - OPENAI_API_KEY=${OPENAI_API_KEY} # Load from .env
+    env_file:
+      - path: ./app-backend/.env
+        required: true
+      - path: ./app-backend/.env.local
+        required: false
+      - path: ./app-backend/.env.docker.local
+        required: false
     depends_on:
       app-db:
         condition: service_healthy
@@ -74,10 +80,13 @@ services:
     command: python -m arq app.workers.roadmap_worker.WorkerSettings
     volumes:
       - ./app-backend:/app
-    environment:
-      - DATABASE_URL=postgresql+asyncpg://stepzero_admin:stepzero_password@app-db:5432/stepzero_db
-      - REDIS_URL=redis://app-redis:6379
-      # - OPENAI_API_KEY=${OPENAI_API_KEY} # Load from .env
+    env_file:
+      - path: ./app-backend/.env
+        required: true
+      - path: ./app-backend/.env.local
+        required: false
+      - path: ./app-backend/.env.docker.local
+        required: false
     depends_on:
       app-db:
         condition: service_healthy
@@ -100,8 +109,13 @@ services:
     volumes:
       - ./app-frontend:/app
       - /app/node_modules # Avoid overwriting node_modules
-    environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
+    env_file:
+      - path: ./app-frontend/.env
+        required: true
+      - path: ./app-frontend/.env.local
+        required: false
+      - path: ./app-frontend/.env.docker.local
+        required: false
     depends_on:
       - app-backend
       - app-worker

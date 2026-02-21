@@ -87,7 +87,6 @@ class Settings(BaseSettings):
     
     model_config = SettingsConfigDict(
         case_sensitive=True,
-        # Load shared defaults first, then let local secrets override them.
         env_file=(".env", ".env.local"),
         env_file_encoding='utf-8',
         extra="ignore"

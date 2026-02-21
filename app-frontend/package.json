@@ -9,7 +9,7 @@
     "lint": "eslint . --ext .ts,.tsx,.js,.jsx",
     "test": "jest",
     "test:watch": "jest --watch",
-    "types:backend-openapi": "cd ../app-backend && .venv/bin/python scripts/export_openapi.py",
+    "types:backend-openapi": "docker exec -i stepzero-backend bash -lc \"cd /app && python scripts/export_openapi.py\"",
     "types:generate": "node scripts/generate_api_types.mjs",
     "types:sync": "npm run types:backend-openapi && npm run types:generate"
   },
