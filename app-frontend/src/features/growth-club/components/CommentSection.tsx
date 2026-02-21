@@ -7,6 +7,8 @@ import { growthClubApi } from '../api';
 import { Reply, CornerDownRight } from 'lucide-react';
 import { useTimeAgo } from '../hooks';
 
+import { resolveUploadUrl } from '../utils/upload-url';
+
 interface CommentSectionProps {
     postId: number;
     initialComments: Comment[];
@@ -95,8 +97,19 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
                     {isReply && <CornerDownRight className="text-zinc-300 mt-1" size={16} />}
                     <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-bold text-zinc-900 dark:text-white">
+                            <div className="flex items-center gap-2 flex-1">
+                                {comment.author?.profile_img && comment.author.profile_img !== 'default.png' ? (
+                                    <img
+                                        src={resolveUploadUrl(comment.author.profile_img)}
+                                        alt={comment.author.username}
+                                        className="w-5 h-5 rounded-full object-cover shrink-0"
+                                    />
+                                ) : (
+                                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-[10px] shrink-0">
+                                        {comment.author?.username?.[0] || '?'}
+                                    </div>
+                                )}
+                                <span className="text-[13px] font-bold text-zinc-900 dark:text-white truncate">
                                     {comment.author?.username || '알 수 없음'}
                                 </span>
                                 <span className="text-[10px] text-zinc-400">

@@ -103,9 +103,17 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
         <article className={`bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
             <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                        {post.author.username[0]}
-                    </div>
+                    {post.author.profile_img && post.author.profile_img !== 'default.png' ? (
+                        <img
+                            src={resolveUploadUrl(post.author.profile_img)}
+                            alt={post.author.username}
+                            className="w-10 h-10 rounded-full object-cover shrink-0"
+                        />
+                    ) : (
+                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
+                            {post.author.username?.[0] || '?'}
+                        </div>
+                    )}
                     <div>
                         <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{post.author.username}</h3>
                         <p className="text-xs text-zinc-500">

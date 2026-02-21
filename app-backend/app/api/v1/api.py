@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.actionkit import router as actionkit_router
+from app.api.v1.actionkit.router import router as actionkit_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.growth_club.router import router as growth_club_router

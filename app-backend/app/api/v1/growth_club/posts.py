@@ -1,4 +1,4 @@
-from pathlib import Path
+import pathlib
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Path, Query, UploadFile
@@ -17,7 +17,7 @@ from app.models.growth_club import (
     GrowthClubPostLike,
     GrowthClubPostRead,
 )
-from app.models.user import AuthenticatedUser
+from app.models.user import AuthenticatedUser, User
 
 router = APIRouter()
 settings = get_settings()
@@ -37,7 +37,7 @@ FILE_EXTENSIONS = {
 
 
 def _extract_extension(filename: Optional[str]) -> str:
-    return Path(filename or "").suffix.lower()
+    return pathlib.Path(filename or "").suffix.lower()
 
 
 async def _validate_and_read_uploads(
@@ -120,8 +120,8 @@ async def list_posts(
         select(GrowthClubPost)
         .where(GrowthClubPost.is_blinded.is_(False))
         .options(
-            selectinload(GrowthClubPost.author),
-            selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author),
+            selectinload(GrowthClubPost.author).selectinload(User.profile),
+            selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author).selectinload(User.profile),
             selectinload(GrowthClubPost.likes),
             selectinload(GrowthClubPost.attachments),
         )
@@ -196,8 +196,8 @@ async def create_post(
         select(GrowthClubPost)
         .where(GrowthClubPost.id == post_id)
         .options(
-            selectinload(GrowthClubPost.author),
-            selectinload(GrowthClubPost.comments),
+            selectinload(GrowthClubPost.author).selectinload(User.profile),
+            selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author).selectinload(User.profile),
             selectinload(GrowthClubPost.likes),
             selectinload(GrowthClubPost.attachments),
         )
@@ -217,7 +217,7 @@ async def create_post(
     response_description="삭제 결과를 반환합니다.",
 )
 async def delete_post(
-    post_id: int = Path(description="삭제할 게시글 ID"),
+    post_id: int = Path(..., description="삭제할 게시글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
@@ -245,7 +245,7 @@ async def delete_post(
     response_description="신고 처리 결과와 누적 신고 수를 반환합니다.",
 )
 async def report_post(
-    post_id: int = Path(description="신고할 게시글 ID"),
+    post_id: int = Path(..., description="신고할 게시글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
@@ -282,7 +282,7 @@ async def report_post(
     response_description="토글 결과와 최신 좋아요 수를 반환합니다.",
 )
 async def toggle_like_post(
-    post_id: int = Path(description="좋아요를 토글할 게시글 ID"),
+    post_id: int = Path(..., description="좋아요를 토글할 게시글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):

@@ -1,7 +1,10 @@
 
-from sqlmodel import SQLModel, Field
-from typing import Optional
+from sqlmodel import SQLModel, Field, Relationship
+from typing import Optional, TYPE_CHECKING
 from datetime import datetime
+
+if TYPE_CHECKING:
+    from app.models.profile import UserProfile
 
 class UserBase(SQLModel):
     email: str = Field(unique=True, index=True)
@@ -14,6 +17,10 @@ class User(UserBase, table=True):
     hashed_password: str
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    profile: Optional["UserProfile"] = Relationship(
+        back_populates="user", sa_relationship_kwargs={"uselist": False}
+    )
 
 class UserCreate(UserBase):
     password: str

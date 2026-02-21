@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Any
 
 from pydantic import model_validator
 from sqlmodel import Field, Relationship, SQLModel
@@ -15,6 +15,27 @@ class AuthorRead(SQLModel):
     username: Optional[str] = None
     neighborhood: Optional[str] = None
     industry: Optional[str] = None
+    profile_img: Optional[str] = "default.png"
+
+    @model_validator(mode="before")
+    @classmethod
+    def extract_profile_data(cls, data: Any) -> Any:
+        # data could be dict or User ORM object
+        if hasattr(data, "profile") and data.profile:
+            obj_dict: dict[str, Any] = {k: getattr(data, k) for k in data.__class__.__table__.columns.keys()} if hasattr(data, "__table__") else dict(data)
+            
+            is_public = getattr(data.profile, "is_public", True)
+            if is_public:
+                if getattr(data.profile, "nickname", None):
+                    obj_dict["username"] = data.profile.nickname
+                if getattr(data.profile, "profile_img", None):
+                    obj_dict["profile_img"] = data.profile.profile_img
+            else:
+                obj_dict["username"] = "익명"
+                obj_dict["profile_img"] = "default.png"
+                
+            return obj_dict
+        return data
 
     @model_validator(mode="after")
     def set_username(self) -> "AuthorRead":
@@ -87,6 +108,15 @@ class GrowthClubComment(GrowthClubCommentBase, table=True):
     
     post: GrowthClubPost = Relationship(back_populates="comments")
     author: "User" = Relationship()
+    
+    parent: Optional["GrowthClubComment"] = Relationship(
+        back_populates="replies",
+        sa_relationship_kwargs={"remote_side": "GrowthClubComment.id"}
+    )
+    replies: list["GrowthClubComment"] = Relationship(
+        back_populates="parent",
+        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
 
 
 class GrowthClubCommentRead(GrowthClubCommentBase):

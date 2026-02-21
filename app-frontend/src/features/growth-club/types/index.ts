@@ -5,7 +5,7 @@ export interface Author {
     username: string;
     neighborhood?: string;
     industry?: string;
-    profile_image?: string;
+    profile_img?: string;
 }
 
 export interface Comment {

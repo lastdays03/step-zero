@@ -1,6 +1,9 @@
 from datetime import datetime
-from typing import List, Optional
-from sqlmodel import SQLModel, Field, Column, JSON
+from typing import List, Optional, TYPE_CHECKING
+from sqlmodel import SQLModel, Field, Column, JSON, Relationship
+
+if TYPE_CHECKING:
+    from app.models.user import User
 
 class UserProfileBase(SQLModel):
     nickname: Optional[str] = None
@@ -17,6 +20,8 @@ class UserProfile(UserProfileBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", unique=True, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    user: Optional["User"] = Relationship(back_populates="profile")
 
 class UserProfileUpdate(UserProfileBase):
     full_name: Optional[str] = None

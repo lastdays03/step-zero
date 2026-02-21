@@ -9,7 +9,7 @@ from sqlmodel import select
 from app.api.deps import get_current_user
 from app.core.db import get_session
 from app.models.growth_club import GrowthClubComment, GrowthClubCommentRead, GrowthClubPost
-from app.models.user import AuthenticatedUser
+from app.models.user import AuthenticatedUser, User
 
 router = APIRouter()
 
@@ -51,7 +51,7 @@ async def create_comment(
     query = (
         select(GrowthClubComment)
         .where(GrowthClubComment.id == comment_id)
-        .options(selectinload(GrowthClubComment.author))
+        .options(selectinload(GrowthClubComment.author).selectinload(User.profile))
     )
     result = await session.execute(query)
     return result.scalar_one()
@@ -64,7 +64,7 @@ async def create_comment(
     response_description="삭제 결과를 반환합니다.",
 )
 async def delete_comment(
-    comment_id: int = Path(description="삭제할 댓글 ID"),
+    comment_id: int = Path(..., description="삭제할 댓글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
@@ -74,6 +74,13 @@ async def delete_comment(
 
     if comment.author_id != current_user.id and not current_user.is_superuser:
         raise HTTPException(status_code=403, detail="Not authorized")
+
+    # 대댓글 먼저 삭제 (ForeignKey constraint error 방지)
+    replies_query = select(GrowthClubComment).where(GrowthClubComment.parent_id == comment_id)
+    replies_result = await session.execute(replies_query)
+    replies = replies_result.scalars().all()
+    for reply in replies:
+        await session.delete(reply)
 
     await session.delete(comment)
     await session.commit()

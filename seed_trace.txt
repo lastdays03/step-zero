@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/app/scripts/seed_actionkit.py", line 13, in <module>
+    from app.features.actionkit.application.file_pipeline import detect_mime_type, file_checksum
+  File "/app/app/features/actionkit/application/__init__.py", line 3, in <module>
+    from app.features.actionkit.application.service import ActionKitService
+  File "/app/app/features/actionkit/application/service.py", line 5, in <module>
+    from app.api.v1.actionkit.schemas import ActionKitCategory, ActionKitItem, LawChapter, LawItem, RelatedLaw
+  File "/app/app/api/v1/actionkit/__init__.py", line 1, in <module>
+    from app.api.v1.actionkit.router import router
+  File "/app/app/api/v1/actionkit/router.py", line 3, in <module>
+    from app.api.v1.actionkit import detail, files, listing
+  File "/app/app/api/v1/actionkit/detail.py", line 7, in <module>
+    from app.features.actionkit.application import ActionKitService
+ImportError: cannot import name 'ActionKitService' from partially initialized module 'app.features.actionkit.application' (most likely due to a circular import) (/app/app/features/actionkit/application/__init__.py)
