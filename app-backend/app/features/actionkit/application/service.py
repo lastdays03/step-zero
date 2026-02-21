@@ -2,7 +2,6 @@ from collections import defaultdict
 from pathlib import Path
 
 from fastapi import UploadFile
-from app.api.v1.actionkit.schemas import ActionKitCategory, ActionKitItem, LawChapter, LawItem, RelatedLaw
 from app.core.config import get_settings
 from .file_pipeline import (
     build_object_key,
@@ -28,7 +27,7 @@ class ActionKitService:
             return f"chapter-{category_slug}"
         return category_slug
 
-    async def _build_law_payload(self) -> dict[str, LawChapter]:
+    async def _build_law_payload(self) -> dict[str, dict]:
         categories = await self.repository.list_categories(domain="laws")
         if not categories:
             return {}
@@ -46,37 +45,37 @@ class ActionKitService:
 
         file_map = {file.item_id: file for file in files}
 
-        items_by_category: dict[int, list[LawItem]] = defaultdict(list)
+        items_by_category: dict[int, list[dict]] = defaultdict(list)
         for item in items:
             if item.id is None:
                 continue
             current_file = file_map.get(item.id)
             path = self._to_public_path(current_file.object_key if current_file else None)
             items_by_category[item.category_id].append(
-                LawItem(
-                    name=item.name,
-                    ext=item.ext or ".pdf",
-                    size=item.size_label or "",
-                    summary=item.summary,
-                    path=path,
-                    highlights=highlights_map.get(item.id) or None,
-                )
+                {
+                    "name": item.name,
+                    "ext": item.ext or ".pdf",
+                    "size": item.size_label or "",
+                    "summary": item.summary,
+                    "path": path,
+                    "highlights": highlights_map.get(item.id) or None,
+                }
             )
 
-        payload: dict[str, LawChapter] = {}
+        payload: dict[str, dict] = {}
         for category in categories:
             if category.id is None:
                 continue
-            payload[category.slug] = LawChapter(
-                title=category.title,
-                items=items_by_category.get(category.id, []),
-            )
+            payload[category.slug] = {
+                "title": category.title,
+                "items": items_by_category.get(category.id, []),
+            }
         return payload
 
-    async def _build_kit_payload(self) -> dict[str, ActionKitCategory]:
+    async def _build_kit_payload(self) -> dict[str, dict]:
         categories = await self.repository.list_categories(domain="kits")
         if not categories:
-            return {"all": ActionKitCategory(title="전체 액션 키트", items=[])}
+            return {"all": {"title": "전체 액션 키트", "items": []}}
 
         category_ids = [category.id for category in categories if category.id is not None]
         items = await self.repository.list_items_for_categories(domain="kits", category_ids=category_ids)
@@ -85,61 +84,61 @@ class ActionKitService:
         related_laws = await self.repository.list_related_laws(item_ids=item_ids)
         files = await self.repository.list_current_files(item_ids=item_ids)
 
-        related_map: dict[int, list[RelatedLaw]] = defaultdict(list)
+        related_map: dict[int, list[dict]] = defaultdict(list)
         for law in related_laws:
             related_map[law.item_id].append(
-                RelatedLaw(
-                    name=law.law_name,
-                    summary=law.law_summary,
-                )
+                {
+                    "name": law.law_name,
+                    "summary": law.law_summary,
+                }
             )
 
         file_map = {file.item_id: file for file in files}
 
-        items_by_category: dict[int, list[ActionKitItem]] = defaultdict(list)
+        items_by_category: dict[int, list[dict]] = defaultdict(list)
         for item in items:
             if item.id is None:
                 continue
             current_file = file_map.get(item.id)
             path = self._to_public_path(current_file.object_key if current_file else None)
             items_by_category[item.category_id].append(
-                ActionKitItem(
-                    tag=item.tag,
-                    name=item.name,
-                    summary=item.summary,
-                    type=item.file_type or "PDF",
-                    path=path,
-                    relatedLaws=related_map.get(item.id) or None,
-                    dday=item.dday,
-                )
+                {
+                    "tag": item.tag,
+                    "name": item.name,
+                    "summary": item.summary,
+                    "type": item.file_type or "PDF",
+                    "path": path,
+                    "relatedLaws": related_map.get(item.id) or None,
+                    "dday": item.dday,
+                }
             )
 
-        payload: dict[str, ActionKitCategory] = {}
-        all_items: list[ActionKitItem] = []
+        payload: dict[str, dict] = {}
+        all_items: list[dict] = []
         for category in categories:
             if category.id is None:
                 continue
             category_items = items_by_category.get(category.id, [])
             all_items.extend(category_items)
-            payload[category.slug] = ActionKitCategory(
-                title=category.title,
-                items=category_items,
-            )
+            payload[category.slug] = {
+                "title": category.title,
+                "items": category_items,
+            }
 
-        payload["all"] = ActionKitCategory(title="전체 액션 키트", items=all_items)
+        payload["all"] = {"title": "전체 액션 키트", "items": all_items}
         return payload
 
-    async def list_laws(self) -> dict[str, LawChapter]:
+    async def list_laws(self) -> dict[str, dict]:
         return await self._build_law_payload()
 
-    async def list_kits(self) -> dict[str, ActionKitCategory]:
+    async def list_kits(self) -> dict[str, dict]:
         return await self._build_kit_payload()
 
-    async def get_law_chapter(self, chapter_id: str) -> LawChapter | None:
+    async def get_law_chapter(self, chapter_id: str) -> dict | None:
         payload = await self._build_law_payload()
         return payload.get(chapter_id)
 
-    async def get_kit_category(self, category_id: str) -> ActionKitCategory | None:
+    async def get_kit_category(self, category_id: str) -> dict | None:
         payload = await self._build_kit_payload()
         return payload.get(category_id)
 
