@@ -46,3 +46,8 @@
 - 2026-02-20: ActionKit 로컬 스토리지 경로를 `STORAGE_LOCAL_ROOT` 단일 변수 + fallback(`app-backend/uploads`)로 단순화
 - 2026-02-20: ActionKit 데이터/파일 관리 전환 플랜 문서 `docs/planning/PLAN-actionkit-data-file-management.md` 추가
 - 2026-02-20: 운영 콘솔에 `액션 키트 관리` 카드 및 `/ops/actionkit` 화면 추가
+- 2026-02-21: 팀 공통 ActionKit 동기화용 `app-backend/scripts/bootstrap_actionkit.sh` 추가 및 README 실행 절차 반영
+- 2026-02-21: `bootstrap_actionkit.sh`를 Docker 우선(auto) 실행으로 보강해 팀원 로컬 Python/pip 의존 없이 컨테이너 내부 마이그레이션+시드 가능하게 개선
+- 2026-02-21: README에 ActionKit 동기화를 `docker compose up` 후 `docker compose exec app-backend`로 마이그레이션/시드 수행하는 절차로 명시
+- 2026-02-21: README에 컨테이너 기동 후 필요 시 `docker compose exec`로 마이그레이션/시드를 선택 실행하는 운영 절차(방법 A/B) 추가
+- 2026-02-21: README ActionKit 운영 명령을 `docker compose exec`에서 `docker exec stepzero-backend` 기준으로 통일
