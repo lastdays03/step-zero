@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { useActionKit } from '../hooks/useActionKit';
 import { Disclaimer } from '@/components/ui/Disclaimer';
+import { ActionKitItem, RelatedLaw } from '../types';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -20,7 +21,6 @@ import {
     Gavel,
     LucideIcon,
 } from 'lucide-react';
-import { ActionKitItem, RelatedLaw } from '../types';
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
     all: Layers,
