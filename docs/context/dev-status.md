@@ -51,3 +51,8 @@
 - 2026-02-21: README에 ActionKit 동기화를 `docker compose up` 후 `docker compose exec app-backend`로 마이그레이션/시드 수행하는 절차로 명시
 - 2026-02-21: README에 컨테이너 기동 후 필요 시 `docker compose exec`로 마이그레이션/시드를 선택 실행하는 운영 절차(방법 A/B) 추가
 - 2026-02-21: README ActionKit 운영 명령을 `docker compose exec`에서 `docker exec stepzero-backend` 기준으로 통일
+- 2026-02-21: OS 호환성 강화를 위해 `.gitattributes`에 LF 정책(`*.sh`, `*.yml`, `Dockerfile*`) 추가 및 프론트 `types:backend-openapi`를 Docker exec 기반으로 전환
+- 2026-02-21: README 2-4 섹션의 중복 실행 예시를 정리하고 ActionKit 동기화 절차를 단일 흐름(준비/마이그레이션/시드 + 옵션)으로 재구성
+- 2026-02-21: `docker-compose.prod.yml` + `Dockerfile.prod`(백/프론트) 추가, 루트 `.env.local` 기반 배포 변수 관리 절차와 `app-backend/.env.local`(로컬 백엔드) 역할 분리 문서화
+- 2026-02-21: 환경 템플릿 파일 규격을 `.env.example`로 통일(루트 템플릿 파일명 변경 및 `.gitignore` 예외 반영)
+- 2026-02-21: 컨테이너별 env 분리 정책 적용(백/워커=`app-backend/.env*`, 프론트=`app-frontend/.env*`) 및 dev/prod compose를 `env_file` 기반으로 전환

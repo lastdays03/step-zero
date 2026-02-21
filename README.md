@@ -52,8 +52,30 @@ docker compose -f docker-compose.dev.yml up -d --build
 
 > 참고: 로드맵 비동기 생성은 `app-worker`가 실행 중이어야 진행됩니다.
 
+### 4) 프로덕션 Compose 실행
+프로덕션은 `docker-compose.prod.yml`을 사용합니다.
 
-### 4) (심화) DB/Cache만 띄우고 앱은 로컬에서 실행하기
+```bash
+# 1) 서비스별 환경 변수 파일 준비
+cp app-backend/.env.example app-backend/.env
+cp app-frontend/.env.example app-frontend/.env
+# Docker Compose 전용 override (필요 시)
+cp app-backend/.env.docker.local.example app-backend/.env.docker.local
+cp app-frontend/.env.docker.local.example app-frontend/.env.docker.local
+
+# 2) 프로덕션 이미지 빌드/기동
+docker compose -f docker-compose.prod.yml up -d --build
+
+# 3) 마이그레이션 (필요 시)
+docker compose -f docker-compose.prod.yml exec -T app-backend \
+  bash -lc "cd /app && ./scripts/run_alembic.sh upgrade head"
+```
+
+> 참고:
+> - `docker-compose.prod.yml`은 소스 볼륨 마운트와 `--reload`를 사용하지 않습니다.
+> - 배포 환경에서는 `docker exec stepzero-backend` 대신 `docker compose ... exec app-backend` 사용을 권장합니다.
+
+### 5) (심화) DB/Cache만 띄우고 앱은 로컬에서 실행하기
 개발 시 빠른 디버깅을 위해 프론트/백엔드는 로컬 터미널에서 직접 실행하고, DB와 Redis만 Docker로 띄울 수 있습니다.
 
 **1. DB & Redis만 실행**
@@ -67,6 +89,10 @@ docker compose -f docker-compose.dev.yml up -d app-db app-redis
 cd app-backend
 
 # 1) 개발환경 자동 초기화 (Python 3.11 + dev 의존성 + .env 생성)
+# (최초 1회) 템플릿 복사
+cp .env.example .env
+
+# 개발환경 자동 초기화
 ./scripts/setup_dev.sh
 
 # 2) 서버 실행
@@ -78,32 +104,32 @@ make test
 # 4) 마이그레이션 적용/검증
 make migrate-up
 make migrate-check
+```
 
-# 5) ActionKit DB 데이터 동기화(팀 공통, Docker 권장)
-# [방법 A] 처음 세팅/재기동 시: 빌드 + 컨테이너 기동 후 적용
-cd ..
+**3. ActionKit DB 데이터 동기화 (팀 공통)**
+ActionKit 동기화는 로컬 Python 환경 대신 Docker 컨테이너 내부 실행을 권장합니다.
+
+```bash
+# (A) 컨테이너 준비 (처음 세팅/재기동 시)
 docker compose -f docker-compose.dev.yml build app-backend
 docker compose -f docker-compose.dev.yml up -d app-db app-redis app-backend
 
-# (1) 마이그레이션 적용 (컨테이너 내부)
-docker exec -it stepzero-backend \
-  bash -lc "cd /app && ./scripts/run_alembic.sh upgrade head"
+# (B) 마이그레이션 적용 (필요 시)
+docker exec -it stepzero-backend bash -lc "cd /app && ./scripts/run_alembic.sh upgrade head"
 
-# (2) ActionKit 시드 적용 (컨테이너 내부, 초기 1회 또는 데이터 리셋 후)
-docker exec -it stepzero-backend \
-  bash -lc "cd /app && python scripts/seed_actionkit.py"
+# (C) ActionKit 시드 적용 (초기 1회 또는 데이터 리셋 후)
+docker exec -it stepzero-backend bash -lc "cd /app && python scripts/seed_actionkit.py"
+```
 
-# (옵션) 위 (b)+(c)를 한 번에 실행
+옵션:
+```bash
+# 마이그레이션 + 시드를 한 번에 실행
 cd app-backend
 ACTIONKIT_BOOTSTRAP_MODE=docker ./scripts/bootstrap_actionkit.sh
 
-# [방법 B] 이미 컨테이너가 실행 중일 때: 필요 시에만 exec로 적용
-cd ..
-# 마이그레이션만 필요할 때
-docker exec -it stepzero-backend bash -lc "cd /app && ./scripts/run_alembic.sh upgrade head"
-
-# 시드가 필요할 때만 별도 실행
-docker exec -it stepzero-backend bash -lc "cd /app && python scripts/seed_actionkit.py"
+# 서비스명 기준으로 실행(컨테이너 이름 비의존)
+docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && ./scripts/run_alembic.sh upgrade head"
+docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && python scripts/seed_actionkit.py"
 ```
 
 > 참고:
@@ -111,12 +137,13 @@ docker exec -it stepzero-backend bash -lc "cd /app && python scripts/seed_action
 > - `uv` 버전은 `app-backend/.uv-version`으로 고정합니다.
 > - macOS(26 계열)에서는 `uv` 패닉 이슈를 우회하기 위해 `setup_dev.sh`가 기본적으로 `python/pip` 경로를 사용합니다.
 > - `uv`를 강제로 쓰려면 `FORCE_UV=1 ./scripts/setup_dev.sh`를 사용하세요.
-> - 팀 공통 기준은 Docker 컨테이너 내부 실행 방식(방법 A/B)을 권장합니다.
+> - 팀 공통 기준은 Docker 컨테이너 내부 실행을 권장합니다.
 > - 시드(`seed_actionkit.py`)는 데이터가 이미 존재하면 skip 하므로 초기 적재/리셋 후에 주로 실행하면 됩니다.
 > - `bootstrap_actionkit.sh` 모드 강제: `ACTIONKIT_BOOTSTRAP_MODE=docker|local|auto`
 > - 본 저장소는 `app-backend` 컨테이너 이름을 `stepzero-backend`로 고정하므로 `docker exec` 기준 명령을 사용합니다.
+> - 컨테이너 이름 변경 가능성을 고려하면 `docker compose exec app-backend` 방식이 더 이식성이 좋습니다.
 
-**3. Frontend 로컬 실행 (Node.js)**
+**4. Frontend 로컬 실행 (Node.js)**
 ```bash
 # Node.js 20.9.0 이상 권장 (Next.js 16 요구사항)
 cd app-frontend
@@ -126,19 +153,42 @@ npm run dev
 # 백엔드 OpenAPI 기반 타입 동기화
 npm run types:sync
 ```
+> Windows/macOS/Linux 공통으로 `types:sync`는 실행 중인 `stepzero-backend` 컨테이너에서 OpenAPI를 추출합니다.
 
-### 5) 로컬 시크릿 관리 (권장)
-백엔드는 `app-backend/.env.local`을 `app-backend/.env`보다 우선해서 읽습니다.
+### 6) 환경변수 파일 분리 규칙 (권장)
+로컬 직접 실행과 Docker Compose 실행을 파일로 분리합니다.
+
+- 로컬 실행(백엔드/프론트를 로컬 프로세스로 실행):
+`app-backend/.env` < `app-backend/.env.local`
+`app-frontend/.env` < `app-frontend/.env.local`
+- Docker Compose 실행:
+`app-backend/.env` < `app-backend/.env.local` < `app-backend/.env.docker.local`
+`app-frontend/.env` < `app-frontend/.env.local` < `app-frontend/.env.docker.local`
+
+같은 키가 여러 파일에 있으면 **나중에 로드된 파일 값이 최종값**입니다.
 
 1. `app-backend/.env`:
 - 공유 가능한 기본값만 유지 (민감키 금지)
 2. `app-backend/.env.local`:
 - 로컬 전용 비밀값 저장 (Git 추적 제외)
-3. 최소 예시:
+3. `app-backend/.env.docker.local`:
+- Docker Compose 전용 override (예: `DATABASE_URL` host=`app-db`, `REDIS_URL` host=`app-redis`)
+4. `app-frontend/.env` / `app-frontend/.env.local`:
+- `NEXT_PUBLIC_*` 값만 관리 (백엔드/시크릿 값 금지)
+5. `app-frontend/.env.docker.local`:
+- 프론트 Docker Compose 전용 override가 필요할 때만 사용
+6. 최소 예시:
 ```bash
-cd app-backend
-cp .env.example .env.local
-# .env.local에 OPENAI_API_KEY, GOOGLE_CLIENT_ID 등 실제 값 입력
+cp app-backend/.env.example app-backend/.env
+cp app-frontend/.env.example app-frontend/.env
+
+# 로컬 실행 전용(선택)
+cp app-backend/.env.example app-backend/.env.local
+cp app-frontend/.env.example app-frontend/.env.local
+
+# Docker Compose 전용(선택)
+cp app-backend/.env.docker.local.example app-backend/.env.docker.local
+cp app-frontend/.env.docker.local.example app-frontend/.env.docker.local
 ```
 
 ---
