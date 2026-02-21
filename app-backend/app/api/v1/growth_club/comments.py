@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -20,7 +20,13 @@ class CommentCreate(BaseModel):
     parent_id: Optional[int] = None
 
 
-@router.post("", response_model=GrowthClubCommentRead)
+@router.post(
+    "",
+    response_model=GrowthClubCommentRead,
+    summary="댓글 생성",
+    description="게시글에 댓글(또는 대댓글)을 생성합니다.",
+    response_description="생성된 댓글 정보를 반환합니다.",
+)
 async def create_comment(
     comment_in: CommentCreate,
     current_user: AuthenticatedUser = Depends(get_current_user),
@@ -51,9 +57,14 @@ async def create_comment(
     return result.scalar_one()
 
 
-@router.delete("/{comment_id}")
+@router.delete(
+    "/{comment_id}",
+    summary="댓글 삭제",
+    description="댓글 작성자 또는 운영자가 댓글을 삭제합니다.",
+    response_description="삭제 결과를 반환합니다.",
+)
 async def delete_comment(
-    comment_id: int,
+    comment_id: int = Path(description="삭제할 댓글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):

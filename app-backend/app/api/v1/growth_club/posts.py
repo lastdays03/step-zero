@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Literal, Optional
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Path, Query, UploadFile
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -101,10 +101,16 @@ async def _validate_and_read_uploads(
     return prepared, total_bytes
 
 
-@router.get("", response_model=list[GrowthClubPostRead])
+@router.get(
+    "",
+    response_model=list[GrowthClubPostRead],
+    summary="게시글 목록 조회",
+    description="카테고리/검색어 조건으로 그로스클럽 게시글 목록을 조회합니다.",
+    response_description="게시글 목록을 최신순으로 반환합니다.",
+)
 async def list_posts(
-    category: str = "all",
-    search: Optional[str] = None,
+    category: str = Query(default="all", description="카테고리 필터 (`all`이면 전체)"),
+    search: Optional[str] = Query(default=None, description="제목/내용 검색어"),
     current_user: Optional[AuthenticatedUser] = Depends(get_optional_current_user),
     session: AsyncSession = Depends(get_session)
 ):
@@ -144,13 +150,19 @@ async def list_posts(
         
     return read_posts
 
-@router.post("", response_model=GrowthClubPostRead)
+@router.post(
+    "",
+    response_model=GrowthClubPostRead,
+    summary="게시글 생성",
+    description="제목/내용/카테고리와 첨부파일로 새 게시글을 생성합니다.",
+    response_description="생성된 게시글 상세를 반환합니다.",
+)
 async def create_post(
-    title: str = Form(...),
-    content: str = Form(...),
-    category: str = Form("free"),
-    images: list[UploadFile] = File(default=[]),
-    files: list[UploadFile] = File(default=[]),
+    title: str = Form(..., description="게시글 제목"),
+    content: str = Form(..., description="게시글 본문"),
+    category: str = Form("free", description="게시글 카테고리"),
+    images: list[UploadFile] = File(default=[], description="첨부 이미지 목록"),
+    files: list[UploadFile] = File(default=[], description="첨부 문서 파일 목록"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
@@ -198,9 +210,14 @@ async def create_post(
     post_read.is_liked = any(like.user_id == current_user.id for like in post.likes)
     return post_read
 
-@router.delete("/{post_id}")
+@router.delete(
+    "/{post_id}",
+    summary="게시글 삭제",
+    description="게시글 작성자(또는 운영자)가 게시글을 삭제합니다.",
+    response_description="삭제 결과를 반환합니다.",
+)
 async def delete_post(
-    post_id: int,
+    post_id: int = Path(description="삭제할 게시글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
@@ -221,9 +238,14 @@ async def delete_post(
         raise
     return {"status": "success", "message": "Post deleted successfully"}
 
-@router.post("/{post_id}/report")
+@router.post(
+    "/{post_id}/report",
+    summary="게시글 신고",
+    description="게시글을 신고합니다. 누적 5회 이상이면 자동 블라인드 처리됩니다.",
+    response_description="신고 처리 결과와 누적 신고 수를 반환합니다.",
+)
 async def report_post(
-    post_id: int,
+    post_id: int = Path(description="신고할 게시글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
@@ -253,9 +275,14 @@ async def report_post(
     }
 
 
-@router.post("/{post_id}/like")
+@router.post(
+    "/{post_id}/like",
+    summary="게시글 좋아요 토글",
+    description="게시글 좋아요를 추가/해제합니다.",
+    response_description="토글 결과와 최신 좋아요 수를 반환합니다.",
+)
 async def toggle_like_post(
-    post_id: int,
+    post_id: int = Path(description="좋아요를 토글할 게시글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):

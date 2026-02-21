@@ -14,11 +14,21 @@ from app.repositories.roadmap_repository import RoadmapRepository
 router = APIRouter()
 
 
-@router.get("", response_model=DashboardResponse)
+@router.get(
+    "",
+    response_model=DashboardResponse,
+    summary="대시보드 지표 조회",
+    description="현재 사용자(또는 게스트) 기준 대시보드 요약 지표를 조회합니다.",
+    response_description="대시보드 카드/진행률 데이터를 반환합니다.",
+)
 async def get_dashboard_stats(
     current_user: AuthenticatedUser | None = Depends(deps.get_optional_current_user),
     session: AsyncSession = Depends(get_session),
-    x_team_id: str | None = Header(default=None, alias="X-Team-Id"),
+    x_team_id: str | None = Header(
+        default=None,
+        alias="X-Team-Id",
+        description="조회 대상 팀 ID. 생략 시 현재 사용자 기본 팀을 사용합니다.",
+    ),
 ) -> Any:
     service = DashboardService(roadmap_repo=RoadmapRepository(session))
     if not current_user:

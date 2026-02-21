@@ -36,7 +36,13 @@ class GenerationResponse(BaseModel):
     steps: list[RoadmapStepResponse]
 
 
-@router.post("", response_model=GenerationResponse)
+@router.post(
+    "",
+    response_model=GenerationResponse,
+    summary="로드맵 생성(레거시 엔드포인트)",
+    description="기존 클라이언트 호환을 위해 유지되는 로드맵 즉시 생성 API입니다.",
+    response_description="생성된 로드맵 ID, 제목, 단계 목록을 반환합니다.",
+)
 async def generate_roadmap(
     request: GenerationRequest,
     current_user: AuthenticatedUser = Depends(deps.get_current_user),

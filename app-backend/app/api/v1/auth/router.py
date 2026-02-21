@@ -1,9 +1,9 @@
 from typing import Any
 
 from google.auth.exceptions import GoogleAuthError
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Path, status
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,7 +20,7 @@ settings = config.get_settings()
 
 
 class GoogleLoginRequest(BaseModel):
-    id_token: str
+    id_token: str = Field(description="Google OAuth ID Token")
 
 
 def _auth_service(session: AsyncSession) -> AuthService:
@@ -79,7 +79,13 @@ async def _login_social_mock_user(provider: str, session: AsyncSession) -> dict[
     }
 
 
-@router.post("/login", response_model=TokenWithTeams)
+@router.post(
+    "/login",
+    response_model=TokenWithTeams,
+    summary="이메일 로그인",
+    description="이메일/비밀번호로 로그인하고 팀 컨텍스트가 포함된 액세스 토큰을 발급합니다.",
+    response_description="액세스 토큰과 사용자/팀 정보를 반환합니다.",
+)
 async def login_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(get_session),
@@ -102,7 +108,13 @@ async def login_access_token(
     return _serialize_auth_result(result)
 
 
-@router.post("/login/google", response_model=TokenWithTeams)
+@router.post(
+    "/login/google",
+    response_model=TokenWithTeams,
+    summary="Google 로그인",
+    description="Google ID Token을 검증해 로그인합니다.",
+    response_description="액세스 토큰과 사용자/팀 정보를 반환합니다.",
+)
 async def login_google(
     request_data: GoogleLoginRequest,
     session: AsyncSession = Depends(get_session),
@@ -138,9 +150,15 @@ async def login_google(
     return _serialize_auth_result(result)
 
 
-@router.post("/login/social/{provider}", response_model=TokenWithTeams)
+@router.post(
+    "/login/social/{provider}",
+    response_model=TokenWithTeams,
+    summary="소셜 로그인(mock)",
+    description="개발 환경에서 mock 소셜 계정으로 로그인합니다.",
+    response_description="액세스 토큰과 사용자/팀 정보를 반환합니다.",
+)
 async def login_social(
-    provider: str,
+    provider: str = Path(description="소셜 로그인 제공자 (`google` 또는 `kakao`)"),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     if not settings.ENABLE_SOCIAL_MOCK:

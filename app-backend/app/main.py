@@ -33,6 +33,19 @@ app = FastAPI(
     version=settings.VERSION,
     lifespan=lifespan,
     openapi_url="/api/openapi.json",
+    openapi_tags=[
+        {"name": "health", "description": "서비스 상태 점검 API"},
+        {"name": "auth", "description": "인증/로그인 API"},
+        {"name": "dashboard", "description": "대시보드 요약 지표 API"},
+        {"name": "generation", "description": "레거시 로드맵 생성 API"},
+        {"name": "roadmaps", "description": "로드맵 생성/조회/진행 상태 API"},
+        {"name": "profile", "description": "내 프로필 조회/수정 API"},
+        {"name": "actionkits", "description": "액션키트 조회/파일 업로드 API"},
+        {"name": "growth-club", "description": "그로스클럽 게시글/댓글 API"},
+        {"name": "community", "description": "그로스클럽 하위호환(alias) API"},
+        {"name": "ops", "description": "플랫폼 운영자 전용 API"},
+        {"name": "rag", "description": "법률 가이드 RAG 질의 API"},
+    ],
 )
 
 # CORS 설정 추가
@@ -99,7 +112,13 @@ app.mount(
 
 from app.api.v1.api import api_router as api_v1_router
 
-@app.get("/health")
+@app.get(
+    "/health",
+    tags=["health"],
+    summary="헬스체크",
+    description="백엔드 프로세스 상태를 확인합니다.",
+    response_description="정상 상태(`status=ok`)를 반환합니다.",
+)
 async def health_check():
     return {"status": "ok"}
 

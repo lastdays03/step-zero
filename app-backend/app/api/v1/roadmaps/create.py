@@ -14,7 +14,13 @@ from app.repositories.roadmap_repository import RoadmapRepository
 router = APIRouter()
 
 
-@router.post("", response_model=RoadmapResponse)
+@router.post(
+    "",
+    response_model=RoadmapResponse,
+    summary="로드맵 생성",
+    description="입력된 업종/지역/메모를 기반으로 로드맵을 생성합니다.",
+    response_description="생성된 로드맵 ID, 제목, 단계 목록을 반환합니다.",
+)
 async def create_roadmap(
     request: RoadmapCreateRequest,
     current_user: AuthenticatedUser = Depends(deps.get_current_user),
