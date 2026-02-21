@@ -1,7 +1,7 @@
 # Dev Status
 
 ## Last Updated
-- Date: 2026-02-15
+- Date: 2026-02-21
 - Branch: `develop`
 
 ## Sprint Focus
@@ -56,3 +56,5 @@
 - 2026-02-21: `docker-compose.prod.yml` + `Dockerfile.prod`(백/프론트) 추가, 루트 `.env.local` 기반 배포 변수 관리 절차와 `app-backend/.env.local`(로컬 백엔드) 역할 분리 문서화
 - 2026-02-21: 환경 템플릿 파일 규격을 `.env.example`로 통일(루트 템플릿 파일명 변경 및 `.gitignore` 예외 반영)
 - 2026-02-21: 컨테이너별 env 분리 정책 적용(백/워커=`app-backend/.env*`, 프론트=`app-frontend/.env*`) 및 dev/prod compose를 `env_file` 기반으로 전환
+- 2026-02-21: Ops 운영관리 플랜을 마스터+상세 구조로 재편(`PLAN-ops-admin-menu-master` + users/reports/announcements/audit-logs)하고 기존 actionkit/growth 플랜을 감사로그 선행 게이트 기준으로 보강
+- 2026-02-21: `docs/planning/` 레거시/참조 문서 9개를 `docs/planning/completed/`로 이동해 실행 문서 범위를 현재 플랜 중심으로 정리
