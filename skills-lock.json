@@ -1,0 +1,30 @@
+{
+  "version": 1,
+  "skills": {
+    "api-design-principles": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "74d1cdb3f538a1f2758001f65132e6fd634dd0d3c8fdff54e6439a97f72499d9"
+    },
+    "architecture-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "67711f2580e7196ad1730ca61513783f31943fb56fa5e308373f2dfd38ee15f4"
+    },
+    "notion-meeting-intelligence": {
+      "source": "davila7/claude-code-templates",
+      "sourceType": "github",
+      "computedHash": "7f6dc33378f45ee3761838e2d7d0077c5767a932ba55a1728ca00e599232dd11"
+    },
+    "openai-docs": {
+      "source": "openai/skills",
+      "sourceType": "github",
+      "computedHash": "eb2f4c2bbc47b50695dc1b5aa61416b664fb2707c7b0a645b1b8291a7ee48525"
+    },
+    "python-testing-patterns": {
+      "source": "wshobson/agents",
+      "sourceType": "github",
+      "computedHash": "a2cc64d28bbda77aeac8ec634ae38102a3b8d2314f3aa802811a44281c5d7838"
+    }
+  }
+}
