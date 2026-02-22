@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Path, Query, UploadFile
-from sqlalchemy import func
+from sqlalchemy import and_, exists, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
@@ -116,16 +116,55 @@ async def list_posts(
 ):
 
     """게시글 목록 조회 (검색 및 카테고리 필터링 포함)"""
-    query = (
-        select(GrowthClubPost)
-        .where(GrowthClubPost.is_blinded.is_(False))
-        .options(
-            selectinload(GrowthClubPost.author),
-            selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author),
-            selectinload(GrowthClubPost.likes),
-            selectinload(GrowthClubPost.attachments),
-        )
+    likes_count_subquery = (
+        select(func.count())
+        .select_from(GrowthClubPostLike)
+        .where(GrowthClubPostLike.post_id == GrowthClubPost.id)
+        .correlate(GrowthClubPost)
+        .scalar_subquery()
     )
+
+    is_liked_subquery = None
+    if current_user:
+        is_liked_subquery = (
+            exists(
+                select(1).where(
+                    and_(
+                        GrowthClubPostLike.post_id == GrowthClubPost.id,
+                        GrowthClubPostLike.user_id == current_user.id,
+                    )
+                )
+            )
+            .correlate(GrowthClubPost)
+        )
+
+    if is_liked_subquery is not None:
+        query = (
+            select(
+                GrowthClubPost,
+                likes_count_subquery.label("likes_count"),
+                is_liked_subquery.label("is_liked"),
+            )
+            .where(GrowthClubPost.is_blinded.is_(False))
+            .options(
+                selectinload(GrowthClubPost.author),
+                selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author),
+                selectinload(GrowthClubPost.attachments),
+            )
+        )
+    else:
+        query = (
+            select(
+                GrowthClubPost,
+                likes_count_subquery.label("likes_count"),
+            )
+            .where(GrowthClubPost.is_blinded.is_(False))
+            .options(
+                selectinload(GrowthClubPost.author),
+                selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author),
+                selectinload(GrowthClubPost.attachments),
+            )
+        )
 
     if category != "all":
         query = query.where(GrowthClubPost.category == category)
@@ -134,20 +173,22 @@ async def list_posts(
             (GrowthClubPost.title.contains(search))
             | (GrowthClubPost.content.contains(search))
         )
-    
+
     query = query.order_by(GrowthClubPost.created_at.desc())
     result = await session.execute(query)
-    posts = result.scalars().all()
-    
+
     # 가공하여 반환
     read_posts: list[GrowthClubPostRead] = []
-    for post in posts:
+    for row in result.all():
+        post = row[0]
+        likes_count = row[1] if len(row) > 1 else 0
+        is_liked = bool(row[2]) if current_user and len(row) > 2 else False
+
         post_read = GrowthClubPostRead.model_validate(post)
-        post_read.likes_count = len(post.likes)
-        if current_user:
-            post_read.is_liked = any(like.user_id == current_user.id for like in post.likes)
+        post_read.likes_count = int(likes_count or 0)
+        post_read.is_liked = is_liked
         read_posts.append(post_read)
-        
+
     return read_posts
 
 @router.post(
