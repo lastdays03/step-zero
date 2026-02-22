@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiClient } from "@/lib/api-client";
+import { ROADMAP_POLLING_CLEARED_EVENT, apiClient } from "@/lib/api-client";
 import { RoadmapChatIntake, type RoadmapRawInput, type RoadmapValidationResult } from "./RoadmapChatIntake";
 import { useRoadmapJob } from "@/features/roadmap/hooks";
 import type { RoadmapIntakePayload } from "@/features/roadmap/hooks/useRoadmapJob";
@@ -51,6 +51,18 @@ export const RoadmapGenerationPanel = ({
     });
     const [generationError, setGenerationError] = useState<string | null>(null);
     const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+    useEffect(() => {
+        const handlePollingCleared = () => {
+            setPollingJobId(null);
+            setGenerationError("로그인 만료로 로드맵 생성 확인이 중단되었습니다. 다시 로그인 후 재시도해 주세요.");
+        };
+
+        window.addEventListener(ROADMAP_POLLING_CLEARED_EVENT, handlePollingCleared);
+        return () => {
+            window.removeEventListener(ROADMAP_POLLING_CLEARED_EVENT, handlePollingCleared);
+        };
+    }, []);
 
     useEffect(() => {
         if (!pollingJobId) return;

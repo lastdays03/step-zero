@@ -1,6 +1,6 @@
 import os
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
@@ -10,11 +10,13 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
 from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.models.growth_club import GrowthClubPost, GrowthClubPostAttachment
 from app.models.profile import UserProfile
 from app.models.user import AuthenticatedUser
 
 settings = get_settings()
+logger = get_logger(__name__)
 
 
 def _as_non_empty(value: Optional[str], fallback: str) -> str:
@@ -31,7 +33,7 @@ def _generate_upload_name(kind: str, filename: Optional[str]) -> str:
 
 
 def _build_upload_path(kind: str, filename: Optional[str]) -> tuple[Path, str]:
-    now = datetime.utcnow()
+    now = datetime.now(timezone.utc)
     relative_dir = Path("growth-club") / kind / f"{now.year}" / f"{now.month:02d}"
     generated_name = _generate_upload_name(kind, filename)
     relative_path = relative_dir / generated_name
@@ -47,8 +49,8 @@ def _remove_saved_files(object_keys: list[str]) -> None:
         try:
             if target.exists():
                 target.unlink()
-        except OSError:
-            continue
+        except OSError as e:
+            logger.error(f"Failed to remove saved file: object_key={object_key}, path={target}, error={e}")
 
 
 class GrowthClubPostService:
@@ -141,4 +143,7 @@ class GrowthClubPostService:
         attachment_keys = [attachment.object_key for attachment in db_post.attachments]
         await self.session.delete(db_post)
         await self.session.commit()
-        _remove_saved_files(attachment_keys)
+        try:
+            _remove_saved_files(attachment_keys)
+        except Exception as e:
+            logger.error(f"Failed to remove attachment files after post delete: post_id={post_id}, error={e}")

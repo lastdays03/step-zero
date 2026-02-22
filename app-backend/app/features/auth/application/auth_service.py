@@ -1,3 +1,4 @@
+import secrets
 from dataclasses import dataclass
 
 from google.auth.transport import requests
@@ -42,7 +43,7 @@ class AuthService:
             user = await self.user_repo.create_google_user(
                 email=email,
                 full_name=idinfo.get("name") or email.split("@")[0],
-                hashed_password=security.get_password_hash("SOCIAL_AUTH_GOOGLE"),
+                hashed_password=security.get_password_hash(secrets.token_hex(32)),
             )
         return await self._build_auth_result(user)
 

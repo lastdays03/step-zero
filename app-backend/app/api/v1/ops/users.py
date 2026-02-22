@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -28,10 +28,12 @@ class OpsUserRead(BaseModel):
     response_description="운영 사용자 목록을 반환합니다.",
 )
 async def list_ops_users(
+    offset: int = Query(default=0, ge=0, description="조회 시작 오프셋"),
+    limit: int = Query(default=50, ge=1, le=200, description="조회 개수"),
     session: AsyncSession = Depends(get_session),
 ) -> list[OpsUserRead]:
     result = await session.execute(
-        select(User).order_by(User.created_at.desc()).limit(50)
+        select(User).order_by(User.created_at.desc()).offset(offset).limit(limit)
     )
     users = result.scalars().all()
     return [OpsUserRead.model_validate(user, from_attributes=True) for user in users]

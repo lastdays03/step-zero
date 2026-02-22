@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -98,7 +98,7 @@ class DashboardService:
                 date = "-"
             roadmap_items.append({"title": phase_name, "status": status, "date": date})
 
-        days_left = max(0, 30 - (datetime.utcnow() - latest_roadmap.created_at).days)
+        days_left = max(0, 30 - (datetime.now(timezone.utc) - latest_roadmap.created_at).days)
 
         return DashboardResult(
             user_name=user_name,
