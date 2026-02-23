@@ -121,15 +121,48 @@ docker exec -it stepzero-backend bash -lc "cd /app && ./scripts/run_alembic.sh u
 docker exec -it stepzero-backend bash -lc "cd /app && python scripts/seed_actionkit.py"
 ```
 
+**4. 전체 DB 마이그레이션 순차 실행 (팀 공통)**
+`alembic upgrade head` 대신 리비전 단위(`+1`)로 순차 적용/로그 확인이 필요한 경우 사용합니다.
+
+```bash
+# 컨테이너 이름 기준
+docker exec -it stepzero-backend bash -lc "cd /app && ./scripts/migrate_all_sequential.sh"
+
+# docker compose 서비스명 기준
+docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && ./scripts/migrate_all_sequential.sh"
+```
+
+**5. RAG 벡터 마이그레이션 + 시드 (팀 공통)**
+RAG는 DB 마이그레이션(스키마 + pgvector extension 보장)과 벡터 적재를 함께 수행해야 합니다.
+
+```bash
+# (A) 기본 실행: /app/.temp/rag 경로의 pdf/md를 ETL 후 벡터 적재
+docker exec -it stepzero-backend bash -lc "cd /app && ./scripts/bootstrap_rag.sh"
+docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && ./scripts/bootstrap_rag.sh"
+
+# (B) 문서 경로 지정
+docker exec -it stepzero-backend bash -lc "cd /app && RAG_BOOTSTRAP_SOURCE_DIR=/app/.temp/rag ./scripts/bootstrap_rag.sh"
+docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && RAG_BOOTSTRAP_SOURCE_DIR=/app/.temp/rag ./scripts/bootstrap_rag.sh"
+
+# (C) 테스트용 일부만 적재(예: 20개)
+docker exec -it stepzero-backend bash -lc "cd /app && RAG_BOOTSTRAP_LIMIT=20 ./scripts/bootstrap_rag.sh"
+docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && RAG_BOOTSTRAP_LIMIT=20 ./scripts/bootstrap_rag.sh"
+```
+
 옵션:
 ```bash
 # 마이그레이션 + 시드를 한 번에 실행
 cd app-backend
 ACTIONKIT_BOOTSTRAP_MODE=docker ./scripts/bootstrap_actionkit.sh
 
+# RAG 마이그레이션 + 벡터 시드 한 번에 실행
+RAG_BOOTSTRAP_MODE=docker ./scripts/bootstrap_rag.sh
+
 # 서비스명 기준으로 실행(컨테이너 이름 비의존)
 docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && ./scripts/run_alembic.sh upgrade head"
 docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && python scripts/seed_actionkit.py"
+docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && ./scripts/migrate_all_sequential.sh"
+docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && ./scripts/bootstrap_rag.sh"
 ```
 
 > 참고:
@@ -140,6 +173,8 @@ docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app &
 > - 팀 공통 기준은 Docker 컨테이너 내부 실행을 권장합니다.
 > - 시드(`seed_actionkit.py`)는 데이터가 이미 존재하면 skip 하므로 초기 적재/리셋 후에 주로 실행하면 됩니다.
 > - `bootstrap_actionkit.sh` 모드 강제: `ACTIONKIT_BOOTSTRAP_MODE=docker|local|auto`
+> - `bootstrap_rag.sh` 모드 강제: `RAG_BOOTSTRAP_MODE=docker|local|auto`
+> - `seed_rag_vectors.py` 기본 경로는 `app-backend/.temp/rag`이며, PDF/Markdown 파일을 재귀 탐색합니다.
 > - 본 저장소는 `app-backend` 컨테이너 이름을 `stepzero-backend`로 고정하므로 `docker exec` 기준 명령을 사용합니다.
 > - 컨테이너 이름 변경 가능성을 고려하면 `docker compose exec app-backend` 방식이 더 이식성이 좋습니다.
 

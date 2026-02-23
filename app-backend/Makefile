@@ -1,4 +1,4 @@
-.PHONY: setup run worker test migrate-up migrate-revision migrate-check
+.PHONY: setup run worker test migrate-up migrate-revision migrate-check migrate-all rag-bootstrap
 
 setup:
 	@./scripts/setup_dev.sh
@@ -20,3 +20,9 @@ migrate-revision:
 
 migrate-check:
 	@./scripts/check_migrations.sh
+
+migrate-all:
+	@./scripts/migrate_all_sequential.sh
+
+rag-bootstrap:
+	@./scripts/bootstrap_rag.sh
