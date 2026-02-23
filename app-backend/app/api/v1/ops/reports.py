@@ -1,6 +1,6 @@
-from datetime import datetime, timezone
-
 from fastapi import APIRouter
+
+from app.features.ops.application.reports import get_summary
 
 router = APIRouter(prefix="/reports")
 
@@ -12,10 +12,4 @@ router = APIRouter(prefix="/reports")
     response_description="최근 7일 기준 운영 지표 요약을 반환합니다.",
 )
 async def get_ops_summary() -> dict[str, str | int]:
-    # TODO: Replace with real metrics aggregation.
-    return {
-        "active_users_7d": 0,
-        "new_signups_7d": 0,
-        "roadmaps_generated_7d": 0,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
-    }
+    return get_summary()

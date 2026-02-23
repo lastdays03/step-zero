@@ -1,2 +1,2 @@
-// Feature-local types boundary.
-export {};
+export type { OpsSummary } from "../reports/types";
+export type { OpsUser } from "../users/types";

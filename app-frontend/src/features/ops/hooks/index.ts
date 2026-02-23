@@ -1,2 +1,2 @@
 // Feature-local hooks boundary.
-export {};
+export { useOpsAccessGuard } from "../shared/use-ops-access-guard";
