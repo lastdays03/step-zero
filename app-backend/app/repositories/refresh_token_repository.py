@@ -68,4 +68,9 @@ class RefreshTokenRepository:
         await self.session.commit()
 
     def is_expired(self, token: RefreshToken) -> bool:
-        return token.expires_at < datetime.now(timezone.utc)
+        expires = token.expires_at
+        now = datetime.now(timezone.utc)
+        # Handle timezone-naive datetimes (e.g. from SQLite)
+        if expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        return expires < now
