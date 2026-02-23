@@ -14,14 +14,22 @@ interface PostCardProps {
     post: Post;
     onDeleteSuccess?: () => void;
     onReportSuccess?: () => void;
+    isHighlighted?: boolean;
+    initialShowComments?: boolean;
 }
 
 
 
-export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onReportSuccess }) => {
+export const PostCard: React.FC<PostCardProps> = ({
+    post,
+    onDeleteSuccess,
+    onReportSuccess,
+    isHighlighted,
+    initialShowComments = false
+}) => {
     const { user } = useAuth();
     const [isDeleting, setIsDeleting] = useState(false);
-    const [showComments, setShowComments] = useState(false);
+    const [showComments, setShowComments] = useState(initialShowComments);
 
     // 좋아요 상태 관리를 위한 로컬 스테이트
     const [liked, setLiked] = useState(post.is_liked);
@@ -39,6 +47,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
 
 
     const isAuthor = user && String(user.id) === String(post.author_id);
+    const isSuperuser = user?.is_superuser;
 
     const handleDelete = async () => {
         if (!window.confirm('정말 이 게시글을 삭제하시겠습니까?')) return;
@@ -49,9 +58,15 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
             if (onDeleteSuccess) {
                 onDeleteSuccess();
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to delete post:', error);
-            alert('게시글 삭제에 실패했습니다.');
+            if (error.response?.status === 401) {
+                alert('인증이 만료되었습니다. 다시 로그인해주세요.');
+            } else if (error.response?.status === 403) {
+                alert('삭제 권한이 없습니다.');
+            } else {
+                alert('게시글 삭제에 실패했습니다. 네트워크 상태를 확인해주세요.');
+            }
         } finally {
             setIsDeleting(false);
         }
@@ -123,7 +138,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
     };
 
     return (
-        <article className={`bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
+        <article
+            id={`post-${post.id}`}
+            className={`bg-white dark:bg-zinc-900 rounded-xl shadow-sm border p-6 transition-all duration-500 ${isDeleting ? 'opacity-50 pointer-events-none' : ''} ${isHighlighted
+                    ? 'border-blue-500 shadow-lg shadow-blue-500/10 ring-2 ring-blue-500/20 scale-[1.01] z-10'
+                    : 'border-zinc-200 dark:border-zinc-800 hover:shadow-md'
+                }`}
+        >
             <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                     {post.author.profile_img && post.author.profile_img !== 'default.png' ? (
@@ -146,7 +167,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
                     </div>
                 </div>
 
-                {isAuthor && (
+                {(isAuthor || isSuperuser) && (
                     <button
                         onClick={handleDelete}
                         className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"

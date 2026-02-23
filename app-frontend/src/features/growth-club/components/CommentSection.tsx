@@ -125,7 +125,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
                                         답글 달기
                                     </button>
                                 )}
-                                {isLoggedIn && user && Number(user.id) === comment.author?.id && (
+                                {isLoggedIn && user && (Number(user.id) === comment.author?.id || user.is_superuser) && (
                                     <button
                                         onClick={() => handleDelete(comment.id)}
                                         className="text-[10px] text-red-400 hover:text-red-500 font-medium opacity-0 group-hover:opacity-100 transition-opacity"

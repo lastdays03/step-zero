@@ -142,7 +142,7 @@ async def list_posts(
             query = query.where(GrowthClubPost.content.contains(search))
         elif search_type == "tag":
             from app.models.growth_club import GrowthClubTag
-            query = query.join(GrowthClubPost.tags).where(GrowthClubTag.name.contains(search))
+            query = query.join(GrowthClubPost.tags).where(GrowthClubTag.name.contains(search)).distinct()
         else:
             query = query.where(
                 or_(
@@ -225,6 +225,7 @@ async def create_post(
             selectinload(GrowthClubPost.likes),
             selectinload(GrowthClubPost.reports),
             selectinload(GrowthClubPost.attachments),
+            selectinload(GrowthClubPost.tags),
         )
     )
     result = await session.execute(query)
@@ -345,6 +346,17 @@ async def toggle_like_post(
         new_like = GrowthClubPostLike(post_id=post_id, user_id=current_user.id)
         session.add(new_like)
         liked = True
+
+        # 알림 생성 (자신의 글이 아닐 때만)
+        if db_post.author_id != current_user.id:
+            from app.models.notification import Notification
+            notification = Notification(
+                user_id=db_post.author_id,
+                content=f"'{current_user.full_name or current_user.email}'님이 당신의 게시글을 좋아합니다.",
+                type="like",
+                link=f"/growth-club?post_id={post_id}"
+            )
+            session.add(notification)
 
     await session.commit()
 

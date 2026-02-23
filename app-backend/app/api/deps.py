@@ -32,8 +32,12 @@ async def get_current_user(
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
         subject = payload.get("sub")
         if subject is None:
+            from app.core.logging import get_logger
+            get_logger("app.api.deps").warning("Token sub is missing")
             raise credentials_exception
-    except JWTError:
+    except JWTError as e:
+        from app.core.logging import get_logger
+        get_logger("app.api.deps").warning(f"JWT validation failed: {str(e)}")
         raise credentials_exception
 
     user: User | None = None

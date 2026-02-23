@@ -45,6 +45,31 @@ async def create_comment(
     session.add(comment)
     await session.flush()
     comment_id = comment.id
+    
+    # 알림 생성 (자신의 글이 아닐 때만)
+    if post.author_id != current_user.id:
+        from app.models.notification import Notification
+        notification = Notification(
+            user_id=post.author_id,
+            content=f"'{current_user.full_name or current_user.email}'님이 당신의 게시글에 댓글을 남겼습니다.",
+            type="comment",
+            link=f"/growth-club?post_id={post.id}&comment_id={comment_id}"
+        )
+        session.add(notification)
+        
+    # 대댓글인 경우 원댓글 작성자에게도 알림 (원댓글 작성자가 게시물 작성자와 다르고, 본인이 아닐 때)
+    if comment_in.parent_id:
+        parent_comment = await session.get(GrowthClubComment, comment_in.parent_id)
+        if parent_comment and parent_comment.author_id != current_user.id and parent_comment.author_id != post.author_id:
+            from app.models.notification import Notification
+            reply_notification = Notification(
+                user_id=parent_comment.author_id,
+                content=f"'{current_user.full_name or current_user.email}'님이 당신의 댓글에 답글을 남겼습니다.",
+                type="reply",
+                link=f"/growth-club?post_id={post.id}&comment_id={comment_id}"
+            )
+            session.add(reply_notification)
+
     await session.commit()
 
     # Refresh with author relationship to satisfy response model

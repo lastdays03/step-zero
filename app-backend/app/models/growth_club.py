@@ -1,8 +1,9 @@
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional, Any
 
-from pydantic import model_validator
+from pydantic import model_validator, field_validator
 from sqlmodel import Field, Relationship, SQLModel
+from sqlalchemy import inspect
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -20,21 +21,45 @@ class AuthorRead(SQLModel):
     @model_validator(mode="before")
     @classmethod
     def extract_profile_data(cls, data: Any) -> Any:
-        # data could be dict or User ORM object
-        if hasattr(data, "profile") and data.profile:
-            obj_dict: dict[str, Any] = {k: getattr(data, k) for k in data.__class__.__table__.columns.keys()} if hasattr(data, "__table__") else dict(data)
-            
-            is_public = getattr(data.profile, "is_public", True)
-            if is_public:
-                if getattr(data.profile, "nickname", None):
-                    obj_dict["username"] = data.profile.nickname
-                if getattr(data.profile, "profile_img", None):
-                    obj_dict["profile_img"] = data.profile.profile_img
-            else:
-                obj_dict["username"] = "익명"
-                obj_dict["profile_img"] = "default.png"
-                
-            return obj_dict
+        # If it's an ORM object, we want to extract profile data without losing other fields
+        if hasattr(data, "_sa_instance_state"):
+            try:
+                state = inspect(data)
+                # Ensure profile is loaded
+                if state and "profile" not in state.unloaded:
+                    profile = getattr(data, "profile", None)
+                    if profile:
+                        # Find existing values or use profile values
+                        is_public = getattr(profile, "is_public", True)
+                        
+                        # We don't return a dict here to avoid losing data.
+                        # Instead, we rely on the fact that Pydantic will call getattr(data, "username") etc.
+                        # But "username" is not an ORM column on User.
+                        # So we might need to return a dict or use a property.
+                        
+                        # Option: return a proxy-like dict or a full dict
+                        obj_dict = {k: getattr(data, k) for k in data.__class__.__table__.columns.keys()}
+                        
+                        if is_public:
+                            obj_dict["username"] = getattr(profile, "nickname", None)
+                            obj_dict["profile_img"] = getattr(profile, "profile_img", "default.png")
+                            obj_dict["neighborhood"] = getattr(profile, "region", None)
+                            obj_dict["industry"] = getattr(profile, "category", None)
+                        else:
+                            obj_dict["username"] = "익명"
+                            obj_dict["profile_img"] = "default.png"
+                            obj_dict["neighborhood"] = None
+                            obj_dict["industry"] = None
+                        
+                        # Add email if available (it should be a column)
+                        if "email" not in obj_dict:
+                            obj_dict["email"] = getattr(data, "email", None)
+                        if "full_name" not in obj_dict:
+                            obj_dict["full_name"] = getattr(data, "full_name", None)
+                            
+                        return obj_dict
+            except Exception:
+                pass
         return data
 
     @model_validator(mode="after")
@@ -176,12 +201,11 @@ class GrowthClubPostRead(GrowthClubPostBase):
     is_liked: bool = False
     is_reported: bool = False
 
-    @model_validator(mode="before")
+    @field_validator("tags", mode="before")
     @classmethod
-    def extract_tag_names(cls, data: Any) -> Any:
-        if hasattr(data, "tags") and data.tags:
-            # If it's an ORM object, convert tags to list of strings
-            obj_dict = dict(data) if isinstance(data, dict) else {k: getattr(data, k) for k in data.__class__.__table__.columns.keys()}
-            obj_dict["tags"] = [tag.name for tag in data.tags]
-            return obj_dict
-        return data
+    def validate_tags(cls, v: Any) -> list[str]:
+        if isinstance(v, list) and len(v) > 0:
+            # If it's a list of GrowthClubTag objects, extract names
+            if hasattr(v[0], "name"):
+                return [tag.name for tag in v]
+        return v

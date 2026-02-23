@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 
-const formatTimeAgo = (dateString: string) => {
+export const formatTimeAgo = (dateString: string) => {
     // 백엔드에서 온 날짜 문자열이 UTC임을 명시하기 위해 'Z'가 없으면 추가합니다.
     const normalizedDateString = dateString.endsWith('Z') || dateString.includes('+')
         ? dateString

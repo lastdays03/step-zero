@@ -69,7 +69,8 @@ async def log_request_response(request: Request, call_next):
     start_time = time.time()
     
     # 요청 정보 로깅
-    logger.info(f"Request: {request.method} {request.url.path}")
+    auth_header = request.headers.get("Authorization")
+    logger.info(f"Request: {request.method} {request.url.path} | Auth: {'Present' if auth_header else 'Missing'}")
     
     response = await call_next(request)
 

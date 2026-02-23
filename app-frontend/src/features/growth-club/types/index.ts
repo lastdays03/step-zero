@@ -34,6 +34,7 @@ export interface Post {
     category: PostCategory;
     neighborhood: string;
     industry: string;
+    author_id: number;
     author: Author;
     created_at: string;
     comments: Comment[];
