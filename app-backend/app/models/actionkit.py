@@ -1,7 +1,7 @@
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, SQLModel, Relationship
 
 
 class ActionKitCategory(SQLModel, table=True):
@@ -15,6 +15,8 @@ class ActionKitCategory(SQLModel, table=True):
     is_active: bool = Field(default=True, index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    
+    items: list["ActionKitItem"] = Relationship(back_populates="category")
 
 
 class ActionKitItem(SQLModel, table=True):
@@ -35,6 +37,11 @@ class ActionKitItem(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
+    category: ActionKitCategory = Relationship(back_populates="items")
+    files: list["ActionKitFile"] = Relationship(back_populates="item")
+    highlights: list["ActionKitItemHighlight"] = Relationship(back_populates="item")
+    related_laws: list["ActionKitRelatedLaw"] = Relationship(back_populates="item")
+
 
 class ActionKitItemHighlight(SQLModel, table=True):
     __tablename__ = "actionkit_item_highlights"
@@ -44,6 +51,8 @@ class ActionKitItemHighlight(SQLModel, table=True):
     content: str
     sort_order: int = Field(default=0, index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    item: ActionKitItem = Relationship(back_populates="highlights")
 
 
 class ActionKitRelatedLaw(SQLModel, table=True):
@@ -55,6 +64,8 @@ class ActionKitRelatedLaw(SQLModel, table=True):
     law_summary: str | None = None
     sort_order: int = Field(default=0, index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    item: ActionKitItem = Relationship(back_populates="related_laws")
 
 
 class ActionKitFile(SQLModel, table=True):
@@ -71,4 +82,6 @@ class ActionKitFile(SQLModel, table=True):
     is_current: bool = Field(default=True, index=True)
     uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+    item: ActionKitItem = Relationship(back_populates="files")
 
