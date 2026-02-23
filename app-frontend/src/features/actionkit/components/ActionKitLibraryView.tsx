@@ -21,6 +21,9 @@ import {
     Gavel,
     LucideIcon,
     CheckSquare,
+    Package,
+    Users,
+    Building,
 } from 'lucide-react';
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
@@ -38,6 +41,30 @@ const CATEGORY_COLORS: Record<string, string> = {
     hr: 'bg-purple-100 text-purple-600',
     grant: 'bg-orange-100 text-orange-600',
 };
+
+const STARTER_PACKS = [
+    {
+        id: "employee-onboarding",
+        title: "직원 채용 필수 팩",
+        icon: Users,
+        color: "bg-blue-50 text-blue-600 border-blue-200",
+        keywords: ["근로계약서", "보안서약서", "개인정보 이용 동의서"]
+    },
+    {
+        id: "office-setup",
+        title: "사무실 계약 팩",
+        icon: Building,
+        color: "bg-amber-50 text-amber-600 border-amber-200",
+        keywords: ["임대차", "전대차"]
+    },
+    {
+        id: "investment-prep",
+        title: "투자 유치 준비 팩",
+        icon: Package,
+        color: "bg-purple-50 text-purple-600 border-purple-200",
+        keywords: ["주주명부", "정관", "투자"]
+    }
+];
 
 const isRelatedLawObject = (law: string | RelatedLaw): law is RelatedLaw => {
     return typeof law === "object" && law !== null && "name" in law;
@@ -104,6 +131,7 @@ export const ActionKitLibraryView = ({ onNavigateToLaw }: ActionKitLibraryViewPr
     const { data, loading, error } = useActionKit();
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [searchQuery, setSearchQuery] = useState("");
+    const [activeStarterPack, setActiveStarterPack] = useState<string | null>(null);
     const [previewItem, setPreviewItem] = useState<ActionKitItem | null>(null);
 
     const handleLawClick = (e: React.MouseEvent, lawName: string) => {
@@ -184,12 +212,24 @@ export const ActionKitLibraryView = ({ onNavigateToLaw }: ActionKitLibraryViewPr
                 "근로계약서 2부 작성 후 근로자에게 1부 교부 완료 여부"
             ] : undefined
         }))
-    ).filter(item =>
-        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.summary.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    ).filter(item => {
+        const isMatch = item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            item.summary.toLowerCase().includes(searchQuery.toLowerCase());
 
-    const displayItems = searchQuery ? filteredItems : (currentCategory?.items || []);
+        if (activeStarterPack) {
+            const pack = STARTER_PACKS.find(p => p.id === activeStarterPack);
+            if (pack) {
+                return pack.keywords.some(keyword =>
+                    item.name.toLowerCase().includes(keyword.toLowerCase()) ||
+                    item.summary.toLowerCase().includes(keyword.toLowerCase())
+                );
+            }
+        }
+
+        return isMatch;
+    });
+
+    const displayItems = (searchQuery || activeStarterPack) ? filteredItems : (currentCategory?.items || []);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -207,7 +247,10 @@ export const ActionKitLibraryView = ({ onNavigateToLaw }: ActionKitLibraryViewPr
                         type="text"
                         placeholder="키트 검색..."
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+                        onChange={(e) => {
+                            setSearchQuery(e.target.value);
+                            if (activeStarterPack) setActiveStarterPack(null);
+                        }}
                         className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-full text-sm focus:ring-2 focus:ring-[#36a4f2]/20 transition-all outline-none"
                     />
                 </div>
@@ -236,6 +279,54 @@ export const ActionKitLibraryView = ({ onNavigateToLaw }: ActionKitLibraryViewPr
                             </button>
                         );
                     })}
+                </div>
+            )}
+
+            {/* Starter Packs (Only show if not searching and category is 'all') */}
+            {!searchQuery && selectedCategory === "all" && (
+                <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                    <h3 className="text-sm font-bold text-slate-700 flex items-center gap-2">
+                        <Sparkles className="w-4 h-4 text-[#36a4f2]" />
+                        스타터 팩 컬렉션
+                    </h3>
+                    <div className="flex flex-col md:flex-row gap-4">
+                        {STARTER_PACKS.map(pack => {
+                            const PIcon = pack.icon;
+                            const isActive = activeStarterPack === pack.id;
+                            return (
+                                <button
+                                    key={pack.id}
+                                    onClick={() => {
+                                        if (isActive) {
+                                            setActiveStarterPack(null);
+                                            setSearchQuery("");
+                                        } else {
+                                            setActiveStarterPack(pack.id);
+                                            setSearchQuery(""); // Clear search to use starter pack filter
+                                        }
+                                    }}
+                                    className={`flex-1 p-4 rounded-2xl border transition-all text-left group flex items-start justify-between ${isActive
+                                        ? "bg-slate-900 border-slate-900 shadow-lg text-white"
+                                        : `${pack.color} hover:shadow-md bg-white`
+                                        }`}
+                                >
+                                    <div>
+                                        <div className={`w-8 h-8 rounded-lg mb-3 flex items-center justify-center ${isActive ? 'bg-white/20' : 'bg-white shadow-sm'}`}>
+                                            <PIcon className={`w-4 h-4 ${isActive ? 'text-white' : ''}`} />
+                                        </div>
+                                        <h4 className={`font-bold text-sm mb-1 ${isActive ? 'text-white' : 'text-slate-900'}`}>{pack.title}</h4>
+                                        <p className={`text-[10px] line-clamp-1 ${isActive ? 'text-slate-300' : 'text-slate-500'}`}>
+                                            {pack.keywords.join(', ')} 포함
+                                        </p>
+                                    </div>
+                                    <div className={`w-6 h-6 rounded-full flex items-center justify-center border transition-colors ${isActive ? 'border-[#36a4f2] bg-[#36a4f2]' : 'border-slate-200 group-hover:bg-white'
+                                        }`}>
+                                        <CheckSquare className={`w-3 h-3 ${isActive ? 'text-white' : 'text-transparent'}`} />
+                                    </div>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             )}
 
