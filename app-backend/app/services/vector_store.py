@@ -1,18 +1,24 @@
-from typing import List, Optional
-import os
+from typing import List
+
 from langchain_openai import OpenAIEmbeddings
 from langchain_core.documents import Document
 
 from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.services.law_etl import ProcessedLawData
+
+logger = get_logger(__name__)
+
 
 class VectorStoreService:
     def __init__(self):
         settings = get_settings()
         if not settings.OPENAI_API_KEY:
-             # In production, we might want to log this but for now it's critical
-             pass
-             
+            message = "OPENAI_API_KEY is not configured; VectorStoreService cannot initialize embeddings."
+            if settings.ENVIRONMENT.lower() == "production":
+                raise RuntimeError(message)
+            logger.warning(message)
+
         self.embeddings = OpenAIEmbeddings(
             model="text-embedding-3-small",
             api_key=settings.OPENAI_API_KEY

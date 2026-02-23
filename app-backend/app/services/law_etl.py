@@ -5,7 +5,10 @@ from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import JsonOutputParser
 
 from app.core.config import get_settings
+from app.core.logging import get_logger
 from app.services.law_fetcher import LawData
+
+logger = get_logger(__name__)
 
 class ProcessedLawData(BaseModel):
     """
@@ -90,7 +93,7 @@ class LawETLProcessor:
                 original_data=law_data
             )
         except Exception as e:
-            print(f"Error processing {law_data.title}: {e}")
+            logger.error(f"Error processing law data: title={law_data.title}, error={e}")
             # Fallback: Return raw content as guide
             return ProcessedLawData(
                 title=law_data.title,

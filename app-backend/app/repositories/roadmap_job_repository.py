@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -49,20 +49,20 @@ class RoadmapJobRepository:
         job.status = "RUNNING"
         job.stage = "MASTER_GENERATING"
         job.progress = 10
-        job.started_at = datetime.utcnow()
-        job.updated_at = datetime.utcnow()
+        job.started_at = datetime.now(timezone.utc)
+        job.updated_at = datetime.now(timezone.utc)
         self.session.add(job)
         await self.session.commit()
 
     async def set_progress(self, job: RoadmapGenerationJob, *, stage: str, progress: int) -> None:
         job.stage = stage
         job.progress = max(0, min(progress, 100))
-        job.updated_at = datetime.utcnow()
+        job.updated_at = datetime.now(timezone.utc)
         self.session.add(job)
         await self.session.commit()
 
     async def mark_succeeded(self, job: RoadmapGenerationJob, *, roadmap_id: UUID) -> None:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         job.status = "SUCCEEDED"
         job.stage = "COMPLETED"
         job.progress = 100
@@ -73,7 +73,7 @@ class RoadmapJobRepository:
         await self.session.commit()
 
     async def mark_failed(self, job: RoadmapGenerationJob, *, code: str, message: str) -> None:
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         job.status = "FAILED"
         job.stage = "FAILED"
         job.error_code = code

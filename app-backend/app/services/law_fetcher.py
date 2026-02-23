@@ -3,6 +3,10 @@ from typing import List, Optional
 from pydantic import BaseModel, Field
 from enum import Enum
 
+from app.core.logging import get_logger
+
+logger = get_logger(__name__)
+
 class SourceType(str, Enum):
     LOCAL = "LOCAL"
     API = "API"
@@ -54,14 +58,14 @@ class LocalFileSource(LawDataSource):
                     text += page.extract_text() + "\n"
                 return text
         except Exception as e:
-            print(f"Error reading PDF {file_path}: {e}")
+            logger.error(f"Error reading PDF: path={file_path}, error={e}")
             return ""
 
     def _extract_text_from_md(self, file_path: Path) -> str:
         try:
             return file_path.read_text(encoding="utf-8")
         except Exception as e:
-            print(f"Error reading MD {file_path}: {e}")
+            logger.error(f"Error reading MD: path={file_path}, error={e}")
             return ""
 
     def _get_category_from_path(self, file_path: Path) -> str:
@@ -77,7 +81,7 @@ class LocalFileSource(LawDataSource):
     async def fetch_all_laws(self) -> List[LawData]:
         results = []
         if not self.root_dir.exists():
-            print(f"Warning: Directory {self.root_dir} does not exist.")
+            logger.warning(f"Directory does not exist: root_dir={self.root_dir}")
             return results
 
         # Walk through the directory
@@ -114,5 +118,5 @@ class LocalFileSource(LawDataSource):
             )
             results.append(law_data)
             
-        print(f"Fetched {len(results)} documents from {self.root_dir}")
+        logger.info(f"Fetched documents from local source: count={len(results)}, root_dir={self.root_dir}")
         return results

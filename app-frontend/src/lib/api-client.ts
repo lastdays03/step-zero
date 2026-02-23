@@ -2,7 +2,8 @@ import axios from "axios";
 
 const explicitBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
 const apiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-const AUTH_STORAGE_EVENT = "auth-storage-changed";
+export const AUTH_STORAGE_EVENT = "auth-storage-changed";
+export const ROADMAP_POLLING_CLEARED_EVENT = "roadmap-polling-cleared";
 const ROADMAP_JOB_STORAGE_KEY = "roadmap_polling_job_id";
 
 const baseURL = explicitBaseUrl
@@ -42,6 +43,7 @@ apiClient.interceptors.response.use(
             localStorage.removeItem("user");
             localStorage.removeItem("current_team_id");
             localStorage.removeItem(ROADMAP_JOB_STORAGE_KEY);
+            window.dispatchEvent(new Event(ROADMAP_POLLING_CLEARED_EVENT));
             window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
         }
         return Promise.reject(error);

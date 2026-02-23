@@ -86,15 +86,12 @@ async def create_roadmap_job(
         user_id=current_user.id,
         payload=normalized_payload,
     )
-    enqueued = await enqueue_roadmap_job(job_id)
-    if not enqueued:
-        repo = RoadmapJobRepository(session)
-        job = await repo.get_for_team(job_id=job_id, team_id=current_team.id)
-        if job:
-            await repo.mark_failed(job, code="QUEUE_UNAVAILABLE", message="Failed to enqueue job")
-
     repo = RoadmapJobRepository(session)
     job = await repo.get_for_team(job_id=job_id, team_id=current_team.id)
+
+    enqueued = await enqueue_roadmap_job(job_id)
+    if not enqueued and job:
+        await repo.mark_failed(job, code="QUEUE_UNAVAILABLE", message="Failed to enqueue job")
     if not job:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Job create failed")
     return RoadmapJobResponse(
