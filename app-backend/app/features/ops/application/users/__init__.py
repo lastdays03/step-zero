@@ -1,3 +1,3 @@
-from .service import OpsUserRead, list_users
+from .service import OpsUserRead, DisciplineHistoryRead, list_users, update_user_status, bulk_update_user_status, get_user_discipline_history
 
-__all__ = ["OpsUserRead", "list_users"]
+__all__ = ["OpsUserRead", "DisciplineHistoryRead", "list_users", "update_user_status", "bulk_update_user_status", "get_user_discipline_history"]

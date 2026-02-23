@@ -38,12 +38,12 @@ class GrowthClubPostBase(SQLModel):
 class GrowthClubPostLike(SQLModel, table=True):
     post_id: int = Field(foreign_key="growthclubpost.id", primary_key=True)
     user_id: int = Field(foreign_key="user.id", primary_key=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 class GrowthClubPost(GrowthClubPostBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     author_id: int = Field(foreign_key="user.id")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     report_count: int = Field(default=0)
     is_blinded: bool = Field(default=False)
     
@@ -68,7 +68,7 @@ class GrowthClubPostAttachment(SQLModel, table=True):
     original_filename: Optional[str] = None
     mime_type: Optional[str] = None
     size_bytes: Optional[int] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     post: GrowthClubPost = Relationship(back_populates="attachments")
 
@@ -81,7 +81,7 @@ class GrowthClubCommentBase(SQLModel):
 class GrowthClubComment(GrowthClubCommentBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     author_id: int = Field(foreign_key="user.id")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     report_count: int = Field(default=0)
     is_blinded: bool = Field(default=False)
     

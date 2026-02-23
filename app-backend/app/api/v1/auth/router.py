@@ -139,11 +139,15 @@ async def login_google(
     except HTTPException:
         raise
     except Exception as error:
+        from app.core.logging import get_logger
+        logger = get_logger("app.api.auth")
         if _is_backend_unavailable_error(error):
+            logger.error(f"Social login failed due to backend unavailability: {str(error)}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Authentication backend unavailable",
             )
+        logger.error(f"Social login failed with unexpected error: {str(error)}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Login failed")
     if not result:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token")
