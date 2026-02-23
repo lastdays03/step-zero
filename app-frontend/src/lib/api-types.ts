@@ -103,6 +103,7 @@ export type TeamRead = {
 
 export type TokenWithTeams = {
   "access_token": string;
+  "refresh_token": string;
   "token_type": string;
   "user": UserRead;
   "current_team_id": string;

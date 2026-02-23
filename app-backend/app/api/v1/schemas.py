@@ -12,10 +12,15 @@ class TeamRead(BaseModel):
 
 class TokenWithTeams(BaseModel):
     access_token: str
+    refresh_token: str
     token_type: str
     user: UserRead
     current_team_id: UUID
     teams: list[TeamRead]
+
+
+class RefreshTokenRequest(BaseModel):
+    refresh_token: str
 
 
 class CurrentPhase(BaseModel):

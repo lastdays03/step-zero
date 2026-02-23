@@ -17,7 +17,7 @@ interface AuthContextType {
     isLoggedIn: boolean;
     isAuthReady: boolean;
     canAccessOps: boolean;
-    login: (token: string, userData: User, currentTeamId?: string) => void;
+    login: (token: string, userData: User, currentTeamId?: string, refreshToken?: string) => void;
     loginWithCredentials: (email: string, password: string) => Promise<void>;
     updateUser: (data: Partial<User>) => void;
     logout: () => void;
@@ -109,11 +109,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { user, isLoggedIn } = authState;
     const canAccessOps = Boolean(user?.is_superuser);
 
-    const login = (token: string, userData: User, currentTeamId?: string) => {
+    const login = (token: string, userData: User, currentTeamId?: string, refreshToken?: string) => {
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userData));
         if (currentTeamId) {
             localStorage.setItem('current_team_id', currentTeamId);
+        }
+        if (refreshToken) {
+            localStorage.setItem('refresh_token', refreshToken);
         }
         notifyAuthStateChanged();
         window.location.assign('/dashboard');
@@ -150,11 +153,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 username: email.split('@')[0] || email,
                 email,
             };
-        login(accessToken, userData, data.current_team_id);
+        login(accessToken, userData, data.current_team_id, data.refresh_token);
     };
 
     const logout = () => {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+            // Best-effort server logout (don't await)
+            apiClient.post('/auth/logout', { refresh_token: refreshToken }).catch(() => {});
+        }
         localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         localStorage.removeItem('current_team_id');
         localStorage.removeItem(ROADMAP_JOB_STORAGE_KEY);
