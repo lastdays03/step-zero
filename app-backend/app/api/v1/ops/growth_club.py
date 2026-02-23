@@ -5,7 +5,7 @@ from sqlmodel import select
 
 from app.api import deps
 from app.core.db import get_session
-from app.features.ops.application.audit_logs import record_admin_audit_log
+from app.features.ops.application.audit_logs import AuditAction, AuditTargetType, record_admin_audit_log
 from app.features.ops.application.growth_club import get_queue_summary
 from app.models.growth_club import GrowthClubPost
 from app.models.user import AuthenticatedUser
@@ -56,23 +56,23 @@ async def moderate_growth_club_post(
             return {"status": "no_change", "post_id": post.id, "is_blinded": True}
         post.is_blinded = True
         after = {"is_blinded": True}
-        action_code = "growth_club.post.blinded"
+        action_code = AuditAction.GROWTH_CLUB_POST_BLINDED
     elif action == "unblind":
         if not post.is_blinded:
             return {"status": "no_change", "post_id": post.id, "is_blinded": False}
         post.is_blinded = False
         after = {"is_blinded": False}
-        action_code = "growth_club.post.unblinded"
+        action_code = AuditAction.GROWTH_CLUB_POST_UNBLINDED
     else:
         await session.delete(post)
         after = {"deleted": True}
-        action_code = "growth_club.post.deleted"
+        action_code = AuditAction.GROWTH_CLUB_POST_DELETED
 
     await record_admin_audit_log(
         session,
         admin_id=admin_user.id,
         action=action_code,
-        target_type="growth_club_post",
+        target_type=AuditTargetType.GROWTH_CLUB_POST,
         target_id=str(post_id),
         reason=payload.reason,
         meta={"before": before, "after": after},

@@ -7,7 +7,7 @@ from sqlmodel import select
 
 from app.api import deps
 from app.core.db import get_session
-from app.features.ops.application.audit_logs import record_admin_audit_log
+from app.features.ops.application.audit_logs import AuditAction, AuditTargetType, record_admin_audit_log
 from app.features.ops.application.actionkit import get_summary
 from app.models.actionkit import ActionKitItem
 from app.models.user import AuthenticatedUser
@@ -59,8 +59,8 @@ async def update_actionkit_item_status(
     await record_admin_audit_log(
         session,
         admin_id=admin_user.id,
-        action="actionkit.item.status.updated",
-        target_type="actionkit_item",
+        action=AuditAction.ACTIONKIT_ITEM_STATUS_UPDATED,
+        target_type=AuditTargetType.ACTIONKIT_ITEM,
         target_id=str(item.id),
         reason=payload.reason,
         meta={"before": {"is_active": before_is_active}, "after": {"is_active": after_is_active}},

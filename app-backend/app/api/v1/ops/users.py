@@ -7,7 +7,7 @@ from sqlmodel import select
 
 from app.api import deps
 from app.core.db import get_session
-from app.features.ops.application.audit_logs import record_admin_audit_log
+from app.features.ops.application.audit_logs import AuditAction, AuditTargetType, record_admin_audit_log
 from app.features.ops.application.users import OpsUserRead, list_users
 from app.models.user import AuthenticatedUser, User
 
@@ -67,8 +67,8 @@ async def update_ops_user_status(
     await record_admin_audit_log(
         session,
         admin_id=admin_user.id,
-        action="user.status.updated",
-        target_type="user",
+        action=AuditAction.USER_STATUS_UPDATED,
+        target_type=AuditTargetType.USER,
         target_id=str(user.id),
         reason=payload.reason,
         meta={

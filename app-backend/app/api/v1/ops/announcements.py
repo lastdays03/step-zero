@@ -14,7 +14,7 @@ from app.features.ops.application.announcements import (
     update_announcement,
     update_announcement_status,
 )
-from app.features.ops.application.audit_logs import record_admin_audit_log
+from app.features.ops.application.audit_logs import AuditAction, AuditTargetType, record_admin_audit_log
 from app.models.user import AuthenticatedUser
 
 router = APIRouter(prefix="/announcements")
@@ -53,8 +53,8 @@ async def create_ops_announcement(
     await record_admin_audit_log(
         session,
         admin_id=admin_user.id,
-        action="announcement.created",
-        target_type="announcement",
+        action=AuditAction.ANNOUNCEMENT_CREATED,
+        target_type=AuditTargetType.ANNOUNCEMENT,
         target_id=str(row.id),
         meta={"after": {"title": row.title, "status": row.status}},
     )
@@ -88,8 +88,8 @@ async def update_ops_announcement(
     await record_admin_audit_log(
         session,
         admin_id=admin_user.id,
-        action="announcement.updated",
-        target_type="announcement",
+        action=AuditAction.ANNOUNCEMENT_UPDATED,
+        target_type=AuditTargetType.ANNOUNCEMENT,
         target_id=str(row.id),
         meta={
             "after": {"title": row.title, "status": row.status},
@@ -122,15 +122,15 @@ async def update_ops_announcement_status(
         raise HTTPException(status_code=404, detail="Announcement not found")
 
     action_code = {
-        "draft": "announcement.drafted",
-        "published": "announcement.published",
-        "archived": "announcement.archived",
+        "draft": AuditAction.ANNOUNCEMENT_DRAFTED,
+        "published": AuditAction.ANNOUNCEMENT_PUBLISHED,
+        "archived": AuditAction.ANNOUNCEMENT_ARCHIVED,
     }[status]
     await record_admin_audit_log(
         session,
         admin_id=admin_user.id,
         action=action_code,
-        target_type="announcement",
+        target_type=AuditTargetType.ANNOUNCEMENT,
         target_id=str(row.id),
         meta={"after": {"status": row.status}},
     )

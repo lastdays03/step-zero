@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from pydantic import BaseModel
@@ -7,6 +7,7 @@ from sqlmodel import select
 from sqlalchemy import func
 
 from app.models.admin_audit_log import AdminAuditLog
+from .constants import ALLOWED_AUDIT_ACTIONS, ALLOWED_AUDIT_TARGET_TYPES
 
 
 class AuditLogItem(BaseModel):
@@ -27,6 +28,47 @@ class AuditLogList(BaseModel):
     size: int
 
 
+SENSITIVE_META_KEYS = {
+    "password",
+    "passwd",
+    "secret",
+    "token",
+    "access_token",
+    "refresh_token",
+    "id_token",
+    "api_key",
+    "authorization",
+    "cookie",
+    "session",
+    "client_secret",
+    "credential",
+    "credentials",
+}
+
+
+def _mask_meta_value(value: Any) -> Any:
+    if isinstance(value, dict):
+        sanitized: dict[str, Any] = {}
+        for key, nested_value in value.items():
+            key_lower = key.lower()
+            if key_lower in SENSITIVE_META_KEYS or any(sensitive in key_lower for sensitive in SENSITIVE_META_KEYS):
+                sanitized[key] = "[REDACTED]"
+            else:
+                sanitized[key] = _mask_meta_value(nested_value)
+        return sanitized
+    if isinstance(value, list):
+        return [_mask_meta_value(item) for item in value]
+    return value
+
+
+def _normalize_to_utc(dt: datetime | None) -> datetime | None:
+    if dt is None:
+        return None
+    if dt.tzinfo is None:
+        return dt.replace(tzinfo=timezone.utc)
+    return dt.astimezone(timezone.utc)
+
+
 async def record_admin_audit_log(
     session: AsyncSession,
     *,
@@ -37,13 +79,19 @@ async def record_admin_audit_log(
     reason: str | None = None,
     meta: dict[str, Any] | None = None,
 ) -> AdminAuditLog:
+    if action not in ALLOWED_AUDIT_ACTIONS:
+        raise ValueError(f"Unsupported audit action: {action}")
+    if target_type not in ALLOWED_AUDIT_TARGET_TYPES:
+        raise ValueError(f"Unsupported audit target_type: {target_type}")
+
+    sanitized_meta = _mask_meta_value(meta or {})
     row = AdminAuditLog(
         admin_id=admin_id,
         action=action,
         target_type=target_type,
         target_id=target_id,
         reason=reason,
-        meta_json=meta or {},
+        meta_json=sanitized_meta,
     )
     session.add(row)
     await session.flush()
@@ -62,6 +110,9 @@ async def list_audit_logs(
     page: int = 1,
     size: int = 20,
 ) -> AuditLogList:
+    normalized_from = _normalize_to_utc(from_at)
+    normalized_to = _normalize_to_utc(to_at)
+
     filters = []
     if actor is not None:
         filters.append(AdminAuditLog.admin_id == actor)
@@ -69,10 +120,10 @@ async def list_audit_logs(
         filters.append(AdminAuditLog.action == action)
     if target_type:
         filters.append(AdminAuditLog.target_type == target_type)
-    if from_at:
-        filters.append(AdminAuditLog.created_at >= from_at)
-    if to_at:
-        filters.append(AdminAuditLog.created_at <= to_at)
+    if normalized_from:
+        filters.append(AdminAuditLog.created_at >= normalized_from)
+    if normalized_to:
+        filters.append(AdminAuditLog.created_at <= normalized_to)
 
     total_stmt = select(func.count()).select_from(AdminAuditLog)
     if filters:
