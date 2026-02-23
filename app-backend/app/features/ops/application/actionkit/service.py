@@ -105,3 +105,8 @@ async def delete_item(session: AsyncSession, item_id: int) -> bool:
     await session.delete(item)
     await session.commit()
     return True
+
+async def get_file_by_id(session: AsyncSession, file_id: int) -> ActionKitFile | None:
+    stmt = select(ActionKitFile).where(ActionKitFile.id == file_id)
+    result = await session.execute(stmt)
+    return result.scalar_one_or_none()

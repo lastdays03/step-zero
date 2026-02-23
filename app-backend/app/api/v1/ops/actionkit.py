@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
@@ -10,7 +11,8 @@ from app.features.ops.application.actionkit import (
     update_item,
     create_item,
     upload_file_for_item,
-    delete_item
+    delete_item,
+    get_file_by_id
 )
 from app.api.v1.ops.schemas import (
     ActionKitCategoryResponse,
@@ -116,3 +118,25 @@ async def delete_actionkit_item(
     if not success:
         raise HTTPException(status_code=404, detail="Item not found")
     return {"ok": True}
+
+@router.get(
+    "/files/{file_id}/download",
+    summary="액션키트 파일 다운로드",
+)
+async def download_actionkit_file(
+    file_id: int,
+    session: AsyncSession = Depends(get_session)
+):
+    file_record = await get_file_by_id(session, file_id)
+    if not file_record:
+        raise HTTPException(status_code=404, detail="File not found")
+    
+    import os
+    if not os.path.exists(file_record.object_key):
+        raise HTTPException(status_code=404, detail="File not found on disk")
+    
+    return FileResponse(
+        path=file_record.object_key,
+        filename=file_record.original_filename or "download",
+        media_type=file_record.mime_type or "application/octet-stream"
+    )

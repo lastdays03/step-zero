@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, UploadCloud, File as FileIcon, CheckCircle2 } from "lucide-react";
+import { Loader2, UploadCloud, File as FileIcon, CheckCircle2, Download, Clock } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useDropzone } from "react-dropzone";
 
@@ -98,8 +98,8 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
 
     return (
         <Dialog open={isOpen} onOpenChange={(open: boolean) => !open && onClose()}>
-            <DialogContent className="sm:max-w-[500px] border-slate-100 p-0 overflow-hidden bg-white shadow-xl rounded-2xl">
-                <DialogHeader className="p-6 pb-2 border-b border-slate-100 flex flex-row items-center justify-between">
+            <DialogContent className="sm:max-w-[500px] max-h-[85vh] border-slate-100 p-0 bg-white shadow-xl rounded-2xl flex flex-col">
+                <DialogHeader className="p-6 pb-2 border-b border-slate-100 flex flex-row items-center justify-between flex-shrink-0">
                     <div>
                         <DialogTitle className="text-xl font-bold text-slate-800">
                             {isNew ? "새 문서 등록" : "문서 정보 수정"}
@@ -110,7 +110,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                     </div>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="p-6 space-y-5 bg-slate-50/50">
+                <form onSubmit={handleSubmit} className="p-6 space-y-5 bg-slate-50/50 overflow-y-auto flex-1">
                     <div className="space-y-2">
                         <Label htmlFor="name" className="text-slate-700 font-semibold text-sm">항목 제목</Label>
                         <Input
@@ -189,11 +189,63 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                                             마우스로 파일을 끌어다 놓거나 <span className="text-[#36a4f2]">클릭해서 선택</span>하세요.
                                         </p>
                                         <p className="text-xs text-slate-400">
-                                            현재 첨부된 파일 버전: v{item.files?.length ? item.files[0].version : "없음"}
+                                            현재 첨부된 파일 버전: v{item.files?.length ? Math.max(...item.files.map((f: any) => f.version)) : "없음"}
                                         </p>
                                     </div>
                                 )}
                             </div>
+
+                            {/* Version History */}
+                            {item.files?.length > 0 && (
+                                <div className="mt-3">
+                                    <div className="flex items-center gap-1.5 mb-2">
+                                        <Clock className="w-3.5 h-3.5 text-slate-400" />
+                                        <span className="text-xs font-semibold text-slate-500">버전 히스토리 ({item.files.length}개)</span>
+                                    </div>
+                                    <div className="space-y-1.5 max-h-[160px] overflow-y-auto">
+                                        {[...item.files].sort((a: any, b: any) => b.version - a.version).map((f: any) => (
+                                            <div key={f.id} className={`flex items-center justify-between p-2.5 rounded-lg border text-xs transition-colors ${f.is_current
+                                                ? 'bg-[#36a4f2]/5 border-[#36a4f2]/20'
+                                                : 'bg-white border-slate-100 hover:bg-slate-50'
+                                                }`}>
+                                                <div className="flex items-center gap-2 min-w-0 flex-1">
+                                                    <FileIcon className={`w-4 h-4 flex-shrink-0 ${f.is_current ? 'text-[#36a4f2]' : 'text-slate-400'}`} />
+                                                    <div className="min-w-0">
+                                                        <p className="font-semibold text-slate-700 truncate">
+                                                            v{f.version} {f.is_current && <span className="text-[#36a4f2]">(최신)</span>}
+                                                        </p>
+                                                        <p className="text-slate-400 truncate">
+                                                            {f.original_filename || '파일명 없음'} · {f.size_bytes ? `${(f.size_bytes / 1024).toFixed(0)}KB` : ''}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                                <button
+                                                    type="button"
+                                                    onClick={async () => {
+                                                        try {
+                                                            const res = await apiClient.get(`/ops/actionkit/files/${f.id}/download`, { responseType: 'blob' });
+                                                            const url = window.URL.createObjectURL(new Blob([res.data]));
+                                                            const link = document.createElement('a');
+                                                            link.href = url;
+                                                            link.setAttribute('download', f.original_filename || 'download');
+                                                            document.body.appendChild(link);
+                                                            link.click();
+                                                            link.remove();
+                                                            window.URL.revokeObjectURL(url);
+                                                        } catch (e) {
+                                                            alert("파일 다운로드 중 오류가 발생했습니다.");
+                                                        }
+                                                    }}
+                                                    className="flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-white border border-slate-200 text-slate-500 hover:text-[#36a4f2] hover:border-[#36a4f2]/30 transition-colors flex-shrink-0 ml-2"
+                                                >
+                                                    <Download className="w-3.5 h-3.5" />
+                                                    <span className="font-semibold">받기</span>
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     )}
 
