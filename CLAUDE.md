@@ -170,6 +170,24 @@ Backend and frontend both require `.env` files:
   - Deploys to ECS service: `prod-apne2-qwarty-backend-svc` in cluster `qwarty-backend-cluster`
   - Task definition: `backend/prod-apne2-qwarty-backend-task-def.json`
 
+### Task Document Lifecycle (`dev/`)
+
+작업 계획 문서는 `dev/` 디렉토리에서 상태별로 관리한다.
+
+```
+dev/
+├── active/          # 진행 중인 작업
+│   └── {task-name}/
+│       ├── {task-name}-plan.md      # 구현 계획
+│       ├── {task-name}-context.md   # 컨텍스트 & 의존성
+│       └── {task-name}-tasks.md     # 체크리스트
+└── done/            # 완료된 작업 (아카이브)
+```
+
+- **시작**: `dev/active/{task-name}/`에 계획 문서 생성
+- **완료**: 구현·검증·커밋이 모두 끝나면 `dev/done/`으로 이동
+- `dev/active/`에는 현재 진행 중인 작업만 유지
+
 ### Key Design Patterns
 
 **Backend:**
