@@ -160,3 +160,12 @@ class RagQueryRequest(BaseModel):
 
 class RagQueryResponse(BaseModel):
     answer: str
+
+
+class ChatRequest(BaseModel):
+    message: str
+
+
+class ChatResponse(BaseModel):
+    answer: str
+    source: str

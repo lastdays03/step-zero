@@ -94,3 +94,17 @@ pgdata/
 .temp/
 app-backend/uploads/
 app-backend/static/uploads/
+
+# ---------------
+# Testing & Tools
+# ---------------
+# Playwright MCP
+.playwright-mcp/
+# Test screenshots
+*.png
+!app-frontend/public/**/*.png
+
+# ---------------
+# MCP
+# ---------------
+.mcp.json
