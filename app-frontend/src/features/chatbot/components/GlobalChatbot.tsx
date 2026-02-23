@@ -29,10 +29,11 @@ export function GlobalChatbot() {
           onInputChange={setInput}
           onSend={sendMessage}
           onClear={clearHistory}
+          onClose={togglePanel}
           scrollRef={scrollRef}
         />
       )}
-      <ChatFAB isOpen={isOpen} onClick={togglePanel} />
+      {!isOpen && <ChatFAB isOpen={isOpen} onClick={togglePanel} />}
     </>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import type { Ref } from "react";
-import { Trash2 } from "lucide-react";
+import { Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ChatMessage } from "../types/chat";
 import { ChatMessageList } from "./ChatMessageList";
@@ -15,6 +15,7 @@ interface ChatPanelProps {
   onInputChange: (value: string) => void;
   onSend: () => void;
   onClear: () => void;
+  onClose: () => void;
   scrollRef: Ref<HTMLDivElement>;
 }
 
@@ -26,10 +27,11 @@ export function ChatPanel({
   onInputChange,
   onSend,
   onClear,
+  onClose,
   scrollRef,
 }: ChatPanelProps) {
   return (
-    <div className="fixed z-50 inset-x-0 bottom-0 h-[70vh] pb-28 md:pb-0 md:inset-x-auto md:right-8 md:bottom-20 md:w-[400px] md:h-[600px] md:max-h-[80vh] flex flex-col bg-slate-50 border border-slate-200 rounded-t-2xl md:rounded-2xl shadow-2xl animate-in slide-in-from-bottom duration-300">
+    <div className="fixed z-50 inset-x-0 bottom-0 h-[70vh] pb-16 md:pb-0 md:inset-x-auto md:right-8 md:bottom-8 md:w-[400px] md:h-[600px] md:max-h-[80vh] flex flex-col bg-slate-50 border border-slate-200 rounded-t-2xl md:rounded-2xl shadow-2xl animate-in slide-in-from-bottom duration-300">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white rounded-t-2xl md:rounded-t-2xl">
         <div className="flex items-center gap-2">
@@ -38,15 +40,26 @@ export function ChatPanel({
           </div>
           <h3 className="text-sm font-bold text-slate-800">AI 어시스턴트</h3>
         </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onClear}
-          className="h-8 w-8 text-slate-400 hover:text-slate-600"
-          title="대화 초기화"
-        >
-          <Trash2 className="w-4 h-4" />
-        </Button>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClear}
+            className="h-8 w-8 text-slate-400 hover:text-slate-600"
+            title="대화 초기화"
+          >
+            <Trash2 className="w-4 h-4" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="h-8 w-8 text-slate-400 hover:text-slate-600"
+            title="닫기"
+          >
+            <X className="w-4 h-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Messages */}
