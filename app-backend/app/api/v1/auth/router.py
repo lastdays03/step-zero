@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from google.auth.exceptions import GoogleAuthError
@@ -16,6 +17,7 @@ from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.team_repository import TeamRepository
 from app.repositories.user_repository import UserRepository
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 settings = config.get_settings()
 
@@ -155,6 +157,7 @@ async def login_google(
     except HTTPException:
         raise
     except Exception as error:
+        logger.error(f"Google login error: {type(error).__name__}: {str(error)}", exc_info=True)
         if _is_backend_unavailable_error(error):
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
