@@ -1,6 +1,6 @@
 # 로드맵 세션 만료 버그 수정 — Tasks
 
-Last Updated: 2026-02-23
+Last Updated: 2026-02-23 21:30
 
 ## Phase 1: 백엔드 — Refresh Token 구현
 
@@ -14,7 +14,7 @@ Last Updated: 2026-02-23
 - [x] 1-8. `deps.py` 수정 — `get_current_user_or_guest` 추가 (만료 토큰 → 401) [M]
   - [x] `dashboard/stats.py`에서 `get_optional_current_user` → `get_current_user_or_guest` 교체
 - [x] 1-9. Alembic 마이그레이션 생성 + `db.py` 모델 import 추가 [S]
-- [x] 1-10. 백엔드 테스트 통과 확인 (기존 33개) [M]
+- [x] 1-10. 백엔드 테스트 통과 확인 (40개: 기존 33 + 신규 7) [M]
 
 ## Phase 2: 프론트엔드 — Silent Refresh 구현
 
@@ -34,11 +34,22 @@ Last Updated: 2026-02-23
 ## Phase 3: 검증 및 엣지 케이스
 
 - [x] 3-1. `_login_social_mock_user()` fallback에 refresh_token 포함 [S]
-- [ ] 3-2. E2E 검증: 토큰 만료 후 로드맵 자동 갱신 확인
-- [ ] 3-3. E2E 검증: 동시 401 → 1회만 refresh 확인
-- [ ] 3-4. E2E 검증: 게스트 모드 (토큰 없음) 정상 동작
-- [ ] 3-5. E2E 검증: 명시적 로그아웃 → refresh token 폐기
-- [ ] 3-6. 전체 커밋 & 푸시
+- [x] 3-2. 백엔드 API 테스트 (7개): 토큰 로테이션, 재사용 감지, 무효 토큰, 게스트 모드, 만료 401, 로그아웃 폐기 ✅ 40/40 통과
+- [x] 3-3. 브라우저 E2E 검증: 토큰 만료 후 로드맵 자동 갱신 확인 ✅ 수동 검증 통과
+- [x] 3-4. 브라우저 E2E 검증: 동시 401 → 1회만 refresh 확인 ✅ 수동 검증 통과
+- [x] 3-5. 브라우저 E2E 검증: 게스트 모드 (토큰 없음) 정상 동작 ✅ 수동 검증 통과
+- [x] 3-6. 브라우저 E2E 검증: 명시적 로그아웃 → refresh token 폐기 ✅ 수동 검증 통과
+- [x] 3-7. develop → main PR 생성 ✅ https://github.com/lastdays03/step-zero/pull/9
+- [x] 3-8. PR 병합 완료 ✅ 2026-02-23T12:40:32Z
+
+---
+
+## 현재 상태 (2026-02-23 21:30)
+
+- **개발 완료**: Phase 1, 2, 3-1, 3-2 완료. 모든 변경사항 커밋 완료.
+- **현재 브랜치**: `develop`
+- **남은 작업**: 브라우저 E2E 검증(3-3 ~ 3-6) 및 main 병합(3-7)
+- **추가 픽스**: asyncpg 호환을 위해 `datetime.now(timezone.utc)` → `datetime.utcnow()` 전체 교체 완료
 
 ---
 
