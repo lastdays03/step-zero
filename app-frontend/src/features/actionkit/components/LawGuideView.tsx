@@ -12,20 +12,39 @@ import {
     Download,
     CheckCircle2,
     Info,
-    Sparkles
+    Sparkles,
+    FolderOpen
 } from 'lucide-react';
-import { LawItem } from '../types';
+import { LawItem, RelatedLaw } from '../types';
+import { useActionKit } from '../hooks/useActionKit';
 
 type LawItemWithChapter = LawItem & { chapterTitle: string };
 
 interface LawGuideViewProps {
     initialSearch?: string;
+    onNavigateToKit?: (kitName: string) => void;
 }
 
-export const LawGuideView = ({ initialSearch = "" }: LawGuideViewProps) => {
+export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideViewProps) => {
     const { data, loading, error } = useLawGuide();
+    const { data: kitsData } = useActionKit();
     const [activeChapter, setActiveChapter] = useState<string>("1");
     const [searchQuery, setSearchQuery] = useState(initialSearch);
+
+    const isRelatedLawObject = (law: string | RelatedLaw): law is RelatedLaw => {
+        return typeof law === "object" && law !== null && "name" in law;
+    };
+
+    const getRelatedKits = (lawName: string) => {
+        if (!kitsData) return [];
+        return Object.values(kitsData).flatMap(cat => cat.items)
+            .filter(kit => kit.relatedLaws?.some(rl => {
+                const name = isRelatedLawObject(rl) ? rl.name : rl;
+                // Match if the law name is part of the kit's related law or vice versa
+                return name.includes(lawName) || lawName.includes(name);
+            }))
+            .slice(0, 3);
+    };
 
     React.useEffect(() => {
         if (initialSearch) {
@@ -154,6 +173,39 @@ export const LawGuideView = ({ initialSearch = "" }: LawGuideViewProps) => {
                                     ))}
                                 </div>
                             )}
+
+                            {/* Smart Linkage: Related Action Kits */}
+                            {(() => {
+                                const relatedKits = getRelatedKits(item.name);
+                                if (relatedKits.length === 0) return null;
+                                return (
+                                    <div className="mb-4 p-3 bg-slate-50 rounded-xl border border-slate-100/50">
+                                        <div className="flex items-center gap-1.5 mb-2">
+                                            <FolderOpen className="w-3 h-3 text-[#36a4f2]" />
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">실무 활용 키트</span>
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            {relatedKits.map((kit, i) => (
+                                                <button
+                                                    key={i}
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        onNavigateToKit?.(kit.name);
+                                                    }}
+                                                    className="w-full flex items-center justify-between gap-2 p-1.5 bg-white border border-slate-100 rounded-lg group/kit hover:border-[#36a4f2]/30 transition-all shadow-sm"
+                                                >
+                                                    <span className="text-[10px] font-bold text-slate-700 line-clamp-1 group-hover/kit:text-[#36a4f2] text-left">
+                                                        {kit.name}
+                                                    </span>
+                                                    <Badge variant="outline" className="text-[8px] py-0 px-1 border-slate-200 text-slate-400 group-hover/kit:border-[#36a4f2]/20 group-hover/kit:text-[#36a4f2]/70 shrink-0">
+                                                        {kit.type}
+                                                    </Badge>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })()}
 
                             <div className="mt-auto pt-4 border-t border-slate-50 flex justify-between items-center">
                                 <span className="text-[11px] font-medium text-slate-400">{item.size}</span>

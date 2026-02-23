@@ -15,6 +15,11 @@ export const ActionKitContainer = () => {
         setActiveTab('laws');
     };
 
+    const handleNavigateToKit = (kitName: string) => {
+        setSearchQuery(kitName);
+        setActiveTab('kits');
+    };
+
     const handleTabChange = (tab: 'laws' | 'kits') => {
         setSearchQuery(""); // Clear search when manually switching tabs
         setActiveTab(tab);
@@ -53,7 +58,10 @@ export const ActionKitContainer = () => {
             {/* View Content */}
             <div className="max-w-7xl mx-auto">
                 {activeTab === 'laws' ? (
-                    <LawGuideView initialSearch={searchQuery} />
+                    <LawGuideView
+                        initialSearch={searchQuery}
+                        onNavigateToKit={handleNavigateToKit}
+                    />
                 ) : (
                     <ActionKitLibraryView onNavigateToLaw={handleNavigateToLaw} />
                 )}

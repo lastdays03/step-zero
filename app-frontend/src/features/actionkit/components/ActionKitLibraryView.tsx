@@ -20,6 +20,7 @@ import {
     Sparkles,
     Gavel,
     LucideIcon,
+    CheckSquare,
 } from 'lucide-react';
 
 const CATEGORY_ICONS: Record<string, LucideIcon> = {
@@ -40,6 +41,59 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 const isRelatedLawObject = (law: string | RelatedLaw): law is RelatedLaw => {
     return typeof law === "object" && law !== null && "name" in law;
+};
+
+const LawSnippetTag = ({
+    law,
+    onClick
+}: {
+    law: string | RelatedLaw,
+    onClick: (e: React.MouseEvent, name: string) => void
+}) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const name = isRelatedLawObject(law) ? law.name : law;
+    const summary = isRelatedLawObject(law) ? law.summary : null;
+    const snippet = isRelatedLawObject(law) ? law.snippet : null;
+
+    return (
+        <div
+            className="relative group/law-tag"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            <div
+                className="flex flex-wrap items-center gap-1.5 cursor-pointer"
+                onClick={(e) => onClick(e, name)}
+            >
+                <span className="text-[10px] font-bold text-[#36a4f2] bg-[#36a4f2]/5 px-1.5 py-0.5 rounded border border-[#36a4f2]/10 transition-colors group-hover/law-tag:bg-[#36a4f2]/20 group-hover/law-tag:border-[#36a4f2]/30">
+                    #{name}
+                </span>
+                {summary && (
+                    <span className="text-[10px] text-slate-500 line-clamp-1 flex-1 transition-colors group-hover/law-tag:text-slate-700">
+                        {summary}
+                    </span>
+                )}
+            </div>
+
+            {isHovered && snippet && (
+                <div className="absolute bottom-full left-0 mb-3 z-50 w-72 p-4 bg-white/95 backdrop-blur-md rounded-2xl shadow-2xl border border-[#36a4f2]/10 animate-in fade-in slide-in-from-bottom-2 duration-200 pointer-events-none">
+                    <div className="absolute -bottom-1.5 left-6 w-3 h-3 bg-white border-r border-b border-[#36a4f2]/10 rotate-45" />
+                    <div className="flex items-center gap-2 mb-2">
+                        <div className="w-6 h-6 rounded-lg bg-[#36a4f2]/10 flex items-center justify-center">
+                            <Gavel className="w-3.5 h-3.5 text-[#36a4f2]" />
+                        </div>
+                        <span className="text-[11px] font-black text-slate-800">{name} 핵심 요약</span>
+                    </div>
+                    <p className="text-[10px] text-slate-600 leading-relaxed break-keep font-medium">
+                        {snippet}
+                    </p>
+                    <div className="mt-3 pt-2 border-t border-slate-50 text-[10px] text-[#36a4f2] font-black flex items-center gap-1 capitalize tracking-tighter">
+                        CLICK TO VIEW FULL GUIDE <Search className="w-2.5 h-2.5" />
+                    </div>
+                </div>
+            )}
+        </div>
+    );
 };
 
 interface ActionKitLibraryViewProps {
@@ -97,6 +151,38 @@ export const ActionKitLibraryView = ({ onNavigateToLaw }: ActionKitLibraryViewPr
         cat.items.map(item => ({
             ...item,
             categoryTitle: cat.title,
+            relatedLaws: item.relatedLaws?.map(law => {
+                const name = isRelatedLawObject(law) ? law.name : law;
+                // Demo snippet for a specific law
+                if (name === "근로기준법 제17조") {
+                    return {
+                        name,
+                        summary: "근로조건의 명시",
+                        snippet: "사용자는 근로계약을 체결할 때 근로자에게 임금, 소정근로시간, 휴일, 연차 유급휴가 등을 명시해야 하며, 근로자에게 서면으로 교부해야 합니다."
+                    };
+                }
+                if (name === "상가건물 임대차보호법 제10조") {
+                    return {
+                        name,
+                        summary: "계약갱신 요구 등",
+                        snippet: "임차인이 임대차기간이 만료되기 6개월 전부터 1개월 전까지 사이에 계약갱신을 요구할 경우 임대인은 정당한 사유 없이 거절하지 못합니다."
+                    };
+                }
+                if (name === "상법 제170조") {
+                    return {
+                        name,
+                        summary: "회사의 정관",
+                        snippet: "회사를 설립함에는 발기인이 정관을 작성하여 각 발기인이 이에 기명날인 또는 서명하여야 합니다. 이는 회사의 헌법과 같은 역할을 합니다."
+                    };
+                }
+                return law;
+            }),
+            complianceChecklist: item.name.includes("근로계약서") ? [
+                "임금(기본급, 수당 등) 구성항목 및 계산방법 명시 여부",
+                "소정근로시간 및 휴게시간 명시 여부",
+                "휴일(주휴일 등) 및 연차 유급휴가 확인",
+                "근로계약서 2부 작성 후 근로자에게 1부 교부 완료 여부"
+            ] : undefined
         }))
     ).filter(item =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -195,25 +281,13 @@ export const ActionKitLibraryView = ({ onNavigateToLaw }: ActionKitLibraryViewPr
                                                     <Gavel className="w-3 h-3" /> 관련 조문 및 해설
                                                 </p>
                                                 <div className="space-y-1.5">
-                                                    {item.relatedLaws.map((law, i) => {
-                                                        const name = isRelatedLawObject(law) ? law.name : law;
-                                                        const summary = isRelatedLawObject(law) ? law.summary : null;
-
-                                                        return (
-                                                            <div key={i} className="group/law" onClick={(e) => handleLawClick(e, name)}>
-                                                                <div className="flex flex-wrap items-center gap-1.5">
-                                                                    <span className="text-[10px] font-bold text-[#36a4f2] bg-[#36a4f2]/5 px-1.5 py-0.5 rounded border border-[#36a4f2]/10 transition-colors group-hover/law:bg-[#36a4f2]/20 group-hover/law:border-[#36a4f2]/30">
-                                                                        #{name}
-                                                                    </span>
-                                                                    {summary && (
-                                                                        <span className="text-[10px] text-slate-500 line-clamp-1 flex-1 transition-colors group-hover/law:text-slate-700">
-                                                                            {summary}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </div>
-                                                        );
-                                                    })}
+                                                    {item.relatedLaws.map((law, i) => (
+                                                        <LawSnippetTag
+                                                            key={i}
+                                                            law={law}
+                                                            onClick={handleLawClick}
+                                                        />
+                                                    ))}
                                                 </div>
                                             </div>
                                         )}
@@ -312,6 +386,29 @@ export const ActionKitLibraryView = ({ onNavigateToLaw }: ActionKitLibraryViewPr
                                         </ul>
                                     </div>
 
+                                    {/* Compliance Checklist */}
+                                    {previewItem.complianceChecklist && previewItem.complianceChecklist.length > 0 && (
+                                        <div className="p-4 bg-amber-50 rounded-xl border border-amber-200">
+                                            <h4 className="flex items-center gap-2 text-sm font-bold text-amber-700 mb-3">
+                                                <CheckSquare className="w-4 h-4" />
+                                                법적 필수 확인 사항 (Checklist)
+                                            </h4>
+                                            <div className="space-y-2">
+                                                {previewItem.complianceChecklist.map((task, i) => (
+                                                    <label key={i} className="flex items-start gap-3 p-2 bg-white rounded-lg border border-amber-100 hover:border-amber-300 transition-colors cursor-pointer group/check">
+                                                        <div className="relative flex items-start justify-center pt-0.5">
+                                                            <input type="checkbox" className="peer appearance-none w-4 h-4 border-2 border-slate-300 rounded cursor-pointer checked:bg-amber-500 checked:border-amber-500 transition-all" />
+                                                            <CheckSquare className="w-3 h-3 text-white absolute top-1 pointer-events-none opacity-0 peer-checked:opacity-100" />
+                                                        </div>
+                                                        <span className="text-xs text-slate-700 font-medium peer-checked:text-slate-400 peer-checked:line-through transition-all select-none">
+                                                            {task}
+                                                        </span>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+
                                     {previewItem.relatedLaws && previewItem.relatedLaws.length > 0 && (
                                         <div className="space-y-3">
                                             <h4 className="flex items-center gap-2 text-sm font-bold text-slate-700">
@@ -319,22 +416,16 @@ export const ActionKitLibraryView = ({ onNavigateToLaw }: ActionKitLibraryViewPr
                                                 관련 법령 가이드
                                             </h4>
                                             <div className="flex flex-wrap gap-2">
-                                                {previewItem.relatedLaws.map((law, i) => {
-                                                    const name = isRelatedLawObject(law) ? law.name : law;
-                                                    return (
-                                                        <Badge
-                                                            key={i}
-                                                            variant="outline"
-                                                            className="cursor-pointer hover:bg-[#36a4f2]/10 hover:border-[#36a4f2]/30 transition-colors text-[10px] py-1 px-3 border-slate-200 text-slate-600"
-                                                            onClick={(e) => {
-                                                                handleLawClick(e, name);
-                                                                setPreviewItem(null);
-                                                            }}
-                                                        >
-                                                            #{name}
-                                                        </Badge>
-                                                    );
-                                                })}
+                                                {previewItem.relatedLaws.map((law, i) => (
+                                                    <LawSnippetTag
+                                                        key={i}
+                                                        law={law}
+                                                        onClick={(e, name) => {
+                                                            handleLawClick(e, name);
+                                                            setPreviewItem(null);
+                                                        }}
+                                                    />
+                                                ))}
                                             </div>
                                         </div>
                                     )}
