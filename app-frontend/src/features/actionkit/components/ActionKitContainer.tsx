@@ -8,6 +8,17 @@ import { Gavel, FolderOpen } from 'lucide-react';
 
 export const ActionKitContainer = () => {
     const [activeTab, setActiveTab] = useState<'laws' | 'kits'>('laws');
+    const [searchQuery, setSearchQuery] = useState("");
+
+    const handleNavigateToLaw = (lawTitle: string) => {
+        setSearchQuery(lawTitle);
+        setActiveTab('laws');
+    };
+
+    const handleNavigateToKit = (kitName: string) => {
+        setSearchQuery(kitName);
+        setActiveTab('kits');
+    };
 
     return (
         <div className="p-8 pb-32">
@@ -41,7 +52,17 @@ export const ActionKitContainer = () => {
 
             {/* View Content */}
             <div className="max-w-7xl mx-auto">
-                {activeTab === 'laws' ? <LawGuideView /> : <ActionKitLibraryView />}
+                {activeTab === 'laws' ? (
+                    <LawGuideView
+                        initialSearch={searchQuery}
+                        onNavigateToKit={handleNavigateToKit}
+                    />
+                ) : (
+                    <ActionKitLibraryView
+                        initialSearch={searchQuery}
+                        onNavigateToLaw={handleNavigateToLaw}
+                    />
+                )}
             </div>
         </div>
     );
