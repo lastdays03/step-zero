@@ -1,5 +1,5 @@
 import uuid
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 
 from fastapi import UploadFile
@@ -71,7 +71,7 @@ class ProfileService:
             if hasattr(profile, key):
                 setattr(profile, key, value)
         
-        profile.updated_at = datetime.now(timezone.utc)
+        profile.updated_at = datetime.utcnow()
         self.session.add(profile)
         await self.session.commit()
         await self.session.refresh(profile)
@@ -92,7 +92,7 @@ class ProfileService:
             
         # Update profile
         profile.profile_img = f"profile/{filename}"
-        profile.updated_at = datetime.now(timezone.utc)
+        profile.updated_at = datetime.utcnow()
         self.session.add(profile)
         await self.session.commit()
         await self.session.refresh(profile)

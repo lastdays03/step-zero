@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -17,8 +17,8 @@ class Roadmap(SQLModel, table=True):
     open_timeline: str | None = None
     budget_range: str | None = None
     additional_notes: str = ""
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
     deleted_at: datetime | None = None
     created_by: Optional[int] = Field(default=None, foreign_key="user.id")
     updated_by: Optional[int] = Field(default=None, foreign_key="user.id")
@@ -30,7 +30,7 @@ class RoadmapStep(SQLModel, table=True):
     step_order: int = Field(index=True)
     title: str
     status: str = "PENDING"
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class RoadmapGenerationJob(SQLModel, table=True):
@@ -46,8 +46,8 @@ class RoadmapGenerationJob(SQLModel, table=True):
     error_code: str | None = None
     error_message: str | None = None
     roadmap_id: UUID | None = Field(default=None, foreign_key="roadmap.id", index=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
     started_at: datetime | None = None
     completed_at: datetime | None = None
 
@@ -62,8 +62,8 @@ class RoadmapStepDetail(SQLModel, table=True):
     estimated_days: int = Field(default=0)
     risk_notes: list[str] = Field(default_factory=list, sa_column=sa.Column(sa.JSON, nullable=False))
     generation_mode: str = Field(default="RAG")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
 
 
 class RoadmapStepAction(SQLModel, table=True):
@@ -76,4 +76,4 @@ class RoadmapStepAction(SQLModel, table=True):
     description: str = Field(default="")
     source_url: str | None = None
     metadata_json: dict = Field(default_factory=dict, sa_column=sa.Column(sa.JSON, nullable=False))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=datetime.utcnow)

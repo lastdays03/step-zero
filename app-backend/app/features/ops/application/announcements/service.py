@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Literal
 
 from pydantic import BaseModel
@@ -82,7 +82,7 @@ async def update_announcement(
     if content is not None:
         row.content = content
     row.updated_by = actor_id
-    row.updated_at = datetime.now(timezone.utc)
+    row.updated_at = datetime.utcnow()
     session.add(row)
     await session.flush()
     await session.refresh(row)
@@ -102,7 +102,7 @@ async def update_announcement_status(
 
     row.status = status
     row.updated_by = actor_id
-    row.updated_at = datetime.now(timezone.utc)
+    row.updated_at = datetime.utcnow()
     session.add(row)
     await session.flush()
     await session.refresh(row)

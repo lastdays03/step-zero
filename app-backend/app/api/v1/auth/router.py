@@ -76,14 +76,13 @@ async def _login_social_mock_user(provider: str, session: AsyncSession) -> dict[
     current_team = teams[0]
 
     # Store refresh token for fallback path
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
 
     refresh_repo = RefreshTokenRepository(session)
     await refresh_repo.create(
         user_id=user.id,
         token_hash=security.hash_refresh_token(raw_refresh),
-        expires_at=datetime.now(timezone.utc)
-        + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
 
     return {

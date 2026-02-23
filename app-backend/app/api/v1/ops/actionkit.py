@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Path
 from pydantic import BaseModel
@@ -53,7 +53,7 @@ async def update_actionkit_item_status(
         return {"status": "no_change", "item_id": item.id, "is_active": before_is_active}
 
     item.is_active = after_is_active
-    item.updated_at = datetime.now(timezone.utc)
+    item.updated_at = datetime.utcnow()
     session.add(item)
 
     await record_admin_audit_log(

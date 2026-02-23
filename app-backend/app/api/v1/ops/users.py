@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query
 from pydantic import BaseModel
@@ -61,7 +61,7 @@ async def update_ops_user_status(
         }
 
     user.is_active = after_is_active
-    user.updated_at = datetime.now(timezone.utc)
+    user.updated_at = datetime.utcnow()
     session.add(user)
 
     await record_admin_audit_log(

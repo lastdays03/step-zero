@@ -81,7 +81,7 @@ class AuthService:
         new_stored = await self.refresh_token_repo.create(
             user_id=user.id,
             token_hash=new_token_hash,
-            expires_at=datetime.now(timezone.utc)
+            expires_at=datetime.utcnow()
             + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
         )
         await self.refresh_token_repo.mark_replaced(stored.id, new_stored.id)
@@ -123,7 +123,7 @@ class AuthService:
         await self.refresh_token_repo.create(
             user_id=user.id,
             token_hash=token_hash,
-            expires_at=datetime.now(timezone.utc)
+            expires_at=datetime.utcnow()
             + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
         )
 

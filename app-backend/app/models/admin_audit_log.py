@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime
 from typing import Optional
 
 import sqlalchemy as sa
@@ -18,4 +18,4 @@ class AdminAuditLog(SQLModel, table=True):
         default_factory=dict,
         sa_column=sa.Column("meta", sa.JSON, nullable=False),
     )
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), index=True)
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)

@@ -69,8 +69,8 @@ class RefreshTokenRepository:
 
     def is_expired(self, token: RefreshToken) -> bool:
         expires = token.expires_at
-        now = datetime.now(timezone.utc)
-        # Handle timezone-naive datetimes (e.g. from SQLite)
-        if expires.tzinfo is None:
-            expires = expires.replace(tzinfo=timezone.utc)
+        now = datetime.utcnow()
+        # Handle timezone-aware datetimes (e.g. from PostgreSQL with tz)
+        if expires.tzinfo is not None:
+            expires = expires.replace(tzinfo=None)
         return expires < now
