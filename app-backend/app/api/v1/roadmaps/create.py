@@ -1,0 +1,42 @@
+from typing import Any
+
+from fastapi import APIRouter, Depends
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.api import deps
+from app.api.v1.schemas import RoadmapCreateRequest, RoadmapResponse
+from app.core.db import get_session
+from app.features.roadmaps.application.roadmap_service import RoadmapService
+from app.models.team import Team
+from app.models.user import AuthenticatedUser
+from app.repositories.roadmap_repository import RoadmapRepository
+
+router = APIRouter()
+
+
+@router.post(
+    "",
+    response_model=RoadmapResponse,
+    summary="로드맵 생성",
+    description="입력된 업종/지역/메모를 기반으로 로드맵을 생성합니다.",
+    response_description="생성된 로드맵 ID, 제목, 단계 목록을 반환합니다.",
+)
+async def create_roadmap(
+    request: RoadmapCreateRequest,
+    current_user: AuthenticatedUser = Depends(deps.get_current_user),
+    current_team: Team = Depends(deps.get_current_team),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    service = RoadmapService(roadmap_repo=RoadmapRepository(session))
+    result = await service.create_roadmap(
+        team_id=current_team.id,
+        user_id=current_user.id,
+        business_type=request.business_type,
+        location=request.location,
+        description=request.description,
+        startup_type=request.startup_type,
+        open_timeline=request.open_timeline,
+        budget_range=request.budget_range,
+        additional_notes=request.additional_notes,
+    )
+    return result.__dict__

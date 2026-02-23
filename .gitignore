@@ -25,6 +25,11 @@ env/
 .env.development.local
 .env.test.local
 .env.production.local
+!.env.example
+!app-backend/.env.example
+!app-backend/.env.docker.local.example
+!app-frontend/.env.example
+!app-frontend/.env.docker.local.example
 
 # ---------------
 # Python (Backend)
@@ -51,6 +56,8 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+!app-frontend/src/lib/
+!app-frontend/src/lib/**
 
 # Typing & Test
 .mypy_cache/
@@ -85,3 +92,19 @@ data/
 pgdata/
 
 .temp/
+app-backend/uploads/
+app-backend/static/uploads/
+
+# ---------------
+# Testing & Tools
+# ---------------
+# Playwright MCP
+.playwright-mcp/
+# Test screenshots
+*.png
+!app-frontend/public/**/*.png
+
+# ---------------
+# MCP
+# ---------------
+.mcp.json

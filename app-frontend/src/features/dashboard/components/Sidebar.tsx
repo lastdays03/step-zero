@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, Map, Briefcase, Users, Settings, LogOut, Sparkles, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Map, Briefcase, Users, LogOut, Sparkles, ChevronRight, Shield } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 import { useAuth } from '@/providers/AuthProvider';
@@ -21,15 +21,15 @@ import {
 
 export const Sidebar = () => {
     const pathname = usePathname();
-    const { isLoggedIn, user, logout } = useAuth();
+    const { isLoggedIn, user, logout, canAccessOps } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
 
     const menuItems = [
         { icon: LayoutDashboard, label: '대시보드', href: '/dashboard' },
-        { icon: Map, label: '나의 로드맵', href: '#' },
-        { icon: Briefcase, label: '액션 키트', href: '#' },
-        { icon: Users, label: '그로스 클럽', href: '#', badge: 'New' },
-        { icon: Settings, label: '설정', href: '#' },
+        { icon: Map, label: '나의 로드맵', href: '/roadmap' },
+        { icon: Briefcase, label: '액션 키트', href: '/actionkit' },
+        { icon: Users, label: '그로스 클럽', href: '/growth-club', badge: 'New' },
+        ...(canAccessOps ? [{ icon: Shield, label: '운영 콘솔', href: '/ops' }] : []),
     ];
 
     return (
@@ -47,7 +47,7 @@ export const Sidebar = () => {
 
                 <nav className="flex-1 px-4 py-8 space-y-2">
                     {menuItems.map((item) => {
-                        const isActive = pathname === item.href;
+                        const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`);
                         return (
                             <Link
                                 key={item.label}
@@ -73,9 +73,12 @@ export const Sidebar = () => {
 
                 <div className="p-4 mt-auto">
                     {isLoggedIn ? (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <div className="bg-white rounded-2xl p-4 flex items-center justify-between group cursor-pointer hover:bg-slate-50 transition-all border border-slate-100 shadow-sm">
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <button
+                                        type="button"
+                                        className="w-full bg-white rounded-2xl p-4 flex items-center justify-between group cursor-pointer hover:bg-slate-50 transition-all border border-slate-100 shadow-sm text-left"
+                                    >
                                     <div className="flex items-center gap-3">
                                         <div className="relative">
                                             <Avatar className="w-10 h-10 border-2 border-white shadow-sm">
@@ -90,11 +93,12 @@ export const Sidebar = () => {
                                         </div>
                                     </div>
                                     <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-450 group-hover:translate-x-0.5 transition-all" />
-                                </div>
+                                    </button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-64 p-2 rounded-2xl bg-white/95 backdrop-blur-xl border-slate-200/60 shadow-2xl animate-in fade-in zoom-in duration-200">
                                 <DropdownMenuLabel className="px-3 py-2 text-xs font-semibold text-slate-400">내 계정</DropdownMenuLabel>
-                                <DropdownMenuItem className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors group">
+                                <DropdownMenuItem asChild className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors group">
+                                    <Link href="/profile">
                                     <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 group-hover:scale-110 transition-transform">
                                         <Users className="w-4 h-4" />
                                     </div>
@@ -102,8 +106,10 @@ export const Sidebar = () => {
                                         <span className="text-sm font-semibold text-slate-700">프로필 관리</span>
                                         <span className="text-[10px] text-slate-400">신원 및 정보 수정</span>
                                     </div>
+                                    </Link>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors group">
+                                <DropdownMenuItem asChild className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors group">
+                                    <Link href="/billing">
                                     <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
                                         <Sparkles className="w-4 h-4" />
                                     </div>
@@ -111,6 +117,7 @@ export const Sidebar = () => {
                                         <span className="text-sm font-semibold text-slate-700">구독 플랜</span>
                                         <span className="text-[10px] text-slate-400">프로 플랜 사용 중</span>
                                     </div>
+                                    </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator className="my-2 bg-slate-100" />
                                 <DropdownMenuItem

@@ -2,6 +2,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import model_validator
 from functools import lru_cache
 from typing import List
+from pathlib import Path
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "StepZero API"
@@ -26,6 +27,7 @@ class Settings(BaseSettings):
     SECRET_KEY: str
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     SQL_ECHO: bool = False
     
     # OpenAI
@@ -39,18 +41,55 @@ class Settings(BaseSettings):
     OPENAI_CHAT_MODEL: str = "gpt-4o-mini"
     OPENAI_EMBED_MODEL: str = "text-embedding-3-small"
 
+    # Storage (local only for now)
+    STORAGE_LOCAL_ROOT: str | None = None
+    GROWTH_CLUB_MAX_IMAGE_MB: int = 20
+    GROWTH_CLUB_MAX_FILE_MB: int = 50
+    GROWTH_CLUB_MAX_TOTAL_MB: int = 200
+    GROWTH_CLUB_MAX_IMAGE_COUNT: int = 10
+    GROWTH_CLUB_MAX_FILE_COUNT: int = 10
+
+    @staticmethod
+    def _normalize_optional_secret(value: str | None) -> str | None:
+        if value is None:
+            return None
+        cleaned = value.strip()
+        if not cleaned:
+            return None
+        placeholders = {
+            "REPLACE_ME",
+            "CHANGE_ME",
+            "CHANGE_ME_IN_PROD",
+            "YOUR_API_KEY",
+        }
+        return None if cleaned in placeholders else cleaned
+
     @model_validator(mode="after")
     def validate_security(self) -> "Settings":
         if not self.SECRET_KEY.strip():
             raise ValueError("SECRET_KEY must be set")
         if self.ENVIRONMENT.lower() == "production" and self.SECRET_KEY == "CHANGE_ME_IN_PROD":
             raise ValueError("SECRET_KEY must not use a default value in production")
+        self.OPENAI_API_KEY = self._normalize_optional_secret(self.OPENAI_API_KEY)
+        self.GOOGLE_CLIENT_ID = self._normalize_optional_secret(self.GOOGLE_CLIENT_ID)
         return self
+
+    @property
+    def STORAGE_ROOT_PATH(self) -> Path:
+        if self.STORAGE_LOCAL_ROOT and self.STORAGE_LOCAL_ROOT.strip():
+            return Path(self.STORAGE_LOCAL_ROOT).expanduser()
+
+        backend_root = Path(__file__).resolve().parents[2]
+        return backend_root / "uploads"
+
+    @property
+    def ACTIONKIT_STORAGE_PATH(self) -> Path:
+        return self.STORAGE_ROOT_PATH / "actionkit"
     
     model_config = SettingsConfigDict(
-        case_sensitive=True, 
-        env_file=(".env.local", ".env"),
-        env_file_encoding='utf-8', 
+        case_sensitive=True,
+        env_file=(".env", ".env.local"),
+        env_file_encoding='utf-8',
         extra="ignore"
     )
 

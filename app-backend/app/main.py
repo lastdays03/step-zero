@@ -2,6 +2,7 @@
 from contextlib import asynccontextmanager
 import time
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.problem import (
@@ -11,26 +12,13 @@ from app.api.problem import (
 )
 from app.core import config
 from app.core.logging import setup_logging, get_logger
-from app.services.rag.deps import get_rag_service
+from app.features.rag.application.deps import get_rag_service
 
 # 로깅 설정 초기화
 setup_logging()
 logger = get_logger("app.main")
 
 settings = config.get_settings()
-V1_SUNSET = "Tue, 30 Jun 2026 00:00:00 GMT"
-
-
-def get_v2_successor(path: str) -> str:
-    if path.startswith("/api/v1/auth"):
-        return path.replace("/api/v1/auth", "/api/v2/auth", 1)
-    if path.startswith("/api/v1/dashboard"):
-        return path.replace("/api/v1/dashboard", "/api/v2/dashboard", 1)
-    if path.startswith("/api/v1/generate"):
-        return path.replace("/api/v1/generate", "/api/v2/roadmaps", 1)
-    if path.startswith("/api/v1/rag"):
-        return path.replace("/api/v1/rag", "/api/v2/rag", 1)
-    return path.replace("/api/v1", "/api/v2", 1)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -45,16 +33,35 @@ app = FastAPI(
     version=settings.VERSION,
     lifespan=lifespan,
     openapi_url="/api/openapi.json",
+    openapi_tags=[
+        {"name": "health", "description": "서비스 상태 점검 API"},
+        {"name": "auth", "description": "인증/로그인 API"},
+        {"name": "dashboard", "description": "대시보드 요약 지표 API"},
+        {"name": "generation", "description": "레거시 로드맵 생성 API"},
+        {"name": "roadmaps", "description": "로드맵 생성/조회/진행 상태 API"},
+        {"name": "profile", "description": "내 프로필 조회/수정 API"},
+        {"name": "actionkits", "description": "액션키트 조회/파일 업로드 API"},
+        {"name": "growth-club", "description": "그로스클럽 게시글/댓글 API"},
+        {"name": "community", "description": "그로스클럽 하위호환(alias) API"},
+        {"name": "ops", "description": "플랫폼 운영자 전용 API"},
+        {"name": "rag", "description": "법률 가이드 RAG 질의 API"},
+    ],
 )
 
 # CORS 설정 추가
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+    # allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Serve user-uploaded files from the shared storage root.
+upload_dir = settings.STORAGE_ROOT_PATH
+upload_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/api/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
 
 # 1. 로깅 미들웨어 추가
 @app.middleware("http")
@@ -66,15 +73,6 @@ async def log_request_response(request: Request, call_next):
     
     response = await call_next(request)
 
-    if request.url.path.startswith("/api/v1"):
-        successor = get_v2_successor(request.url.path)
-        response.headers["Deprecation"] = "true"
-        response.headers["Sunset"] = V1_SUNSET
-        response.headers["Link"] = f'<{successor}>; rel="successor-version"'
-        response.headers["Warning"] = (
-            f'299 stepzero-api "Deprecated API v1. Migrate to {successor} before {V1_SUNSET}."'
-        )
-    
     # 응답 시간 및 상태 코드 로깅
     process_time = time.time() - start_time
     logger.info(
@@ -102,12 +100,26 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-from app.api.v1.api import api_router as api_v1_router
-from app.api.v2.api import api_router as api_v2_router
+# Static files for ActionKit
+actionkit_storage_dir = settings.ACTIONKIT_STORAGE_PATH
+actionkit_storage_dir.mkdir(parents=True, exist_ok=True)
+logger.info("ActionKit storage mounted at: %s", actionkit_storage_dir)
+app.mount(
+    "/api/v1/actionkits/files",
+    StaticFiles(directory=str(actionkit_storage_dir)),
+    name="actionkit-files",
+)
 
-@app.get("/health")
+from app.api.v1.api import api_router as api_v1_router
+
+@app.get(
+    "/health",
+    tags=["health"],
+    summary="헬스체크",
+    description="백엔드 프로세스 상태를 확인합니다.",
+    response_description="정상 상태(`status=ok`)를 반환합니다.",
+)
 async def health_check():
     return {"status": "ok"}
 
 app.include_router(api_v1_router, prefix="/api/v1")
-app.include_router(api_v2_router, prefix="/api/v2")

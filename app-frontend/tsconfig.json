@@ -24,6 +24,27 @@
     "paths": {
       "@/*": [
         "./src/*"
+      ],
+      "@feature/profile": [
+        "./src/features/profile"
+      ],
+      "@feature/actionkit": [
+        "./src/features/actionkit"
+      ],
+      "@feature/community": [
+        "./src/features/growth-club"
+      ],
+      "@feature/ops": [
+        "./src/features/ops"
+      ],
+      "@feature/dashboard": [
+        "./src/features/dashboard"
+      ],
+      "@feature/roadmap": [
+        "./src/features/roadmap"
+      ],
+      "@feature/contracts": [
+        "./src/features/shared/contracts"
       ]
     },
     "target": "ES2017"

@@ -3,9 +3,9 @@ from httpx import AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_v2_create_roadmap(client: AsyncClient):
+async def test_v1_create_roadmap(client: AsyncClient):
     login_response = await client.post(
-        "/api/v2/auth/login",
+        "/api/v1/auth/login",
         data={"username": "test@example.com", "password": "password123"},
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
@@ -21,7 +21,7 @@ async def test_v2_create_roadmap(client: AsyncClient):
         "description": "A cozy space for developers",
     }
 
-    create_response = await client.post("/api/v2/roadmaps", json=payload, headers=headers)
+    create_response = await client.post("/api/v1/roadmaps", json=payload, headers=headers)
     assert create_response.status_code == 200
     data = create_response.json()
     assert "roadmap_id" in data

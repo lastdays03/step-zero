@@ -2,12 +2,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { useAuth } from '../hooks/useAuth';
 
 export const LoginForm = () => {
     const { login } = useAuth();
-    const router = useRouter();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -16,7 +14,6 @@ export const LoginForm = () => {
         e.preventDefault();
         try {
             await login(email, password);
-            router.push('/dashboard');
         } catch {
             setError('Login failed');
         }

@@ -1,19 +1,144 @@
 "use client";
 
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { apiClient } from "@/lib/api-client";
 import { useDashboard } from '../hooks/useDashboard';
 import { ProgressCard } from './ProgressCard';
 import { RoadmapStepper } from './RoadmapStepper';
 import { GrowthClubCard } from './GrowthClubCard';
+import { RoadmapGenerationPanel } from '@/features/roadmap/components';
+import { useAuth } from "@/providers/AuthProvider";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Sparkles, Clock, CheckSquare } from 'lucide-react';
+import { Clock, CheckSquare } from 'lucide-react';
+import type { RoadmapDetailResponse } from '@/features/roadmap/components/RoadmapExecutionView';
 
 export const DashboardView = () => {
-    const { data, loading: isLoading } = useDashboard();
+    const { isLoggedIn } = useAuth();
+    const { data, loading: isLoading, reload } = useDashboard();
+    const [roadmapDetail, setRoadmapDetail] = useState<RoadmapDetailResponse | null>(null);
+    const [documentsLoading, setDocumentsLoading] = useState(false);
+    const [documentsError, setDocumentsError] = useState<string | null>(null);
+
+    const isRoadmapNotReady =
+        !data ||
+        data.current_phase.status === "GUEST" ||
+        data.current_phase.status === "READY" ||
+        data.roadmap.length === 0;
+    const dashboardPhaseTitle = data?.current_phase.title?.trim();
+
+    useEffect(() => {
+        if (isRoadmapNotReady) {
+            setRoadmapDetail(null);
+            setDocumentsError(null);
+            setDocumentsLoading(false);
+            return;
+        }
+
+        let cancelled = false;
+        const loadLatestRoadmapDetail = async () => {
+            setDocumentsLoading(true);
+            setDocumentsError(null);
+            try {
+                const response = await apiClient.get<RoadmapDetailResponse>("/roadmaps/latest/detail");
+                if (!cancelled) {
+                    setRoadmapDetail(response.data);
+                }
+            } catch (e) {
+                console.error("Failed to load roadmap documents", e);
+                if (!cancelled) {
+                    setDocumentsError("필요 서류를 불러오지 못했습니다.");
+                    setRoadmapDetail(null);
+                }
+            } finally {
+                if (!cancelled) {
+                    setDocumentsLoading(false);
+                }
+            }
+        };
+
+        void loadLatestRoadmapDetail();
+
+        return () => {
+            cancelled = true;
+        };
+    }, [isRoadmapNotReady]);
+
+    const currentStep = useMemo(() => {
+        if (!roadmapDetail) return null;
+        return (
+            roadmapDetail.steps.find(
+                (step) =>
+                    dashboardPhaseTitle
+                    && (step.detail?.phase === dashboardPhaseTitle || step.title === dashboardPhaseTitle)
+            )
+            || roadmapDetail.steps.find((step) => step.status === "IN_PROGRESS")
+            || roadmapDetail.steps.find((step) => step.status === "PENDING")
+            || roadmapDetail.steps.find((step) => step.status !== "COMPLETED")
+            || roadmapDetail.steps[0]
+            || null
+        );
+    }, [roadmapDetail, dashboardPhaseTitle]);
+
+    const nextRoadmapTitle = useMemo(() => {
+        if (!roadmapDetail || !currentStep) {
+            const currentRoadmapIndex = data?.roadmap.findIndex((step) => step.status === "current") ?? -1;
+            return currentRoadmapIndex >= 0 && data?.roadmap[currentRoadmapIndex + 1]
+                ? data.roadmap[currentRoadmapIndex + 1].title
+                : null;
+        }
+        const currentIndex = roadmapDetail.steps.findIndex((step) => step.id === currentStep.id);
+        if (currentIndex < 0) return null;
+        const nextStep = roadmapDetail.steps
+            .slice(currentIndex + 1)
+            .find((step) => step.status !== "COMPLETED");
+        return nextStep?.title || null;
+    }, [roadmapDetail, currentStep, data?.roadmap]);
+
+    const documentActions = useMemo(() => {
+        if (!currentStep) return [];
+
+        return ((currentStep.detail?.actions || []) as Array<{
+            id: number;
+            title: string;
+            description: string;
+            source_url?: string | null;
+            metadata_json?: Record<string, unknown>;
+            action_type: string;
+        }>)
+            .filter((action) => action.action_type === "DOCUMENT")
+            .map((doc) => {
+                const meta = (doc.metadata_json || {}) as Record<string, unknown>;
+                const downloadUrl =
+                    (typeof meta.download_url === "string" && meta.download_url)
+                    || (typeof meta.file_url === "string" && meta.file_url)
+                    || (typeof meta.template_url === "string" && meta.template_url)
+                    || (typeof meta.source_url === "string" && meta.source_url)
+                    || doc.source_url
+                    || null;
+
+                return {
+                    id: doc.id,
+                    title: doc.title,
+                    description: doc.description,
+                    completed: doc.metadata_json?.completed === true,
+                    stepTitle: currentStep.title,
+                    downloadUrl,
+                };
+            });
+    }, [currentStep]);
 
     if (isLoading || !data) {
         return <div className="p-8 text-center">Loading...</div>;
+    }
+
+    if (isRoadmapNotReady) {
+        return (
+            <RoadmapGenerationPanel
+                isAuthenticated={isLoggedIn}
+                onRefresh={() => void reload()}
+                onGenerated={() => void reload()}
+            />
+        );
     }
 
     return (
@@ -23,7 +148,11 @@ export const DashboardView = () => {
 
                 {/* 1. Progress Card (Span 3) */}
                 <div className="md:col-span-3 lg:col-span-3 h-full">
-                    <ProgressCard phase={data.current_phase} />
+                    <ProgressCard
+                        phase={data.current_phase}
+                        daysLeft={data.stats.days_left}
+                        nextTitle={nextRoadmapTitle}
+                    />
                 </div>
 
                 {/* 2. Growth Club (Span 1) */}
@@ -44,7 +173,56 @@ export const DashboardView = () => {
                             필요 서류
                         </h3>
                         <div className="space-y-3">
-                            <p className="text-sm text-slate-400 text-center py-4">로드맵을 생성하면 필요한 서류 목록이 표시됩니다.</p>
+                            {documentsLoading ? (
+                                <p className="text-sm text-slate-400 text-center py-4">필요 서류를 불러오는 중입니다...</p>
+                            ) : documentsError ? (
+                                <p className="text-sm text-red-500 text-center py-4">{documentsError}</p>
+                            ) : documentActions.length === 0 ? (
+                                <p className="text-sm text-slate-400 text-center py-4">현재 단계에서 필요한 서류가 없습니다.</p>
+                            ) : (
+                                documentActions.slice(0, 6).map((doc) => (
+                                    <div
+                                        key={doc.id}
+                                        className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2"
+                                    >
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div>
+                                                <p className="text-sm font-semibold text-slate-800">{doc.title}</p>
+                                                <p className="mt-0.5 text-[11px] text-slate-500">{doc.stepTitle}</p>
+                                            </div>
+                                            <span
+                                                className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                                                    doc.completed
+                                                        ? "bg-emerald-100 text-emerald-700"
+                                                        : "bg-amber-100 text-amber-700"
+                                                }`}
+                                            >
+                                                {doc.completed ? "완료" : "필수"}
+                                            </span>
+                                        </div>
+                                        {doc.description ? (
+                                            <p className="mt-1 text-xs text-slate-600 line-clamp-2">{doc.description}</p>
+                                        ) : null}
+                                        <div className="mt-2">
+                                            {doc.downloadUrl ? (
+                                                <a
+                                                    href={doc.downloadUrl}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                    download
+                                                    className="inline-flex rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-100"
+                                                >
+                                                    다운로드
+                                                </a>
+                                            ) : (
+                                                <span className="text-[11px] text-slate-400">
+                                                    다운로드 링크 없음
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+                                ))
+                            )}
                         </div>
                     </CardContent>
                 </Card>
@@ -70,16 +248,6 @@ export const DashboardView = () => {
                         <p className="text-xs font-bold text-slate-500 mt-1 uppercase">작업 완료율</p>
                     </CardContent>
                 </Card>
-            </div>
-
-            {/* Floating FAB */}
-            <div className="fixed bottom-28 md:bottom-8 right-6 md:right-8 z-50">
-                <Button className="w-14 h-14 md:w-auto md:h-auto group flex items-center justify-center md:justify-start md:gap-3 bg-slate-900 hover:bg-slate-800 text-white p-0 md:pl-4 md:pr-6 md:py-4 rounded-full shadow-[0_4px_20px_rgba(54,164,242,0.4)] transition-all hover:scale-105 active:scale-95 border-none">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#36a4f2] to-purple-400 flex items-center justify-center shrink-0">
-                        <Sparkles className="w-4 h-4 text-white" />
-                    </div>
-                    <span className="hidden md:block font-bold text-sm tracking-tight text-white">법률 AI에게 물어보기</span>
-                </Button>
             </div>
         </div>
     );

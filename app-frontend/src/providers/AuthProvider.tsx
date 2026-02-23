@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useSyncExternalStore, ReactNode } from 'react';
 import { apiClient } from '@/lib/api-client';
 import type { TokenWithTeams } from '@/lib/api-types';
 
@@ -9,57 +9,117 @@ interface User {
     username: string;
     email: string;
     full_name?: string;
+    is_superuser?: boolean;
 }
 
 interface AuthContextType {
     user: User | null;
     isLoggedIn: boolean;
-    login: (token: string, userData: User, currentTeamId?: string) => void;
+    isAuthReady: boolean;
+    canAccessOps: boolean;
+    login: (token: string, userData: User, currentTeamId?: string, refreshToken?: string) => void;
     loginWithCredentials: (email: string, password: string) => Promise<void>;
+    updateUser: (data: Partial<User>) => void;
     logout: () => void;
     isGuest: boolean;
 }
 
+type AuthState = { user: User | null; isLoggedIn: boolean };
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AUTH_STORAGE_EVENT = 'auth-storage-changed';
+const ROADMAP_JOB_STORAGE_KEY = "roadmap_polling_job_id";
+const LOGGED_OUT_STATE: AuthState = { user: null, isLoggedIn: false };
+let lastTokenSnapshot: string | null = null;
+let lastUserSnapshot: string | null = null;
+let lastAuthStateSnapshot: AuthState = LOGGED_OUT_STATE;
 
 const asOptionalString = (value: unknown): string | undefined =>
     typeof value === 'string' && value.trim() ? value : undefined;
 
-const getInitialAuthState = (): { user: User | null; isLoggedIn: boolean } => {
+const getStoredAuthState = (): AuthState => {
     if (typeof window === 'undefined') {
-        return { user: null, isLoggedIn: false };
+        return LOGGED_OUT_STATE;
     }
 
     const storedToken = localStorage.getItem('token');
     const storedUser = localStorage.getItem('user');
+    if (storedToken === lastTokenSnapshot && storedUser === lastUserSnapshot) {
+        return lastAuthStateSnapshot;
+    }
+
     if (!storedToken || !storedUser) {
-        return { user: null, isLoggedIn: false };
+        lastTokenSnapshot = storedToken;
+        lastUserSnapshot = storedUser;
+        lastAuthStateSnapshot = LOGGED_OUT_STATE;
+        return LOGGED_OUT_STATE;
     }
 
     try {
-        return { user: JSON.parse(storedUser) as User, isLoggedIn: true };
+        lastTokenSnapshot = storedToken;
+        lastUserSnapshot = storedUser;
+        lastAuthStateSnapshot = { user: JSON.parse(storedUser) as User, isLoggedIn: true };
+        return lastAuthStateSnapshot;
     } catch (e) {
         console.error("Failed to parse user data", e);
         localStorage.removeItem('token');
         localStorage.removeItem('user');
         localStorage.removeItem('current_team_id');
-        return { user: null, isLoggedIn: false };
+        lastTokenSnapshot = null;
+        lastUserSnapshot = null;
+        lastAuthStateSnapshot = LOGGED_OUT_STATE;
+        return LOGGED_OUT_STATE;
     }
 };
 
-export const AuthProvider = ({ children }: { children: ReactNode }) => {
-    const initialAuthState = getInitialAuthState();
-    const [user, setUser] = useState<User | null>(initialAuthState.user);
-    const [isLoggedIn, setIsLoggedIn] = useState(initialAuthState.isLoggedIn);
+const getServerAuthState = (): AuthState => LOGGED_OUT_STATE;
 
-    const login = (token: string, userData: User, currentTeamId?: string) => {
+const subscribeAuthState = (onStoreChange: () => void): (() => void) => {
+    if (typeof window === 'undefined') {
+        return () => {};
+    }
+
+    const onChange = () => onStoreChange();
+    window.addEventListener('storage', onChange);
+    window.addEventListener(AUTH_STORAGE_EVENT, onChange);
+
+    return () => {
+        window.removeEventListener('storage', onChange);
+        window.removeEventListener(AUTH_STORAGE_EVENT, onChange);
+    };
+};
+
+const notifyAuthStateChanged = () => {
+    if (typeof window === 'undefined') return;
+    window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
+};
+
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    const [isAuthReady, setIsAuthReady] = React.useState(false);
+
+    React.useEffect(() => {
+        setIsAuthReady(true);
+    }, []);
+
+    const authState = useSyncExternalStore(
+        subscribeAuthState,
+        getStoredAuthState,
+        getServerAuthState
+    );
+    const { user, isLoggedIn } = authState;
+    const canAccessOps = Boolean(user?.is_superuser);
+
+    const login = (token: string, userData: User, currentTeamId?: string, refreshToken?: string) => {
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(userData));
         if (currentTeamId) {
             localStorage.setItem('current_team_id', currentTeamId);
         }
-        setUser(userData);
-        setIsLoggedIn(true);
+        if (refreshToken) {
+            localStorage.setItem('refresh_token', refreshToken);
+        }
+        notifyAuthStateChanged();
+        window.location.assign('/dashboard');
     };
 
     const loginWithCredentials = async (email: string, password: string) => {
@@ -86,29 +146,47 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 username: fullName || data.user.email.split('@')[0] || data.user.email,
                 email: data.user.email,
                 full_name: fullName,
+                is_superuser: Boolean((data.user as { is_superuser?: boolean }).is_superuser),
             }
             : {
                 id: email,
                 username: email.split('@')[0] || email,
                 email,
             };
-        login(accessToken, userData, data.current_team_id);
+        login(accessToken, userData, data.current_team_id, data.refresh_token);
     };
 
     const logout = () => {
+        const refreshToken = localStorage.getItem('refresh_token');
+        if (refreshToken) {
+            // Best-effort server logout (don't await)
+            apiClient.post('/auth/logout', { refresh_token: refreshToken }).catch(() => {});
+        }
         localStorage.removeItem('token');
+        localStorage.removeItem('refresh_token');
         localStorage.removeItem('user');
         localStorage.removeItem('current_team_id');
-        setUser(null);
-        setIsLoggedIn(false);
+        localStorage.removeItem(ROADMAP_JOB_STORAGE_KEY);
+        notifyAuthStateChanged();
+        window.location.assign('/dashboard');
+    };
+
+    const updateUser = (data: Partial<User>) => {
+        if (!user) return;
+        const updatedUser = { ...user, ...data };
+        localStorage.setItem('user', JSON.stringify(updatedUser));
+        notifyAuthStateChanged();
     };
 
     return (
         <AuthContext.Provider value={{
             user,
             isLoggedIn,
+            isAuthReady,
+            canAccessOps,
             login,
             loginWithCredentials,
+            updateUser,
             logout,
             isGuest: !isLoggedIn
         }}>

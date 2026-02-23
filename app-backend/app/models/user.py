@@ -36,3 +36,4 @@ class AuthenticatedUser(SQLModel):
     id: int
     email: str
     full_name: Optional[str] = None
+    is_superuser: bool = False

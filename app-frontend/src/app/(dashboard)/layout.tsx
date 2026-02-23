@@ -1,8 +1,6 @@
 
 import React from 'react';
-import { Sidebar } from "@/features/dashboard/components/Sidebar";
-import { Header } from "@/features/dashboard/components/Header";
-import { MobileNav } from "@/features/dashboard/components/MobileNav";
+import { Header, MobileNav, Sidebar } from "@/features/dashboard/components";
 
 export default function DashboardLayout({
     children,

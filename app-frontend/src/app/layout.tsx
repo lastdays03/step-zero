@@ -4,6 +4,7 @@ import './globals.css'
 import { cn } from '@/lib/utils'
 import { AuthProvider } from '@/providers/AuthProvider'
 import { GoogleOAuthProvider } from '@react-oauth/google'
+import { GlobalChatbot } from '@/features/chatbot'
 
 const inter = Inter({ subsets: ['latin'], variable: "--font-sans" })
 
@@ -30,11 +31,13 @@ export default function RootLayout({
                     <GoogleOAuthProvider clientId={googleClientId}>
                         <AuthProvider>
                             {children}
+                            <GlobalChatbot />
                         </AuthProvider>
                     </GoogleOAuthProvider>
                 ) : (
                     <AuthProvider>
                         {children}
+                        <GlobalChatbot />
                     </AuthProvider>
                 )}
             </body>

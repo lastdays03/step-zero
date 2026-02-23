@@ -4,6 +4,7 @@ from uuid import UUID
 from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
+from jose.exceptions import ExpiredSignatureError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -12,9 +13,9 @@ from app.models.team import Team, TeamMember
 from app.models.user import AuthenticatedUser, User
 from app.core.security import settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v2/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 optional_oauth2_scheme = OAuth2PasswordBearer(
-    tokenUrl="/api/v2/auth/login",
+    tokenUrl="/api/v1/auth/login",
     auto_error=False,
 )
 
@@ -37,7 +38,7 @@ async def get_current_user(
         raise credentials_exception
 
     user: User | None = None
-    # v2: sub is user_id, v1 fallback: sub may be user email.
+    # Current token subject is user_id; keep email fallback for legacy tokens.
     if str(subject).isdigit():
         result = await session.execute(select(User).where(User.id == int(subject)))
         user = result.scalar_one_or_none()
@@ -50,7 +51,12 @@ async def get_current_user(
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
 
-    return AuthenticatedUser(id=user.id, email=user.email, full_name=user.full_name)
+    return AuthenticatedUser(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        is_superuser=user.is_superuser,
+    )
 
 
 async def get_current_team(
@@ -120,4 +126,64 @@ async def get_optional_current_user(
         return None
     if not user.is_active:
         return None
-    return AuthenticatedUser(id=user.id, email=user.email, full_name=user.full_name)
+    return AuthenticatedUser(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        is_superuser=user.is_superuser,
+    )
+
+
+async def get_current_user_or_guest(
+    token: Annotated[str | None, Depends(optional_oauth2_scheme)] = None,
+    session: AsyncSession = Depends(get_session),
+) -> AuthenticatedUser | None:
+    """Like get_optional_current_user, but returns 401 for expired tokens
+    instead of treating them as guest. This triggers the frontend's
+    silent refresh flow."""
+    if not token:
+        return None  # Genuine guest (no token at all)
+
+    try:
+        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        subject = payload.get("sub")
+        if subject is None:
+            return None
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except JWTError:
+        return None
+
+    user: User | None = None
+    if str(subject).isdigit():
+        result = await session.execute(select(User).where(User.id == int(subject)))
+        user = result.scalar_one_or_none()
+    else:
+        result = await session.execute(select(User).where(User.email == str(subject)))
+        user = result.scalar_one_or_none()
+
+    if not user:
+        return None
+    if not user.is_active:
+        return None
+    return AuthenticatedUser(
+        id=user.id,
+        email=user.email,
+        full_name=user.full_name,
+        is_superuser=user.is_superuser,
+    )
+
+
+async def require_platform_admin(
+    current_user: Annotated[AuthenticatedUser, Depends(get_current_user)],
+) -> AuthenticatedUser:
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Platform admin access denied",
+        )
+    return current_user

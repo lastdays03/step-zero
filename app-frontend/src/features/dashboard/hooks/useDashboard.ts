@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '@/lib/api-client';
 import type { DashboardResponse } from '@/lib/api-types';
+import { AxiosError } from 'axios';
 
 export type DashboardData = DashboardResponse;
 
@@ -31,24 +32,43 @@ export const useDashboard = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
-    useEffect(() => {
-        const loadData = async () => {
-            setLoading(true);
-            try {
-                // actual API call
-                const response = await apiClient.get('/dashboard');
-                setData(response.data);
-            } catch (err) {
-                console.error('Failed to load dashboard data:', err);
-                setError('데이터를 불러오는 중 오류가 발생했습니다.');
+    const loadData = useCallback(async () => {
+        setLoading(true);
+        setError(null);
+        try {
+            const response = await apiClient.get('/dashboard');
+            setData(response.data);
+        } catch (err) {
+            console.error('Failed to load dashboard data:', err);
+            const status = err instanceof AxiosError ? err.response?.status : undefined;
+            if (status === 401) {
+                setError('로그인이 만료되었습니다. 다시 로그인해 주세요.');
                 setData(GUEST_DASHBOARD_DATA);
-            } finally {
-                setLoading(false);
+            } else {
+                setError('데이터를 불러오는 중 오류가 발생했습니다.');
+                // Keep previously loaded roadmap data on transient errors.
+                setData((prev) => prev ?? GUEST_DASHBOARD_DATA);
             }
-        };
-
-        loadData();
+        } finally {
+            setLoading(false);
+        }
     }, []);
 
-    return { data, loading, error };
+    useEffect(() => {
+        void loadData();
+
+        const handleAuthChange = () => {
+            void loadData();
+        };
+
+        window.addEventListener('auth-storage-changed', handleAuthChange);
+        window.addEventListener('storage', handleAuthChange);
+
+        return () => {
+            window.removeEventListener('auth-storage-changed', handleAuthChange);
+            window.removeEventListener('storage', handleAuthChange);
+        };
+    }, [loadData]);
+
+    return { data, loading, error, reload: loadData };
 };
