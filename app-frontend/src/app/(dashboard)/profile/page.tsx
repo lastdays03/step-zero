@@ -35,6 +35,7 @@ export default function ProfilePage() {
     const [saving, setSaving] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [currentTime, setCurrentTime] = useState(new Date());
+    const [isAutoFilled, setIsAutoFilled] = useState(false);
     const apiHost = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
 
     useEffect(() => {
@@ -62,6 +63,16 @@ export default function ProfilePage() {
             setLoading(true);
             const data = await getMyProfile();
             setProfile(data);
+
+            // Check if backend auto-filled these fields (they would come from roadmap)
+            // It's a heuristic: we assume if they are filled on first fetch but user never explicitly saved them, it might be auto-filled.
+            // A more robust way is for the backend to flag it, but for UX, just showing the hint if they exist is helpful.
+            // Since we can't perfectly know if it's auto-filled vs previously saved just from the payload,
+            // we will show the hint if category and region have values.
+            if (data.category || data.region) {
+                setIsAutoFilled(true);
+            }
+
             setFormData({
                 nickname: data.nickname || "",
                 full_name: data.full_name || "",
@@ -295,6 +306,14 @@ export default function ProfilePage() {
                         </CardHeader>
                         <Separator className="bg-slate-50" />
                         <CardContent className="space-y-6 p-6">
+                            {isAutoFilled && (
+                                <div className="rounded-lg bg-blue-50 p-4 border border-blue-100 flex items-start gap-3">
+                                    <AlertCircle className="text-blue-500 mt-0.5 shrink-0" size={16} />
+                                    <p className="text-sm text-blue-800 font-medium">
+                                        💡 대시보드에서 입력하신 정보가 자동으로 채워졌습니다. 자유롭게 수정 가능합니다.
+                                    </p>
+                                </div>
+                            )}
                             <div className="grid gap-6 md:grid-cols-2">
                                 <div className="space-y-2">
                                     <label className="text-sm font-bold text-slate-600">업종</label>
