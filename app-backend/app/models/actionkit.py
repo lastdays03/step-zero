@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
@@ -13,8 +13,8 @@ class ActionKitCategory(SQLModel, table=True):
     title: str
     sort_order: int = Field(default=0, index=True)
     is_active: bool = Field(default=True, index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ActionKitItem(SQLModel, table=True):
@@ -32,8 +32,8 @@ class ActionKitItem(SQLModel, table=True):
     dday: str | None = None
     sort_order: int = Field(default=0, index=True)
     is_active: bool = Field(default=True, index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ActionKitItemHighlight(SQLModel, table=True):
@@ -43,7 +43,7 @@ class ActionKitItemHighlight(SQLModel, table=True):
     item_id: int = Field(foreign_key="actionkit_items.id", index=True)
     content: str
     sort_order: int = Field(default=0, index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ActionKitRelatedLaw(SQLModel, table=True):
@@ -54,7 +54,7 @@ class ActionKitRelatedLaw(SQLModel, table=True):
     law_name: str
     law_summary: str | None = None
     sort_order: int = Field(default=0, index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class ActionKitFile(SQLModel, table=True):
@@ -69,6 +69,6 @@ class ActionKitFile(SQLModel, table=True):
     size_bytes: int | None = None
     checksum: str | None = None
     is_current: bool = Field(default=True, index=True)
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 

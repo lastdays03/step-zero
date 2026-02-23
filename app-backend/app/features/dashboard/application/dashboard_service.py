@@ -98,7 +98,8 @@ class DashboardService:
                 date = "-"
             roadmap_items.append({"title": phase_name, "status": status, "date": date})
 
-        days_left = max(0, 30 - (datetime.now(timezone.utc) - latest_roadmap.created_at).days)
+        created_at = latest_roadmap.created_at.replace(tzinfo=timezone.utc) if latest_roadmap.created_at.tzinfo is None else latest_roadmap.created_at
+        days_left = max(0, 30 - (datetime.now(timezone.utc) - created_at).days)
 
         return DashboardResult(
             user_name=user_name,

@@ -231,24 +231,24 @@ async def create_post(
         prepared_files=prepared_files,
     )
 
-    
+
     # Refresh with relationships to satisfy response model.
+    # 새로 생성된 글이므로 likes는 항상 0건 — selectinload 불필요
     query = (
         select(GrowthClubPost)
         .where(GrowthClubPost.id == post_id)
         .options(
             selectinload(GrowthClubPost.author),
             selectinload(GrowthClubPost.comments),
-            selectinload(GrowthClubPost.likes),
             selectinload(GrowthClubPost.attachments),
         )
     )
     result = await session.execute(query)
     post = result.scalar_one()
-    
+
     post_read = GrowthClubPostRead.model_validate(post)
-    post_read.likes_count = len(post.likes)
-    post_read.is_liked = any(like.user_id == current_user.id for like in post.likes)
+    post_read.likes_count = 0
+    post_read.is_liked = False
     return post_read
 
 @router.delete(

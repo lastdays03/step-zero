@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import shutil
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from sqlmodel import select
@@ -58,7 +58,7 @@ async def seed() -> None:
             print("[seed_actionkit] actionkit data already exists. skipping.")
             return
 
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
 
         law_categories: dict[str, ActionKitCategory] = {}
         for sort_order, (slug, chapter) in enumerate(LAW_DATA.items(), start=1):
