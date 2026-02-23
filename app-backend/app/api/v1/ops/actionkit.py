@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 
@@ -8,7 +8,9 @@ from app.features.ops.application.actionkit import (
     get_items_by_category,
     get_item_detail,
     update_item,
-    create_item
+    create_item,
+    upload_file_for_item,
+    delete_item
 )
 from app.api.v1.ops.schemas import (
     ActionKitCategoryResponse,
@@ -86,3 +88,31 @@ async def patch_actionkit_item(
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     return item
+
+@router.post(
+    "/items/{item_id}/files",
+    response_model=ActionKitItemResponse,
+    summary="액션키트 아이템 연관 파일 업로드",
+)
+async def upload_actionkit_item_file(
+    item_id: int,
+    file: UploadFile = File(...),
+    session: AsyncSession = Depends(get_session)
+):
+    item = await upload_file_for_item(session, item_id, file)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item
+
+@router.delete(
+    "/items/{item_id}",
+    summary="액션키트 아이템 삭제",
+)
+async def delete_actionkit_item(
+    item_id: int,
+    session: AsyncSession = Depends(get_session)
+):
+    success = await delete_item(session, item_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return {"ok": True}

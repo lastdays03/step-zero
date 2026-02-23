@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Search, FolderOpen, Loader2, Edit3, Trash2 } from "lucide-react";
 import { ActionKitEditModal } from "@/features/ops/actionkit/components/actionkit-edit-modal";
+import { apiClient } from "@/lib/api-client";
 
 export function OpsActionKitView() {
   const { canRender } = useOpsAccessGuard();
@@ -21,6 +22,16 @@ export function OpsActionKitView() {
   const [items, setItems] = useState<ActionKitItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [editingItem, setEditingItem] = useState<ActionKitItem | null>(null);
+  const [isCreating, setIsCreating] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+
+  const filteredItems = items.filter(item => {
+    const q = searchQuery.toLowerCase();
+    return (
+      item.name?.toLowerCase().includes(q) ||
+      item.summary?.toLowerCase().includes(q)
+    );
+  });
 
   const loadItems = (categoryId: number) => {
     setLoading(true);
@@ -28,6 +39,17 @@ export function OpsActionKitView() {
       .then((data) => setItems(data))
       .catch(console.error)
       .finally(() => setLoading(false));
+  };
+
+  const handleDelete = async (item: ActionKitItem) => {
+    if (!confirm(`"${item.name}" 항목을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+    try {
+      await apiClient.delete(`/ops/actionkit/items/${(item as any).id}`);
+      if (activeCategory) loadItems(activeCategory);
+    } catch (error) {
+      console.error("Failed to delete item:", error);
+      alert("삭제 중 오류가 발생했습니다.");
+    }
   };
 
   useEffect(() => {
@@ -59,7 +81,11 @@ export function OpsActionKitView() {
             앱 화면에 노출되는 액션 키트 라이브러리와 법령 가이드를 운영할 수 있습니다.
           </p>
         </div>
-        <Button className="bg-[#36a4f2] hover:bg-[#258bd1]">
+        <Button
+          className="bg-[#36a4f2] hover:bg-[#258bd1]"
+          onClick={() => setIsCreating(true)}
+          disabled={!activeCategory}
+        >
           + 새 항목 등록
         </Button>
       </header>
@@ -87,11 +113,13 @@ export function OpsActionKitView() {
             <input
               type="text"
               placeholder="항목 검색..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               className="w-full pl-9 pr-4 py-1.5 text-sm border-slate-200 rounded-lg focus:ring-[#36a4f2]/20 outline-none border"
             />
           </div>
           <div className="text-sm font-semibold text-slate-500 flex items-center">
-            총 {items.length}개 항목
+            총 {filteredItems.length}개 항목
           </div>
         </div>
         <CardContent className="p-0">
@@ -99,10 +127,12 @@ export function OpsActionKitView() {
             <div className="py-20 flex justify-center items-center text-slate-400">
               <Loader2 className="w-8 h-8 animate-spin" />
             </div>
-          ) : items.length === 0 ? (
+          ) : filteredItems.length === 0 ? (
             <div className="py-20 text-center text-slate-400">
               <FolderOpen className="w-12 h-12 mx-auto mb-4 opacity-20" />
-              <p className="text-sm font-bold">이 카테고리에는 아직 항목이 없습니다.</p>
+              <p className="text-sm font-bold">
+                {searchQuery ? "검색 결과가 없습니다." : "이 카테고리에는 아직 항목이 없습니다."}
+              </p>
             </div>
           ) : (
             <div className="w-full">
@@ -118,7 +148,7 @@ export function OpsActionKitView() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {items.map((item) => (
+                  {filteredItems.map((item) => (
                     <tr key={item.name} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
                         <Badge className={`border-none ${(item as any).is_active ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
@@ -148,7 +178,7 @@ export function OpsActionKitView() {
                           >
                             <Edit3 className="w-4 h-4" />
                           </Button>
-                          <Button variant="outline" size="icon" className="w-8 h-8 rounded-md text-slate-400 hover:text-red-500">
+                          <Button variant="outline" size="icon" className="w-8 h-8 rounded-md text-slate-400 hover:text-red-500" onClick={() => handleDelete(item)}>
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
@@ -167,6 +197,17 @@ export function OpsActionKitView() {
           item={editingItem}
           isOpen={!!editingItem}
           onClose={() => setEditingItem(null)}
+          onSaved={() => {
+            if (activeCategory) loadItems(activeCategory);
+          }}
+        />
+      )}
+
+      {isCreating && activeCategory && (
+        <ActionKitEditModal
+          item={{ category_id: activeCategory, isNew: true }}
+          isOpen={isCreating}
+          onClose={() => setIsCreating(false)}
           onSaved={() => {
             if (activeCategory) loadItems(activeCategory);
           }}

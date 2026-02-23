@@ -1,4 +1,8 @@
 from typing import TypedDict, List
+from fastapi import UploadFile
+import os
+import shutil
+import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -43,8 +47,7 @@ async def create_item(session: AsyncSession, data: ActionKitItemCreateRequest) -
     item = ActionKitItem(**data.model_dump())
     session.add(item)
     await session.commit()
-    await session.refresh(item)
-    return item
+    return await get_item_detail(session, item.id)
 
 async def update_item(session: AsyncSession, item_id: int, data: ActionKitItemUpdateRequest) -> ActionKitItem | None:
     item = await get_item_detail(session, item_id)
@@ -55,3 +58,50 @@ async def update_item(session: AsyncSession, item_id: int, data: ActionKitItemUp
     await session.commit()
     await session.refresh(item)
     return item
+
+async def upload_file_for_item(session: AsyncSession, item_id: int, file: UploadFile) -> ActionKitItem | None:
+    item = await get_item_detail(session, item_id)
+    if not item:
+        return None
+
+    next_version = len(item.files) + 1 if item.files else 1
+    upload_dir = "data/uploads/actionkit"
+    os.makedirs(upload_dir, exist_ok=True)
+    
+    unique_name = f"{uuid.uuid4()}_{file.filename}"
+    file_path = os.path.join(upload_dir, unique_name)
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+
+    for f in item.files:
+        f.is_current = False
+
+    new_file = ActionKitFile(
+        item_id=item.id,
+        version=next_version,
+        object_key=file_path,
+        original_filename=file.filename,
+        mime_type=file.content_type,
+        size_bytes=os.path.getsize(file_path),
+        is_current=True
+    )
+    session.add(new_file)
+    
+    ext = file.filename.split('.')[-1].lower() if file.filename and '.' in file.filename else None
+    item.file_type = file.content_type
+    item.ext = ext
+    
+    size_mb = os.path.getsize(file_path) / (1024 * 1024)
+    item.size_label = f"{size_mb:.1f}MB" if size_mb >= 0.1 else f"{os.path.getsize(file_path) / 1024:.0f}KB"
+
+    await session.commit()
+    return await get_item_detail(session, item.id)
+
+async def delete_item(session: AsyncSession, item_id: int) -> bool:
+    item = await get_item_detail(session, item_id)
+    if not item:
+        return False
+    await session.delete(item)
+    await session.commit()
+    return True
