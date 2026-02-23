@@ -94,7 +94,10 @@ export const ActionKitLibraryView = ({ onNavigateToLaw }: ActionKitLibraryViewPr
     };
 
     const filteredItems = Object.values(data).flatMap(cat =>
-        cat.items.map(item => ({ ...item, categoryTitle: cat.title }))
+        cat.items.map(item => ({
+            ...item,
+            categoryTitle: cat.title,
+        }))
     ).filter(item =>
         item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.summary.toLowerCase().includes(searchQuery.toLowerCase())
