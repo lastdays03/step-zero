@@ -54,7 +54,8 @@ async def get_items_by_category(session: AsyncSession, category_id: int) -> List
     stmt = select(ActionKitItem).where(ActionKitItem.category_id == category_id).options(
         selectinload(ActionKitItem.files),
         selectinload(ActionKitItem.highlights),
-        selectinload(ActionKitItem.related_laws)
+        selectinload(ActionKitItem.related_laws),
+        selectinload(ActionKitItem.checklists)
     ).order_by(ActionKitItem.sort_order)
     result = await session.execute(stmt)
     return list(result.scalars().all())
@@ -82,8 +83,7 @@ async def update_item(session: AsyncSession, item_id: int, data: ActionKitItemUp
     for key, value in data.model_dump(exclude_unset=True).items():
         setattr(item, key, value)
     await session.commit()
-    await session.refresh(item)
-    return item
+    return await get_item_detail(session, item.id)
 
 async def upload_file_for_item(session: AsyncSession, item_id: int, file: UploadFile) -> ActionKitItem | None:
     item = await get_item_detail(session, item_id)
