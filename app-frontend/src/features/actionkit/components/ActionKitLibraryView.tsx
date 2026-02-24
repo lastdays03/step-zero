@@ -83,7 +83,12 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
     const [selectedCategory, setSelectedCategory] = useState<string>("all");
     const [searchQuery, setSearchQuery] = useState(initialSearch);
     const [activeStarterPack, setActiveStarterPack] = useState<string | null>(null);
+    const [selectedTag, setSelectedTag] = useState<string>("all");
     const [previewKit, setPreviewKit] = useState<ActionKitItem | null>(null);
+
+    useEffect(() => {
+        setSelectedTag("all");
+    }, [selectedCategory, searchQuery, activeStarterPack]);
     const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
 
     useEffect(() => {
@@ -163,7 +168,9 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
         return isMatch;
     });
 
-    const displayItems = (searchQuery || activeStarterPack) ? filteredItems : (currentCategory?.items || []);
+    const baseDisplayItems = (searchQuery || activeStarterPack) ? filteredItems : (currentCategory?.items || []);
+    const availableTags = Array.from(new Set(baseDisplayItems.map(item => item.tag).filter(Boolean))).sort();
+    const displayItems = selectedTag === "all" ? baseDisplayItems : baseDisplayItems.filter(item => item.tag === selectedTag);
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
@@ -256,6 +263,27 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                             );
                         })}
                     </div>
+                </div>
+            )}
+
+            {/* Tag Filter Bar */}
+            {availableTags.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2 py-2 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                    <button
+                        onClick={() => setSelectedTag("all")}
+                        className={`px-4 py-1.5 rounded-full text-[13px] font-bold transition-all ${selectedTag === "all" ? "bg-slate-800 text-white shadow-md" : "bg-slate-100 text-slate-500 hover:bg-slate-200"}`}
+                    >
+                        전체보기
+                    </button>
+                    {availableTags.map(tag => (
+                        <button
+                            key={tag as string}
+                            onClick={() => setSelectedTag(tag as string)}
+                            className={`px-4 py-1.5 rounded-full text-[13px] font-bold transition-all border ${selectedTag === tag ? "bg-[#36a4f2]/10 border-[#36a4f2] text-[#36a4f2] shadow-sm" : "bg-white border-slate-200 text-slate-500 hover:border-[#36a4f2]/50 hover:bg-[#36a4f2]/5 hover:text-[#36a4f2]"}`}
+                        >
+                            {tag as string}
+                        </button>
+                    ))}
                 </div>
             )}
 
