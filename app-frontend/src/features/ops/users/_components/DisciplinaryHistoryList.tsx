@@ -41,6 +41,16 @@ export function DisciplinaryHistoryList({ userId }: DisciplinaryHistoryListProps
         });
     };
 
+    const getStatusLabel = (status: string) => {
+        const map: Record<string, string> = {
+            active: "정상",
+            suspended: "정지(징계)",
+            suspended_permanent: "영구 정지",
+            suspended_inactive: "정지(휴면)",
+        };
+        return map[status] || status;
+    };
+
     if (isLoading) return <div className="p-4 text-center"><Loader2 className="animate-spin mx-auto h-5 w-5 text-slate-400" /></div>;
     if (error) return <div className="p-4 text-sm text-red-500 flex items-center gap-2"><AlertCircle size={16} /> {error}</div>;
     if (histories.length === 0) return <div className="p-4 text-sm text-slate-400 text-center italic">정지 기록이 없습니다.</div>;
@@ -51,7 +61,7 @@ export function DisciplinaryHistoryList({ userId }: DisciplinaryHistoryListProps
                 <div key={h.id} className="p-3 text-xs">
                     <div className="flex justify-between items-start mb-1">
                         <div className="font-bold text-slate-700">
-                            {h.prev_status} → <span className="text-blue-600">{h.new_status}</span>
+                            {getStatusLabel(h.prev_status)} → <span className="text-blue-600">{getStatusLabel(h.new_status)}</span>
                             {h.suspended_until && (
                                 <span className="ml-2 text-[10px] text-amber-600 font-bold">
                                     (~ {toKST(h.suspended_until).split(' ').slice(1, 4).join(' ')})

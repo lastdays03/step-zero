@@ -10,6 +10,7 @@ class OpsUserRead(BaseModel):
     last_login_at: datetime | None
     is_active: bool
     is_superuser: bool
+    suspended_until: datetime | None = None
     created_at: datetime
 
 class DisciplineHistoryRead(BaseModel):

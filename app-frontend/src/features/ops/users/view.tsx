@@ -110,7 +110,9 @@ export function OpsUsersView() {
   const toKST = (dateStr: string | null) => {
     if (!dateStr) return "-";
     const utcStr = dateStr.includes('Z') || dateStr.includes('+') ? dateStr : `${dateStr.replace(' ', 'T')}Z`;
-    return new Date(utcStr).toLocaleString("ko-KR", {
+    const date = new Date(utcStr);
+
+    const kstDate = new Intl.DateTimeFormat("ko-KR", {
       timeZone: "Asia/Seoul",
       year: "numeric",
       month: "2-digit",
@@ -118,26 +120,46 @@ export function OpsUsersView() {
       hour: "2-digit",
       minute: "2-digit",
       hour12: false,
-    });
+    }).formatToParts(date);
+
+    const find = (type: string) => kstDate.find(p => p.type === type)?.value || "";
+    return `${find('year')}.${find('month')}.${find('day')} ${find('hour')}:${find('minute')}`;
   };
 
   const getStatusBadge = (user: OpsUser) => {
     const s = user.status;
     if (s === "active") return <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-none">정상</Badge>;
     if (s === "suspended") {
+      let mainLabel = "정지(징계)";
+      if (user.suspended_until) {
+        const now = new Date();
+        const target = user.suspended_until.includes('Z') || user.suspended_until.includes('+') ? user.suspended_until : `${user.suspended_until.replace(' ', 'T')}Z`;
+        const until = new Date(target);
+        const diffMs = until.getTime() - now.getTime();
+
+        if (diffMs <= 0) {
+          mainLabel = "해제 처리 중";
+        } else if (diffMs < 24 * 60 * 60 * 1000) {
+          const hours = Math.floor(diffMs / (1000 * 60 * 60));
+          mainLabel = hours >= 1 ? `${hours}시간 남음` : "오늘 해제 예정";
+        } else {
+          const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+          mainLabel = `징계 (${days}일 남음)`;
+        }
+      }
       return (
         <div className="flex flex-col gap-0.5">
-          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-none w-fit">정지 중</Badge>
+          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-none w-fit font-bold">{mainLabel}</Badge>
           {user.suspended_until && (
             <span className="text-[9px] text-amber-600 font-bold whitespace-nowrap">
-              ~ {toKST(user.suspended_until).split(' ').slice(1, 4).join(' ')}
+              만료: {toKST(user.suspended_until)} (KST)
             </span>
           )}
         </div>
       );
     }
     if (s === "suspended_permanent") return <Badge className="bg-red-100 text-red-700 hover:bg-red-200 border-none">영구 정지</Badge>;
-    if (s === "suspended_inactive") return <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-none">30일 미접속</Badge>;
+    if (s === "suspended_inactive") return <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-none">정지(휴면)</Badge>;
     return <Badge variant="secondary">{s}</Badge>;
   };
 
@@ -187,7 +209,7 @@ export function OpsUsersView() {
               >
                 <option value="">모든 상태</option>
                 <option value="active">정상 (Active)</option>
-                <option value="suspended">기간 정지 (Suspended)</option>
+                <option value="suspended">기간 정지</option>
                 <option value="suspended_permanent">영구 정지</option>
                 <option value="suspended_inactive">30일 미접속</option>
               </select>

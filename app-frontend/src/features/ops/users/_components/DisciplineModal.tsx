@@ -88,7 +88,7 @@ export function DisciplineModal({ user, isOpen, onClose, onConfirm, isBulk, sele
                                     <AlertTriangle size={18} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-slate-900">기간 정지 (Suspended)</p>
+                                    <p className="text-sm font-bold text-slate-900">기간 정지</p>
                                     <p className="text-xs text-slate-500">이용 정책 위반으로 일시 정지합니다.</p>
                                 </div>
                             </button>
