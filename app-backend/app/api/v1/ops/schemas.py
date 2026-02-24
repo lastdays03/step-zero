@@ -29,6 +29,13 @@ class ActionKitItemHighlightResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+class ActionKitChecklistResponse(BaseModel):
+    id: int
+    content: str
+    sort_order: int
+
+    model_config = ConfigDict(from_attributes=True)
+
 class ActionKitItemResponse(BaseModel):
     id: int
     domain: str
@@ -47,6 +54,7 @@ class ActionKitItemResponse(BaseModel):
     files: List[ActionKitFileResponse] = []
     related_laws: List[RelatedLawResponse] = []
     highlights: List[ActionKitItemHighlightResponse] = []
+    checklists: List[ActionKitChecklistResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
 
