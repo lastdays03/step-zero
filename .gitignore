@@ -93,8 +93,8 @@ data/
 pgdata/
 
 .temp/
-app-backend/uploads/
-app-backend/static/uploads/
+# app-backend/uploads/
+# app-backend/static/uploads/
 
 # ---------------
 # Testing & Tools
