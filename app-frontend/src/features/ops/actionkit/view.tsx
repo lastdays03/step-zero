@@ -20,8 +20,9 @@ import { useOpsAccessGuard } from "@/features/ops/shared/use-ops-access-guard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, FolderOpen, Loader2, Edit3, Trash2, Package, Paperclip, EyeOff, Scale, Highlighter } from "lucide-react";
+import { Search, FolderOpen, Loader2, Edit3, Trash2, Package, Paperclip, EyeOff, Scale, Highlighter, Settings, Plus } from "lucide-react";
 import { ActionKitEditModal } from "@/features/ops/actionkit/components/actionkit-edit-modal";
+import { CategoryEditModal } from "@/features/ops/actionkit/components/category-edit-modal";
 import { apiClient } from "@/lib/api-client";
 
 export function OpsActionKitView() {
@@ -36,6 +37,9 @@ export function OpsActionKitView() {
   const [searchQuery, setSearchQuery] = useState("");
   const [summary, setSummary] = useState<any>(null);
   const [activeDomain, setActiveDomain] = useState<"kits" | "laws">("kits");
+
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [editingCategory, setEditingCategory] = useState<any>(null);
 
   const filteredCategories = categories.filter(cat => cat.domain === activeDomain);
 
@@ -110,6 +114,20 @@ export function OpsActionKitView() {
     }
   };
 
+  const handleCategorySaved = () => {
+    fetchCategories()
+      .then((data) => {
+        setCategories(data);
+        const domainCats = data.filter((c: any) => c.domain === activeDomain);
+        if (domainCats.length > 0 && !domainCats.find((c: any) => c.id === activeCategory)) {
+          setActiveCategory(domainCats[0].id);
+        } else if (data.length > 0 && !activeCategory) {
+          setActiveCategory(data[0].id);
+        }
+      })
+      .catch(console.error);
+  };
+
   if (!canRender) return <OpsAccessPlaceholder />;
 
   return (
@@ -160,8 +178,8 @@ export function OpsActionKitView() {
         <button
           onClick={() => handleDomainChange("kits")}
           className={`flex items-center justify-center gap-2 flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeDomain === "kits"
-              ? "bg-white text-[#36a4f2] shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
+            ? "bg-white text-[#36a4f2] shadow-sm"
+            : "text-slate-500 hover:text-slate-700"
             }`}
         >
           <FolderOpen className="w-4 h-4" />
@@ -170,8 +188,8 @@ export function OpsActionKitView() {
         <button
           onClick={() => handleDomainChange("laws")}
           className={`flex items-center justify-center gap-2 flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeDomain === "laws"
-              ? "bg-white text-[#36a4f2] shadow-sm"
-              : "text-slate-500 hover:text-slate-700"
+            ? "bg-white text-[#36a4f2] shadow-sm"
+            : "text-slate-500 hover:text-slate-700"
             }`}
         >
           <Scale className="w-4 h-4" />
@@ -180,19 +198,39 @@ export function OpsActionKitView() {
       </div>
 
       {/* Category Tabs (Sub Level) */}
-      <div className="flex gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
+      <div className="flex gap-2 border-b border-slate-200 pb-2 overflow-x-auto items-center">
         {filteredCategories.map((cat) => (
-          <button
-            key={cat.id}
-            onClick={() => setActiveCategory(cat.id)}
-            className={`px-4 py-2 font-bold text-sm rounded-t-xl transition-colors ${activeCategory === cat.id
-              ? "bg-slate-100 text-[#36a4f2] border-b-2 border-[#36a4f2]"
-              : "text-slate-500 hover:bg-slate-50"
-              }`}
-          >
-            {cat.title}
-          </button>
+          <div key={cat.id} className="group relative flex items-center">
+            <button
+              onClick={() => setActiveCategory(cat.id)}
+              onDoubleClick={() => {
+                setEditingCategory(cat);
+                setIsCategoryModalOpen(true);
+              }}
+              className={`px-4 py-2 font-bold text-sm rounded-t-xl transition-colors ${activeCategory === cat.id
+                ? "bg-slate-100 text-[#36a4f2] border-b-2 border-[#36a4f2]"
+                : "text-slate-500 hover:bg-slate-50"
+                }`}
+              title="더블 클릭하여 수정"
+            >
+              {cat.title}
+            </button>
+            <button
+              title="카테고리 수정/삭제"
+              onClick={() => { setEditingCategory(cat); setIsCategoryModalOpen(true); }}
+              className="opacity-0 group-hover:opacity-100 absolute right-1 top-1 text-slate-400 hover:text-[#36a4f2] bg-white rounded-full p-0.5"
+            >
+              <Settings className="w-3 h-3" />
+            </button>
+          </div>
         ))}
+        <button
+          title="새 카테고리 추가"
+          onClick={() => { setEditingCategory(null); setIsCategoryModalOpen(true); }}
+          className="ml-2 w-8 h-8 rounded-full border border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:text-[#36a4f2] hover:border-[#36a4f2] transition-colors"
+        >
+          <Plus className="w-5 h-5" />
+        </button>
       </div>
 
       <Card className="shadow-sm border-slate-200">
@@ -302,6 +340,16 @@ export function OpsActionKitView() {
             if (activeCategory) loadItems(activeCategory);
             fetchSummary().then(setSummary).catch(console.error);
           }}
+        />
+      )}
+
+      {(isCategoryModalOpen) && (
+        <CategoryEditModal
+          isOpen={isCategoryModalOpen}
+          onClose={() => setIsCategoryModalOpen(false)}
+          onSaved={handleCategorySaved}
+          category={editingCategory}
+          activeDomain={activeDomain}
         />
       )}
     </div>

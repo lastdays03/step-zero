@@ -13,6 +13,9 @@ from app.features.ops.application.audit_logs import AuditAction, AuditTargetType
 from app.features.ops.application.actionkit import (
     get_summary,
     get_all_categories,
+    create_category,
+    update_category,
+    delete_category,
     get_items_by_category,
     get_item_detail,
     update_item,
@@ -30,6 +33,8 @@ from app.features.ops.application.actionkit import (
 from pydantic import BaseModel as PydanticBaseModel
 from app.api.v1.ops.schemas import (
     ActionKitCategoryResponse,
+    ActionKitCategoryCreateRequest,
+    ActionKitCategoryUpdateRequest,
     ActionKitItemResponse,
     ActionKitItemCreateRequest,
     ActionKitItemUpdateRequest
@@ -56,6 +61,45 @@ async def get_actionkit_summary(session: AsyncSession = Depends(get_session)) ->
 )
 async def get_categories(session: AsyncSession = Depends(get_session)):
     return await get_all_categories(session)
+
+
+@router.post(
+    "/categories",
+    response_model=ActionKitCategoryResponse,
+    summary="새로운 액션키트 카테고리 생성",
+)
+async def post_category(
+    data: ActionKitCategoryCreateRequest,
+    session: AsyncSession = Depends(get_session)
+):
+    return await create_category(session, data)
+
+
+@router.patch(
+    "/categories/{category_id}",
+    response_model=ActionKitCategoryResponse,
+    summary="액션키트 카테고리 정보 수정",
+)
+async def patch_category(
+    category_id: int,
+    data: ActionKitCategoryUpdateRequest,
+    session: AsyncSession = Depends(get_session)
+):
+    category = await update_category(session, category_id, data)
+    if not category:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return category
+
+
+@router.delete(
+    "/categories/{category_id}",
+    summary="액션키트 카테고리 삭제",
+)
+async def remove_category(category_id: int, session: AsyncSession = Depends(get_session)):
+    success = await delete_category(session, category_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Category not found")
+    return {"message": "Category deleted successfully"}
 
 
 @router.get(

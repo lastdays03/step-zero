@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.models.actionkit import ActionKitCategory, ActionKitItem, ActionKitFile, ActionKitRelatedLaw, ActionKitItemHighlight, ActionKitChecklist
-from app.api.v1.ops.schemas import ActionKitItemCreateRequest, ActionKitItemUpdateRequest
+from app.api.v1.ops.schemas import ActionKitItemCreateRequest, ActionKitItemUpdateRequest, ActionKitCategoryCreateRequest, ActionKitCategoryUpdateRequest
 
 class ActionKitOpsSummary(TypedDict):
     total_items: int
@@ -49,6 +49,36 @@ async def get_all_categories(session: AsyncSession) -> List[ActionKitCategory]:
     stmt = select(ActionKitCategory).order_by(ActionKitCategory.sort_order)
     result = await session.execute(stmt)
     return list(result.scalars().all())
+
+async def create_category(session: AsyncSession, data: ActionKitCategoryCreateRequest) -> ActionKitCategory:
+    category = ActionKitCategory(**data.model_dump())
+    session.add(category)
+    await session.commit()
+    await session.refresh(category)
+    return category
+
+async def get_category_detail(session: AsyncSession, category_id: int) -> ActionKitCategory | None:
+    stmt = select(ActionKitCategory).where(ActionKitCategory.id == category_id)
+    result = await session.execute(stmt)
+    return result.scalars().first()
+
+async def update_category(session: AsyncSession, category_id: int, data: ActionKitCategoryUpdateRequest) -> ActionKitCategory | None:
+    category = await get_category_detail(session, category_id)
+    if not category:
+        return None
+    for key, value in data.model_dump(exclude_unset=True).items():
+        setattr(category, key, value)
+    await session.commit()
+    await session.refresh(category)
+    return category
+
+async def delete_category(session: AsyncSession, category_id: int) -> bool:
+    category = await get_category_detail(session, category_id)
+    if not category:
+        return False
+    await session.delete(category)
+    await session.commit()
+    return True
 
 async def get_items_by_category(session: AsyncSession, category_id: int) -> List[ActionKitItem]:
     stmt = select(ActionKitItem).where(ActionKitItem.category_id == category_id).options(

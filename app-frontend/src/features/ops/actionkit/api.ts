@@ -15,6 +15,21 @@ export const fetchCategories = async () => {
     return data;
 };
 
+export const createCategory = async (payload: { domain: string, slug: string, title: string, sort_order: number, is_active: boolean }) => {
+    const { data } = await apiClient.post('/ops/actionkit/categories', payload);
+    return data;
+};
+
+export const updateCategory = async (categoryId: number, payload: { slug?: string, title?: string, sort_order?: number, is_active?: boolean }) => {
+    const { data } = await apiClient.patch(`/ops/actionkit/categories/${categoryId}`, payload);
+    return data;
+};
+
+export const deleteCategory = async (categoryId: number) => {
+    const { data } = await apiClient.delete(`/ops/actionkit/categories/${categoryId}`);
+    return data;
+};
+
 export const fetchCategoryItems = async (categoryId: number) => {
     const { data } = await apiClient.get(`/ops/actionkit/categories/${categoryId}/items`);
     return data;
