@@ -81,10 +81,10 @@ export default function GrowthClubPage() {
                 <nav className="flex items-center gap-1 border-b border-zinc-200 dark:border-zinc-800">
                     {[
                         { id: 'all', label: '전체' },
+                        { id: 'hot', label: '🔥 인기글' },
                         { id: 'free', label: '자유게시판' },
                         { id: 'neighborhood', label: '동네 소식' },
                         { id: 'industry', label: '업종 이야기' },
-                        { id: 'notice', label: '공지사항' },
                     ].map((tab) => (
                         <button
                             key={tab.id}

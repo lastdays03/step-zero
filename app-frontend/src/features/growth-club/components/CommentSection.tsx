@@ -249,10 +249,10 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
                         <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">신고 사유 선택</h3>
                         <div className="space-y-2">
                             <button onClick={() => submitReport('폭언과 욕설')} className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300">
-                                🤬 폭언과 욕설
+                                폭언과 욕설
                             </button>
                             <button onClick={() => submitReport('광고')} className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300">
-                                📢 광고
+                                광고
                             </button>
                             <button onClick={() => submitReport('기타')} className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300">
                                 기타 불건전한 내용

@@ -18,3 +18,19 @@ export const fetchBlindedComments = async (): Promise<Comment[]> => {
 export const unblindComment = async (commentId: number): Promise<void> => {
     await apiClient.post(`/ops/growth-club/comments/${commentId}/unblind`);
 };
+
+export const suspendUser = async (userId: number): Promise<void> => {
+    await apiClient.post(`/ops/growth-club/users/${userId}/suspend`);
+};
+
+export const unsuspendUser = async (userId: number): Promise<void> => {
+    await apiClient.post(`/ops/growth-club/users/${userId}/unsuspend`);
+};
+
+export const deletePost = async (postId: number): Promise<void> => {
+    await apiClient.delete(`/ops/growth-club/posts/${postId}`);
+};
+
+export const deleteComment = async (commentId: number): Promise<void> => {
+    await apiClient.delete(`/ops/growth-club/comments/${commentId}`);
+};

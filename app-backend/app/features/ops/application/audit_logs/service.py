@@ -11,6 +11,7 @@ async def save_audit_log(
     action: str,
     target_type: str,
     target_id: str,
+    target_author: Optional[str] = None,
     details: Optional[str] = None
 ):
     log = AuditLog(
@@ -18,6 +19,7 @@ async def save_audit_log(
         action=action,
         target_type=target_type,
         target_id=target_id,
+        target_author=target_author,
         details=details
     )
     session.add(log)
@@ -41,6 +43,7 @@ async def list_audit_logs(session: AsyncSession) -> list[AuditLogRead]:
             action=log.action,
             target_type=log.target_type,
             target_id=log.target_id,
+            target_author=log.target_author,
             details=log.details,
             created_at=log.created_at
         )

@@ -173,7 +173,7 @@ async def list_posts(
             )
         )
 
-    if category != "all":
+    if category != "all" and category != "hot":
         query = query.where(GrowthClubPost.category == category)
     if search:
         if search_type == "title":
@@ -186,7 +186,11 @@ async def list_posts(
                 | (GrowthClubPost.content.contains(search))
             )
 
-    query = query.order_by(GrowthClubPost.created_at.desc())
+    if category == "hot":
+        query = query.order_by(likes_count_subquery.desc(), GrowthClubPost.created_at.desc())
+    else:
+        query = query.order_by(GrowthClubPost.created_at.desc())
+        
     result = await session.execute(query)
 
     # 가공하여 반환
@@ -231,11 +235,8 @@ async def create_post(
     session: AsyncSession = Depends(get_session)
 ):
     """새 게시글 작성"""
-    if category == "notice" and not current_user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="공지사항은 관리자만 작성할 수 있습니다."
-        )
+    if current_user.is_suspended:
+        raise HTTPException(status_code=403, detail="이용이 정지된 사용자입니다. 접근이 제한됩니다.")
     image_uploads = [u for u in images if u is not None]
     file_uploads = [u for u in files if u is not None]
     prepared_images, total_bytes = await _validate_and_read_uploads(
@@ -321,6 +322,8 @@ async def report_post(
     session: AsyncSession = Depends(get_session)
 ):
     """게시글 신고 (1회 이상 신고 시 자동 블라인드)"""
+    if current_user.is_suspended:
+        raise HTTPException(status_code=403, detail="이용이 정지된 사용자입니다. 접근이 제한됩니다.")
     db_post = await session.get(GrowthClubPost, post_id)
     if not db_post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -352,6 +355,19 @@ async def report_post(
     if db_post.report_count >= 1:
         db_post.is_blinded = True
         message = "게시글이 누적 신고로 인해 블라인드 처리되었습니다."
+        
+        # 블라인드 처리 시 감사 로그 기록
+        author = await session.get(User, db_post.author_id)
+        from app.features.ops.application.audit_logs.service import save_audit_log
+        await save_audit_log(
+            session=session,
+            user_id=current_user.id,
+            action="growth_club.post.blind",
+            target_type="post",
+            target_id=str(post_id),
+            target_author=author.email if author else None,
+            details=f"게시글 '{db_post.title[:20]}...' 누적 신고로 블라인드 처리 (자동)"
+        )
     else:
         message = "게시글이 신고되었습니다."
 

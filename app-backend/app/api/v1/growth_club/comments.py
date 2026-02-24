@@ -36,6 +36,8 @@ async def create_comment(
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
+    if current_user.is_suspended:
+        raise HTTPException(status_code=403, detail="이용이 정지된 사용자입니다. 접근이 제한됩니다.")
     post = await session.get(GrowthClubPost, comment_in.post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -160,6 +162,19 @@ async def report_comment(
     if comment.report_count >= 1:
         comment.is_blinded = True
         message = "댓글이 누적 신고로 인해 블라인드 처리되었습니다."
+        
+        # 블라인드 처리 시 감사 로그 기록
+        author = await session.get(User, comment.author_id)
+        from app.features.ops.application.audit_logs.service import save_audit_log
+        await save_audit_log(
+            session=session,
+            user_id=current_user.id,
+            action="growth_club.comment.blind",
+            target_type="comment",
+            target_id=str(comment_id),
+            target_author=author.email if author else None,
+            details=f"댓글 '{comment.content[:20]}...' 누적 신고로 블라인드 처리 (자동)"
+        )
     else:
         message = "댓글이 신고되었습니다."
 

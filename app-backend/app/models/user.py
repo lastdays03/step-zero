@@ -11,6 +11,7 @@ class UserBase(SQLModel):
     full_name: Optional[str] = None
     is_active: bool = True
     is_superuser: bool = False
+    is_suspended: bool = Field(default=False, index=True)
 
 class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
@@ -34,6 +35,7 @@ class Token(SQLModel):
 
 class UserRead(UserBase):
     id: int
+    is_suspended: bool = False
 
 class TokenWithUser(Token):
     user: UserRead
@@ -44,3 +46,4 @@ class AuthenticatedUser(SQLModel):
     email: str
     full_name: Optional[str] = None
     is_superuser: bool = False
+    is_suspended: bool = False

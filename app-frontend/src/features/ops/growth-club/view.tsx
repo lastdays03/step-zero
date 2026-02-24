@@ -4,8 +4,8 @@ import { useEffect, useState } from "react";
 import { OpsAccessPlaceholder } from "@/features/ops/shared/ops-access-placeholder";
 import { useOpsAccessGuard } from "@/features/ops/shared/use-ops-access-guard";
 import { Post, Comment } from "@/features/growth-club/types";
-import { fetchBlindedPosts, unblindPost, fetchBlindedComments, unblindComment } from "./api";
-import { ShieldAlert, CheckCircle2, RotateCcw, MessageSquare } from "lucide-react";
+import { fetchBlindedPosts, unblindPost, fetchBlindedComments, unblindComment, suspendUser, unsuspendUser, deletePost, deleteComment } from "./api";
+import { ShieldAlert, CheckCircle2, RotateCcw, MessageSquare, Ban, ShieldCheck, Trash2 } from "lucide-react";
 
 export function OpsGrowthClubView() {
   const { canRender, isAuthReady } = useOpsAccessGuard();
@@ -14,6 +14,8 @@ export function OpsGrowthClubView() {
   const [blindedComments, setBlindedComments] = useState<Comment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // 정지 상태 추적: { [userId]: boolean }
+  const [suspendedUsers, setSuspendedUsers] = useState<Record<number, boolean>>({});
 
   const loadData = async () => {
     try {
@@ -58,6 +60,44 @@ export function OpsGrowthClubView() {
     }
   };
 
+  const handleSuspendUser = async (userId: number, isSuspended: boolean) => {
+    const action = isSuspended ? "정지 해제" : "정지";
+    if (!confirm(`이 유저를 ${action} 처리하시겠습니까?`)) return;
+    try {
+      if (isSuspended) {
+        await unsuspendUser(userId);
+      } else {
+        await suspendUser(userId);
+      }
+      setSuspendedUsers((prev) => ({ ...prev, [userId]: !isSuspended }));
+      alert(`유저 ${action} 처리가 완료되었습니다.`);
+    } catch {
+      alert(`${action} 처리 중 오류가 발생했습니다.`);
+    }
+  };
+
+  const handleDeletePost = async (postId: number) => {
+    if (!confirm("이 게시글을 영구적으로 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) return;
+    try {
+      await deletePost(postId);
+      alert("게시글이 영구 삭제되었습니다.");
+      void loadData();
+    } catch {
+      alert("삭제 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handleDeleteComment = async (commentId: number) => {
+    if (!confirm("이 댓글을 영구적으로 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) return;
+    try {
+      await deleteComment(commentId);
+      alert("댓글이 영구 삭제되었습니다.");
+      void loadData();
+    } catch {
+      alert("삭제 중 오류가 발생했습니다.");
+    }
+  };
+
   if (!isAuthReady || !canRender) return <OpsAccessPlaceholder />;
 
   return (
@@ -79,8 +119,8 @@ export function OpsGrowthClubView() {
             <button
               onClick={() => setActiveTab("posts")}
               className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === "posts"
-                  ? "bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200"
-                  : "text-slate-500 hover:text-slate-700"
+                ? "bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200"
+                : "text-slate-500 hover:text-slate-700"
                 }`}
             >
               블라인드 게시글
@@ -92,8 +132,8 @@ export function OpsGrowthClubView() {
             <button
               onClick={() => setActiveTab("comments")}
               className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${activeTab === "comments"
-                  ? "bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200"
-                  : "text-slate-500 hover:text-slate-700"
+                ? "bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200"
+                : "text-slate-500 hover:text-slate-700"
                 }`}
             >
               블라인드 댓글
@@ -163,13 +203,46 @@ export function OpsGrowthClubView() {
                           {new Date(post.created_at).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-5 text-right">
-                          <button
-                            onClick={() => handleUnblindPost(post.id)}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all active:scale-95"
-                          >
-                            <RotateCcw className="h-3.5 w-3.5" />
-                            블라인드 해제
-                          </button>
+                          <div className="inline-flex items-center gap-2">
+                            {/* 영구 삭제 버튼 */}
+                            <button
+                              onClick={() => handleDeletePost(post.id)}
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-red-100 px-4 py-2 text-xs font-bold text-red-800 hover:bg-red-200 border border-red-200 transition-all active:scale-95"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              삭제
+                            </button>
+                            {/* 정지 / 정지 해제 버튼 */}
+                            {(() => {
+                              const authorId = post.author?.id;
+                              if (!authorId) return null;
+                              const isSuspended = suspendedUsers[authorId] ?? post.author?.is_suspended ?? false;
+                              return isSuspended ? (
+                                <button
+                                  onClick={() => handleSuspendUser(authorId, true)}
+                                  className="inline-flex items-center gap-1.5 rounded-xl bg-green-100 px-4 py-2 text-xs font-bold text-green-800 hover:bg-green-200 border border-green-200 transition-all active:scale-95"
+                                >
+                                  <ShieldCheck className="h-3.5 w-3.5" />
+                                  정지 해제
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleSuspendUser(authorId, false)}
+                                  className="inline-flex items-center gap-1.5 rounded-xl bg-orange-100 px-4 py-2 text-xs font-bold text-orange-800 hover:bg-orange-200 border border-orange-200 transition-all active:scale-95"
+                                >
+                                  <Ban className="h-3.5 w-3.5" />
+                                  유저 정지
+                                </button>
+                              );
+                            })()}
+                            <button
+                              onClick={() => handleUnblindPost(post.id)}
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all active:scale-95"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              블라인드 해제
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}
@@ -220,13 +293,45 @@ export function OpsGrowthClubView() {
                           {new Date(comment.created_at).toLocaleDateString()}
                         </td>
                         <td className="px-6 py-5 text-right">
-                          <button
-                            onClick={() => handleUnblindComment(comment.id)}
-                            className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all active:scale-95"
-                          >
-                            <RotateCcw className="h-3.5 w-3.5" />
-                            블라인드 해제
-                          </button>
+                          <div className="inline-flex items-center gap-2">
+                            {/* 영구 삭제 버튼 */}
+                            <button
+                              onClick={() => handleDeleteComment(comment.id)}
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-red-100 px-4 py-2 text-xs font-bold text-red-800 hover:bg-red-200 border border-red-200 transition-all active:scale-95"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              삭제
+                            </button>
+                            {(() => {
+                              const authorId = comment.author?.id;
+                              if (!authorId) return null;
+                              const isSuspended = suspendedUsers[authorId] ?? comment.author?.is_suspended ?? false;
+                              return isSuspended ? (
+                                <button
+                                  onClick={() => handleSuspendUser(authorId, true)}
+                                  className="inline-flex items-center gap-1.5 rounded-xl bg-green-100 px-4 py-2 text-xs font-bold text-green-800 hover:bg-green-200 border border-green-200 transition-all active:scale-95"
+                                >
+                                  <ShieldCheck className="h-3.5 w-3.5" />
+                                  정지 해제
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleSuspendUser(authorId, false)}
+                                  className="inline-flex items-center gap-1.5 rounded-xl bg-orange-100 px-4 py-2 text-xs font-bold text-orange-800 hover:bg-orange-200 border border-orange-200 transition-all active:scale-95"
+                                >
+                                  <Ban className="h-3.5 w-3.5" />
+                                  유저 정지
+                                </button>
+                              );
+                            })()}
+                            <button
+                              onClick={() => handleUnblindComment(comment.id)}
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-4 py-2 text-xs font-bold text-white hover:bg-indigo-700 shadow-md shadow-indigo-200 transition-all active:scale-95"
+                            >
+                              <RotateCcw className="h-3.5 w-3.5" />
+                              블라인드 해제
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

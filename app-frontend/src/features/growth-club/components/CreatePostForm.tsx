@@ -192,10 +192,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
         { id: 'industry', label: '업종 이야기' },
     ];
 
-    if (user?.is_superuser) {
-        categories.push({ id: 'notice', label: '공지사항' });
-    }
-
     return (
         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-6">
             <form onSubmit={handleSubmit} className="space-y-4">

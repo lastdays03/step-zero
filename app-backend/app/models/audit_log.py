@@ -11,6 +11,7 @@ class AuditLog(SQLModel, table=True):
     action: str = Field(index=True)  # ex: "growth_club.post.unblind"
     target_type: str = Field(index=True)  # ex: "post", "comment"
     target_id: str = Field(index=True)
+    target_author: Optional[str] = None
     details: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now())
 
@@ -23,5 +24,6 @@ class AuditLogRead(SQLModel):
     action: str
     target_type: str
     target_id: str
+    target_author: Optional[str]
     details: Optional[str]
     created_at: datetime

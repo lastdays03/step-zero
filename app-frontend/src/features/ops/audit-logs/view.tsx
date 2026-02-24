@@ -40,6 +40,8 @@ export function OpsAuditLogsView() {
     const actionMap: Record<string, string> = {
       "growth_club.post.unblind": "게시글 블라인드 해제",
       "growth_club.comment.unblind": "댓글 블라인드 해제",
+      "growth_club.post.blind": "현재 블라인드 되고 있음",
+      "growth_club.comment.blind": "현재 블라인드 되고 있음",
     };
     return actionMap[action] || action;
   };
@@ -78,6 +80,7 @@ export function OpsAuditLogsView() {
                 <TableHead className="w-[120px]">운영자</TableHead>
                 <TableHead className="w-[180px]">수행 작업</TableHead>
                 <TableHead className="w-[100px]">대상 타입</TableHead>
+                <TableHead className="w-[150px]">대상자 계정</TableHead>
                 <TableHead>상세 내용</TableHead>
               </TableRow>
             </TableHeader>
@@ -96,13 +99,18 @@ export function OpsAuditLogsView() {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${log.action.includes('.blind') && !log.action.includes('unblind') ? 'bg-orange-50 text-orange-700 border-orange-100' : 'bg-blue-50 text-blue-700 border-blue-100'}`}>
                       {formatAction(log.action)}
                     </span>
                   </TableCell>
                   <TableCell>
                     <span className="text-xs text-zinc-500 uppercase font-semibold tracking-wider">
                       {log.target_type}
+                    </span>
+                  </TableCell>
+                  <TableCell>
+                    <span className="text-sm font-medium text-zinc-800">
+                      {log.target_author || "-"}
                     </span>
                   </TableCell>
                   <TableCell className="text-sm text-zinc-600">
