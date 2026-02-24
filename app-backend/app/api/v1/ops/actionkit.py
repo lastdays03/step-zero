@@ -12,8 +12,13 @@ from app.features.ops.application.actionkit import (
     create_item,
     upload_file_for_item,
     delete_item,
-    get_file_by_id
+    get_file_by_id,
+    add_related_law,
+    delete_related_law,
+    add_highlight,
+    delete_highlight
 )
+from pydantic import BaseModel as PydanticBaseModel
 from app.api.v1.ops.schemas import (
     ActionKitCategoryResponse,
     ActionKitItemResponse,
@@ -140,3 +145,68 @@ async def download_actionkit_file(
         filename=file_record.original_filename or "download",
         media_type=file_record.mime_type or "application/octet-stream"
     )
+
+
+class RelatedLawRequest(PydanticBaseModel):
+    law_name: str
+    law_summary: str | None = None
+
+class HighlightRequest(PydanticBaseModel):
+    content: str
+
+
+@router.post(
+    "/items/{item_id}/related-laws",
+    response_model=ActionKitItemResponse,
+    summary="액션키트 관련 법령 추가",
+)
+async def add_actionkit_related_law(
+    item_id: int,
+    data: RelatedLawRequest,
+    session: AsyncSession = Depends(get_session)
+):
+    item = await add_related_law(session, item_id, data.law_name, data.law_summary)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item
+
+@router.delete(
+    "/related-laws/{law_id}",
+    summary="액션키트 관련 법령 삭제",
+)
+async def remove_actionkit_related_law(
+    law_id: int,
+    session: AsyncSession = Depends(get_session)
+):
+    success = await delete_related_law(session, law_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Law not found")
+    return {"ok": True}
+
+@router.post(
+    "/items/{item_id}/highlights",
+    response_model=ActionKitItemResponse,
+    summary="액션키트 하이라이트 추가",
+)
+async def add_actionkit_highlight(
+    item_id: int,
+    data: HighlightRequest,
+    session: AsyncSession = Depends(get_session)
+):
+    item = await add_highlight(session, item_id, data.content)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item
+
+@router.delete(
+    "/highlights/{highlight_id}",
+    summary="액션키트 하이라이트 삭제",
+)
+async def remove_actionkit_highlight(
+    highlight_id: int,
+    session: AsyncSession = Depends(get_session)
+):
+    success = await delete_highlight(session, highlight_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Highlight not found")
+    return {"ok": True}

@@ -20,3 +20,8 @@ export const fetchCategoryItems = async (categoryId: number) => {
     const { data } = await apiClient.get(`/ops/actionkit/categories/${categoryId}/items`);
     return data;
 };
+
+export const fetchItemDetail = async (itemId: number) => {
+    const { data } = await apiClient.get(`/ops/actionkit/items/${itemId}`);
+    return data;
+};

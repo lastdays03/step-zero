@@ -258,9 +258,21 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                                     <h4 className="font-bold text-slate-800 mb-2 group-hover:text-[#36a4f2] transition-colors leading-tight min-h-[2.5rem] line-clamp-2">
                                         {item.name}
                                     </h4>
-                                    <p className="text-xs text-slate-400 mb-6 line-clamp-2 leading-relaxed">
+                                    <p className="text-xs text-slate-400 mb-3 line-clamp-2 leading-relaxed">
                                         {item.summary}
                                     </p>
+                                    {(item as any).highlights?.length > 0 && (
+                                        <div className="flex flex-wrap gap-1 mb-3">
+                                            {(item as any).highlights.slice(0, 2).map((hl: any, i: number) => (
+                                                <span key={hl.id || i} className="text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full truncate max-w-[180px]">
+                                                    ⭐ {hl.content}
+                                                </span>
+                                            ))}
+                                            {(item as any).highlights.length > 2 && (
+                                                <span className="text-[10px] text-slate-400 font-medium">+{(item as any).highlights.length - 2}개</span>
+                                            )}
+                                        </div>
+                                    )}
                                 </div>
 
                                 <div className="mt-auto px-6 pb-6 space-y-4">
@@ -386,6 +398,22 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                                         ))}
                                     </div>
                                     <p className="text-[10px] text-slate-400 mt-2 ml-7">* 이 체크리스트는 법률 컨설팅을 대체하지 않습니다.</p>
+                                </div>
+                            )}
+                            {(previewKit as any).highlights?.length > 0 && (
+                                <div className="space-y-3">
+                                    <h4 className="font-bold flex items-center gap-2 text-slate-800">
+                                        <Sparkles className="w-4 h-4 text-amber-500" />
+                                        핵심 포인트
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {(previewKit as any).highlights.map((hl: any, i: number) => (
+                                            <div key={hl.id || i} className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-100">
+                                                <span className="text-amber-500 font-bold text-sm mt-0.5">⭐</span>
+                                                <span className="text-sm text-slate-700 leading-relaxed">{hl.content}</span>
+                                            </div>
+                                        ))}
+                                    </div>
                                 </div>
                             )}
                             <div>

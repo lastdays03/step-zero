@@ -110,3 +110,43 @@ async def get_file_by_id(session: AsyncSession, file_id: int) -> ActionKitFile |
     stmt = select(ActionKitFile).where(ActionKitFile.id == file_id)
     result = await session.execute(stmt)
     return result.scalar_one_or_none()
+
+async def add_related_law(session: AsyncSession, item_id: int, law_name: str, law_summary: str | None = None) -> ActionKitItem | None:
+    item = await get_item_detail(session, item_id)
+    if not item:
+        return None
+    next_order = len(item.related_laws) + 1 if item.related_laws else 1
+    law = ActionKitRelatedLaw(item_id=item_id, law_name=law_name, law_summary=law_summary, sort_order=next_order)
+    session.add(law)
+    await session.commit()
+    return await get_item_detail(session, item_id)
+
+async def delete_related_law(session: AsyncSession, law_id: int) -> bool:
+    stmt = select(ActionKitRelatedLaw).where(ActionKitRelatedLaw.id == law_id)
+    result = await session.execute(stmt)
+    law = result.scalar_one_or_none()
+    if not law:
+        return False
+    await session.delete(law)
+    await session.commit()
+    return True
+
+async def add_highlight(session: AsyncSession, item_id: int, content: str) -> ActionKitItem | None:
+    item = await get_item_detail(session, item_id)
+    if not item:
+        return None
+    next_order = len(item.highlights) + 1 if item.highlights else 1
+    hl = ActionKitItemHighlight(item_id=item_id, content=content, sort_order=next_order)
+    session.add(hl)
+    await session.commit()
+    return await get_item_detail(session, item_id)
+
+async def delete_highlight(session: AsyncSession, highlight_id: int) -> bool:
+    stmt = select(ActionKitItemHighlight).where(ActionKitItemHighlight.id == highlight_id)
+    result = await session.execute(stmt)
+    hl = result.scalar_one_or_none()
+    if not hl:
+        return False
+    await session.delete(hl)
+    await session.commit()
+    return True

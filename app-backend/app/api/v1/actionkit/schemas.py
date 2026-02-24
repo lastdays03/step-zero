@@ -17,6 +17,10 @@ class RelatedLaw(BaseModel):
     name: str
     summary: Optional[str] = None
 
+class Highlight(BaseModel):
+    id: int
+    content: str
+
 class ActionKitItem(BaseModel):
     tag: Optional[str] = None
     name: str
@@ -24,6 +28,7 @@ class ActionKitItem(BaseModel):
     type: str
     path: str
     relatedLaws: Optional[List[Union[str, RelatedLaw]]] = None
+    highlights: Optional[List[Highlight]] = None
     dday: Optional[str] = None
 
 class ActionKitCategory(BaseModel):

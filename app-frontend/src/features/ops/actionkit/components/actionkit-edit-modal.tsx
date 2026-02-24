@@ -5,9 +5,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, UploadCloud, File as FileIcon, CheckCircle2, Download, Clock } from "lucide-react";
+import { Loader2, UploadCloud, File as FileIcon, CheckCircle2, Download, Clock, Scale, Highlighter, Plus, X } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useDropzone } from "react-dropzone";
+import { fetchItemDetail } from "../api";
 
 interface ActionKitEditModalProps {
     item: any;
@@ -20,9 +21,10 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [uploadSuccess, setUploadSuccess] = useState(false);
+    const [currentItem, setCurrentItem] = useState<any>(item);
 
     const [formData, setFormData] = useState({
-        domain: "kits",  // Default, to be safe. We'll set it properly or derive it.
+        domain: "kits",
         category_id: item?.category_id || 1,
         name: "",
         summary: "",
@@ -32,6 +34,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
 
     useEffect(() => {
         if (item && isOpen) {
+            setCurrentItem(item);
             setFormData({
                 domain: "kits",
                 category_id: item.category_id || 1,
@@ -43,10 +46,20 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
         }
     }, [item, isOpen]);
 
-    const isNew = item?.isNew === true;
+    const refreshItem = async () => {
+        if (!currentItem?.id) return;
+        try {
+            const updated = await fetchItemDetail(currentItem.id);
+            setCurrentItem(updated);
+        } catch (e) {
+            console.error('Failed to refresh item:', e);
+        }
+    };
+
+    const isNew = currentItem?.isNew === true;
 
     const onDrop = async (acceptedFiles: File[]) => {
-        if (!item?.id || acceptedFiles.length === 0) return;
+        if (!currentItem?.id || acceptedFiles.length === 0) return;
 
         const file = acceptedFiles[0];
         const formData = new FormData();
@@ -55,13 +68,14 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
         setUploading(true);
         setUploadSuccess(false);
         try {
-            await apiClient.post(`/ops/actionkit/items/${item.id}/files`, formData, {
+            await apiClient.post(`/ops/actionkit/items/${currentItem.id}/files`, formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data'
                 }
             });
             setUploadSuccess(true);
-            onSaved(); // trigger reload in background
+            onSaved();
+            await refreshItem();
             setTimeout(() => setUploadSuccess(false), 3000);
         } catch (error) {
             console.error("Failed to upload file:", error);
@@ -83,8 +97,8 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
             if (isNew) {
                 await apiClient.post(`/ops/actionkit/items`, formData);
             } else {
-                if (!item?.id) return;
-                await apiClient.patch(`/ops/actionkit/items/${item.id}`, formData);
+                if (!currentItem?.id) return;
+                await apiClient.patch(`/ops/actionkit/items/${currentItem.id}`, formData);
             }
             onSaved();
             onClose();
@@ -161,7 +175,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                     </div>
 
                     {/* File Upload Area (Only show for existing items, not when creating new) */}
-                    {!isNew && item?.id && (
+                    {!isNew && currentItem?.id && (
                         <div className="pt-2">
                             <Label className="text-slate-700 font-semibold text-sm mb-2 block">파일 관리</Label>
                             <div
@@ -189,21 +203,21 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                                             마우스로 파일을 끌어다 놓거나 <span className="text-[#36a4f2]">클릭해서 선택</span>하세요.
                                         </p>
                                         <p className="text-xs text-slate-400">
-                                            현재 첨부된 파일 버전: v{item.files?.length ? Math.max(...item.files.map((f: any) => f.version)) : "없음"}
+                                            현재 첨부된 파일 버전: v{currentItem.files?.length ? Math.max(...currentItem.files.map((f: any) => f.version)) : "없음"}
                                         </p>
                                     </div>
                                 )}
                             </div>
 
                             {/* Version History */}
-                            {item.files?.length > 0 && (
+                            {currentItem.files?.length > 0 && (
                                 <div className="mt-3">
                                     <div className="flex items-center gap-1.5 mb-2">
                                         <Clock className="w-3.5 h-3.5 text-slate-400" />
-                                        <span className="text-xs font-semibold text-slate-500">버전 히스토리 ({item.files.length}개)</span>
+                                        <span className="text-xs font-semibold text-slate-500">버전 히스토리 ({currentItem.files.length}개)</span>
                                     </div>
                                     <div className="space-y-1.5 max-h-[160px] overflow-y-auto">
-                                        {[...item.files].sort((a: any, b: any) => b.version - a.version).map((f: any) => (
+                                        {[...currentItem.files].sort((a: any, b: any) => b.version - a.version).map((f: any) => (
                                             <div key={f.id} className={`flex items-center justify-between p-2.5 rounded-lg border text-xs transition-colors ${f.is_current
                                                 ? 'bg-[#36a4f2]/5 border-[#36a4f2]/20'
                                                 : 'bg-white border-slate-100 hover:bg-slate-50'
@@ -246,6 +260,89 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                                     </div>
                                 </div>
                             )}
+                        </div>
+                    )}
+
+                    {/* Related Laws Section */}
+                    {!isNew && currentItem?.id && (
+                        <div className="pt-2">
+                            <Label className="text-slate-700 font-semibold text-sm mb-2 flex items-center gap-1.5">
+                                <Scale className="w-3.5 h-3.5" /> 관련 법령
+                            </Label>
+                            <div className="space-y-1.5 mt-2">
+                                {currentItem.related_laws?.map((law: any) => (
+                                    <div key={law.id} className="flex items-center justify-between p-2.5 rounded-lg border border-slate-100 bg-white text-xs">
+                                        <div className="min-w-0 flex-1">
+                                            <p className="font-semibold text-slate-700 truncate">{law.law_name}</p>
+                                            {law.law_summary && <p className="text-slate-400 truncate mt-0.5">{law.law_summary}</p>}
+                                        </div>
+                                        <button type="button" onClick={async () => {
+                                            await apiClient.delete(`/ops/actionkit/related-laws/${law.id}`);
+                                            onSaved?.();
+                                            await refreshItem();
+                                        }} className="text-slate-300 hover:text-red-400 transition-colors ml-2 flex-shrink-0">
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex gap-2 mt-2">
+                                <Input id="add_law_name" placeholder="법령명 (예: 건축법 제11조)" className="bg-white border-slate-200 h-9 text-xs flex-1" />
+                                <Input id="add_law_summary" placeholder="요약 (선택)" className="bg-white border-slate-200 h-9 text-xs flex-1" />
+                                <Button type="button" size="sm" className="bg-[#36a4f2] hover:bg-[#258bd1] h-9 px-3 flex-shrink-0" onClick={async () => {
+                                    const nameEl = document.getElementById('add_law_name') as HTMLInputElement;
+                                    const summaryEl = document.getElementById('add_law_summary') as HTMLInputElement;
+                                    if (!nameEl.value.trim()) return;
+                                    await apiClient.post(`/ops/actionkit/items/${currentItem.id}/related-laws`, {
+                                        law_name: nameEl.value.trim(),
+                                        law_summary: summaryEl.value.trim() || null
+                                    });
+                                    nameEl.value = '';
+                                    summaryEl.value = '';
+                                    onSaved?.();
+                                    await refreshItem();
+                                }}>
+                                    <Plus className="w-3.5 h-3.5" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Highlights Section */}
+                    {!isNew && currentItem?.id && (
+                        <div className="pt-2">
+                            <Label className="text-slate-700 font-semibold text-sm mb-2 flex items-center gap-1.5">
+                                <Highlighter className="w-3.5 h-3.5" /> 핵심 포인트 (하이라이트)
+                            </Label>
+                            <div className="space-y-1.5 mt-2">
+                                {currentItem.highlights?.map((hl: any) => (
+                                    <div key={hl.id} className="flex items-center justify-between p-2.5 rounded-lg border border-amber-100 bg-amber-50/50 text-xs">
+                                        <p className="font-medium text-slate-700 flex-1 min-w-0 truncate">{hl.content}</p>
+                                        <button type="button" onClick={async () => {
+                                            await apiClient.delete(`/ops/actionkit/highlights/${hl.id}`);
+                                            onSaved?.();
+                                            await refreshItem();
+                                        }} className="text-slate-300 hover:text-red-400 transition-colors ml-2 flex-shrink-0">
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex gap-2 mt-2">
+                                <Input id="add_hl_content" placeholder="핵심 내용을 입력하세요 (예: 건축 허가 필수 조건)" className="bg-white border-slate-200 h-9 text-xs flex-1" />
+                                <Button type="button" size="sm" className="bg-amber-500 hover:bg-amber-600 h-9 px-3 flex-shrink-0" onClick={async () => {
+                                    const el = document.getElementById('add_hl_content') as HTMLInputElement;
+                                    if (!el.value.trim()) return;
+                                    await apiClient.post(`/ops/actionkit/items/${currentItem.id}/highlights`, {
+                                        content: el.value.trim()
+                                    });
+                                    el.value = '';
+                                    onSaved?.();
+                                    await refreshItem();
+                                }}>
+                                    <Plus className="w-3.5 h-3.5" />
+                                </Button>
+                            </div>
                         </div>
                     )}
 

@@ -83,6 +83,7 @@ class ActionKitService:
 
         related_laws = await self.repository.list_related_laws(item_ids=item_ids)
         files = await self.repository.list_current_files(item_ids=item_ids)
+        highlights = await self.repository.list_item_highlights(item_ids=item_ids)
 
         related_map: dict[int, list[dict]] = defaultdict(list)
         for law in related_laws:
@@ -90,6 +91,15 @@ class ActionKitService:
                 {
                     "name": law.law_name,
                     "summary": law.law_summary,
+                }
+            )
+
+        highlights_map: dict[int, list[dict]] = defaultdict(list)
+        for hl in highlights:
+            highlights_map[hl.item_id].append(
+                {
+                    "id": hl.id,
+                    "content": hl.content,
                 }
             )
 
@@ -109,6 +119,7 @@ class ActionKitService:
                     "type": item.file_type or "PDF",
                     "path": path,
                     "relatedLaws": related_map.get(item.id) or None,
+                    "highlights": highlights_map.get(item.id) or None,
                     "dday": item.dday,
                 }
             )
