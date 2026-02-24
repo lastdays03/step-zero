@@ -126,7 +126,7 @@ export default function GrowthClubPage() {
                     <div className="flex items-center justify-between py-2 px-1">
                         <div className="flex items-center gap-2">
                             <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                                <span className="font-semibold text-blue-600 dark:text-blue-400">"{search}"</span>에 대한 검색 결과
+                                <span className="font-semibold text-blue-600 dark:text-blue-400">&ldquo;{search}&rdquo;</span>에 대한 검색 결과
                             </span>
                             <span className="text-xs px-2 py-0.5 bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 rounded-full font-medium">
                                 {posts?.length || 0}건

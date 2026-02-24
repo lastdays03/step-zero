@@ -57,11 +57,12 @@ export const PostCard: React.FC<PostCardProps> = ({
             if (onDeleteSuccess) {
                 onDeleteSuccess();
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Failed to delete post:', error);
-            if (error.response?.status === 401) {
+            const err = error as { response?: { status?: number } };
+            if (err.response?.status === 401) {
                 alert('인증이 만료되었습니다. 다시 로그인해주세요.');
-            } else if (error.response?.status === 403) {
+            } else if (err.response?.status === 403) {
                 alert('삭제 권한이 없습니다.');
             } else {
                 alert('게시글 삭제에 실패했습니다. 네트워크 상태를 확인해주세요.');
@@ -94,8 +95,9 @@ export const PostCard: React.FC<PostCardProps> = ({
             } else if (onReportSuccess) {
                 onReportSuccess();
             }
-        } catch (error: any) {
-            if (error.response?.status === 409) {
+        } catch (error: unknown) {
+            const err = error as { response?: { status?: number } };
+            if (err.response?.status === 409) {
                 alert('이미 신고한 게시글입니다.');
                 setIsReported(true);
             } else {

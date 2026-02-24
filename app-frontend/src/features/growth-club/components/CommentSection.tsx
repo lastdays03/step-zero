@@ -81,7 +81,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
         comment: Comment,
         isReply?: boolean,
         isLoggedIn: boolean,
-        user: any,
+        user: { id: number; nickname?: string } | null,
         replyTo: number | null,
         setReplyTo: (id: number | null) => void,
         handleDelete: (id: number) => void,

@@ -21,13 +21,9 @@ export const formatTimeAgo = (dateString: string) => {
 };
 
 export const useTimeAgo = (dateString: string) => {
-    const [timeAgo, setTimeAgo] = useState(formatTimeAgo(dateString));
+    const [timeAgo, setTimeAgo] = useState(() => formatTimeAgo(dateString));
 
     useEffect(() => {
-        // Initial set
-        setTimeAgo(formatTimeAgo(dateString));
-
-        // Update every minute (60,000 ms)
         const intervalId = setInterval(() => {
             setTimeAgo(formatTimeAgo(dateString));
         }, 60000);

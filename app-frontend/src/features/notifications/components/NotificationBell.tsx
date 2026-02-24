@@ -16,25 +16,26 @@ export const NotificationBell = () => {
     const [hasUnread, setHasUnread] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const fetchNotifications = async () => {
-        if (!user) {
-            setNotifications([]);
-            setHasUnread(false);
-            return;
-        }
-
-        try {
-            const data = await notificationsApi.getNotifications();
-            setNotifications(data);
-            setHasUnread(data.some(n => !n.is_read));
-        } catch (error: any) {
-            if (error.response?.status !== 401) {
-                console.error('Failed to fetch notifications:', error);
-            }
-        }
-    };
-
     useEffect(() => {
+        const fetchNotifications = async () => {
+            if (!user) {
+                setNotifications([]);
+                setHasUnread(false);
+                return;
+            }
+
+            try {
+                const data = await notificationsApi.getNotifications();
+                setNotifications(data);
+                setHasUnread(data.some(n => !n.is_read));
+            } catch (error: unknown) {
+                const err = error as { response?: { status?: number } };
+                if (err.response?.status !== 401) {
+                    console.error('Failed to fetch notifications:', error);
+                }
+            }
+        };
+
         fetchNotifications();
 
         let interval: NodeJS.Timeout | null = null;
@@ -65,8 +66,9 @@ export const NotificationBell = () => {
                 await notificationsApi.readAllNotifications();
                 setHasUnread(false);
                 setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-            } catch (error: any) {
-                if (error.response?.status !== 401) {
+            } catch (error: unknown) {
+                const err = error as { response?: { status?: number } };
+                if (err.response?.status !== 401) {
                     console.error('Failed to mark notifications as read:', error);
                 }
             }
