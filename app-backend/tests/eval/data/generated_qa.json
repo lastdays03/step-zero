@@ -1,0 +1,695 @@
+[
+  {
+    "question": "일반음식점 영업을 하려면 어떤 절차를 따라야 하나요?",
+    "ground_truth": "관할 시·군·구청 위생과를 방문하거나 온라인으로 신고해야 합니다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "영업허가",
+      "신고",
+      "관할 구청"
+    ],
+    "requires_citation": true,
+    "id": "gen-002-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "식품위생법 제37조 (영업허가 등)"
+  },
+  {
+    "question": "직원 자격취득 신고서를 제출해야 하는 이유는 무엇인가요?",
+    "ground_truth": "직원 자격취득 신고서는 건강보험, 국민연금, 고용/산재 입사 신고용으로 필요합니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "직원 자격취득 신고서",
+      "건강보험",
+      "국민연금",
+      "고용보험"
+    ],
+    "requires_citation": true,
+    "id": "gen-003-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "직원 자격취득 신고서 통합 서식"
+  },
+  {
+    "question": "처분의 사전 통지를 받기 위해 필요한 절차는 무엇인가요?",
+    "ground_truth": "처분의 사전 통지를 받기 위해서는 해당 행정기관이 처분을 할 때 미리 통지해야 하며, 이에 대한 의견을 청취할 기회를 제공해야 합니다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "사전 통지",
+      "의견 청취",
+      "절차"
+    ],
+    "requires_citation": true,
+    "id": "gen-004-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "행정절차법 (처분의 사전 통지 및 의견청취)"
+  },
+  {
+    "question": "건축허가를 받기 위해서는 어떤 절차를 따라야 하나요?",
+    "ground_truth": "건축허가를 받기 위해서는 미리 그 건축물 등의 시공지 또는 소재지를 관할하는 소방본부장이나 소방서장의 동의를 받아야 한다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "건축허가",
+      "소방본부장",
+      "소방서장",
+      "동의"
+    ],
+    "requires_citation": true,
+    "id": "gen-005-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "소방시설 설치·유지 및 안전관리"
+  },
+  {
+    "question": "소방시설 설치를 위한 건축허가를 받으려면 어떤 행정기관에 동의 요구를 해야 하나요?",
+    "ground_truth": "소방시설 설치를 위한 건축허가는 소방본부장 또는 소방서장에게 동의 요구를 해야 한다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "소방시설",
+      "건축허가",
+      "소방본부장",
+      "소방서장"
+    ],
+    "requires_citation": true,
+    "id": "gen-006-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "소방시설법 시행규칙 (별지 서식)"
+  },
+  {
+    "question": "부가가치세법 시행령에 따라 사업자등록 신청은 어떻게 하나요?",
+    "ground_truth": "사업자등록 신청은 제11조(사업자등록 신청과 사업자등록증 발급)에 따라 진행된다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "사업자등록",
+      "신청",
+      "절차"
+    ],
+    "requires_citation": true,
+    "id": "gen-007-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "소득세법 기반 적격증빙 수취 매뉴얼"
+  },
+  {
+    "question": "건축허가를 신청하려면 어떤 절차를 따라야 하나요?",
+    "ground_truth": "건축허가를 신청하려면 제9조에 따라 건축허가 등의 신청을 해야 합니다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "건축허가",
+      "신청",
+      "절차"
+    ],
+    "requires_citation": true,
+    "id": "gen-008-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "주차장법 및 지역 조례"
+  },
+  {
+    "question": "농수산물의 원산지 표시 기준은 무엇인가요?",
+    "ground_truth": "농수산물의 원산지 표시 기준은 특정 농수산물의 생산지, 가공지, 또는 유통과정에서의 원래 출처를 소비자에게 명확히 알리기 위한 규정입니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "원산지",
+      "표시 기준"
+    ],
+    "requires_citation": true,
+    "id": "gen-010-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "농수산물의 원산지 표시 기준"
+  },
+  {
+    "question": "위생교육 이수 기한은 언제까지인가요?",
+    "ground_truth": "위생교육 이수 기한은 신규 창업자의 경우 창업 후 3개월 이내입니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "위생교육",
+      "이수 기한",
+      "신규",
+      "창업자"
+    ],
+    "requires_citation": true,
+    "id": "gen-011-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "위생교육 이수 안내 (신규)"
+  },
+  {
+    "question": "신규 영업자가 위생교육을 이수하려면 어떻게 해야 하나요?",
+    "ground_truth": "한국외식업중앙회 등에서 실시하는 신규 영업자 위생교육 방법 및 이수증 출력 방법을 안내합니다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "위생교육",
+      "신규 영업자",
+      "이수 방법"
+    ],
+    "requires_citation": true,
+    "id": "gen-012-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "위생교육 이수 안내 (신규)"
+  },
+  {
+    "question": "식품위생법 제44조에서 영업자가 반드시 지켜야 할 사항은 무엇인가요?",
+    "ground_truth": "유통기한 경과 제품 사용 금지, 원료 관리, 시설 위생 관리 등입니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "유통기한",
+      "원료 관리",
+      "시설 위생"
+    ],
+    "requires_citation": true,
+    "id": "gen-013-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "식품위생법 제44조 (영업자 준수사항)"
+  },
+  {
+    "question": "부가가치세 신고를 위해 매출액을 연 환산할 때, 개업일이 2025년 10월 20일인 경우 계산은 어떻게 하나요?",
+    "ground_truth": "(2,500만원÷3개월)×12개월= 10,000만원 → 지원대상 해당",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "부가가치세",
+      "연 환산",
+      "개업일",
+      "계산"
+    ],
+    "requires_citation": true,
+    "id": "gen-014-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "소상공인 경영안정 바우처 지원사업 공고"
+  },
+  {
+    "question": "안전시설등 완비증명서를 발급받으려면 어떤 절차를 거쳐야 하나요?",
+    "ground_truth": "안전시설등 완비증명서 발급을 위해서는 관련 서류를 준비하고 해당 기관에 신청해야 합니다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "안전시설등 완비증명서",
+      "발급",
+      "절차"
+    ],
+    "requires_citation": true,
+    "id": "gen-015-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "안전시설등 완비증명서 발급 안내"
+  },
+  {
+    "question": "민원 신청을 하려면 어떤 서식을 사용해야 하나요?",
+    "ground_truth": "민원 신청을 하려면 행정절차법에서 정한 민원 서식을 사용해야 합니다.",
+    "category": "procedural",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "민원",
+      "서식",
+      "행정절차법"
+    ],
+    "requires_citation": true,
+    "id": "gen-016-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "행정절차법 민원 및 이의신청 서식"
+  },
+  {
+    "question": "다중이용업소 소방필증을 받기 위해 필요한 서류는 어떤 것이 있나요?",
+    "ground_truth": "다중이용업소 소방필증을 받기 위해 필요한 서류는 소방시설 설치가 완료되었다는 것을 증명하는 서류와 소방안전교육 이수증입니다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "소방필증",
+      "서류",
+      "소방시설",
+      "안전교육"
+    ],
+    "requires_citation": true,
+    "id": "gen-017-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "다중이용업소 소방필증 획득 가이드"
+  },
+  {
+    "question": "사업자카드를 신청하려면 어떻게 해야 하나요?",
+    "ground_truth": "PC 또는 모바일기기에서 소상공인경영안정바우처 홈페이지에 접속한 후 '바우처신청' 버튼을 클릭하여 신청을 시작합니다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "사업자 카드",
+      "신청",
+      "소상공인경영안정바우처"
+    ],
+    "requires_citation": true,
+    "id": "gen-018-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "소상공인 경영안정 바우처 메뉴얼"
+  },
+  {
+    "question": "소방시설 설치 기한은 어떻게 되나요?",
+    "ground_truth": "소방시설 설치 기한은 법령에 따라 정해지며, 구체적인 내용은 관련 법률을 참조해야 합니다.",
+    "category": "factual",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "소방시설",
+      "설치 기한",
+      "법령"
+    ],
+    "requires_citation": true,
+    "id": "gen-019-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "소방시설 설치·유지 및 안전관리"
+  },
+  {
+    "question": "소상공인 지원을 신청하려면 어떤 절차를 따라야 하나요?",
+    "ground_truth": "온라인 신청을 원칙으로 하며, '소상공인24' 또는 '소상공인경영안정바우처.kr'를 통해 신청 가능하다. 신청 과정에서는 업체명, 신청자 정보, 사업자 등록번호, 개업일 등을 입력하고, 정보제공 동의와 본인 인증을 거쳐야 한다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "신청",
+      "절차",
+      "온라인",
+      "본인 인증"
+    ],
+    "requires_citation": true,
+    "id": "gen-020-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "소상공인 경영안정 바우처 지원사업 공고"
+  },
+  {
+    "question": "부가가치세 신고 서식은 어디에서 찾을 수 있나요?",
+    "ground_truth": "부가가치세 신고 및 변경 신청 서식은 과세유형 전환 및 부가세 신고용 별지 서식 모음에서 찾을 수 있습니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "부가가치세",
+      "신고 서식",
+      "별지 서식 모음"
+    ],
+    "requires_citation": true,
+    "id": "gen-021-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "부가가치세 신고 및 변경 신청 서식"
+  },
+  {
+    "question": "간이과세자로 적용받기 위한 조건은 무엇인가요?",
+    "ground_truth": "부가가치세법 제61조에 따르면 간이과세자의 적용 범위 및 배제 제도가 규정되어 있습니다.",
+    "category": "factual",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "간이과세자",
+      "적용 범위",
+      "배제 제도"
+    ],
+    "requires_citation": true,
+    "id": "gen-022-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "부가가치세법상 과세유형 선택 가이드"
+  },
+  {
+    "question": "부가가치세법상 과세유형 선택 기한은 언제인가요?",
+    "ground_truth": "부가가치세법상 과세유형 선택 기한은 매년 1월 1일부터 1월 31일까지입니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "부가가치세법",
+      "과세유형",
+      "선택 기한"
+    ],
+    "requires_citation": true,
+    "id": "gen-023-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "부가가치세법상 과세유형 선택 가이드"
+  },
+  {
+    "question": "간이과세자와 일반과세자의 차이는 무엇인가요?",
+    "ground_truth": "간이과세자는 직전 연도의 재화와 용역의 공급에 대한 대가의 합계액이 대통령령으로 정하는 금액에 미달하는 사업자로서 간편한 절차로 부가가치세를 신고ㆍ납부하는 개인사업자를 말하며, 일반과세자는 간이과세자가 아닌 사업자를 말한다.",
+    "category": "factual",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "간이과세자",
+      "일반과세자",
+      "차이"
+    ],
+    "requires_citation": true,
+    "id": "gen-024-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "부가가치세법상 과세유형 선택 가이드"
+  },
+  {
+    "question": "소득세법에 따라 적격증빙을 수취하기 위해 필요한 서류는 무엇인가요?",
+    "ground_truth": "소득세법에 따라 적격증빙을 수취하기 위해서는 세금계산서, 영수증, 계약서 등의 서류가 필요합니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "적격증빙",
+      "서류"
+    ],
+    "requires_citation": true,
+    "id": "gen-025-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "소득세법 기반 적격증빙 수취 매뉴얼"
+  },
+  {
+    "question": "소득세법 제160조의2에 따르면 경비 처리를 위한 적격증빙을 수취하지 않을 경우 어떤 문제가 발생하나요?",
+    "ground_truth": "소득세법 제160조의2에 따르면 경비 처리를 위한 법정 적격증빙 수취 의무가 있으며, 이를 수취하지 않을 경우 경비로 인정받지 못할 수 있습니다.",
+    "category": "interpretive",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "소득세법",
+      "경비 처리",
+      "적격증빙"
+    ],
+    "requires_citation": true,
+    "id": "gen-026-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "소득세법 기반 적격증빙 수취 매뉴얼"
+  },
+  {
+    "question": "부가가치세 신고의 기한은 언제인가요?",
+    "ground_truth": "부가가치세 신고의 기한은 매 분기마다 정해진 날짜에 신고해야 합니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "부가가치세",
+      "신고",
+      "기한"
+    ],
+    "requires_citation": true,
+    "id": "gen-027-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "부가가치세 신고 및 변경 신청 서식"
+  },
+  {
+    "question": "자가품질검사를 면제받으려면 어떤 조건이 필요한가요?",
+    "ground_truth": "제31조의2에 따라 자가품질검사의무의 면제를 받을 수 있는 조건은 특정한 기준에 따라 결정됩니다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "자가품질검사",
+      "면제",
+      "조건"
+    ],
+    "requires_citation": true,
+    "id": "gen-028-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "농수산물의 원산지 표시 기준"
+  },
+  {
+    "question": "건축허가를 신청하려면 어떤 서류를 제출해야 하나요?",
+    "ground_truth": "건축에 관한 입지 및 규모의 사전결정신청시 제출서류를 제출해야 합니다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "건축허가",
+      "제출서류",
+      "사전결정"
+    ],
+    "requires_citation": true,
+    "id": "gen-031-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "정화조 용량 검토 가이드"
+  },
+  {
+    "question": "용도지역의 지정 및 건축 제한은 어떤 법률의 근거를 두고 있나요?",
+    "ground_truth": "국토계획법 제36조에 근거를 두고 있습니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "용도지역",
+      "지정",
+      "건축 제한",
+      "근거"
+    ],
+    "requires_citation": true,
+    "id": "gen-032-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "국토계획법 시행규칙 (별지 서식 포함)"
+  },
+  {
+    "question": "4대보험 사업장 성립신고를 하려면 어떤 서식이 필요한가요?",
+    "ground_truth": "신규 사업자는 국민연금, 건강, 고용, 산재 통합 서식을 사용해야 합니다.",
+    "category": "procedural",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "4대보험",
+      "사업장 성립신고",
+      "서식"
+    ],
+    "requires_citation": true,
+    "id": "gen-033-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "4대보험 사업장 성립신고 공통 서식"
+  },
+  {
+    "question": "화재배상책임보험 계약의 해제나 해지 가능 사유는 무엇인가요?",
+    "ground_truth": "화재배상책임보험 계약의 해제 또는 해지 가능 사유는 제14조의5에 명시되어 있습니다.",
+    "category": "factual",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "화재배상책임보험",
+      "해제",
+      "해지",
+      "사유"
+    ],
+    "requires_citation": true,
+    "id": "gen-034-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "다중이용업소법 시행규칙 (별지 서식)"
+  },
+  {
+    "question": "다중이용업주는 화재배상책임보험에 가입해야 하나요?",
+    "ground_truth": "네, 다중이용업주는 화재배상책임보험에 가입해야 합니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "화재배상책임보험",
+      "가입 의무"
+    ],
+    "requires_citation": true,
+    "id": "gen-035-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "다중이용업소의 안전관리에 관한 특별법"
+  },
+  {
+    "question": "10인 이상 사업장에서 취업규칙을 작성해야 하는 법적 근거는 무엇인가요?",
+    "ground_truth": "근로기준법 제93조에 따라 10인 이상 고용 시 취업규칙 작성 및 신고 의무가 있습니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "근로기준법",
+      "취업규칙",
+      "10인 이상"
+    ],
+    "requires_citation": true,
+    "id": "gen-036-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "2025년 개정 표준 취업규칙 (배포용)"
+  },
+  {
+    "question": "다중이용업소의 등록 기한은 어떻게 되나요?",
+    "ground_truth": "다중이용업소의 등록 기한은 법 시행일로부터 30일 이내입니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "등록",
+      "기한",
+      "다중이용업소"
+    ],
+    "requires_citation": true,
+    "id": "gen-037-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "다중이용업소법 시행규칙 (별지 서식)"
+  },
+  {
+    "question": "국토계획법 시행규칙에 따라 개발행위 허가를 받으려면 어떤 절차를 따라야 하나요?",
+    "ground_truth": "국토계획법 시행규칙에 따라 개발행위 허가를 받으려면 관련 서류를 제출하고, 심사를 거쳐 허가를 받아야 합니다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "개발행위 허가",
+      "절차",
+      "서류"
+    ],
+    "requires_citation": true,
+    "id": "gen-038-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "국토계획법 시행규칙 (별지 서식 포함)"
+  },
+  {
+    "question": "2026년 소상공인 정책자금 융자사업의 신청 기한은 언제인가요?",
+    "ground_truth": "신청 기한은 문서에 명시되어 있지 않습니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "신청 기한",
+      "2026년",
+      "정책자금"
+    ],
+    "requires_citation": false,
+    "id": "gen-039-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "2026년 소상공인 정책자금 융자사업 공고"
+  },
+  {
+    "question": "2026년 소상공인 정책자금 융자사업의 공고 번호는 무엇인가요?",
+    "ground_truth": "중소벤처기업부 공고 제2025–656호입니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "공고 번호",
+      "소상공인 정책자금"
+    ],
+    "requires_citation": true,
+    "id": "gen-040-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "2026년 소상공인 정책자금 융자사업 공고"
+  },
+  {
+    "question": "소상공인이 대출을 받을 수 있는 최대 한도는 얼마인가요?",
+    "ground_truth": "기업당 운전자금 5억원 이내에서 운용하며, 시설자금을 포함할 경우 10억원 이내입니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "대출",
+      "최대 한도",
+      "소상공인"
+    ],
+    "requires_citation": true,
+    "id": "gen-041-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "2026년 소상공인 정책자금 융자사업 공고"
+  },
+  {
+    "question": "2026년 소상공인 정책자금 융자사업의 일반경영안정자금 공급 규모는 얼마인가요?",
+    "ground_truth": "12,200억 원입니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "2026년",
+      "일반경영안정자금",
+      "공급 규모"
+    ],
+    "requires_citation": true,
+    "id": "gen-042-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "2026년 소상공인 정책자금 융자사업 공고"
+  },
+  {
+    "question": "소상공인정책자금을 신청하려면 어떻게 해야 하나요?",
+    "ground_truth": "소상공인정책자금을 신청하려면 온라인으로 소상공인정책자금 사이트(https://ols.semas.or.kr)에서 접수하거나, 오프라인으로 소상공인시장진흥공단 지역센터(전국 78곳)에 방문하여 접수해야 합니다.",
+    "category": "procedural",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "신청",
+      "접수",
+      "온라인",
+      "오프라인"
+    ],
+    "requires_citation": true,
+    "id": "gen-043-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "2026년 소상공인 정책자금 융자사업 공고"
+  },
+  {
+    "question": "행정심판을 청구하려면 어떤 절차를 따라야 하나요?",
+    "ground_truth": "행정심판을 청구하려면 관할 행정기관에 청구서를 제출해야 합니다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "행정심판",
+      "청구서",
+      "절차"
+    ],
+    "requires_citation": true,
+    "id": "gen-044-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "행정심판법 (행정심판의 청구 및 절차)"
+  },
+  {
+    "question": "행정심판 청구서는 어떤 내용을 포함해야 하나요?",
+    "ground_truth": "행정심판 청구서에는 청구인의 성명, 주소, 청구의 취지 및 이유, 관계 법령 등이 포함되어야 합니다.",
+    "category": "factual",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "행정심판",
+      "청구서",
+      "내용"
+    ],
+    "requires_citation": true,
+    "id": "gen-045-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "행정심판 청구서 및 관련 서식 (시행규칙)"
+  },
+  {
+    "question": "부당한 행정처분에 대해 행정심판을 청구할 수 있는 기한은 얼마인가요?",
+    "ground_truth": "처분이 있음을 안 날부터 90일 이내 청구",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "기한",
+      "행정심판"
+    ],
+    "requires_citation": false,
+    "id": "gen-046-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "행정심판법 (행정심판의 청구 및 절차)"
+  },
+  {
+    "question": "행정심판 청구는 어떤 방식으로 제출해야 하나요?",
+    "ground_truth": "행정심판법 제27조에 따라 심판청구서는 정해진 방식으로 제출해야 합니다.",
+    "category": "procedural",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "행정심판",
+      "청구",
+      "제출 방식"
+    ],
+    "requires_citation": true,
+    "id": "gen-047-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "행정심판법 시행규칙 서식 패키지"
+  },
+  {
+    "question": "행정조사를 실시하기 위해 사전 통지는 언제까지 해야 하나요?",
+    "ground_truth": "조사 개시 7일 전 사전 통지 의무가 있습니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "사전 통지",
+      "7일"
+    ],
+    "requires_citation": true,
+    "id": "gen-049-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "행정조사 기본법 제4조"
+  },
+  {
+    "question": "행정절차법 시행규칙의 목적은 무엇인가요?",
+    "ground_truth": "행정절차법 시행규칙의 목적은 문서에 명시되어 있지 않습니다.",
+    "category": "factual",
+    "difficulty": "medium",
+    "expected_keywords": [
+      "목적",
+      "행정절차법"
+    ],
+    "requires_citation": true,
+    "id": "gen-050-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "행정절차법 민원 및 이의신청 서식"
+  },
+  {
+    "question": "행정조사기본법에 따라 조사원은 어떤 신분 표기 의무가 있나요?",
+    "ground_truth": "조사원은 신분을 표기해야 합니다.",
+    "category": "factual",
+    "difficulty": "easy",
+    "expected_keywords": [
+      "행정조사기본법",
+      "조사원",
+      "신분 표기"
+    ],
+    "requires_citation": true,
+    "id": "gen-051-00",
+    "expected_source": "legal_rag",
+    "source_doc_title": "행정조사기본법 및 대응 가이드"
+  }
+]

@@ -319,7 +319,10 @@ JSON 응답: {{"all_valid": true/false, "invalid_laws": ["<없는 법령>"]}}"""
 
 
 class TestOutOfScopeRefusal:
-    """범위 밖 질문에 대한 적절한 거부 응답 확인."""
+    """범위 밖 질문에 대한 적절한 거부 응답 확인.
+
+    골든 데이터셋의 out_of_scope_cases fixture를 주입받아 테스트.
+    """
 
     REFUSAL_INDICATORS = [
         "찾을 수 없습니다",
@@ -331,18 +334,16 @@ class TestOutOfScopeRefusal:
         "문서에서는",
     ]
 
-    def test_refusal_on_out_of_scope(self, rag_service) -> None:
-        """RAG에 없는 내용을 질문했을 때 '모른다'고 답하는지."""
-        out_of_scope_questions = [
-            "일본 식품위생법의 내용은?",
-            "2035년 예상 법률 변화는?",
-            "양자역학의 기본 원리를 설명해주세요",
-        ]
-
+    def test_refusal_on_out_of_scope(
+        self, rag_service, out_of_scope_cases: list[dict]
+    ) -> None:
+        """골든 데이터셋의 OOS 케이스에 대해 '모른다'고 답하는지 확인."""
         loop = asyncio.new_event_loop()
         refusal_count = 0
+        details = []
 
-        for question in out_of_scope_questions:
+        for case in out_of_scope_cases:
+            question = case["question"]
             answer = loop.run_until_complete(rag_service.query(question))
             has_refusal = any(
                 indicator in answer for indicator in self.REFUSAL_INDICATORS
@@ -350,18 +351,22 @@ class TestOutOfScopeRefusal:
 
             if has_refusal:
                 refusal_count += 1
-            else:
-                print(f"  No refusal for: '{question[:50]}'")
-                print(f"    Answer: {answer[:100]}")
+            details.append({
+                "id": case["id"],
+                "question": question[:50],
+                "refused": has_refusal,
+            })
 
         loop.close()
-        refusal_rate = refusal_count / len(out_of_scope_questions)
-        print(f"\n  Refusal rate: {refusal_rate:.2%}")
+        refusal_rate = refusal_count / len(out_of_scope_cases) if out_of_scope_cases else 0
+        print(f"\n  Refusal rate: {refusal_rate:.2%} ({refusal_count}/{len(out_of_scope_cases)})")
+        for d in details:
+            status = "REFUSED" if d["refused"] else "NOT REFUSED"
+            print(f"    [{d['id']}] {d['question']} [{status}]")
 
         # 범위 밖 질문에 대한 적절 거부는 환각 방지의 핵심
-        # 초기 베이스라인이므로 낮게 설정
         assert refusal_rate >= 0.30, (
-            f"Refusal rate {refusal_rate:.2%} too low"
+            f"Refusal rate {refusal_rate:.2%} too low (threshold: 30%)"
         )
 
 

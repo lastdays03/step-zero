@@ -1,0 +1,16 @@
+{
+  "routing_accuracy": 0.8,
+  "total_cases": 45,
+  "correct": 36,
+  "misclassified": [
+    "  [routing-001] '창업 초기에 가장 중요한 것은 무엇인가요?' → legal (expected: general)",
+    "  [routing-002] '좋은 투자자를 찾는 방법은?' → legal (expected: general)",
+    "  [legal-013] '개인정보 처리방침은 반드시 만들어야 하나요?' → general (expected: legal)",
+    "  [legal-015] '근로계약서는 반드시 서면으로 작성해야 하나요?' → general (expected: legal)",
+    "  [kit-admin-001] '행정심판을 청구하려면 어떤 절차를 따라야 하나요?' → general (expected: legal)",
+    "  [kit-admin-002] '행정심판 청구서는 어떤 내용을 포함해야 하나요?' → general (expected: legal)",
+    "  [kit-admin-004] '행정조사를 실시하기 위해 사전 통지는 언제까지 해야 하나요?' → general (expected: legal)",
+    "  [kit-legal-004] '다중이용업소 소방필증을 받기 위해 필요한 서류는 어떤 것이 있나요?' → general (expected: legal)",
+    "  [kit-legal-005] '다중이용업주는 화재배상책임보험에 가입해야 하나요?' → general (expected: legal)"
+  ]
+}

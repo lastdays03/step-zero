@@ -8,6 +8,7 @@ DB 연결 + OpenAI API 필요.
 사용법:
     cd app-backend
     python -m scripts.eval.run_evaluation [--tier 1|2|3] [--report-only]
+    python -m scripts.eval.run_evaluation --update-baseline  # 현재 결과로 baseline 갱신
 """
 
 from __future__ import annotations
@@ -16,7 +17,9 @@ import argparse
 import asyncio
 import json
 import re
+import subprocess
 import time
+from collections import Counter
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -26,20 +29,90 @@ from typing import Any
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 EVAL_DATA_DIR = PROJECT_ROOT / "tests" / "eval" / "data"
 RESULTS_DIR = PROJECT_ROOT / "tests" / "eval" / "results"
+BASELINE_PATH = RESULTS_DIR / "baseline.json"
+LATEST_RUN_PATH = RESULTS_DIR / "latest_run.json"
 
 
 def load_golden_dataset() -> list[dict]:
+    """골든 데이터셋 로드."""
     path = EVAL_DATA_DIR / "golden_dataset.json"
     with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
 def save_results(name: str, data: Any) -> None:
+    """개별 평가 결과 파일 저장."""
     RESULTS_DIR.mkdir(parents=True, exist_ok=True)
     path = RESULTS_DIR / f"{name}.json"
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
     print(f"  Saved: {path}")
+
+
+def _get_git_commit() -> str:
+    """현재 git commit 해시(short) 반환."""
+    try:
+        return subprocess.check_output(
+            ["git", "rev-parse", "--short", "HEAD"],
+            cwd=PROJECT_ROOT,
+            text=True,
+        ).strip()
+    except Exception:
+        return "unknown"
+
+
+def save_latest_run(dataset: list[dict], tier1_result: dict | None, tier2_result: dict | None) -> dict:
+    """평가 결과를 latest_run.json으로 저장. baseline과 동일한 스키마 사용."""
+    # 카테고리별 케이스 수 집계
+    categories = Counter(c["category"] for c in dataset)
+    case_count = {
+        "legal": len([c for c in dataset if c["expected_source"] == "legal_rag"]),
+        "general": len([c for c in dataset if c["category"] == "general"]),
+        "routing_edge": categories.get("routing_edge", 0),
+        "out_of_scope": categories.get("out_of_scope", 0),
+    }
+
+    # 메트릭 수집
+    metrics: dict[str, float] = {}
+    if tier1_result and not tier1_result.get("skipped"):
+        metrics["routing_accuracy"] = tier1_result.get("routing_accuracy", 0.0)
+    if tier2_result and not tier2_result.get("skipped"):
+        metrics["hit_rate_at_3"] = tier2_result.get("hit_rate", 0.0)
+        metrics["faithfulness"] = tier2_result.get("faithfulness", {}).get("avg", 0.0)
+        metrics["answer_relevancy"] = tier2_result.get("answer_relevancy", {}).get("avg", 0.0)
+        metrics["answer_correctness"] = tier2_result.get("answer_correctness", {}).get("avg", 0.0)
+
+    run_data = {
+        "created_at": datetime.now().isoformat(),
+        "git_commit": _get_git_commit(),
+        "description": "Auto-saved evaluation run",
+        "metrics": metrics,
+        "case_count": case_count,
+    }
+
+    RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+    with open(LATEST_RUN_PATH, "w", encoding="utf-8") as f:
+        json.dump(run_data, f, ensure_ascii=False, indent=2)
+    print(f"  Saved: {LATEST_RUN_PATH}")
+    return run_data
+
+
+def update_baseline() -> None:
+    """latest_run.json을 baseline.json으로 복사하여 베이스라인 갱신."""
+    if not LATEST_RUN_PATH.exists():
+        print("  ERROR: latest_run.json이 없습니다. 먼저 평가를 실행하세요.")
+        return
+
+    with open(LATEST_RUN_PATH, encoding="utf-8") as f:
+        run_data = json.load(f)
+
+    run_data["description"] = f"Baseline updated from run at {run_data['created_at']}"
+    run_data["created_at"] = datetime.now().isoformat()
+
+    with open(BASELINE_PATH, "w", encoding="utf-8") as f:
+        json.dump(run_data, f, ensure_ascii=False, indent=2)
+    print(f"  Baseline updated: {BASELINE_PATH}")
+    print(f"  Metrics: {json.dumps(run_data['metrics'], indent=2)}")
 
 
 # ─── Tier 1: 무비용 기본 검증 ──────────────────────────────────────
@@ -233,6 +306,73 @@ async def run_tier2(dataset: list[dict]) -> dict:
     return result
 
 
+# ─── 회귀 감지 ────────────────────────────────────────────────────
+
+# 메트릭별 허용 하락 마진 (절대값). 이 이상 떨어지면 회귀로 판정.
+REGRESSION_MARGINS: dict[str, float] = {
+    "hit_rate_at_3": 0.10,
+    "faithfulness": 0.05,
+    "answer_relevancy": 0.05,
+    "answer_correctness": 0.05,
+    "routing_accuracy": 0.10,
+    "oos_refusal_rate": 0.10,
+    "legal_accuracy": 0.05,
+}
+
+
+def detect_regression() -> list[str]:
+    """baseline.json과 latest_run.json을 비교하여 회귀를 감지.
+
+    Returns:
+        회귀 감지된 메트릭 목록. 빈 리스트면 회귀 없음.
+    """
+    if not BASELINE_PATH.exists():
+        print("  SKIP: baseline.json이 없어 회귀 감지 생략")
+        return []
+    if not LATEST_RUN_PATH.exists():
+        print("  SKIP: latest_run.json이 없어 회귀 감지 생략")
+        return []
+
+    with open(BASELINE_PATH, encoding="utf-8") as f:
+        baseline = json.load(f)
+    with open(LATEST_RUN_PATH, encoding="utf-8") as f:
+        latest = json.load(f)
+
+    baseline_metrics = baseline.get("metrics", {})
+    latest_metrics = latest.get("metrics", {})
+
+    regressions: list[str] = []
+
+    print(f"\n  ─── Regression Check (vs baseline {baseline.get('git_commit', '?')}) ───")
+
+    for metric, margin in REGRESSION_MARGINS.items():
+        b_val = baseline_metrics.get(metric)
+        l_val = latest_metrics.get(metric)
+
+        if b_val is None or l_val is None:
+            continue
+
+        diff = l_val - b_val
+        status = "OK"
+        if diff < -margin:
+            status = "REGRESSION"
+            regressions.append(metric)
+        elif diff > 0:
+            status = "IMPROVED"
+
+        print(
+            f"    {metric:25s}  baseline={b_val:.3f}  current={l_val:.3f}  "
+            f"diff={diff:+.3f} (margin={margin:.2f})  [{status}]"
+        )
+
+    if regressions:
+        print(f"\n  WARNING: {len(regressions)} metric(s) regressed: {regressions}")
+    else:
+        print(f"\n  All metrics within acceptable range.")
+
+    return regressions
+
+
 # ─── 리포트 생성 ──────────────────────────────────────────────────
 
 
@@ -319,7 +459,17 @@ def main() -> None:
         action="store_true",
         help="기존 결과로 리포트만 생성",
     )
+    parser.add_argument(
+        "--update-baseline",
+        action="store_true",
+        help="latest_run.json을 baseline.json으로 갱신",
+    )
     args = parser.parse_args()
+
+    # --update-baseline: latest_run → baseline 복사 후 종료
+    if args.update_baseline:
+        update_baseline()
+        return
 
     if args.report_only:
         generate_report()
@@ -330,16 +480,29 @@ def main() -> None:
 
     start = time.time()
 
+    tier1_result = None
+    tier2_result = None
+
     if args.tier >= 1:
-        run_tier1(dataset)
+        tier1_result = run_tier1(dataset)
 
     if args.tier >= 2:
-        asyncio.run(run_tier2(dataset))
+        tier2_result = asyncio.run(run_tier2(dataset))
 
     elapsed = time.time() - start
     print(f"\n  Total evaluation time: {elapsed:.1f}s")
 
+    # latest_run.json 자동 저장
+    save_latest_run(dataset, tier1_result, tier2_result)
+
+    # baseline 대비 회귀 감지
+    regressions = detect_regression()
+
     generate_report()
+
+    if regressions:
+        print(f"\n  EXIT CODE 1: {len(regressions)} regression(s) detected")
+        raise SystemExit(1)
 
 
 if __name__ == "__main__":

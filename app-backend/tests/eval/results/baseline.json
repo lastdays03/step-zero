@@ -1,0 +1,18 @@
+{
+  "created_at": "2026-02-24T15:52:39.214498",
+  "git_commit": "8789565",
+  "description": "Baseline updated from run at 2026-02-24T15:52:27.475662",
+  "metrics": {
+    "routing_accuracy": 0.8,
+    "hit_rate_at_3": 0.8604651162790697,
+    "faithfulness": 0.7325581395348837,
+    "answer_relevancy": 0.4395348837209302,
+    "answer_correctness": 0.3643410852713178
+  },
+  "case_count": {
+    "legal": 43,
+    "general": 2,
+    "routing_edge": 2,
+    "out_of_scope": 5
+  }
+}

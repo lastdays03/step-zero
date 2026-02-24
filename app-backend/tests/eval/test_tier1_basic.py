@@ -180,3 +180,93 @@ class TestGoldenDatasetIntegrity:
     ) -> None:
         assert len(legal_cases) >= 5, "Need at least 5 legal cases"
         assert len(general_cases) >= 2, "Need at least 2 general cases"
+
+    def test_has_out_of_scope_cases(self, out_of_scope_cases: list[dict]) -> None:
+        """OOS 케이스가 충분한지 확인 (oos-001~005)."""
+        assert len(out_of_scope_cases) >= 5, (
+            f"Need at least 5 out_of_scope cases, got {len(out_of_scope_cases)}"
+        )
+
+
+# ─── 5. general_cases fixture 라우팅 테스트 ────────────────────────
+
+
+class TestGeneralCasesRouting:
+    """골든 데이터셋의 general_cases fixture를 사용한 라우팅 테스트."""
+
+    def test_general_cases_routed_to_general(self, general_cases: list[dict]) -> None:
+        """일반 대화 케이스(OOS 제외)의 라우팅 현황 기록.
+
+        키워드 기반 라우터의 한계로 일반 질문이 legal로 오분류될 수 있음.
+        현재는 문서화 목적으로만 기록하고, LLM 기반 라우터 전환 후 임계값 추가.
+        """
+        # general_cases fixture에는 OOS도 포함되므로 category=="general"만 필터
+        pure_general = [c for c in general_cases if c["category"] == "general"]
+        correct = 0
+        total = len(pure_general)
+        misclassified = []
+
+        for case in pure_general:
+            actual = classify_query(case["question"])
+            if actual == "general":
+                correct += 1
+            else:
+                misclassified.append(
+                    f"  [{case['id']}] '{case['question'][:50]}' → got '{actual}'"
+                )
+
+        accuracy = correct / total if total > 0 else 0
+        print(f"\n  General routing accuracy: {accuracy:.2%} ({correct}/{total})")
+        if misclassified:
+            print("  Misclassified as legal (keyword-based router 한계):")
+            for m in misclassified:
+                print(f"    {m}")
+
+    def test_general_cases_have_no_law_reference(self, general_cases: list[dict]) -> None:
+        """일반 케이스에는 법령 참조가 없어야 함."""
+        for case in general_cases:
+            assert case.get("expected_law_reference") is None, (
+                f"[{case['id']}] General case should not have law reference: "
+                f"{case.get('expected_law_reference')}"
+            )
+
+
+# ─── 6. routing_edge_cases fixture 테스트 ──────────────────────────
+
+
+class TestRoutingEdgeCases:
+    """골든 데이터셋의 routing_edge_cases fixture를 사용한 경계 케이스 테스트."""
+
+    def test_routing_edge_cases_classification(self, routing_edge_cases: list[dict]) -> None:
+        """라우팅 경계 케이스의 분류 결과를 기록하고 정확도 확인."""
+        correct = 0
+        total = len(routing_edge_cases)
+        details = []
+
+        for case in routing_edge_cases:
+            expected = "legal" if case["expected_source"] == "legal_rag" else "general"
+            actual = classify_query(case["question"])
+            is_correct = actual == expected
+            if is_correct:
+                correct += 1
+            details.append({
+                "id": case["id"],
+                "question": case["question"][:50],
+                "expected": expected,
+                "actual": actual,
+                "correct": is_correct,
+            })
+
+        accuracy = correct / total if total > 0 else 0
+        print(f"\n  Routing edge cases accuracy: {accuracy:.2%} ({correct}/{total})")
+        for d in details:
+            status = "OK" if d["correct"] else "MISS"
+            print(f"    [{d['id']}] {d['question']} → {d['actual']} (expected: {d['expected']}) [{status}]")
+
+    def test_edge_cases_are_legal_source(self, routing_edge_cases: list[dict]) -> None:
+        """라우팅 경계 케이스가 모두 legal_rag 소스인지 확인."""
+        for case in routing_edge_cases:
+            assert case["expected_source"] == "legal_rag", (
+                f"[{case['id']}] Routing edge case should be legal_rag, "
+                f"got: {case['expected_source']}"
+            )
