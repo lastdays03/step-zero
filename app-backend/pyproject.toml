@@ -47,6 +47,10 @@ dev = [
     "mypy>=1.8.0",
     "polyfactory>=2.14.0"
 ]
+eval = [
+    "ragas>=0.1.0",
+    "datasets>=2.14.0",
+]
 
 [build-system]
 requires = ["setuptools>=61.0"]
@@ -71,3 +75,8 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+markers = [
+    "eval: RAG evaluation tests",
+    "slow: slow tests that call external APIs",
+    "full_eval: full evaluation requiring GPT-4o",
+]
