@@ -57,42 +57,60 @@
 
 ---
 
-## Phase 2: 베이스라인 측정 (진행 중)
+## Phase 2: 베이스라인 측정 (완료)
 
 ### Section 2.1: Tier 2 실행 및 베이스라인 기록
-- [ ] **T-2.1.1** Docker PostgreSQL + pgvector 기동 확인
+- [x] **T-2.1.1** Docker PostgreSQL + pgvector 기동 확인
   - Effort: S | Priority: P0
-  - Acceptance: `docker-compose up -d` 후 벡터 DB 접속 성공
+  - 결과: stepzero-db (pgvector/pgvector:pg16) healthy 상태 확인
 
-- [ ] **T-2.1.2** Tier 2 테스트 첫 실행
+- [x] **T-2.1.2** Tier 2 테스트 첫 실행
   - Effort: S | Priority: P0
-  - Command: `pytest tests/eval/test_tier2_metrics.py -v -s`
-  - Acceptance: 모든 테스트 실행 완료 (pass/fail 무관), 결과 JSON 저장
+  - 결과: 9 passed, 1 skipped (RAGAS 미설치) in 52.65s
+  - **인프라 이슈 해결**: tests/conftest.py의 sqlite 덮어쓰기 → .env 직접 읽기 + psycopg2 드라이버로 해결
 
-- [ ] **T-2.1.3** 베이스라인 메트릭 기록
+- [x] **T-2.1.3** 베이스라인 메트릭 기록
   - Effort: S | Priority: P0
-  - Acceptance: `tests/eval/results/tier2_metrics.json`에 첫 측정값 저장
-  - 기록할 값: Faithfulness, Answer Relevancy, Answer Correctness, Hit Rate@3
+  - 결과: `tests/eval/results/tier2_baseline.json`에 저장
+  - **베이스라인 측정값:**
+    | 메트릭 | 값 | 초기 임계값 |
+    |---|---|---|
+    | Hit Rate@3 | **41.18%** | 60% |
+    | Faithfulness | **0.150** | 0.50 |
+    | Answer Relevancy | **0.240** | 0.50 |
+    | Answer Correctness | **0.000** | 0.40 |
+    | Keyword Match | **0.00%** | - |
+    | Law Reference Match | **60.00%** | - |
+    | E2E Routing | **100.00%** | - |
+  - **핵심 발견**: RAG이 대부분 "정보를 찾을 수 없습니다"로 응답 → 검색 품질이 근본 원인
 
-- [ ] **T-2.1.4** 베이스라인 기반 임계값 조정
+- [x] **T-2.1.4** 베이스라인 기반 임계값 조정
   - Effort: S | Priority: P1
-  - Acceptance: 측정된 베이스라인 대비 -10%를 새 임계값으로 설정
-  - Depends on: T-2.1.3
+  - 결과: 회귀 감지 임계값 설정
+    | 메트릭 | 베이스라인 | 회귀 감지 임계값 |
+    |---|---|---|
+    | Hit Rate@3 | 0.41 | >= 0.30 |
+    | Faithfulness | 0.15 | >= 0.05 |
+    | Answer Relevancy | 0.24 | >= 0.14 |
+    | Correctness | 0.00 | disabled |
 
 ### Section 2.2: Tier 3 실행 및 법률 정확성 베이스라인
-- [ ] **T-2.2.1** Tier 3 테스트 첫 실행
+- [x] **T-2.2.1** Tier 3 테스트 첫 실행
   - Effort: S | Priority: P1
-  - Command: `pytest tests/eval/test_tier3_full.py -v -s`
-  - Acceptance: Legal accuracy, citation, refusal 결과 JSON 저장
+  - 결과: 6 passed in 59.55s
+  - Legal Accuracy: 0.000 (17개 케이스 모두 0점)
+  - Out-of-Scope Refusal: 100% (3/3 정상 거부)
+  - Latency: < 5s (임계값 15s 이내)
 
-- [ ] **T-2.2.2** 법률 정확성 분석 리포트 작성
+- [x] **T-2.2.2** 법률 정확성 분석 리포트
   - Effort: M | Priority: P1
-  - Acceptance: 난이도별/카테고리별 정확성 분석, 주요 실패 패턴 식별
+  - 결과: `tests/eval/results/legal_accuracy_full.json` 저장
+  - **실패 패턴**: 모든 케이스에서 "제공된 법령 문서에서는 해당 정보를 찾을 수 없습니다" 응답
+  - **근본 원인**: 벡터 DB 문서와 골든 데이터셋 질문 간 의미적 불일치 (청킹 부재 + 문서 커버리지 부족)
 
-- [ ] **T-2.2.3** 종합 베이스라인 리포트 생성
+- [x] **T-2.2.3** 종합 베이스라인 리포트 생성
   - Effort: S | Priority: P1
-  - Command: `python -m scripts.eval.run_evaluation --report-only`
-  - Depends on: T-2.1.3, T-2.2.1
+  - 결과: `tests/eval/results/summary_report.json` + `tier2_baseline.json` + `tier3_baseline.json`
 
 ---
 
@@ -184,16 +202,17 @@
 | Phase | 상태 | 완료/전체 |
 |---|---|---|
 | Phase 1: 인프라 구축 | **완료** | 11/11 |
-| Phase 2: 베이스라인 측정 | 진행 중 | 0/7 |
+| Phase 2: 베이스라인 측정 | **완료** | 7/7 |
 | Phase 3: 데이터셋 확장 | 대기 | 0/6 |
-| Phase 4: 파이프라인 개선 | 대기 (베이스라인 후) | 0/6 |
+| Phase 4: 파이프라인 개선 | **우선** (베이스라인 분석 완료) | 0/6 |
 | Phase 5: CI/CD 통합 | 대기 | 0/3 |
-| **합계** | | **11/33** |
+| **합계** | | **18/33** |
 
 ---
 
 ## 다음 액션 (Next Steps)
 
-1. **즉시**: Docker 기동 후 Tier 2 첫 실행 (T-2.1.1 → T-2.1.2)
-2. **이번 주**: 베이스라인 기록 및 임계값 조정 (T-2.1.3 → T-2.1.4)
-3. **다음 주**: Tier 3 실행 + 데이터셋 확장 시작 (T-2.2.1, T-3.1.1)
+1. **즉시 (P0)**: 벡터 DB 문서 현황 감사 (T-3.1.1) - 검색 실패 원인 파악
+2. **이번 주**: 청킹 도입 (T-4.1.1) - 가장 큰 성능 개선 기대
+3. **이번 주**: 한국어 System Prompt 전환 (T-4.2.1) - 낮은 노력으로 품질 개선
+4. **다음 주**: 개선 후 Tier 2 재측정 → 베이스라인 비교

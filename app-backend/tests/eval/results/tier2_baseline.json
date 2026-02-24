@@ -1,0 +1,80 @@
+{
+  "evaluation_date": "2026-02-24T13:25:00",
+  "tier": 2,
+  "execution_time_seconds": 53,
+  "total_tests": 10,
+  "passed": 5,
+  "failed": 4,
+  "skipped": 1,
+  "metrics": {
+    "hit_rate_at_3": {
+      "value": 0.4118,
+      "threshold": 0.60,
+      "pass": false,
+      "detail": "7/17 cases hit"
+    },
+    "context_not_empty": {
+      "value": 1.0,
+      "threshold": 0.90,
+      "pass": true,
+      "detail": "All cases returned contexts"
+    },
+    "law_reference_match": {
+      "value": 0.60,
+      "threshold": null,
+      "pass": true,
+      "detail": "9/15 cases matched expected law reference"
+    },
+    "faithfulness": {
+      "value": 0.150,
+      "threshold": 0.50,
+      "pass": false,
+      "detail": "10 cases evaluated. Scores: [0.3, 0.0, 0.0, 0.3, 0.0, 0.0, 0.3, 0.3, 0.3, 0.0]"
+    },
+    "answer_relevancy": {
+      "value": 0.240,
+      "threshold": 0.50,
+      "pass": false,
+      "detail": "10 cases evaluated"
+    },
+    "answer_correctness": {
+      "value": 0.000,
+      "threshold": 0.40,
+      "pass": false,
+      "detail": "10/10 cases scored 0/3 - RAG mostly returns refusal responses"
+    },
+    "keyword_match_rate": {
+      "value": 0.000,
+      "threshold": null,
+      "pass": true,
+      "detail": "0/17 - expected keywords not found in answers"
+    },
+    "no_english_only": {
+      "value": 1.0,
+      "threshold": 1.0,
+      "pass": true,
+      "detail": "All answers contain Korean"
+    },
+    "e2e_routing_accuracy": {
+      "value": 1.00,
+      "threshold": null,
+      "pass": true,
+      "detail": "5/5 correct routing"
+    }
+  },
+  "root_cause_analysis": {
+    "primary_issue": "Retrieval failure - RAG returns mostly refusal responses because retrieved documents don't match queries",
+    "evidence": [
+      "Hit Rate@3 = 41% - fewer than half the queries find relevant documents",
+      "Answer Correctness = 0% - all answers are refusals or irrelevant",
+      "Keyword Match = 0% - none of expected keywords appear in answers",
+      "Law Reference Match = 60% - some relevant docs exist in DB but ranking is poor"
+    ],
+    "contributing_factors": [
+      "No chunking - entire documents embedded as single vectors, diluting semantic signal",
+      "Small document collection in vector DB",
+      "English system prompt for Korean legal domain",
+      "Fixed k=3 without score threshold - irrelevant docs always included"
+    ]
+  }
+}
