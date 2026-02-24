@@ -25,6 +25,8 @@ from app.models.team import Team, TeamMember
 from app.models.user import AuthenticatedUser, TokenWithUser, User, UserRead
 from app.models.profile import UserProfile, UserProfileRead, UserProfileUpdate
 from app.models.user_discipline_history import UserDisciplineHistory
+from app.models.announcement import OpsAnnouncement
+from app.models.ops_audit_log import OpsAuditLog
 
 __all__ = [
     "ActionKitCategory",
@@ -54,4 +56,6 @@ __all__ = [
     "UserProfileRead",
     "UserProfileUpdate",
     "UserDisciplineHistory",
+    "OpsAnnouncement",
+    "OpsAuditLog",
 ]

