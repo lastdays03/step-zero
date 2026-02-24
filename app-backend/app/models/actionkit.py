@@ -41,6 +41,7 @@ class ActionKitItem(SQLModel, table=True):
     files: list["ActionKitFile"] = Relationship(back_populates="item", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
     highlights: list["ActionKitItemHighlight"] = Relationship(back_populates="item", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
     related_laws: list["ActionKitRelatedLaw"] = Relationship(back_populates="item", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+    checklists: list["ActionKitChecklist"] = Relationship(back_populates="item", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
 
 
 class ActionKitItemHighlight(SQLModel, table=True):
@@ -53,6 +54,18 @@ class ActionKitItemHighlight(SQLModel, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     item: ActionKitItem = Relationship(back_populates="highlights")
+
+
+class ActionKitChecklist(SQLModel, table=True):
+    __tablename__ = "actionkit_checklists"
+
+    id: Optional[int] = Field(default=None, primary_key=True)
+    item_id: int = Field(foreign_key="actionkit_items.id", index=True)
+    content: str
+    sort_order: int = Field(default=0, index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+    item: ActionKitItem = Relationship(back_populates="checklists")
 
 
 class ActionKitRelatedLaw(SQLModel, table=True):

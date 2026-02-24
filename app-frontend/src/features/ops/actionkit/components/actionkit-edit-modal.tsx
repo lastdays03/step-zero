@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, UploadCloud, File as FileIcon, CheckCircle2, Download, Clock, Scale, Highlighter, Plus, X } from "lucide-react";
+import { Loader2, UploadCloud, File as FileIcon, CheckCircle2, Download, Clock, Scale, Highlighter, CheckSquare, Plus, X } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
 import { useDropzone } from "react-dropzone";
 import { fetchItemDetail } from "../api";
@@ -353,6 +353,48 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                                     const el = document.getElementById('add_hl_content') as HTMLInputElement;
                                     if (!el.value.trim()) return;
                                     await apiClient.post(`/ops/actionkit/items/${currentItem.id}/highlights`, {
+                                        content: el.value.trim()
+                                    });
+                                    el.value = '';
+                                    onSaved?.();
+                                    await refreshItem();
+                                }}>
+                                    <Plus className="w-3.5 h-3.5" />
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* ── Checklist ── */}
+                    {currentItem.id && (
+                        <div className="mt-6 space-y-3">
+                            <div className="flex items-center gap-2">
+                                <CheckSquare className="w-4 h-4 text-teal-500" />
+                                <h3 className="text-sm font-bold text-slate-700">체크리스트</h3>
+                            </div>
+                            <div className="space-y-1.5">
+                                {(currentItem.checklists || []).map((cl: any) => (
+                                    <div key={cl.id} className="flex items-center justify-between bg-teal-50 rounded-lg px-3 py-2 text-sm text-teal-700">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <CheckSquare className="w-3.5 h-3.5 flex-shrink-0" />
+                                            <span className="truncate">{cl.content}</span>
+                                        </div>
+                                        <button type="button" onClick={async () => {
+                                            await apiClient.delete(`/ops/actionkit/checklists/${cl.id}`);
+                                            onSaved?.();
+                                            await refreshItem();
+                                        }} className="text-slate-300 hover:text-red-400 transition-colors ml-2 flex-shrink-0">
+                                            <X className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex gap-2 mt-2">
+                                <Input id="add_cl_content" placeholder="체크 항목을 입력하세요 (예: 소방안전점검 완료 여부)" className="bg-white border-slate-200 h-9 text-xs flex-1" />
+                                <Button type="button" size="sm" className="bg-teal-500 hover:bg-teal-600 h-9 px-3 flex-shrink-0" onClick={async () => {
+                                    const el = document.getElementById('add_cl_content') as HTMLInputElement;
+                                    if (!el.value.trim()) return;
+                                    await apiClient.post(`/ops/actionkit/items/${currentItem.id}/checklists`, {
                                         content: el.value.trim()
                                     });
                                     el.value = '';

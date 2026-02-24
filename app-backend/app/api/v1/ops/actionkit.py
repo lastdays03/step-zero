@@ -23,7 +23,9 @@ from app.features.ops.application.actionkit import (
     add_related_law,
     delete_related_law,
     add_highlight,
-    delete_highlight
+    delete_highlight,
+    add_checklist,
+    delete_checklist
 )
 from pydantic import BaseModel as PydanticBaseModel
 from app.api.v1.ops.schemas import (
@@ -263,4 +265,35 @@ async def remove_actionkit_highlight(
     success = await delete_highlight(session, highlight_id)
     if not success:
         raise HTTPException(status_code=404, detail="Highlight not found")
+    return {"ok": True}
+
+class ChecklistRequest(PydanticBaseModel):
+    content: str
+
+@router.post(
+    "/items/{item_id}/checklists",
+    response_model=ActionKitItemResponse,
+    summary="액션키트 체크리스트 추가",
+)
+async def add_actionkit_checklist(
+    item_id: int,
+    data: ChecklistRequest,
+    session: AsyncSession = Depends(get_session)
+):
+    item = await add_checklist(session, item_id, data.content)
+    if not item:
+        raise HTTPException(status_code=404, detail="Item not found")
+    return item
+
+@router.delete(
+    "/checklists/{checklist_id}",
+    summary="액션키트 체크리스트 삭제",
+)
+async def remove_actionkit_checklist(
+    checklist_id: int,
+    session: AsyncSession = Depends(get_session)
+):
+    success = await delete_checklist(session, checklist_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Checklist not found")
     return {"ok": True}

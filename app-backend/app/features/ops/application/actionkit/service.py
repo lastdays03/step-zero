@@ -6,7 +6,7 @@ import uuid
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from app.models.actionkit import ActionKitCategory, ActionKitItem, ActionKitFile, ActionKitRelatedLaw, ActionKitItemHighlight
+from app.models.actionkit import ActionKitCategory, ActionKitItem, ActionKitFile, ActionKitRelatedLaw, ActionKitItemHighlight, ActionKitChecklist
 from app.api.v1.ops.schemas import ActionKitItemCreateRequest, ActionKitItemUpdateRequest
 
 class ActionKitOpsSummary(TypedDict):
@@ -63,7 +63,8 @@ async def get_item_detail(session: AsyncSession, item_id: int) -> ActionKitItem 
     stmt = select(ActionKitItem).where(ActionKitItem.id == item_id).options(
         selectinload(ActionKitItem.files),
         selectinload(ActionKitItem.highlights),
-        selectinload(ActionKitItem.related_laws)
+        selectinload(ActionKitItem.related_laws),
+        selectinload(ActionKitItem.checklists)
     )
     result = await session.execute(stmt)
     return result.scalar_one_or_none()
@@ -173,5 +174,25 @@ async def delete_highlight(session: AsyncSession, highlight_id: int) -> bool:
     if not hl:
         return False
     await session.delete(hl)
+    await session.commit()
+    return True
+
+async def add_checklist(session: AsyncSession, item_id: int, content: str) -> ActionKitItem | None:
+    item = await get_item_detail(session, item_id)
+    if not item:
+        return None
+    next_order = len(item.checklists) + 1 if item.checklists else 1
+    cl = ActionKitChecklist(item_id=item_id, content=content, sort_order=next_order)
+    session.add(cl)
+    await session.commit()
+    return await get_item_detail(session, item_id)
+
+async def delete_checklist(session: AsyncSession, checklist_id: int) -> bool:
+    stmt = select(ActionKitChecklist).where(ActionKitChecklist.id == checklist_id)
+    result = await session.execute(stmt)
+    cl = result.scalar_one_or_none()
+    if not cl:
+        return False
+    await session.delete(cl)
     await session.commit()
     return True
