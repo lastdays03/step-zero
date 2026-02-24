@@ -24,6 +24,7 @@ import {
     LucideIcon,
 } from 'lucide-react';
 import { ActionKitItem, RelatedLaw } from '../types';
+import { apiClient } from '@/lib/api-client';
 
 const STARTER_PACKS = [
     {
@@ -91,27 +92,35 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
     const categories = Object.entries(data);
     const currentCategory = data[selectedCategory];
 
-    const handleDownload = (path: string, filename: string) => {
+    const handleDownload = async (path: string, filename: string, itemId?: number) => {
         try {
-            const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
-
-            // If path already starts with actionkits/files, just use it with baseURL
-            // If it starts with library/resources, swap it to the new structure
-            let finalPath = path;
-            if (path.startsWith('library/resources/')) {
-                finalPath = path.replace('library/resources/', 'actionkits/files/');
+            if (itemId) {
+                // Use authenticated API download for DB-managed files
+                const res = await apiClient.get(`/actionkits/items/${itemId}/download`, { responseType: 'blob' });
+                const url = window.URL.createObjectURL(new Blob([res.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+                window.URL.revokeObjectURL(url);
+            } else {
+                // Fallback for legacy path-based files
+                const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+                let finalPath = path;
+                if (path.startsWith('library/resources/')) {
+                    finalPath = path.replace('library/resources/', 'actionkits/files/');
+                }
+                const url = finalPath.startsWith('http') ? finalPath : `${baseURL}/${finalPath}`;
+                const link = document.createElement('a');
+                link.href = url;
+                link.target = "_blank";
+                link.download = filename;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
             }
-
-            // Build absolute URL
-            const url = finalPath.startsWith('http') ? finalPath : `${baseURL}/${finalPath}`;
-
-            const link = document.createElement('a');
-            link.href = url;
-            link.target = "_blank";
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
         } catch (err) {
             console.error('Download failed:', err);
             alert('다운로드 중 오류가 발생했습니다.');
@@ -430,7 +439,7 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                             <Button
                                 className="bg-[#36a4f2] hover:bg-[#258bd1] gap-2"
                                 onClick={() => {
-                                    handleDownload(previewKit.path, previewKit.name);
+                                    handleDownload(previewKit.path, previewKit.name, (previewKit as any).id);
                                     setPreviewKit(null);
                                 }}
                             >

@@ -113,6 +113,7 @@ class ActionKitService:
             path = self._to_public_path(current_file.object_key if current_file else None)
             items_by_category[item.category_id].append(
                 {
+                    "id": item.id,
                     "tag": item.tag,
                     "name": item.name,
                     "summary": item.summary,
