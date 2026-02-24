@@ -48,21 +48,6 @@ app = FastAPI(
     ],
 )
 
-# CORS 설정 추가
-app.add_middleware(
-    CORSMiddleware,
-    # allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-# Serve user-uploaded files from the shared storage root.
-upload_dir = settings.STORAGE_ROOT_PATH
-upload_dir.mkdir(parents=True, exist_ok=True)
-app.mount("/api/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
-
 # 1. 로깅 미들웨어 추가
 @app.middleware("http")
 async def log_request_response(request: Request, call_next):
@@ -83,6 +68,16 @@ async def log_request_response(request: Request, call_next):
     
     return response
 
+# CORS 설정 추가 (가장 나중에 추가하여 가장 바깥쪽에서 동작하도록 함)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[str(origin) for origin in settings.BACKEND_CORS_ORIGINS],
+    allow_origin_regex=r"https?://(localhost|127\.0\.0\.1)(:\d+)?",
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 # RFC7807-style error responses
 app.add_exception_handler(HTTPException, http_exception_to_problem)
 app.add_exception_handler(RequestValidationError, validation_exception_to_problem)
@@ -99,6 +94,11 @@ async def global_exception_handler(request: Request, exc: Exception):
         type_uri="https://stepzero.dev/problems/internal-error",
     )
 
+
+# Serve user-uploaded files from the shared storage root.
+upload_dir = settings.STORAGE_ROOT_PATH
+upload_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/api/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
 
 # Static files for ActionKit
 actionkit_storage_dir = settings.ACTIONKIT_STORAGE_PATH

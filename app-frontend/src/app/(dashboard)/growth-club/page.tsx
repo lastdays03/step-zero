@@ -1,24 +1,74 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PostCard, CreatePostForm } from '@/features/growth-club';
 import { usePosts } from '@/features/growth-club';
 import { useAuth } from '@/providers/AuthProvider';
+import { Search } from 'lucide-react';
 
 export default function GrowthClubPage() {
     const { isLoggedIn } = useAuth();
     const [category, setCategory] = useState('all');
-    const { posts, isLoading, error, refetch } = usePosts(category);
+
+    // 검색 관련 상태
+    const [searchQuery, setSearchQuery] = useState('');
+    const [searchType, setSearchType] = useState('title');
+    const [activeSearch, setActiveSearch] = useState({ query: '', type: 'title' });
+
+    const { posts, isLoading, error, refetch } = usePosts(category, activeSearch.query, activeSearch.type);
+
+    const handleSearch = (e: React.FormEvent) => {
+        e.preventDefault();
+        setActiveSearch({ query: searchQuery, type: searchType });
+    };
+
+    // 알림에서 넘어올 때 URL 해시(#post-N)로 해당 게시글 스크롤
+    useEffect(() => {
+        if (isLoading) return;
+        const hash = window.location.hash; // e.g. "#post-42"
+        if (!hash) return;
+        const el = document.getElementById(hash.slice(1));
+        if (el) {
+            setTimeout(() => {
+                el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                el.classList.add('ring-2', 'ring-blue-400', 'ring-offset-2');
+                setTimeout(() => el.classList.remove('ring-2', 'ring-blue-400', 'ring-offset-2'), 2000);
+            }, 100);
+        }
+    }, [isLoading]);
 
     return (
         <div className="max-w-4xl mx-auto py-8 px-4 sm:px-6">
-            <header className="mb-10 text-center sm:text-left">
-                <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
-                    그로스 클럽
-                </h1>
-                <p className="mt-2 text-zinc-500 dark:text-zinc-400">
-                    창업가들과 성공 경험을 공유하고 소통하며 함께 성장하세요.
-                </p>
+            <header className="mb-10 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6">
+                <div className="text-center sm:text-left">
+                    <h1 className="text-3xl font-extrabold text-zinc-900 dark:text-white tracking-tight">
+                        그로스 클럽
+                    </h1>
+                    <p className="mt-2 text-zinc-500 dark:text-zinc-400">
+                        창업가들과 성공 경험을 공유하고 소통하며 함께 성장하세요.
+                    </p>
+                </div>
+
+                <form onSubmit={handleSearch} className="flex flex-row gap-2 w-full sm:w-auto">
+                    <select
+                        value={searchType}
+                        onChange={(e) => setSearchType(e.target.value)}
+                        className="rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none"
+                    >
+                        <option value="title">제목</option>
+                        <option value="content">내용</option>
+                    </select>
+                    <div className="relative flex-1 sm:w-64">
+                        <input
+                            type="text"
+                            placeholder="검색어를 입력하세요..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full rounded-xl border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-2 pl-10 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none placeholder:text-zinc-400"
+                        />
+                        <Search className="absolute left-3 top-2.5 h-4 w-4 text-zinc-400" />
+                    </div>
+                </form>
             </header>
 
             <div className="grid grid-cols-1 gap-8">

@@ -24,6 +24,8 @@ from app.models.roadmap import (
 from app.models.team import Team, TeamMember
 from app.models.user import AuthenticatedUser, TokenWithUser, User, UserRead
 from app.models.profile import UserProfile, UserProfileRead, UserProfileUpdate
+from app.models.audit_log import AuditLog, AuditLogRead
+from app.models.notification import Notification, NotificationRead
 
 __all__ = [
     "ActionKitCategory",
@@ -52,4 +54,8 @@ __all__ = [
     "UserProfile",
     "UserProfileRead",
     "UserProfileUpdate",
+    "AuditLog",
+    "AuditLogRead",
+    "Notification",
+    "NotificationRead",
 ]

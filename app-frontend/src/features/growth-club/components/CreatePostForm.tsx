@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { Camera, Paperclip, Send, X, FileText } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { growthClubApi } from '../api';
+import { useAuth } from '@/providers/AuthProvider';
 
 interface CreatePostFormProps {
     onSuccess: () => void;
@@ -26,6 +27,7 @@ const getExt = (name: string) => {
 };
 
 export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => {
+    const { user } = useAuth();
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [category, setCategory] = useState('free');
@@ -184,21 +186,31 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
         }
     };
 
+    const categories = [
+        { id: 'free', label: '자유게시판' },
+        { id: 'neighborhood', label: '동네 소식' },
+        { id: 'industry', label: '업종 이야기' },
+    ];
+
+    if (user?.is_superuser) {
+        categories.push({ id: 'notice', label: '공지사항' });
+    }
+
     return (
         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="flex gap-2">
-                    {['free', 'neighborhood', 'industry'].map((cat) => (
+                <div className="flex flex-wrap gap-2">
+                    {categories.map((cat) => (
                         <button
-                            key={cat}
+                            key={cat.id}
                             type="button"
-                            onClick={() => setCategory(cat)}
-                            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${category === cat
+                            onClick={() => setCategory(cat.id)}
+                            className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${category === cat.id
                                 ? 'bg-blue-600 text-white'
                                 : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-700'
                                 }`}
                         >
-                            {cat === 'free' ? '자유게시판' : cat === 'neighborhood' ? '동네 소식' : '업종 이야기'}
+                            {cat.label}
                         </button>
                     ))}
                 </div>

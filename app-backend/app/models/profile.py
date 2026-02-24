@@ -16,7 +16,7 @@ class UserProfileBase(SQLModel):
 class UserProfile(UserProfileBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", unique=True, index=True)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 class UserProfileUpdate(UserProfileBase):
     full_name: Optional[str] = None

@@ -1,0 +1,200 @@
+stepzero-backend  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/app/app/main.py", line 59, in log_request_response
+stepzero-backend  |     response = await call_next(request)
+stepzero-backend  |                ^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+stepzero-backend  |     raise app_exc from app_exc.__cause__ or app_exc.__context__
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+stepzero-backend  |     await self.app(scope, receive_or_disconnect, send_no_error)
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+stepzero-backend  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+stepzero-backend  |     raise exc
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+stepzero-backend  |     await app(scope, receive, sender)
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+stepzero-backend  |     await self.app(scope, receive, send)
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+stepzero-backend  |     await self.middleware_stack(scope, receive, send)
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+stepzero-backend  |     await route.handle(scope, receive, send)
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+stepzero-backend  |     await self.app(scope, receive, send)
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 119, in app
+stepzero-backend  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+stepzero-backend  |     raise exc
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+stepzero-backend  |     await app(scope, receive, sender)
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 105, in app
+stepzero-backend  |     response = await f(request)
+stepzero-backend  |                ^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 424, in app
+stepzero-backend  |     raw_response = await run_endpoint_function(
+stepzero-backend  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 312, in run_endpoint_function
+stepzero-backend  |     return await dependant.call(**values)
+stepzero-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/app/app/api/v1/ops/growth_club.py", line 59, in list_blinded_posts
+stepzero-backend  |     post_read = GrowthClubPostRead.model_validate(post)
+stepzero-backend  |                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlmodel/main.py", line 882, in model_validate
+stepzero-backend  |     return sqlmodel_validate(
+stepzero-backend  |            ^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlmodel/_compat.py", line 301, in sqlmodel_validate
+stepzero-backend  |     cls.__pydantic_validator__.validate_python(
+stepzero-backend  |   File "/app/app/models/growth_club.py", line 36, in from_user
+stepzero-backend  |     if hasattr(data, "profile") and data.profile:
+stepzero-backend  |        ^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/attributes.py", line 569, in __get__
+stepzero-backend  |     return self.impl.get(state, dict_)  # type: ignore[no-any-return]
+stepzero-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/attributes.py", line 1096, in get
+stepzero-backend  |     value = self._fire_loader_callables(state, key, passive)
+stepzero-backend  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/attributes.py", line 1131, in _fire_loader_callables
+stepzero-backend  |     return self.callable_(state, passive)
+stepzero-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/strategies.py", line 978, in _load_for_state
+stepzero-backend  |     return self._emit_lazyload(
+stepzero-backend  |            ^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/strategies.py", line 1141, in _emit_lazyload
+stepzero-backend  |     result = session.execute(
+stepzero-backend  |              ^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2351, in execute
+stepzero-backend  |     return self._execute_internal(
+stepzero-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2249, in _execute_internal
+stepzero-backend  |     result: Result[Any] = compile_state_cls.orm_execute_statement(
+stepzero-backend  |                           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+stepzero-backend  |     result = conn.execute(
+stepzero-backend  |              ^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+stepzero-backend  |     return meth(
+stepzero-backend  |            ^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+stepzero-backend  |     return connection._execute_clauseelement(
+stepzero-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+stepzero-backend  |     ret = self._execute_context(
+stepzero-backend  |           ^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+stepzero-backend  |     return self._exec_single_context(
+stepzero-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+stepzero-backend  |     self._handle_dbapi_exception(
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2366, in _handle_dbapi_exception
+stepzero-backend  |     raise exc_info[1].with_traceback(exc_info[2])
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+stepzero-backend  |     self.dialect.do_execute(
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+stepzero-backend  |     cursor.execute(statement, parameters)
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 585, in execute
+stepzero-backend  |     self._adapt_connection.await_(
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 123, in await_only
+stepzero-backend  |     raise exc.MissingGreenlet(
+stepzero-backend  | sqlalchemy.exc.MissingGreenlet: greenlet_spawn has not been called; can't call await_only() here. Was IO attempted in an unexpected place? (Background on this error at: https://sqlalche.me/e/20/xd2s)
+stepzero-backend  | 2026-02-24 01:58:13,784 - app.main - INFO - Request: GET /api/v1/notifications
+stepzero-backend  | 2026-02-24 01:58:13,788 - app.main - INFO - Response: GET /api/v1/notifications Status: 200 Elapsed: 0.0036s
+stepzero-backend  | 2026-02-24 01:58:43,783 - app.main - INFO - Request: GET /api/v1/notifications
+stepzero-backend  | 2026-02-24 01:58:43,790 - app.main - INFO - Response: GET /api/v1/notifications Status: 200 Elapsed: 0.0068s
+stepzero-backend  | 2026-02-24 01:59:13,787 - app.main - INFO - Request: GET /api/v1/notifications
+stepzero-backend  | 2026-02-24 01:59:13,790 - app.main - INFO - Response: GET /api/v1/notifications Status: 200 Elapsed: 0.0032s
+stepzero-backend  | 2026-02-24 01:59:43,780 - app.main - INFO - Request: GET /api/v1/notifications
+stepzero-backend  | 2026-02-24 01:59:43,783 - app.main - INFO - Response: GET /api/v1/notifications Status: 200 Elapsed: 0.0032s
+stepzero-backend  | WARNING:  WatchFiles detected changes in 'app/api/v1/ops/growth_club.py'. Reloading...
+stepzero-backend  | INFO:     Shutting down
+stepzero-backend  | INFO:     Waiting for application shutdown.
+stepzero-backend  | 2026-02-24 02:00:03,380 - app.main - INFO - Shutting down StepZero Backend...
+stepzero-backend  | INFO:     Application shutdown complete.
+stepzero-backend  | INFO:     Finished server process [8]
+stepzero-backend  | 2026-02-24 02:00:05,335 - app.main - INFO - ActionKit storage mounted at: /app/uploads/actionkit
+stepzero-backend  | Process SpawnProcess-2:
+stepzero-backend  | Traceback (most recent call last):
+stepzero-backend  |   File "/usr/local/lib/python3.11/multiprocessing/process.py", line 314, in _bootstrap
+stepzero-backend  |     self.run()
+stepzero-backend  |   File "/usr/local/lib/python3.11/multiprocessing/process.py", line 108, in run
+stepzero-backend  |     self._target(*self._args, **self._kwargs)
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/_subprocess.py", line 80, in subprocess_started
+stepzero-backend  |     target(sockets=sockets)
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 75, in run
+stepzero-backend  |     return asyncio_run(self.serve(sockets=sockets), loop_factory=self.config.get_loop_factory())
+stepzero-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/_compat.py", line 30, in asyncio_run
+stepzero-backend  |     return runner.run(main)
+stepzero-backend  |            ^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/asyncio/runners.py", line 118, in run
+stepzero-backend  |     return self._loop.run_until_complete(task)
+stepzero-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "uvloop/loop.pyx", line 1518, in uvloop.loop.Loop.run_until_complete
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 79, in serve
+stepzero-backend  |     await self._serve(sockets)
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/server.py", line 86, in _serve
+stepzero-backend  |     config.load()
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/config.py", line 441, in load
+stepzero-backend  |     self.loaded_app = import_from_string(self.app)
+stepzero-backend  |                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/importer.py", line 19, in import_from_string
+stepzero-backend  |     module = importlib.import_module(module_str)
+stepzero-backend  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "/usr/local/lib/python3.11/importlib/__init__.py", line 126, in import_module
+stepzero-backend  |     return _bootstrap._gcd_import(name[level:], package, level)
+stepzero-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+stepzero-backend  |   File "<frozen importlib._bootstrap>", line 1204, in _gcd_import
+stepzero-backend  |   File "<frozen importlib._bootstrap>", line 1176, in _find_and_load
+stepzero-backend  |   File "<frozen importlib._bootstrap>", line 1147, in _find_and_load_unlocked
+stepzero-backend  |   File "<frozen importlib._bootstrap>", line 690, in _load_unlocked
+stepzero-backend  |   File "<frozen importlib._bootstrap_external>", line 940, in exec_module
+stepzero-backend  |   File "<frozen importlib._bootstrap>", line 241, in _call_with_frames_removed
+stepzero-backend  |   File "/app/app/main.py", line 113, in <module>
+stepzero-backend  |     from app.api.v1.api import api_router as api_v1_router
+stepzero-backend  |   File "/app/app/api/v1/api.py", line 7, in <module>
+stepzero-backend  |     from app.api.v1.ops import router as ops_router
+stepzero-backend  |   File "/app/app/api/v1/ops/__init__.py", line 1, in <module>
+stepzero-backend  |     from app.api.v1.ops.router import router
+stepzero-backend  |   File "/app/app/api/v1/ops/router.py", line 4, in <module>
+stepzero-backend  |     from app.api.v1.ops import (
+stepzero-backend  |   File "/app/app/api/v1/ops/growth_club.py", line 39
+stepzero-backend  |     select(
+stepzero-backend  | IndentationError: unexpected indent
+stepzero-backend  | WARNING:  WatchFiles detected changes in 'app/api/v1/ops/growth_club.py'. Reloading...
+stepzero-backend  | 2026-02-24 02:00:13,398 - app.main - INFO - ActionKit storage mounted at: /app/uploads/actionkit
+stepzero-backend  | INFO:     Started server process [70]
+stepzero-backend  | INFO:     Waiting for application startup.
+stepzero-backend  | 2026-02-24 02:00:16,209 - app.main - INFO - Starting up StepZero Backend...
+stepzero-backend  | INFO:     Application startup complete.
+stepzero-backend  | 2026-02-24 02:00:16,437 - app.main - INFO - Request: GET /api/v1/notifications
+stepzero-backend  | 2026-02-24 02:00:16,504 - app.main - INFO - Response: GET /api/v1/notifications Status: 200 Elapsed: 0.0667s
+stepzero-backend  | 2026-02-24 02:00:43,783 - app.main - INFO - Request: GET /api/v1/notifications
+stepzero-backend  | 2026-02-24 02:00:43,788 - app.main - INFO - Response: GET /api/v1/notifications Status: 200 Elapsed: 0.0049s
+stepzero-backend  | WARNING:  WatchFiles detected changes in 'app/models/growth_club.py'. Reloading...
+stepzero-backend  | INFO:     Shutting down
+stepzero-backend  | INFO:     Waiting for application shutdown.
+stepzero-backend  | 2026-02-24 02:00:51,950 - app.main - INFO - Shutting down StepZero Backend...
+stepzero-backend  | INFO:     Application shutdown complete.
+stepzero-backend  | INFO:     Finished server process [70]
+stepzero-backend  | 2026-02-24 02:00:53,785 - app.main - INFO - ActionKit storage mounted at: /app/uploads/actionkit
+stepzero-backend  | INFO:     Started server process [102]
+stepzero-backend  | INFO:     Waiting for application startup.
+stepzero-backend  | 2026-02-24 02:00:56,770 - app.main - INFO - Starting up StepZero Backend...
+stepzero-backend  | INFO:     Application startup complete.
+stepzero-backend  | WARNING:  WatchFiles detected changes in 'app/models/growth_club.py'. Reloading...
+stepzero-backend  | INFO:     Shutting down
+stepzero-backend  | INFO:     Waiting for application shutdown.
+stepzero-backend  | 2026-02-24 02:01:00,632 - app.main - INFO - Shutting down StepZero Backend...
+stepzero-backend  | INFO:     Application shutdown complete.
+stepzero-backend  | INFO:     Finished server process [102]
+stepzero-backend  | 2026-02-24 02:01:02,739 - app.main - INFO - ActionKit storage mounted at: /app/uploads/actionkit
+stepzero-backend  | INFO:     Started server process [130]
+stepzero-backend  | INFO:     Waiting for application startup.
+stepzero-backend  | 2026-02-24 02:01:06,651 - app.main - INFO - Starting up StepZero Backend...
+stepzero-backend  | INFO:     Application startup complete.
+stepzero-backend  | 2026-02-24 02:01:13,788 - app.main - INFO - Request: GET /api/v1/notifications
+stepzero-backend  | 2026-02-24 02:01:13,877 - app.main - INFO - Response: GET /api/v1/notifications Status: 200 Elapsed: 0.0886s
+stepzero-backend  | 2026-02-24 02:01:43,782 - app.main - INFO - Request: GET /api/v1/notifications
+stepzero-backend  | 2026-02-24 02:01:43,786 - app.main - INFO - Response: GET /api/v1/notifications Status: 200 Elapsed: 0.0034s
+stepzero-backend  | 2026-02-24 02:02:13,780 - app.main - INFO - Request: GET /api/v1/notifications
+stepzero-backend  | 2026-02-24 02:02:13,783 - app.main - INFO - Response: GET /api/v1/notifications Status: 200 Elapsed: 0.0034s
+stepzero-backend  | 2026-02-24 02:02:43,784 - app.main - INFO - Request: GET /api/v1/notifications
+stepzero-backend  | 2026-02-24 02:02:43,789 - app.main - INFO - Response: GET /api/v1/notifications Status: 200 Elapsed: 0.0045s

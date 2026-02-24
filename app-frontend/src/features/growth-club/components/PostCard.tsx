@@ -8,6 +8,7 @@ import { useAuth } from '@/providers/AuthProvider';
 import { growthClubApi } from '../api';
 import { CommentSection } from './CommentSection';
 import { resolveUploadUrl } from '../utils/upload-url';
+import { useTimeAgo } from '../hooks/useTimeAgo';
 
 interface PostCardProps {
     post: Post;
@@ -15,22 +16,14 @@ interface PostCardProps {
     onReportSuccess?: () => void;
 }
 
-const formatTimeAgo = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
 
-    if (diffInSeconds < 60) return '방금 전';
-    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)}분 전`;
-    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)}시간 전`;
-    if (diffInSeconds < 2592000) return `${Math.floor(diffInSeconds / 86400)}일 전`;
-    return date.toLocaleDateString('ko-KR');
-};
 
 export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onReportSuccess }) => {
     const { user } = useAuth();
     const [isDeleting, setIsDeleting] = useState(false);
     const [showComments, setShowComments] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const timeAgo = useTimeAgo(post.created_at);
 
     // 좋아요 상태 관리를 위한 로컬 스테이트
     const [liked, setLiked] = useState(post.is_liked);
@@ -59,20 +52,24 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
         }
     };
 
-    const handleReport = async () => {
-        if (!window.confirm('이 게시물을 신고하시겠습니까?')) return;
+    const handleReport = () => {
+        setIsReportModalOpen(true);
+    };
 
+    const submitReport = async (reason: string) => {
+        setIsReportModalOpen(false);
         try {
-            const result = await growthClubApi.reportPost(post.id);
+            const result = await growthClubApi.reportPost(post.id, reason);
             alert(result.message);
             if (result.is_blinded && onDeleteSuccess) {
-                onDeleteSuccess(); // 블라인드 처리되면 목록에서 제거하기 위해 같은 콜백 사용
+                onDeleteSuccess();
             } else if (onReportSuccess) {
                 onReportSuccess();
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error('Failed to report post:', error);
-            alert('게시글 신고에 실패했습니다.');
+            const message = error.response?.data?.detail || '게시글 신고에 실패했습니다.';
+            alert(message);
         }
     };
 
@@ -106,21 +103,34 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
     };
 
     return (
-        <article className={`bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
+        <article id={`post-${post.id}`} className={`bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
             <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
-                        {post.author.username[0]}
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-zinc-100 dark:border-zinc-800">
+                        {post.author.profile_img && post.author.profile_img !== 'default.png' ? (
+                            <img
+                                src={resolveUploadUrl(post.author.profile_img)}
+                                alt={post.author.username}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    // Fallback if image fails to load
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                    (e.target as HTMLImageElement).parentElement!.innerText = post.author.username[0] || '?';
+                                }}
+                            />
+                        ) : (
+                            post.author.username[0] || '?'
+                        )}
                     </div>
                     <div>
                         <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{post.author.username}</h3>
                         <p className="text-xs text-zinc-500">
-                            {formatTimeAgo(post.created_at)} · {post.neighborhood}
+                            {timeAgo} · {post.neighborhood}
                         </p>
                     </div>
                 </div>
 
-                {isAuthor && (
+                {(isAuthor || user?.is_superuser) && (
                     <button
                         onClick={handleDelete}
                         className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
@@ -211,6 +221,28 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
                     initialComments={post.comments}
                     onCommentAdded={onDeleteSuccess || (() => { })}
                 />
+            )}
+
+            {isReportModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl max-w-sm w-full p-6 shadow-xl border border-zinc-200 dark:border-zinc-800">
+                        <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">신고 사유 선택</h3>
+                        <div className="space-y-2">
+                            <button onClick={() => submitReport('욕설과폭언')} className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300">
+                                🤬 욕설과폭언
+                            </button>
+                            <button onClick={() => submitReport('광고')} className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300">
+                                📢 광고
+                            </button>
+                            <button onClick={() => submitReport('기타')} className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300">
+                                기타 불건전한 내용
+                            </button>
+                        </div>
+                        <button onClick={() => setIsReportModalOpen(false)} className="mt-4 w-full p-3 font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+                            취소
+                        </button>
+                    </div>
+                </div>
             )}
         </article>
     );
