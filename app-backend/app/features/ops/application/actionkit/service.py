@@ -11,14 +11,39 @@ from app.api.v1.ops.schemas import ActionKitItemCreateRequest, ActionKitItemUpda
 
 class ActionKitOpsSummary(TypedDict):
     total_items: int
-    pending_reviews: int
+    items_with_files: int
+    inactive_items: int
+    total_related_laws: int
+    total_highlights: int
 
 
 async def get_summary(session: AsyncSession) -> ActionKitOpsSummary:
-    stmt = select(ActionKitItem)
-    result = await session.execute(stmt)
-    total = len(list(result.scalars().all()))
-    return {"total_items": total, "pending_reviews": 0}
+    # Total items
+    result = await session.execute(select(ActionKitItem))
+    all_items = list(result.scalars().all())
+    total = len(all_items)
+    inactive = sum(1 for i in all_items if not i.is_active)
+
+    # Items with at least one file
+    file_stmt = select(ActionKitFile.item_id).distinct()
+    file_result = await session.execute(file_stmt)
+    items_with_files = len(list(file_result.scalars().all()))
+
+    # Total related laws
+    law_result = await session.execute(select(ActionKitRelatedLaw))
+    total_laws = len(list(law_result.scalars().all()))
+
+    # Total highlights
+    hl_result = await session.execute(select(ActionKitItemHighlight))
+    total_highlights = len(list(hl_result.scalars().all()))
+
+    return {
+        "total_items": total,
+        "items_with_files": items_with_files,
+        "inactive_items": inactive,
+        "total_related_laws": total_laws,
+        "total_highlights": total_highlights,
+    }
 
 async def get_all_categories(session: AsyncSession) -> List[ActionKitCategory]:
     stmt = select(ActionKitCategory).order_by(ActionKitCategory.sort_order)

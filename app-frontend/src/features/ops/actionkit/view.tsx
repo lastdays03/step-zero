@@ -3,14 +3,14 @@
 import React, { useState, useEffect } from "react";
 import { Link } from "lucide-react";
 
-import { fetchCategories, fetchCategoryItems } from "./api";
+import { fetchCategories, fetchCategoryItems, fetchSummary } from "./api";
 import { ActionKitItem } from "@/features/actionkit/types";
 import { OpsAccessPlaceholder } from "@/features/ops/shared/ops-access-placeholder";
 import { useOpsAccessGuard } from "@/features/ops/shared/use-ops-access-guard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, FolderOpen, Loader2, Edit3, Trash2 } from "lucide-react";
+import { Search, FolderOpen, Loader2, Edit3, Trash2, Package, Paperclip, EyeOff, Scale, Highlighter } from "lucide-react";
 import { ActionKitEditModal } from "@/features/ops/actionkit/components/actionkit-edit-modal";
 import { apiClient } from "@/lib/api-client";
 
@@ -24,6 +24,7 @@ export function OpsActionKitView() {
   const [editingItem, setEditingItem] = useState<ActionKitItem | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [summary, setSummary] = useState<any>(null);
 
   const filteredItems = items.filter(item => {
     const q = searchQuery.toLowerCase();
@@ -46,6 +47,7 @@ export function OpsActionKitView() {
     try {
       await apiClient.delete(`/ops/actionkit/items/${(item as any).id}`);
       if (activeCategory) loadItems(activeCategory);
+      fetchSummary().then(setSummary).catch(console.error);
     } catch (error) {
       console.error("Failed to delete item:", error);
       alert("삭제 중 오류가 발생했습니다.");
@@ -63,6 +65,7 @@ export function OpsActionKitView() {
         }
       })
       .catch(console.error);
+    fetchSummary().then(setSummary).catch(console.error);
   }, [canRender]);
 
   useEffect(() => {
@@ -89,6 +92,31 @@ export function OpsActionKitView() {
           + 새 항목 등록
         </Button>
       </header>
+
+      {/* Statistics Cards */}
+      {summary && (
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          {[
+            { icon: Package, label: "전체 항목", value: summary.total_items, color: "text-[#36a4f2]", bg: "bg-[#36a4f2]/10" },
+            { icon: Paperclip, label: "파일 첨부", value: summary.items_with_files, color: "text-emerald-500", bg: "bg-emerald-50" },
+            { icon: EyeOff, label: "미공개", value: summary.inactive_items, color: "text-orange-500", bg: "bg-orange-50" },
+            { icon: Scale, label: "관련 법령", value: summary.total_related_laws, color: "text-violet-500", bg: "bg-violet-50" },
+            { icon: Highlighter, label: "하이라이트", value: summary.total_highlights, color: "text-amber-500", bg: "bg-amber-50" },
+          ].map((stat) => (
+            <Card key={stat.label} className="border-none shadow-sm hover:shadow-md transition-shadow">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className={`w-10 h-10 rounded-xl ${stat.bg} flex items-center justify-center flex-shrink-0`}>
+                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
+                </div>
+                <div>
+                  <p className="text-2xl font-black text-slate-800 leading-none">{stat.value}</p>
+                  <p className="text-[10px] font-bold text-slate-400 mt-1">{stat.label}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* Category Tabs */}
       <div className="flex gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
@@ -199,6 +227,7 @@ export function OpsActionKitView() {
           onClose={() => setEditingItem(null)}
           onSaved={() => {
             if (activeCategory) loadItems(activeCategory);
+            fetchSummary().then(setSummary).catch(console.error);
           }}
         />
       )}
@@ -210,6 +239,7 @@ export function OpsActionKitView() {
           onClose={() => setIsCreating(false)}
           onSaved={() => {
             if (activeCategory) loadItems(activeCategory);
+            fetchSummary().then(setSummary).catch(console.error);
           }}
         />
       )}
