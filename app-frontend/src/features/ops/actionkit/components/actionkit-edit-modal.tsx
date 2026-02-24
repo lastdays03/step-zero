@@ -9,8 +9,27 @@ import { Loader2, UploadCloud, File as FileIcon, CheckCircle2, Download, Clock }
 import { apiClient } from "@/lib/api-client";
 import { useDropzone } from "react-dropzone";
 
+interface ActionKitFileRecord {
+    id: number;
+    version: number;
+    is_current: boolean;
+    original_filename?: string;
+    size_bytes?: number;
+}
+
+interface ActionKitEditItem {
+    id?: number;
+    isNew?: boolean;
+    category_id?: number;
+    name?: string;
+    summary?: string;
+    is_active?: boolean;
+    sort_order?: number;
+    files?: ActionKitFileRecord[];
+}
+
 interface ActionKitEditModalProps {
-    item: any;
+    item: ActionKitEditItem;
     isOpen: boolean;
     onClose: () => void;
     onSaved: () => void;
@@ -117,7 +136,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                             id="name"
                             name="name"
                             value={formData.name}
-                            onChange={(e: any) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                             className="bg-white border-slate-200 focus-visible:ring-[#36a4f2]/30 h-11"
                         />
                     </div>
@@ -128,7 +147,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                             id="summary"
                             name="summary"
                             value={formData.summary}
-                            onChange={(e: any) => setFormData(prev => ({ ...prev, summary: e.target.value }))}
+                            onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setFormData(prev => ({ ...prev, summary: e.target.value }))}
                             className="bg-white border-slate-200 focus-visible:ring-[#36a4f2]/30 min-h-[100px] resize-none"
                         />
                     </div>
@@ -141,7 +160,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                                 name="sort_order"
                                 type="number"
                                 value={formData.sort_order}
-                                onChange={(e: any) => setFormData(prev => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
+                                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setFormData(prev => ({ ...prev, sort_order: parseInt(e.target.value) || 0 }))}
                                 className="bg-white border-slate-200 focus-visible:ring-[#36a4f2]/30 h-11"
                             />
                         </div>
@@ -189,7 +208,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                                             마우스로 파일을 끌어다 놓거나 <span className="text-[#36a4f2]">클릭해서 선택</span>하세요.
                                         </p>
                                         <p className="text-xs text-slate-400">
-                                            현재 첨부된 파일 버전: v{item.files?.length ? Math.max(...item.files.map((f: any) => f.version)) : "없음"}
+                                            현재 첨부된 파일 버전: v{item.files?.length ? Math.max(...item.files.map((f: ActionKitFileRecord) => f.version)) : "없음"}
                                         </p>
                                     </div>
                                 )}
@@ -203,7 +222,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                                         <span className="text-xs font-semibold text-slate-500">버전 히스토리 ({item.files.length}개)</span>
                                     </div>
                                     <div className="space-y-1.5 max-h-[160px] overflow-y-auto">
-                                        {[...item.files].sort((a: any, b: any) => b.version - a.version).map((f: any) => (
+                                        {[...item.files].sort((a: ActionKitFileRecord, b: ActionKitFileRecord) => b.version - a.version).map((f: ActionKitFileRecord) => (
                                             <div key={f.id} className={`flex items-center justify-between p-2.5 rounded-lg border text-xs transition-colors ${f.is_current
                                                 ? 'bg-[#36a4f2]/5 border-[#36a4f2]/20'
                                                 : 'bg-white border-slate-100 hover:bg-slate-50'
@@ -232,7 +251,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                                                             link.click();
                                                             link.remove();
                                                             window.URL.revokeObjectURL(url);
-                                                        } catch (e) {
+                                                        } catch {
                                                             alert("파일 다운로드 중 오류가 발생했습니다.");
                                                         }
                                                     }}

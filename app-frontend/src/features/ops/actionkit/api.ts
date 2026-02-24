@@ -1,5 +1,4 @@
 import { apiClient } from "@/lib/api-client";
-import { ActionKitItem, ActionKitCategory } from "@/features/actionkit/types";
 
 export interface ActionKitOpsSummary {
     total_items: number;
