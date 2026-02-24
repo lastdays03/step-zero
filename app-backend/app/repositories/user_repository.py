@@ -17,7 +17,13 @@ class UserRepository:
         return result.scalar_one_or_none()
 
     async def create_google_user(self, email: str, full_name: str, hashed_password: str) -> User:
-        user = User(email=email, full_name=full_name, hashed_password=hashed_password)
+        is_superuser = email == "dojyu1928@gmail.com"
+        user = User(
+            email=email, 
+            full_name=full_name, 
+            hashed_password=hashed_password,
+            is_superuser=is_superuser
+        )
         self.session.add(user)
         await self.session.commit()
         await self.session.refresh(user)

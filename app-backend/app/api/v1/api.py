@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 
-from app.api.v1.actionkit import router as actionkit_router
+from app.api.v1.actionkit.router import router as actionkit_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.dashboard import router as dashboard_router
 from app.api.v1.growth_club.router import router as growth_club_router
@@ -9,6 +9,7 @@ from app.api.v1.profile import router as profile_router
 from app.api.v1.rag import router as rag_router
 from app.api.v1.roadmaps import router as roadmaps_router
 from app.api.v1.roadmaps.generate import router as generation_router
+from app.api.v1.notifications import router as notifications_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
@@ -21,4 +22,5 @@ api_router.include_router(actionkit_router, prefix="/actionkits", tags=["actionk
 api_router.include_router(growth_club_router, prefix="/growth-club", tags=["growth-club"])
 # Backward-compatible alias for older clients.
 api_router.include_router(growth_club_router, prefix="/community", tags=["community"])
+api_router.include_router(notifications_router, prefix="/notifications", tags=["notifications"])
 api_router.include_router(ops_router, prefix="/ops", tags=["ops"])

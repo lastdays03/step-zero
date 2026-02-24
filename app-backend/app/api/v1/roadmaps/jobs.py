@@ -113,7 +113,7 @@ async def create_roadmap_job(
     response_description="잡 상태 정보를 반환합니다.",
 )
 async def get_roadmap_job(
-    job_id: UUID = Path(description="조회할 로드맵 생성 잡 ID"),
+    job_id: UUID = Path(..., description="조회할 로드맵 생성 잡 ID"),
     current_team: Team = Depends(deps.get_current_team),
     session: AsyncSession = Depends(get_session),
 ) -> RoadmapJobResponse:
@@ -140,7 +140,7 @@ async def get_roadmap_job(
     response_description="잡 상태와 생성 결과를 반환합니다.",
 )
 async def get_roadmap_job_result(
-    job_id: UUID = Path(description="결과를 조회할 로드맵 생성 잡 ID"),
+    job_id: UUID = Path(..., description="결과를 조회할 로드맵 생성 잡 ID"),
     current_team: Team = Depends(deps.get_current_team),
     session: AsyncSession = Depends(get_session),
 ) -> RoadmapJobResultResponse:

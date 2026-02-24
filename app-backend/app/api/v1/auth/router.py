@@ -177,7 +177,7 @@ async def login_google(
     response_description="액세스 토큰과 사용자/팀 정보를 반환합니다.",
 )
 async def login_social(
-    provider: str = Path(description="소셜 로그인 제공자 (`google` 또는 `kakao`)"),
+    provider: str = Path(..., description="소셜 로그인 제공자 (`google` 또는 `kakao`)"),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     if not settings.ENABLE_SOCIAL_MOCK:

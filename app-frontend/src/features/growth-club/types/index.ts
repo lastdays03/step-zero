@@ -5,7 +5,7 @@ export interface Author {
     username: string;
     neighborhood?: string;
     industry?: string;
-    profile_image?: string;
+    profile_img?: string;
 }
 
 export interface Comment {
@@ -34,6 +34,7 @@ export interface Post {
     category: PostCategory;
     neighborhood: string;
     industry: string;
+    author_id: number;
     author: Author;
     created_at: string;
     comments: Comment[];
@@ -41,4 +42,6 @@ export interface Post {
     report_count: number;
     likes_count: number;
     is_liked: boolean;
+    is_reported: boolean;
+    tags: string[];
 }

@@ -3,6 +3,7 @@
 import React from 'react';
 import { useAuth } from '@/providers/AuthProvider';
 import { Bell } from 'lucide-react';
+import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 
 export const Header = () => {
     const { user } = useAuth();
@@ -16,10 +17,7 @@ export const Header = () => {
             </div>
 
             <div className="flex items-center gap-4">
-                <button className="w-10 h-10 bg-white border border-slate-100 flex items-center justify-center rounded-full text-slate-400 hover:text-primary hover:border-primary/30 transition-all relative shadow-sm">
-                    <Bell className="w-5 h-5" />
-                    <span className="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
-                </button>
+                <NotificationBell />
             </div>
         </header>
     );

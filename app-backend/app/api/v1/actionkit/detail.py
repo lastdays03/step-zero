@@ -22,7 +22,7 @@ def _service(session: AsyncSession) -> ActionKitService:
     response_description="법령 챕터 상세 정보를 반환합니다.",
 )
 async def get_law_chapter(
-    chapter_id: str = Path(description="조회할 법령 챕터 식별자"),
+    chapter_id: str = Path(..., description="조회할 법령 챕터 식별자"),
     session: AsyncSession = Depends(get_session),
 ):
     """Get a specific law chapter."""
@@ -39,7 +39,7 @@ async def get_law_chapter(
     response_description="액션키트 카테고리 상세 정보를 반환합니다.",
 )
 async def get_kit_category(
-    category_id: str = Path(description="조회할 액션키트 카테고리 식별자"),
+    category_id: str = Path(..., description="조회할 액션키트 카테고리 식별자"),
     session: AsyncSession = Depends(get_session),
 ):
     """Get a specific action kit category."""

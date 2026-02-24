@@ -1,8 +1,8 @@
-from pathlib import Path
+import pathlib
 from typing import Literal, Optional
 
 from fastapi import APIRouter, Depends, File, Form, HTTPException, Path, Query, UploadFile
-from sqlalchemy import and_, exists, func
+from sqlalchemy import func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
@@ -16,8 +16,9 @@ from app.models.growth_club import (
     GrowthClubPost,
     GrowthClubPostLike,
     GrowthClubPostRead,
+    GrowthClubPostReport,
 )
-from app.models.user import AuthenticatedUser
+from app.models.user import AuthenticatedUser, User
 
 router = APIRouter()
 settings = get_settings()
@@ -37,7 +38,7 @@ FILE_EXTENSIONS = {
 
 
 def _extract_extension(filename: Optional[str]) -> str:
-    return Path(filename or "").suffix.lower()
+    return pathlib.Path(filename or "").suffix.lower()
 
 
 async def _validate_and_read_uploads(
@@ -110,83 +111,55 @@ async def _validate_and_read_uploads(
 )
 async def list_posts(
     category: str = Query(default="all", description="카테고리 필터 (`all`이면 전체)"),
-    search: Optional[str] = Query(default=None, description="제목/내용 검색어"),
+    search: Optional[str] = Query(default=None, description="검색어"),
+    search_type: str = Query(default="all", description="검색 유형 (all, title, content, tag)"),
     current_user: Optional[AuthenticatedUser] = Depends(get_optional_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-
     """게시글 목록 조회 (검색 및 카테고리 필터링 포함)"""
-    likes_count_subquery = (
-        select(func.count())
-        .select_from(GrowthClubPostLike)
-        .where(GrowthClubPostLike.post_id == GrowthClubPost.id)
-        .correlate(GrowthClubPost)
-        .scalar_subquery()
+    query = (
+        select(GrowthClubPost)
+        .where(GrowthClubPost.is_blinded.is_(False))
+        .options(
+            selectinload(GrowthClubPost.author).selectinload(User.profile),
+            selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author).selectinload(User.profile),
+            selectinload(GrowthClubPost.likes),
+            selectinload(GrowthClubPost.reports),
+            selectinload(GrowthClubPost.attachments),
+            selectinload(GrowthClubPost.tags),
+        )
     )
-
-    is_liked_subquery = None
-    if current_user:
-        is_liked_subquery = (
-            exists(
-                select(1).where(
-                    and_(
-                        GrowthClubPostLike.post_id == GrowthClubPost.id,
-                        GrowthClubPostLike.user_id == current_user.id,
-                    )
-                )
-            )
-            .correlate(GrowthClubPost)
-        )
-
-    if is_liked_subquery is not None:
-        query = (
-            select(
-                GrowthClubPost,
-                likes_count_subquery.label("likes_count"),
-                is_liked_subquery.label("is_liked"),
-            )
-            .where(GrowthClubPost.is_blinded.is_(False))
-            .options(
-                selectinload(GrowthClubPost.author),
-                selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author),
-                selectinload(GrowthClubPost.attachments),
-            )
-        )
-    else:
-        query = (
-            select(
-                GrowthClubPost,
-                likes_count_subquery.label("likes_count"),
-            )
-            .where(GrowthClubPost.is_blinded.is_(False))
-            .options(
-                selectinload(GrowthClubPost.author),
-                selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author),
-                selectinload(GrowthClubPost.attachments),
-            )
-        )
 
     if category != "all":
         query = query.where(GrowthClubPost.category == category)
+
     if search:
-        query = query.where(
-            (GrowthClubPost.title.contains(search))
-            | (GrowthClubPost.content.contains(search))
-        )
+        search = search.strip()
+        if search_type == "title":
+            query = query.where(GrowthClubPost.title.contains(search))
+        elif search_type == "content":
+            query = query.where(GrowthClubPost.content.contains(search))
+        elif search_type == "tag":
+            from app.models.growth_club import GrowthClubTag
+            query = query.join(GrowthClubPost.tags).where(GrowthClubTag.name.contains(search)).distinct()
+        else:
+            query = query.where(
+                or_(
+                    GrowthClubPost.title.contains(search),
+                    GrowthClubPost.content.contains(search)
+                )
+            )
 
     query = query.order_by(GrowthClubPost.created_at.desc())
     result = await session.execute(query)
 
-    # 가공하여 반환
     read_posts: list[GrowthClubPostRead] = []
-    for row in result.all():
-        post = row[0]
-        likes_count = row[1] if len(row) > 1 else 0
-        is_liked = bool(row[2]) if current_user and len(row) > 2 else False
-
+    for post in result.scalars().all():
         post_read = GrowthClubPostRead.model_validate(post)
-        post_read.likes_count = int(likes_count or 0)
-        post_read.is_liked = is_liked
+        post_read.likes_count = len(post.likes)
+        if current_user:
+            post_read.is_liked = any(like.user_id == current_user.id for like in post.likes)
+            post_read.is_reported = any(r.user_id == current_user.id for r in post.reports)
         read_posts.append(post_read)
 
     return read_posts
@@ -202,12 +175,18 @@ async def create_post(
     title: str = Form(..., description="게시글 제목"),
     content: str = Form(..., description="게시글 본문"),
     category: str = Form("free", description="게시글 카테고리"),
+    tags: Optional[str] = Form(None, description="쉼표로 구분된 태그 목록"),
     images: list[UploadFile] = File(default=[], description="첨부 이미지 목록"),
     files: list[UploadFile] = File(default=[], description="첨부 문서 파일 목록"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
     """새 게시글 작성"""
+    # 태그 파싱
+    parsed_tags = []
+    if tags:
+        parsed_tags = [t.strip() for t in tags.split(",") if t.strip()]
+
     image_uploads = [u for u in images if u is not None]
     file_uploads = [u for u in files if u is not None]
     prepared_images, total_bytes = await _validate_and_read_uploads(
@@ -229,6 +208,7 @@ async def create_post(
         category=category,
         prepared_images=prepared_images,
         prepared_files=prepared_files,
+        tags=parsed_tags,
     )
 
 
@@ -238,17 +218,21 @@ async def create_post(
         select(GrowthClubPost)
         .where(GrowthClubPost.id == post_id)
         .options(
-            selectinload(GrowthClubPost.author),
-            selectinload(GrowthClubPost.comments),
+            selectinload(GrowthClubPost.author).selectinload(User.profile),
+            selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author).selectinload(User.profile),
+            selectinload(GrowthClubPost.likes),
+            selectinload(GrowthClubPost.reports),
             selectinload(GrowthClubPost.attachments),
+            selectinload(GrowthClubPost.tags),
         )
     )
     result = await session.execute(query)
     post = result.scalar_one()
 
     post_read = GrowthClubPostRead.model_validate(post)
-    post_read.likes_count = 0
-    post_read.is_liked = False
+    post_read.likes_count = len(post.likes)
+    post_read.is_liked = any(like.user_id == current_user.id for like in post.likes)
+    post_read.is_reported = current_user.id in [r.user_id for r in post.reports]
     return post_read
 
 @router.delete(
@@ -258,7 +242,7 @@ async def create_post(
     response_description="삭제 결과를 반환합니다.",
 )
 async def delete_post(
-    post_id: int = Path(description="삭제할 게시글 ID"),
+    post_id: int = Path(..., description="삭제할 게시글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
@@ -286,14 +270,27 @@ async def delete_post(
     response_description="신고 처리 결과와 누적 신고 수를 반환합니다.",
 )
 async def report_post(
-    post_id: int = Path(description="신고할 게시글 ID"),
+    post_id: int = Path(..., description="신고할 게시글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
-    """게시글 신고 (5회 이상 신고 시 자동 블라인드)"""
+    """게시글 신고 (중복 신고 불가, 5회 이상 신고 시 자동 블라인드)"""
     db_post = await session.get(GrowthClubPost, post_id)
     if not db_post:
         raise HTTPException(status_code=404, detail="Post not found")
+
+    # 이미 신고했는지 확인
+    existing_report_query = select(GrowthClubPostReport).where(
+        GrowthClubPostReport.post_id == post_id,
+        GrowthClubPostReport.user_id == current_user.id
+    )
+    existing_report_result = await session.execute(existing_report_query)
+    if existing_report_result.scalar_one_or_none():
+        raise HTTPException(status_code=409, detail="이미 신고한 게시글입니다.")
+
+    # 신고 기록 생성
+    new_report = GrowthClubPostReport(post_id=post_id, user_id=current_user.id)
+    session.add(new_report)
 
     # 신고 횟수 증가
     db_post.report_count += 1
@@ -323,7 +320,7 @@ async def report_post(
     response_description="토글 결과와 최신 좋아요 수를 반환합니다.",
 )
 async def toggle_like_post(
-    post_id: int = Path(description="좋아요를 토글할 게시글 ID"),
+    post_id: int = Path(..., description="좋아요를 토글할 게시글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
 ):
@@ -346,6 +343,17 @@ async def toggle_like_post(
         new_like = GrowthClubPostLike(post_id=post_id, user_id=current_user.id)
         session.add(new_like)
         liked = True
+
+        # 알림 생성 (자신의 글이 아닐 때만)
+        if db_post.author_id != current_user.id:
+            from app.models.notification import Notification
+            notification = Notification(
+                user_id=db_post.author_id,
+                content=f"'{current_user.full_name or current_user.email}'님이 당신의 게시글을 좋아합니다.",
+                type="like",
+                link=f"/growth-club?post_id={post_id}"
+            )
+            session.add(notification)
 
     await session.commit()
 

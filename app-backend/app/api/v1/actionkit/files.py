@@ -23,7 +23,7 @@ def _service(session: AsyncSession) -> ActionKitService:
     response_description="업로드된 파일의 메타데이터를 반환합니다.",
 )
 async def upload_actionkit_file(
-    item_id: int = Path(description="파일을 업로드할 액션키트 아이템 ID"),
+    item_id: int = Path(..., description="파일을 업로드할 액션키트 아이템 ID"),
     upload: UploadFile = File(..., description="업로드할 원본 파일"),
     _: AuthenticatedUser = Depends(require_platform_admin),
     session: AsyncSession = Depends(get_session),

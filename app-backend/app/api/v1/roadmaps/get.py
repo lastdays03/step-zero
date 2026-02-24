@@ -111,7 +111,7 @@ async def get_latest_roadmap_detail(
     response_description="로드맵 기본 정보와 단계 목록을 반환합니다.",
 )
 async def get_roadmap(
-    roadmap_id: UUID = Path(description="조회할 로드맵 ID"),
+    roadmap_id: UUID = Path(..., description="조회할 로드맵 ID"),
     current_team: Team = Depends(deps.get_current_team),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
@@ -135,7 +135,7 @@ async def get_roadmap(
     response_description="로드맵 상세 정보를 반환합니다.",
 )
 async def get_roadmap_detail(
-    roadmap_id: UUID = Path(description="상세 조회할 로드맵 ID"),
+    roadmap_id: UUID = Path(..., description="상세 조회할 로드맵 ID"),
     current_team: Team = Depends(deps.get_current_team),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
@@ -155,7 +155,7 @@ async def get_roadmap_detail(
 )
 async def update_roadmap_step_status(
     request: RoadmapStepStatusUpdateRequest,
-    step_id: int = Path(description="상태를 변경할 로드맵 단계 ID"),
+    step_id: int = Path(..., description="상태를 변경할 로드맵 단계 ID"),
     current_team: Team = Depends(deps.get_current_team),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
@@ -190,8 +190,8 @@ async def update_roadmap_step_status(
 )
 async def update_roadmap_step_action(
     request: RoadmapStepActionUpdateRequest,
-    step_id: int = Path(description="액션이 속한 로드맵 단계 ID"),
-    action_id: int = Path(description="완료 상태를 변경할 액션 ID"),
+    step_id: int = Path(..., description="액션이 속한 로드맵 단계 ID"),
+    action_id: int = Path(..., description="완료 상태를 변경할 액션 ID"),
     current_team: Team = Depends(deps.get_current_team),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
