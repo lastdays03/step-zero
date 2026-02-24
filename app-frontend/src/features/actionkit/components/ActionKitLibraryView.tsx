@@ -132,19 +132,35 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
 
             await Promise.all(items.map(async (item) => {
                 const itemId = (item as any).id;
-                let blob: Blob;
+                let blob: Blob | null = null;
                 if (itemId) {
-                    const res = await apiClient.get(`/actionkits/items/${itemId}/download`, { responseType: 'blob' });
-                    blob = new Blob([res.data]);
-                } else if (item.path.startsWith('http')) {
-                    const res = await fetch(item.path);
-                    blob = await res.blob();
-                } else {
-                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}${item.path}`);
-                    blob = await res.blob();
+                    try {
+                        const res = await apiClient.get(`/actionkits/items/${itemId}/download`, { responseType: 'blob' });
+                        blob = new Blob([res.data]);
+                    } catch (apiErr: any) {
+                        if (apiErr.response?.status !== 404) throw apiErr;
+                    }
                 }
-                const filename = (item as any).files?.[0]?.original_filename || `${item.name}.${(item as any).ext || 'pdf'}`;
-                zip.file(filename, blob);
+
+                if (!blob && item.path) {
+                    let finalPath = item.path;
+                    if (finalPath.startsWith('library/resources/')) {
+                        finalPath = finalPath.replace('library/resources/', 'actionkits/files/');
+                    }
+                    if (finalPath.startsWith('http')) {
+                        const res = await fetch(finalPath);
+                        blob = await res.blob();
+                    } else {
+                        const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+                        const res = await fetch(`${baseURL}/${finalPath}`);
+                        blob = await res.blob();
+                    }
+                }
+
+                if (blob) {
+                    const filename = (item as any).files?.[0]?.original_filename || `${item.name}.${(item as any).ext || 'pdf'}`;
+                    zip.file(filename, blob);
+                }
             }));
 
             const content = await zip.generateAsync({ type: 'blob' });
@@ -182,18 +198,26 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
 
     const handleDownload = async (path: string, filename: string, itemId?: number) => {
         try {
+            let success = false;
             if (itemId) {
-                // Use authenticated API download for DB-managed files
-                const res = await apiClient.get(`/actionkits/items/${itemId}/download`, { responseType: 'blob' });
-                const url = window.URL.createObjectURL(new Blob([res.data]));
-                const link = document.createElement('a');
-                link.href = url;
-                link.setAttribute('download', filename);
-                document.body.appendChild(link);
-                link.click();
-                link.remove();
-                window.URL.revokeObjectURL(url);
-            } else {
+                try {
+                    // Use authenticated API download for DB-managed files
+                    const res = await apiClient.get(`/actionkits/items/${itemId}/download`, { responseType: 'blob' });
+                    const url = window.URL.createObjectURL(new Blob([res.data]));
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.setAttribute('download', filename);
+                    document.body.appendChild(link);
+                    link.click();
+                    link.remove();
+                    window.URL.revokeObjectURL(url);
+                    success = true;
+                } catch (apiErr: any) {
+                    if (apiErr.response?.status !== 404) throw apiErr;
+                }
+            }
+
+            if (!success && path) {
                 // Fallback for legacy path-based files
                 const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
                 let finalPath = path;
