@@ -15,6 +15,7 @@ export interface LawChapter {
 export interface RelatedLaw {
     name: string;
     summary?: string;
+    snippet?: string;
 }
 
 export interface ActionKitItem {
@@ -25,6 +26,9 @@ export interface ActionKitItem {
     path: string;
     relatedLaws?: (string | RelatedLaw)[];
     dday?: string;
+    previewImageUrl?: string;
+    usageTips?: string[];
+    complianceChecklist?: string[];
 }
 
 export interface ActionKitCategory {
