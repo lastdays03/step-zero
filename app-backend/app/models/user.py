@@ -1,7 +1,7 @@
 
 from sqlmodel import SQLModel, Field
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 
 class UserBase(SQLModel):
     email: str = Field(unique=True, index=True)
@@ -12,8 +12,11 @@ class UserBase(SQLModel):
 class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     hashed_password: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    status: str = Field(default="active", index=True)
+    report_count: int = Field(default=0, index=True)
+    last_login_at: Optional[datetime] = Field(default=None, index=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 class UserCreate(UserBase):
     password: str

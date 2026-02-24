@@ -41,6 +41,10 @@ class AuthService:
             return None
         if not user.is_active:
             return None
+        
+        # Handle inactivity recovery and update last login
+        await self._handle_user_login_metadata(user)
+        
         return await self._build_auth_result(user)
 
     async def login_with_google(self, google_client_id: str, token: str) -> AuthResult | None:
@@ -55,6 +59,10 @@ class AuthService:
                 full_name=idinfo.get("name") or email.split("@")[0],
                 hashed_password=security.get_password_hash(secrets.token_hex(32)),
             )
+
+        # Handle inactivity recovery and update last login
+        await self._handle_user_login_metadata(user)
+        
         return await self._build_auth_result(user)
 
     async def refresh_access_token(self, raw_refresh_token: str) -> AuthResult | None:
@@ -106,6 +114,14 @@ class AuthService:
                 await self.refresh_token_repo.revoke_all_for_user(revoked_token.user_id)
                 return True
         return False
+
+    async def _handle_user_login_metadata(self, user: User) -> None:
+        user.last_login_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        if user.status == "suspended_inactive":
+            user.status = "active"
+        self.user_repo.session.add(user)
+        await self.user_repo.session.commit()
+        await self.user_repo.session.refresh(user)
 
     async def _build_auth_result(self, user: User) -> AuthResult:
         teams = await self.team_repo.list_for_user(user.id)

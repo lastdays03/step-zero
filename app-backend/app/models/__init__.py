@@ -26,6 +26,7 @@ from app.models.roadmap import (
 from app.models.team import Team, TeamMember
 from app.models.user import AuthenticatedUser, TokenWithUser, User, UserRead
 from app.models.profile import UserProfile, UserProfileRead, UserProfileUpdate
+from app.models.user_discipline_history import UserDisciplineHistory
 
 __all__ = [
     "ActionKitCategory",
@@ -56,4 +57,5 @@ __all__ = [
     "UserProfile",
     "UserProfileRead",
     "UserProfileUpdate",
+    "UserDisciplineHistory",
 ]

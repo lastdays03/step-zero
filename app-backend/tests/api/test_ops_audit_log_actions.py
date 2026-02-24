@@ -10,6 +10,7 @@ from app.models.actionkit import ActionKitCategory, ActionKitItem
 from app.models.admin_audit_log import AdminAuditLog
 from app.models.growth_club import GrowthClubPost
 from app.models.user import User
+from app.models.user_discipline_history import UserDisciplineHistory
 
 
 async def _get_admin_token(client: AsyncClient) -> str:
@@ -30,7 +31,7 @@ async def _get_admin_token(client: AsyncClient) -> str:
 
 
 @pytest.mark.asyncio
-async def test_ops_users_status_update_records_audit_log(client: AsyncClient):
+async def test_ops_users_status_update_records_discipline_history(client: AsyncClient):
     token = await _get_admin_token(client)
 
     async with db.async_session() as session:
@@ -47,22 +48,25 @@ async def test_ops_users_status_update_records_audit_log(client: AsyncClient):
 
     response = await client.patch(
         f"/api/v1/ops/users/{target_user_id}/status",
-        json={"is_active": False, "reason": "policy violation"},
+        json={"status": "suspended", "reason": "policy violation"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 200
-    assert response.json()["status"] == "success"
+    data = response.json()
+    assert data["status"] == "suspended"
+    assert data["is_active"] is False
 
     async with db.async_session() as session:
         row = (
             await session.execute(
-                select(AdminAuditLog)
-                .where(AdminAuditLog.target_type == "user", AdminAuditLog.target_id == str(target_user_id))
-                .order_by(AdminAuditLog.id.desc())
+                select(UserDisciplineHistory)
+                .where(UserDisciplineHistory.user_id == target_user_id)
+                .order_by(UserDisciplineHistory.id.desc())
             )
         ).scalars().first()
         assert row is not None
-        assert row.action == "user.status.updated"
+        assert row.new_status == "suspended"
+        assert row.reason == "policy violation"
 
 
 @pytest.mark.asyncio
@@ -180,7 +184,7 @@ async def test_ops_announcement_create_and_publish_records_audit_log(client: Asy
 
 
 @pytest.mark.asyncio
-async def test_ops_users_status_update_no_change_does_not_create_new_log(client: AsyncClient):
+async def test_ops_users_status_update_same_status_still_records_history(client: AsyncClient):
     token = await _get_admin_token(client)
 
     async with db.async_session() as session:
@@ -195,58 +199,34 @@ async def test_ops_users_status_update_no_change_does_not_create_new_log(client:
         await session.refresh(target_user)
         target_user_id = target_user.id
 
-        before_count = int((await session.execute(select(func.count()).select_from(AdminAuditLog))).scalar_one())
-
     response = await client.patch(
         f"/api/v1/ops/users/{target_user_id}/status",
-        json={"is_active": True, "reason": "same value"},
+        json={"status": "active", "reason": "re-confirm active"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 200
-    assert response.json()["status"] == "no_change"
+    assert response.json()["status"] == "active"
 
     async with db.async_session() as session:
-        after_count = int((await session.execute(select(func.count()).select_from(AdminAuditLog))).scalar_one())
-        assert after_count == before_count
+        row = (
+            await session.execute(
+                select(UserDisciplineHistory)
+                .where(UserDisciplineHistory.user_id == target_user_id)
+                .order_by(UserDisciplineHistory.id.desc())
+            )
+        ).scalars().first()
+        assert row is not None
+        assert row.prev_status == "active"
+        assert row.new_status == "active"
 
 
 @pytest.mark.asyncio
-async def test_ops_users_status_update_rollback_when_audit_write_fails(client: AsyncClient, monkeypatch):
+async def test_ops_users_status_update_nonexistent_user_returns_404(client: AsyncClient):
     token = await _get_admin_token(client)
 
-    async with db.async_session() as session:
-        target_user = User(
-            email="ops-rollback-user@example.com",
-            full_name="Ops Rollback User",
-            hashed_password="not-used-in-test",
-            is_active=True,
-        )
-        session.add(target_user)
-        await session.commit()
-        await session.refresh(target_user)
-        target_user_id = target_user.id
-
-    async def _raise_audit_error(*args, **kwargs):
-        raise RuntimeError("forced audit write failure")
-
-    monkeypatch.setattr("app.api.v1.ops.users.record_admin_audit_log", _raise_audit_error)
-
-    with pytest.raises(RuntimeError):
-        await client.patch(
-            f"/api/v1/ops/users/{target_user_id}/status",
-            json={"is_active": False, "reason": "trigger rollback"},
-            headers={"Authorization": f"Bearer {token}"},
-        )
-
-    async with db.async_session() as session:
-        user = (await session.execute(select(User).where(User.id == target_user_id))).scalar_one()
-        assert user.is_active is True
-
-        row = (
-            await session.execute(
-                select(AdminAuditLog)
-                .where(AdminAuditLog.target_type == "user", AdminAuditLog.target_id == str(target_user_id))
-                .order_by(AdminAuditLog.id.desc())
-            )
-        ).scalars().first()
-        assert row is None
+    response = await client.patch(
+        "/api/v1/ops/users/99999/status",
+        json={"status": "suspended", "reason": "test"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert response.status_code == 404
