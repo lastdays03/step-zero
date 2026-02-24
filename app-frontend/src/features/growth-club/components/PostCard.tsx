@@ -40,7 +40,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
     const imageAttachments = attachments.filter((it) => it.kind === "image");
     const fileAttachments = attachments.filter((it) => it.kind === "file");
 
-    const isAuthor = user && String(user.id) === String(post.author_id);
+    const isAuthor = user && String(user.id) === String(post.author?.id);
 
     const handleDelete = async () => {
         if (!window.confirm('정말 이 게시글을 삭제하시겠습니까?')) return;

@@ -31,6 +31,7 @@ class RoadmapStep(SQLModel, table=True):
     title: str
     status: str = "PENDING"
     created_at: datetime = Field(default_factory=datetime.utcnow)
+    completed_at: datetime | None = None
 
 
 class RoadmapGenerationJob(SQLModel, table=True):

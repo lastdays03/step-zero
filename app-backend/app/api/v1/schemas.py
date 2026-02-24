@@ -108,12 +108,14 @@ class RoadmapDetailStepResponse(BaseModel):
     id: int
     title: str
     status: str
+    completed_at: str | None = None
     detail: RoadmapStepDetailResponse | None = None
 
 
 class RoadmapDetailResponse(BaseModel):
     roadmap_id: UUID
     title: str
+    created_at: str
     steps: list[RoadmapDetailStepResponse]
 
 

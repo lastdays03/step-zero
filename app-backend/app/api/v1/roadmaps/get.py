@@ -72,6 +72,7 @@ async def _serialize_roadmap_detail(
                 id=int(step.id),
                 title=step.title,
                 status=step.status,
+                completed_at=step.completed_at.isoformat() if step.completed_at else None,
                 detail=detail_model,
             )
         )
@@ -79,6 +80,7 @@ async def _serialize_roadmap_detail(
     return RoadmapDetailResponse(
         roadmap_id=roadmap.id,
         title=roadmap.title,
+        created_at=roadmap.created_at.isoformat(),
         steps=output_steps,
     )
 

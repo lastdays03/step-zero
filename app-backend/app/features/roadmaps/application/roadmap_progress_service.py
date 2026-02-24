@@ -1,3 +1,4 @@
+from datetime import datetime
 from uuid import UUID
 
 from app.models.roadmap import RoadmapStep, RoadmapStepAction
@@ -35,7 +36,23 @@ class RoadmapProgressService:
             if any(prev.status != "COMPLETED" for prev in previous_steps):
                 raise InvalidRoadmapStepStatusError("Previous steps must be completed first")
 
+        was_completed = step.status == "COMPLETED"
+
+        # Revert guard: only the last completed step can be reverted.
+        if was_completed and normalized_status != "COMPLETED":
+            subsequent_completed = any(
+                s.status == "COMPLETED" for s in ordered_steps[target_idx + 1 :]
+            )
+            if subsequent_completed:
+                raise InvalidRoadmapStepStatusError(
+                    "Only the last completed step can be reverted"
+                )
+
         step.status = normalized_status
+        if normalized_status == "COMPLETED":
+            step.completed_at = datetime.utcnow()
+        else:
+            step.completed_at = None
 
         if normalized_status == "COMPLETED":
             active_step_exists = any(
@@ -46,6 +63,14 @@ class RoadmapProgressService:
                     if next_step.status in {"PENDING", "BLOCKED"}:
                         next_step.status = "IN_PROGRESS"
                         break
+
+        # Revert: demote the auto-advanced next step back to PENDING.
+        if was_completed and normalized_status != "COMPLETED":
+            for subsequent in ordered_steps[target_idx + 1 :]:
+                if subsequent.status == "IN_PROGRESS":
+                    subsequent.status = "PENDING"
+                    subsequent.completed_at = None
+
         return step
 
     async def update_step_status(
@@ -113,6 +138,7 @@ class RoadmapProgressService:
                 )
             elif not all_completed and step.status == "COMPLETED":
                 step.status = "IN_PROGRESS"
+                step.completed_at = None
 
         await self.roadmap_repo.commit()
         return action
