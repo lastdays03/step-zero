@@ -22,6 +22,7 @@ class Highlight(BaseModel):
     content: str
 
 class ActionKitItem(BaseModel):
+    id: Optional[int] = None
     tag: Optional[str] = None
     name: str
     summary: str
@@ -29,6 +30,7 @@ class ActionKitItem(BaseModel):
     path: str
     relatedLaws: Optional[List[Union[str, RelatedLaw]]] = None
     highlights: Optional[List[Highlight]] = None
+    complianceChecklist: Optional[List[str]] = None
     dday: Optional[str] = None
 
 class ActionKitCategory(BaseModel):
