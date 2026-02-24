@@ -14,6 +14,7 @@ class User(UserBase, table=True):
     hashed_password: str
     status: str = Field(default="active", index=True)
     report_count: int = Field(default=0, index=True)
+    suspended_until: Optional[datetime] = Field(default=None, index=True)
     last_login_at: Optional[datetime] = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

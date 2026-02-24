@@ -17,7 +17,7 @@ interface DisciplineModalProps {
     user: OpsUser | null;
     isOpen: boolean;
     onClose: () => void;
-    onConfirm: (status: string, reason: string) => Promise<void>;
+    onConfirm: (status: string, reason: string, duration_days?: number) => Promise<void>;
     isBulk?: boolean;
     selectedCount?: number;
 }
@@ -25,6 +25,7 @@ interface DisciplineModalProps {
 export function DisciplineModal({ user, isOpen, onClose, onConfirm, isBulk, selectedCount }: DisciplineModalProps) {
     const [status, setStatus] = useState("suspended");
     const [reason, setReason] = useState("");
+    const [durationDays, setDurationDays] = useState(7);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     if (!user && !isBulk) return null;
@@ -36,7 +37,7 @@ export function DisciplineModal({ user, isOpen, onClose, onConfirm, isBulk, sele
         }
         setIsSubmitting(true);
         try {
-            await onConfirm(status, reason);
+            await onConfirm(status, reason, status === "suspended" ? durationDays : undefined);
             onClose();
             setReason(""); // Reset reason
         } catch (err) {
@@ -87,10 +88,32 @@ export function DisciplineModal({ user, isOpen, onClose, onConfirm, isBulk, sele
                                     <AlertTriangle size={18} />
                                 </div>
                                 <div>
-                                    <p className="text-sm font-bold text-slate-900">7일 정지 (Suspended)</p>
+                                    <p className="text-sm font-bold text-slate-900">기간 정지 (Suspended)</p>
                                     <p className="text-xs text-slate-500">이용 정책 위반으로 일시 정지합니다.</p>
                                 </div>
                             </button>
+
+                            {status === "suspended" && (
+                                <div className="mt-1 p-3 bg-slate-50 rounded-lg border border-dashed border-slate-300">
+                                    <label className="text-[11px] font-bold text-slate-500 uppercase tracking-tight block mb-2">정지 기간 선택</label>
+                                    <div className="flex flex-wrap gap-2">
+                                        {[1, 3, 7, 14, 30].map((d) => (
+                                            <button
+                                                key={d}
+                                                type="button"
+                                                onClick={() => setDurationDays(d)}
+                                                className={`px-3 py-1.5 rounded-md text-xs font-bold transition-all ${durationDays === d
+                                                    ? "bg-amber-600 text-white shadow-sm"
+                                                    : "bg-white border border-slate-200 text-slate-600 hover:border-amber-300"
+                                                    }`}
+                                            >
+                                                {d}일
+                                            </button>
+                                        ))}
+                                    </div>
+                                    <p className="text-[10px] text-slate-400 mt-2 font-medium italic">* 선택한 기간이 지나면 로그인 시 자동으로 정상 복구됩니다.</p>
+                                </div>
+                            )}
 
                             <button
                                 onClick={() => setStatus("suspended_permanent")}

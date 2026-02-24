@@ -57,9 +57,20 @@ class AuthService:
         return await self._build_auth_result(user)
 
     async def _handle_user_login_metadata(self, user: User) -> None:
-        user.last_login_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        user.last_login_at = now
+        
+        # Check for suspension recovery
+        if user.status.startswith("suspended") and user.suspended_until:
+            if user.suspended_until <= now:
+                user.status = "active"
+                user.is_active = True
+                user.suspended_until = None
+        
         if user.status == "suspended_inactive":
             user.status = "active"
+            user.is_active = True
+            
         self.user_repo.session.add(user)
         await self.user_repo.session.commit()
         await self.user_repo.session.refresh(user)

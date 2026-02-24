@@ -20,12 +20,14 @@ router = APIRouter(prefix="/users")
 class UserStatusUpdateRequest(BaseModel):
     status: str
     reason: str
+    duration_days: int | None = None
 
 
 class BulkStatusUpdateRequest(BaseModel):
     user_ids: list[int]
     status: str
     reason: str
+    duration_days: int | None = None
 
 
 @router.get(
@@ -61,6 +63,7 @@ async def bulk_update_ops_users_status(
         user_ids=request.user_ids,
         status=request.status,
         reason=request.reason,
+        duration_days=request.duration_days,
     )
     return {"updated_count": count}
 
@@ -83,6 +86,7 @@ async def update_ops_user_status(
         user_id=user_id,
         status=request.status,
         reason=request.reason,
+        duration_days=request.duration_days,
     )
     
     if not user:

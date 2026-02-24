@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -79,6 +79,7 @@ async def update_user_status(
     user_id: int,
     status: str,
     reason: str,
+    duration_days: int | None = None,
 ) -> User | None:
     result = await session.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
@@ -91,8 +92,13 @@ async def update_user_status(
     # 'suspended' 계열이면 is_active = False 처리 (필요에 따라 정책 조정 가능)
     if status.startswith("suspended"):
         user.is_active = False
+        if duration_days is not None and duration_days > 0 and status != "suspended_permanent":
+            user.suspended_until = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=float(duration_days))
+        else:
+            user.suspended_until = None
     else:
         user.is_active = True
+        user.suspended_until = None
         
     session.add(user)
     
@@ -103,6 +109,7 @@ async def update_user_status(
         prev_status=prev_status,
         new_status=status,
         reason=reason,
+        suspended_until=user.suspended_until,
     )
     session.add(history)
     
@@ -132,6 +139,7 @@ async def bulk_update_user_status(
     user_ids: list[int],
     status: str,
     reason: str,
+    duration_days: int | None = None,
 ) -> int:
     # 대상 사용자들 조회
     statement = select(User).where(User.id.in_(user_ids))
@@ -146,8 +154,13 @@ async def bulk_update_user_status(
         user.status = status
         if status.startswith("suspended"):
             user.is_active = False
+            if duration_days is not None and duration_days > 0 and status != "suspended_permanent":
+                user.suspended_until = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=float(duration_days))
+            else:
+                user.suspended_until = None
         else:
             user.is_active = True
+            user.suspended_until = None
         
         session.add(user)
         

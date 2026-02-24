@@ -78,12 +78,12 @@ export function OpsUsersView() {
     }
   }, [canRender, load]);
 
-  const handleUpdateStatus = async (status: string, reason: string) => {
+  const handleUpdateStatus = async (status: string, reason: string, duration_days?: number) => {
     try {
       if (isBulkMode) {
-        await bulkUpdateUserStatus({ user_ids: selectedUserIds, status, reason });
+        await bulkUpdateUserStatus({ user_ids: selectedUserIds, status, reason, duration_days });
       } else if (selectedUser) {
-        await updateUserStatus(selectedUser.id, { status, reason });
+        await updateUserStatus(selectedUser.id, { status, reason, duration_days });
       }
       await load(); // Reload list
     } catch (err) {

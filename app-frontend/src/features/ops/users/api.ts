@@ -14,7 +14,7 @@ export async function fetchOpsUsers(params?: FetchOpsUsersParams): Promise<OpsUs
 
 export async function updateUserStatus(
   userId: number,
-  data: { status: string; reason: string }
+  data: { status: string; reason: string; duration_days?: number }
 ): Promise<OpsUser> {
   const response = await apiClient.patch(`/ops/users/${userId}/status`, data);
   return response.data as OpsUser;
@@ -24,6 +24,7 @@ export async function bulkUpdateUserStatus(data: {
   user_ids: number[];
   status: string;
   reason: string;
+  duration_days?: number;
 }): Promise<{ updated_count: number }> {
   const response = await apiClient.patch("/ops/users/bulk-status", data);
   return response.data;

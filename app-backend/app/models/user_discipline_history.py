@@ -11,4 +11,5 @@ class UserDisciplineHistory(SQLModel, table=True):
     prev_status: str
     new_status: str
     reason: str
+    suspended_until: Optional[datetime] = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
