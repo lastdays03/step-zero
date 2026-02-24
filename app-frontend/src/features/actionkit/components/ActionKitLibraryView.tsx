@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useActionKit } from '../hooks/useActionKit';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -84,6 +84,23 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
     const [searchQuery, setSearchQuery] = useState(initialSearch);
     const [activeStarterPack, setActiveStarterPack] = useState<string | null>(null);
     const [previewKit, setPreviewKit] = useState<ActionKitItem | null>(null);
+    const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+
+    useEffect(() => {
+        const stored = localStorage.getItem('actionkit_checklists');
+        if (stored) {
+            try {
+                setCheckedItems(JSON.parse(stored));
+            } catch (e) { }
+        }
+    }, []);
+
+    const toggleChecklist = (kitId: number | string, itemText: string) => {
+        const key = `${kitId}_${itemText}`;
+        const newChecked = { ...checkedItems, [key]: !checkedItems[key] };
+        setCheckedItems(newChecked);
+        localStorage.setItem('actionkit_checklists', JSON.stringify(newChecked));
+    };
 
     if (loading) return <div className="p-8 text-center text-slate-500">액션 키트 라이브러리를 불러오는 중...</div>;
     if (error) return <div className="p-8 text-center text-red-500">{error}</div>;
@@ -397,14 +414,24 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                                         사용 전 필수 체크리스트
                                     </h4>
                                     <div className="space-y-2">
-                                        {previewKit.complianceChecklist.map((item, i) => (
-                                            <label key={i} className="flex items-start gap-3 p-3 rounded-xl border border-slate-100 hover:border-[#36a4f2]/30 hover:bg-[#36a4f2]/5 transition-colors cursor-pointer group">
-                                                <input type="checkbox" className="mt-1 w-4 h-4 rounded border-slate-300 text-[#36a4f2] focus:ring-[#36a4f2]" />
-                                                <span className="text-sm text-slate-600 group-hover:text-slate-900 leading-tight">
-                                                    {item}
-                                                </span>
-                                            </label>
-                                        ))}
+                                        {previewKit.complianceChecklist.map((item, i) => {
+                                            const kitIdentifier = (previewKit as any).id || previewKit.name;
+                                            const key = `${kitIdentifier}_${item}`;
+                                            const isChecked = !!checkedItems[key];
+                                            return (
+                                                <label key={i} className={`flex items-start gap-3 p-3 rounded-xl border transition-colors cursor-pointer group ${isChecked ? 'border-emerald-500 bg-emerald-50' : 'border-slate-100 hover:border-[#36a4f2]/30 hover:bg-[#36a4f2]/5'}`}>
+                                                    <input
+                                                        type="checkbox"
+                                                        className="mt-1 w-4 h-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+                                                        checked={isChecked}
+                                                        onChange={() => toggleChecklist(kitIdentifier, item)}
+                                                    />
+                                                    <span className={`text-sm leading-tight transition-all ${isChecked ? 'text-emerald-700 font-medium line-through opacity-70' : 'text-slate-600 group-hover:text-slate-900'}`}>
+                                                        {item}
+                                                    </span>
+                                                </label>
+                                            );
+                                        })}
                                     </div>
                                     <p className="text-[10px] text-slate-400 mt-2 ml-7">* 이 체크리스트는 법률 컨설팅을 대체하지 않습니다.</p>
                                 </div>
