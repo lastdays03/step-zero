@@ -104,3 +104,10 @@ class ActionKitItemUpdateRequest(BaseModel):
     dday: str | None = None
     sort_order: int | None = None
     is_active: bool | None = None
+
+class ActionKitItemOrderUpdate(BaseModel):
+    id: int
+    sort_order: int
+
+class ActionKitItemReorderRequest(BaseModel):
+    items: List[ActionKitItemOrderUpdate]

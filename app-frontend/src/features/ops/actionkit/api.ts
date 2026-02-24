@@ -39,3 +39,8 @@ export const fetchItemDetail = async (itemId: number) => {
     const { data } = await apiClient.get(`/ops/actionkit/items/${itemId}`);
     return data;
 };
+
+export const updateItemOrders = async (items: { id: number, sort_order: number }[]) => {
+    const { data } = await apiClient.patch('/ops/actionkit/items/reorder', { items });
+    return data;
+};

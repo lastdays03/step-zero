@@ -19,6 +19,7 @@ from app.features.ops.application.actionkit import (
     get_items_by_category,
     get_item_detail,
     update_item,
+    update_item_orders,
     create_item,
     upload_file_for_item,
     delete_item,
@@ -37,7 +38,8 @@ from app.api.v1.ops.schemas import (
     ActionKitCategoryUpdateRequest,
     ActionKitItemResponse,
     ActionKitItemCreateRequest,
-    ActionKitItemUpdateRequest
+    ActionKitItemUpdateRequest,
+    ActionKitItemReorderRequest
 )
 from app.models.actionkit import ActionKitItem
 from app.models.user import AuthenticatedUser
@@ -121,6 +123,18 @@ async def create_actionkit_item(
     session: AsyncSession = Depends(get_session)
 ):
     return await create_item(session, data)
+
+
+@router.patch(
+    "/items/reorder",
+    summary="액션키트 아이템 일괄 순서 변경",
+)
+async def patch_actionkit_item_orders(
+    data: ActionKitItemReorderRequest,
+    session: AsyncSession = Depends(get_session)
+):
+    await update_item_orders(session, data.model_dump()["items"])
+    return {"message": "Success"}
 
 
 @router.get(

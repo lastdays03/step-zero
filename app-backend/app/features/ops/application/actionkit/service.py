@@ -115,6 +115,18 @@ async def update_item(session: AsyncSession, item_id: int, data: ActionKitItemUp
     await session.commit()
     return await get_item_detail(session, item.id)
 
+async def update_item_orders(session: AsyncSession, item_orders: List[dict]):
+    for order_data in item_orders:
+        item_id = order_data["id"]
+        sort_order = order_data["sort_order"]
+        stmt = select(ActionKitItem).where(ActionKitItem.id == item_id)
+        result = await session.execute(stmt)
+        item = result.scalars().first()
+        if item:
+            item.sort_order = sort_order
+    await session.commit()
+    return True
+
 async def upload_file_for_item(session: AsyncSession, item_id: int, file: UploadFile) -> ActionKitItem | None:
     item = await get_item_detail(session, item_id)
     if not item:

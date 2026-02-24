@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
-import { fetchCategories, fetchCategoryItems, fetchSummary } from "./api";
+import { fetchCategories, fetchCategoryItems, fetchSummary, updateItemOrders } from "./api";
 import type { ActionKitItem } from "@/features/actionkit/types";
 
 interface OpsActionKitItem extends ActionKitItem {
@@ -20,7 +21,7 @@ import { useOpsAccessGuard } from "@/features/ops/shared/use-ops-access-guard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, FolderOpen, Loader2, Edit3, Trash2, Package, Paperclip, EyeOff, Scale, Highlighter, Settings, Plus } from "lucide-react";
+import { Search, FolderOpen, Loader2, Edit3, Trash2, Package, Paperclip, EyeOff, Scale, Highlighter, Settings, Plus, GripVertical } from "lucide-react";
 import { ActionKitEditModal } from "@/features/ops/actionkit/components/actionkit-edit-modal";
 import { CategoryEditModal } from "@/features/ops/actionkit/components/category-edit-modal";
 import { apiClient } from "@/lib/api-client";
@@ -58,6 +59,32 @@ export function OpsActionKitView() {
       .catch(console.error)
       .finally(() => setLoading(false));
   }, []);
+
+  const handleDragEnd = async (result: DropResult) => {
+    if (!result.destination) return;
+    if (result.source.index === result.destination.index) return;
+    if (searchQuery) return; // Disable drag during search
+
+    const reorderedItems = Array.from(filteredItems);
+    const [movedItem] = reorderedItems.splice(result.source.index, 1);
+    reorderedItems.splice(result.destination.index, 0, movedItem);
+
+    // Update sort_order locally
+    const updatedItems = reorderedItems.map((item, index) => ({
+      ...item,
+      sort_order: index + 1
+    }));
+
+    setItems(updatedItems);
+
+    try {
+      const payload = updatedItems.map(item => ({ id: item.id, sort_order: item.sort_order }));
+      await updateItemOrders(payload);
+    } catch (e) {
+      console.error("Failed to reorder items", e);
+      if (activeCategory) loadItems(activeCategory); // Revert on failure
+    }
+  };
 
   const handleDelete = async (item: OpsActionKitItem) => {
     if (!confirm(`"${item.name}" 항목을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
@@ -266,6 +293,7 @@ export function OpsActionKitView() {
               <table className="w-full text-left text-sm whitespace-nowrap">
                 <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
                   <tr>
+                    <th className="px-3 py-3 w-8"></th>
                     <th className="px-6 py-3">상태</th>
                     <th className="px-6 py-3 w-1/3">제목</th>
                     <th className="px-6 py-3">종류/태그</th>
@@ -274,45 +302,67 @@ export function OpsActionKitView() {
                     <th className="px-6 py-3 text-right">관리</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
-                  {filteredItems.map((item) => (
-                    <tr key={item.name} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <Badge className={`border-none ${item.is_active ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                          {item.is_active ? '게시중' : '숨김'}
-                        </Badge>
-                      </td>
-                      <td className="px-6 py-4">
-                        <p className="font-bold text-slate-800 line-clamp-1">{item.name}</p>
-                        <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">{item.summary}</p>
-                      </td>
-                      <td className="px-6 py-4">
-                        <Badge variant="outline" className="text-[10px] text-slate-500">{item.type || item.ext || item.file_type || "유형없음"}</Badge>
-                      </td>
-                      <td className="px-6 py-4 text-xs font-semibold text-slate-500">
-                        v{item.files?.length ? item.files[0].version : "1"} (최신)
-                      </td>
-                      <td className="px-6 py-4 text-xs text-slate-500">
-                        {item.sort_order || 0}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() => setEditingItem(item)}
-                            className="w-8 h-8 rounded-md text-slate-400 hover:text-[#36a4f2]"
-                          >
-                            <Edit3 className="w-4 h-4" />
-                          </Button>
-                          <Button variant="outline" size="icon" className="w-8 h-8 rounded-md text-slate-400 hover:text-red-500" onClick={() => handleDelete(item)}>
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
+                <DragDropContext onDragEnd={handleDragEnd}>
+                  <Droppable droppableId="items_list">
+                    {(provided) => (
+                      <tbody
+                        className="divide-y divide-slate-100"
+                        {...provided.droppableProps}
+                        ref={provided.innerRef}
+                      >
+                        {filteredItems.map((item, index) => (
+                          <Draggable key={item.id.toString()} draggableId={item.id.toString()} index={index} isDragDisabled={!!searchQuery}>
+                            {(provided, snapshot) => (
+                              <tr
+                                ref={provided.innerRef}
+                                {...provided.draggableProps}
+                                className={`transition-colors ${snapshot.isDragging ? 'bg-white shadow-xl ring-1 ring-[#36a4f2]/20' : 'hover:bg-slate-50'}`}
+                              >
+                                <td className="px-3 py-4" {...provided.dragHandleProps}>
+                                  <GripVertical className="w-4 h-4 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing" />
+                                </td>
+                                <td className="px-6 py-4">
+                                  <Badge className={`border-none ${item.is_active ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                                    {item.is_active ? '게시중' : '숨김'}
+                                  </Badge>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <p className="font-bold text-slate-800 line-clamp-1">{item.name}</p>
+                                  <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">{item.summary}</p>
+                                </td>
+                                <td className="px-6 py-4">
+                                  <Badge variant="outline" className="text-[10px] text-slate-500">{item.type || item.ext || item.file_type || "유형없음"}</Badge>
+                                </td>
+                                <td className="px-6 py-4 text-xs font-semibold text-slate-500">
+                                  v{item.files?.length ? item.files[0].version : "1"} (최신)
+                                </td>
+                                <td className="px-6 py-4 text-xs text-slate-500">
+                                  {item.sort_order || 0}
+                                </td>
+                                <td className="px-6 py-4 text-right">
+                                  <div className="flex justify-end gap-2">
+                                    <Button
+                                      variant="outline"
+                                      size="icon"
+                                      onClick={() => setEditingItem(item)}
+                                      className="w-8 h-8 rounded-md text-slate-400 hover:text-[#36a4f2]"
+                                    >
+                                      <Edit3 className="w-4 h-4" />
+                                    </Button>
+                                    <Button variant="outline" size="icon" className="w-8 h-8 rounded-md text-slate-400 hover:text-red-500" onClick={() => handleDelete(item)}>
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </tbody>
+                    )}
+                  </Droppable>
+                </DragDropContext>
               </table>
             </div>
           )}
