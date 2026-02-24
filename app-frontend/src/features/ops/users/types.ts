@@ -7,6 +7,7 @@ export type OpsUser = {
   last_login_at: string | null;
   is_active: boolean;
   is_superuser: boolean;
+  suspended_until: string | null;
   created_at: string;
 };
 
@@ -17,5 +18,6 @@ export type DisciplineHistory = {
   prev_status: string;
   new_status: string;
   reason: string;
+  suspended_until: string | null;
   created_at: string;
 };

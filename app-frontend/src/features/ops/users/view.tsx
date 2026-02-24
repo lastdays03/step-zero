@@ -124,7 +124,18 @@ export function OpsUsersView() {
   const getStatusBadge = (user: OpsUser) => {
     const s = user.status;
     if (s === "active") return <Badge className="bg-green-100 text-green-700 hover:bg-green-200 border-none">정상</Badge>;
-    if (s === "suspended") return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-none">7일 정지</Badge>;
+    if (s === "suspended") {
+      return (
+        <div className="flex flex-col gap-0.5">
+          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-200 border-none w-fit">정지 중</Badge>
+          {user.suspended_until && (
+            <span className="text-[9px] text-amber-600 font-bold whitespace-nowrap">
+              ~ {toKST(user.suspended_until).split(' ').slice(1, 4).join(' ')}
+            </span>
+          )}
+        </div>
+      );
+    }
     if (s === "suspended_permanent") return <Badge className="bg-red-100 text-red-700 hover:bg-red-200 border-none">영구 정지</Badge>;
     if (s === "suspended_inactive") return <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-200 border-none">30일 미접속</Badge>;
     return <Badge variant="secondary">{s}</Badge>;
@@ -176,7 +187,7 @@ export function OpsUsersView() {
               >
                 <option value="">모든 상태</option>
                 <option value="active">정상 (Active)</option>
-                <option value="suspended">7일 정지</option>
+                <option value="suspended">기간 정지 (Suspended)</option>
                 <option value="suspended_permanent">영구 정지</option>
                 <option value="suspended_inactive">30일 미접속</option>
               </select>

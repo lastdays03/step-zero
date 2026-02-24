@@ -8,27 +8,20 @@ from app.models.user import User
 from app.models.user_discipline_history import UserDisciplineHistory
 
 
-class OpsUserRead(BaseModel):
-    id: int
-    email: str
-    full_name: str | None
-    status: str
-    report_count: int
-    last_login_at: datetime | None
-    is_active: bool
-    is_superuser: bool
-    created_at: datetime
+from .schemas import OpsUserRead, DisciplineHistoryRead
 
-
-class DisciplineHistoryRead(BaseModel):
-    id: int
-    user_id: int
-    admin_id: int
-    prev_status: str
-    new_status: str
-    reason: str
-    created_at: datetime
-
+def _apply_status_update(user: User, status: str, duration_days: int | None) -> None:
+    """Helper to apply status and suspension logic to a user model."""
+    user.status = status
+    if status.startswith("suspended"):
+        user.is_active = False
+        if duration_days is not None and duration_days > 0 and status != "suspended_permanent":
+            user.suspended_until = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=float(duration_days))
+        else:
+            user.suspended_until = None
+    else:
+        user.is_active = True
+        user.suspended_until = None
 
 async def list_users(
     session: AsyncSession,
@@ -88,18 +81,7 @@ async def update_user_status(
         return None
         
     prev_status = user.status
-    user.status = status
-    # 'suspended' 계열이면 is_active = False 처리 (필요에 따라 정책 조정 가능)
-    if status.startswith("suspended"):
-        user.is_active = False
-        if duration_days is not None and duration_days > 0 and status != "suspended_permanent":
-            user.suspended_until = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=float(duration_days))
-        else:
-            user.suspended_until = None
-    else:
-        user.is_active = True
-        user.suspended_until = None
-        
+    _apply_status_update(user, status, duration_days)
     session.add(user)
     
     # 징계 이력 저장
@@ -112,20 +94,6 @@ async def update_user_status(
         suspended_until=user.suspended_until,
     )
     session.add(history)
-    
-    # ---------------------------------------------------------
-    # TODO: [감사로그 구현 게이트] 
-    # record_admin_audit_log 유틸리티가 완성되면 아래 자리에 꽂을 것.
-    # 예: await record_admin_audit_log(
-    #     session=session,
-    #     admin_id=admin_id,
-    #     action="UPDATE_USER_STATUS",
-    #     target_type="USER",
-    #     target_id=str(user_id),
-    #     reason=reason,
-    #     meta={"new_status": status, "prev_status": prev_status}
-    # )
-    # ---------------------------------------------------------
     
     await session.commit()
     await session.refresh(user)
@@ -151,17 +119,7 @@ async def bulk_update_user_status(
         
     for user in users:
         prev_status = user.status
-        user.status = status
-        if status.startswith("suspended"):
-            user.is_active = False
-            if duration_days is not None and duration_days > 0 and status != "suspended_permanent":
-                user.suspended_until = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=float(duration_days))
-            else:
-                user.suspended_until = None
-        else:
-            user.is_active = True
-            user.suspended_until = None
-        
+        _apply_status_update(user, status, duration_days)
         session.add(user)
         
         # 각 사용자별 징계 이력 저장
@@ -171,22 +129,9 @@ async def bulk_update_user_status(
             prev_status=prev_status,
             new_status=status,
             reason=reason,
+            suspended_until=user.suspended_until,
         )
         session.add(history)
         
-    # ---------------------------------------------------------
-    # TODO: [감사로그 구현 게이트] 
-    # record_admin_audit_log 유틸리티가 완성되면 아래 자리에 꽂을 것.
-    # 예: await record_admin_audit_log(
-    #     session=session,
-    #     admin_id=admin_id,
-    #     action="BULK_UPDATE_USER_STATUS",
-    #     target_type="USER",
-    #     target_id="bulk",
-    #     reason=reason,
-    #     meta={"user_ids": user_ids, "new_status": status}
-    # )
-    # ---------------------------------------------------------
-    
     await session.commit()
     return len(users)

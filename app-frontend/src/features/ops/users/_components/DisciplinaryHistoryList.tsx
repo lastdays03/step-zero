@@ -52,6 +52,11 @@ export function DisciplinaryHistoryList({ userId }: DisciplinaryHistoryListProps
                     <div className="flex justify-between items-start mb-1">
                         <div className="font-bold text-slate-700">
                             {h.prev_status} → <span className="text-blue-600">{h.new_status}</span>
+                            {h.suspended_until && (
+                                <span className="ml-2 text-[10px] text-amber-600 font-bold">
+                                    (~ {toKST(h.suspended_until).split(' ').slice(1, 4).join(' ')})
+                                </span>
+                            )}
                         </div>
                         <div className="text-slate-400">{toKST(h.created_at)}</div>
                     </div>
