@@ -134,8 +134,7 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                 const itemId = (item as any).id;
                 let blob: Blob;
                 if (itemId) {
-                    const res = await apiClient.get(`/ops/actionkit/items/${itemId}/download`, { responseType: 'blob' });
-                    // API from ops for testing or public endpoint
+                    const res = await apiClient.get(`/actionkits/items/${itemId}/download`, { responseType: 'blob' });
                     blob = new Blob([res.data]);
                 } else if (item.path.startsWith('http')) {
                     const res = await fetch(item.path);
