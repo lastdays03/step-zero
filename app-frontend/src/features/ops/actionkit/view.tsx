@@ -1,10 +1,20 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Link } from "lucide-react";
+import React, { useState, useEffect, useCallback } from "react";
 
 import { fetchCategories, fetchCategoryItems, fetchSummary } from "./api";
-import { ActionKitItem } from "@/features/actionkit/types";
+import type { ActionKitItem } from "@/features/actionkit/types";
+
+interface OpsActionKitItem extends ActionKitItem {
+  id: number;
+  category_id: number;
+  is_active: boolean;
+  sort_order: number;
+  ext?: string;
+  file_type?: string;
+  files?: { id: number; version: number; is_current: boolean }[];
+}
+
 import { OpsAccessPlaceholder } from "@/features/ops/shared/ops-access-placeholder";
 import { useOpsAccessGuard } from "@/features/ops/shared/use-ops-access-guard";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,10 +28,10 @@ export function OpsActionKitView() {
   const { canRender } = useOpsAccessGuard();
 
   const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [items, setItems] = useState<ActionKitItem[]>([]);
+  const [categories, setCategories] = useState<{ id: number; title: string; domain: string }[]>([]);
+  const [items, setItems] = useState<OpsActionKitItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
-  const [editingItem, setEditingItem] = useState<ActionKitItem | null>(null);
+  const [editingItem, setEditingItem] = useState<OpsActionKitItem | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [summary, setSummary] = useState<any>(null);
@@ -34,18 +44,18 @@ export function OpsActionKitView() {
     );
   });
 
-  const loadItems = (categoryId: number) => {
+  const loadItems = useCallback((categoryId: number) => {
     setLoading(true);
     fetchCategoryItems(categoryId)
       .then((data) => setItems(data))
       .catch(console.error)
       .finally(() => setLoading(false));
-  };
+  }, []);
 
-  const handleDelete = async (item: ActionKitItem) => {
+  const handleDelete = async (item: OpsActionKitItem) => {
     if (!confirm(`"${item.name}" 항목을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
     try {
-      await apiClient.delete(`/ops/actionkit/items/${(item as any).id}`);
+      await apiClient.delete(`/ops/actionkit/items/${item.id}`);
       if (activeCategory) loadItems(activeCategory);
       fetchSummary().then(setSummary).catch(console.error);
     } catch (error) {
@@ -70,7 +80,20 @@ export function OpsActionKitView() {
 
   useEffect(() => {
     if (activeCategory === null) return;
-    loadItems(activeCategory);
+    let cancelled = false;
+    const load = async () => {
+      setLoading(true);
+      try {
+        const data = await fetchCategoryItems(activeCategory);
+        if (!cancelled) setItems(data);
+      } catch (err) {
+        if (!cancelled) console.error(err);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+    void load();
+    return () => { cancelled = true; };
   }, [activeCategory]);
 
   if (!canRender) return <OpsAccessPlaceholder />;
@@ -179,8 +202,8 @@ export function OpsActionKitView() {
                   {filteredItems.map((item) => (
                     <tr key={item.name} className="hover:bg-slate-50 transition-colors">
                       <td className="px-6 py-4">
-                        <Badge className={`border-none ${(item as any).is_active ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                          {(item as any).is_active ? '게시중' : '숨김'}
+                        <Badge className={`border-none ${item.is_active ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                          {item.is_active ? '게시중' : '숨김'}
                         </Badge>
                       </td>
                       <td className="px-6 py-4">
@@ -188,13 +211,13 @@ export function OpsActionKitView() {
                         <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">{item.summary}</p>
                       </td>
                       <td className="px-6 py-4">
-                        <Badge variant="outline" className="text-[10px] text-slate-500">{item.type || (item as any).ext || (item as any).file_type || "유형없음"}</Badge>
+                        <Badge variant="outline" className="text-[10px] text-slate-500">{item.type || item.ext || item.file_type || "유형없음"}</Badge>
                       </td>
                       <td className="px-6 py-4 text-xs font-semibold text-slate-500">
-                        v{(item as any).files?.length ? (item as any).files[0].version : "1"} (최신)
+                        v{item.files?.length ? item.files[0].version : "1"} (최신)
                       </td>
                       <td className="px-6 py-4 text-xs text-slate-500">
-                        {(item as any).sort_order || 0}
+                        {item.sort_order || 0}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end gap-2">

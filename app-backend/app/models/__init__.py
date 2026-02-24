@@ -5,6 +5,8 @@ from app.models.actionkit import (
     ActionKitItemHighlight,
     ActionKitRelatedLaw,
 )
+from app.models.admin_audit_log import AdminAuditLog
+from app.models.announcement import Announcement
 from app.models.growth_club import (
     GrowthClubAttachmentRead,
     GrowthClubComment,
@@ -24,6 +26,7 @@ from app.models.roadmap import (
 from app.models.team import Team, TeamMember
 from app.models.user import AuthenticatedUser, TokenWithUser, User, UserRead
 from app.models.profile import UserProfile, UserProfileRead, UserProfileUpdate
+from app.models.user_discipline_history import UserDisciplineHistory
 
 __all__ = [
     "ActionKitCategory",
@@ -31,6 +34,8 @@ __all__ = [
     "ActionKitItem",
     "ActionKitItemHighlight",
     "ActionKitRelatedLaw",
+    "AdminAuditLog",
+    "Announcement",
     "AuthenticatedUser",
     "GrowthClubAttachmentRead",
     "GrowthClubComment",
@@ -52,4 +57,5 @@ __all__ = [
     "UserProfile",
     "UserProfileRead",
     "UserProfileUpdate",
+    "UserDisciplineHistory",
 ]

@@ -2,8 +2,9 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.api.v1.schemas import RagQueryRequest, RagQueryResponse
-from app.features.rag.application.deps import get_rag_service
+from app.api.v1.schemas import ChatRequest, ChatResponse, RagQueryRequest, RagQueryResponse
+from app.features.rag.application.deps import get_chat_service, get_rag_service
+from app.features.rag.application.chat_service import ChatService
 from app.features.rag.application.rag_service import RagService
 
 router = APIRouter()
@@ -29,4 +30,24 @@ async def query_rag(
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="RAG service unavailable",
+        )
+
+
+@router.post(
+    "/chat",
+    response_model=ChatResponse,
+    summary="하이브리드 AI 챗",
+    description="법률 질문은 RAG, 일반 질문은 LLM 직접 응답합니다.",
+)
+async def chat(
+    request: ChatRequest,
+    service: ChatService = Depends(get_chat_service),
+) -> Any:
+    try:
+        answer, source = await service.chat(request.message)
+        return ChatResponse(answer=answer, source=source)
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Chat service unavailable",
         )

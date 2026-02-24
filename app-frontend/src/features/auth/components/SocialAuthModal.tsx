@@ -24,10 +24,11 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
 
     const completeLogin = (payload: {
         access_token: string;
+        refresh_token?: string;
         user: { id: number | string; full_name?: string | null; email: string; is_superuser?: boolean | null };
         current_team_id?: string;
     }) => {
-        const { access_token, user, current_team_id } = payload;
+        const { access_token, refresh_token, user, current_team_id } = payload;
         const fullName = typeof user.full_name === 'string' ? user.full_name : undefined;
         const userData = {
             id: user.id.toString(),
@@ -37,7 +38,7 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
             is_superuser: Boolean(user.is_superuser),
         };
 
-        login(access_token, userData, current_team_id);
+        login(access_token, userData, current_team_id, refresh_token);
         onClose();
         window.location.reload();
     };

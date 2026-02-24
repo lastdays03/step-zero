@@ -13,9 +13,9 @@ class ActionKitCategory(SQLModel, table=True):
     title: str
     sort_order: int = Field(default=0, index=True)
     is_active: bool = Field(default=True, index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
     items: list["ActionKitItem"] = Relationship(back_populates="category")
 
 
@@ -34,8 +34,8 @@ class ActionKitItem(SQLModel, table=True):
     dday: str | None = None
     sort_order: int = Field(default=0, index=True)
     is_active: bool = Field(default=True, index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     category: ActionKitCategory = Relationship(back_populates="items")
     files: list["ActionKitFile"] = Relationship(back_populates="item", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
@@ -50,7 +50,7 @@ class ActionKitItemHighlight(SQLModel, table=True):
     item_id: int = Field(foreign_key="actionkit_items.id", index=True)
     content: str
     sort_order: int = Field(default=0, index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     item: ActionKitItem = Relationship(back_populates="highlights")
 
@@ -63,7 +63,7 @@ class ActionKitRelatedLaw(SQLModel, table=True):
     law_name: str
     law_summary: str | None = None
     sort_order: int = Field(default=0, index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     item: ActionKitItem = Relationship(back_populates="related_laws")
 
@@ -80,8 +80,7 @@ class ActionKitFile(SQLModel, table=True):
     size_bytes: int | None = None
     checksum: str | None = None
     is_current: bool = Field(default=True, index=True)
-    uploaded_at: datetime = Field(default_factory=datetime.utcnow)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    uploaded_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     item: ActionKitItem = Relationship(back_populates="files")
-

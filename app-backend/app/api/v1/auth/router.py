@@ -1,3 +1,4 @@
+import logging
 from typing import Any
 
 from google.auth.exceptions import GoogleAuthError
@@ -7,14 +8,16 @@ from pydantic import BaseModel, Field
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.schemas import TeamRead, TokenWithTeams
+from app.api.v1.schemas import RefreshTokenRequest, TeamRead, TokenWithTeams
 from app.core import config, security
 from app.core.db import get_session
 from app.features.auth.application.auth_service import AuthService
 from app.models.user import User, UserRead
+from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.team_repository import TeamRepository
 from app.repositories.user_repository import UserRepository
 
+logger = logging.getLogger(__name__)
 router = APIRouter()
 settings = config.get_settings()
 
@@ -27,12 +30,14 @@ def _auth_service(session: AsyncSession) -> AuthService:
     return AuthService(
         user_repo=UserRepository(session),
         team_repo=TeamRepository(session),
+        refresh_token_repo=RefreshTokenRepository(session),
     )
 
 
 def _serialize_auth_result(result: Any) -> TokenWithTeams:
     return TokenWithTeams(
         access_token=result.access_token,
+        refresh_token=result.refresh_token,
         token_type=result.token_type,
         user=UserRead.model_validate(result.user),
         current_team_id=result.current_team.id,
@@ -64,14 +69,27 @@ async def _login_social_mock_user(provider: str, session: AsyncSession) -> dict[
 
     # fallback for seeded mock user with hashed secret
     token = security.create_access_token(subject=str(user.id))
+    raw_refresh = security.create_refresh_token()
     team_repo = TeamRepository(session)
     teams = await team_repo.list_for_user(user.id)
     if not teams:
         default_team = await team_repo.create_default_team_for_user(user.id, user.email)
         teams = [default_team]
     current_team = teams[0]
+
+    # Store refresh token for fallback path
+    from datetime import datetime, timedelta
+
+    refresh_repo = RefreshTokenRepository(session)
+    await refresh_repo.create(
+        user_id=user.id,
+        token_hash=security.hash_refresh_token(raw_refresh),
+        expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+    )
+
     return {
         "access_token": token,
+        "refresh_token": raw_refresh,
         "token_type": "bearer",
         "user": UserRead.model_validate(user).model_dump(mode="json"),
         "current_team_id": current_team.id,
@@ -139,11 +157,14 @@ async def login_google(
     except HTTPException:
         raise
     except Exception as error:
+        logger.error(f"Google login error: {type(error).__name__}: {str(error)}", exc_info=True)
         if _is_backend_unavailable_error(error):
+            logger.error(f"Social login failed due to backend unavailability: {str(error)}", exc_info=True)
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Authentication backend unavailable",
             )
+        logger.error(f"Social login failed with unexpected error: {str(error)}", exc_info=True)
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Login failed")
     if not result:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token")
@@ -175,3 +196,50 @@ async def login_social(
                 detail="Authentication backend unavailable",
             )
         raise
+
+
+@router.post(
+    "/refresh",
+    response_model=TokenWithTeams,
+    summary="토큰 갱신",
+    description="리프레시 토큰으로 새 액세스 토큰과 리프레시 토큰을 발급합니다.",
+    response_description="새 액세스 토큰과 리프레시 토큰을 반환합니다.",
+)
+async def refresh_token(
+    body: RefreshTokenRequest,
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    service = _auth_service(session)
+
+    # Check for token reuse (possible theft)
+    reuse_detected = await service.detect_refresh_token_reuse(body.refresh_token)
+    if reuse_detected:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Refresh token reuse detected. All sessions revoked.",
+        )
+
+    result = await service.refresh_access_token(body.refresh_token)
+    if not result:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or expired refresh token",
+        )
+    return _serialize_auth_result(result)
+
+
+@router.post(
+    "/logout",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="로그아웃",
+    description="리프레시 토큰을 폐기합니다.",
+)
+async def logout(
+    body: RefreshTokenRequest,
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    token_hash = security.hash_refresh_token(body.refresh_token)
+    refresh_repo = RefreshTokenRepository(session)
+    stored = await refresh_repo.get_by_hash(token_hash)
+    if stored:
+        await refresh_repo.revoke(stored.id)

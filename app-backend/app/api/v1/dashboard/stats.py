@@ -22,7 +22,7 @@ router = APIRouter()
     response_description="대시보드 카드/진행률 데이터를 반환합니다.",
 )
 async def get_dashboard_stats(
-    current_user: AuthenticatedUser | None = Depends(deps.get_optional_current_user),
+    current_user: AuthenticatedUser | None = Depends(deps.get_current_user_or_guest),
     session: AsyncSession = Depends(get_session),
     x_team_id: str | None = Header(
         default=None,

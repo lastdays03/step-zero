@@ -1,8 +1,15 @@
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from datetime import datetime
+
+from fastapi import APIRouter, Depends, HTTPException, Path, UploadFile, File
 from fastapi.responses import FileResponse
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 from typing import List
 
+from app.api import deps
+from app.core.db import get_session
+from app.features.ops.application.audit_logs import AuditAction, AuditTargetType, record_admin_audit_log
 from app.features.ops.application.actionkit import (
     get_summary,
     get_all_categories,
@@ -25,7 +32,8 @@ from app.api.v1.ops.schemas import (
     ActionKitItemCreateRequest,
     ActionKitItemUpdateRequest
 )
-from app.core.db import get_session
+from app.models.actionkit import ActionKitItem
+from app.models.user import AuthenticatedUser
 
 router = APIRouter(prefix="/actionkit", tags=["ops-actionkit"])
 
@@ -63,7 +71,7 @@ async def get_category_items(category_id: int, session: AsyncSession = Depends(g
     summary="새로운 액션키트 아이템 생성",
 )
 async def create_actionkit_item(
-    data: ActionKitItemCreateRequest, 
+    data: ActionKitItemCreateRequest,
     session: AsyncSession = Depends(get_session)
 ):
     return await create_item(session, data)
@@ -87,14 +95,60 @@ async def get_actionkit_item(item_id: int, session: AsyncSession = Depends(get_s
     summary="액션키트 아이템 정보 수정",
 )
 async def patch_actionkit_item(
-    item_id: int, 
-    data: ActionKitItemUpdateRequest, 
+    item_id: int,
+    data: ActionKitItemUpdateRequest,
     session: AsyncSession = Depends(get_session)
 ):
     item = await update_item(session, item_id, data)
     if not item:
         raise HTTPException(status_code=404, detail="Item not found")
     return item
+
+
+class OpsActionKitItemStatusUpdateRequest(BaseModel):
+    is_active: bool
+    reason: str | None = None
+
+
+@router.patch(
+    "/items/{item_id}/status",
+    summary="운영 액션키트 아이템 상태 변경",
+    description="액션키트 아이템 활성/비활성 상태를 변경하고 감사로그를 남깁니다.",
+    response_description="변경 결과를 반환합니다.",
+)
+async def update_actionkit_item_status(
+    payload: OpsActionKitItemStatusUpdateRequest,
+    item_id: int = Path(description="상태를 변경할 아이템 ID"),
+    session: AsyncSession = Depends(get_session),
+    admin_user: AuthenticatedUser = Depends(deps.get_current_user),
+) -> dict[str, object]:
+    stmt = select(ActionKitItem).where(ActionKitItem.id == item_id)
+    item = (await session.execute(stmt)).scalar_one_or_none()
+    if not item:
+        raise HTTPException(status_code=404, detail="ActionKit item not found")
+
+    before_is_active = bool(item.is_active)
+    after_is_active = bool(payload.is_active)
+    if before_is_active == after_is_active:
+        return {"status": "no_change", "item_id": item.id, "is_active": before_is_active}
+
+    item.is_active = after_is_active
+    item.updated_at = datetime.utcnow()
+    session.add(item)
+
+    await record_admin_audit_log(
+        session,
+        admin_id=admin_user.id,
+        action=AuditAction.ACTIONKIT_ITEM_STATUS_UPDATED,
+        target_type=AuditTargetType.ACTIONKIT_ITEM,
+        target_id=str(item.id),
+        reason=payload.reason,
+        meta={"before": {"is_active": before_is_active}, "after": {"is_active": after_is_active}},
+    )
+    await session.commit()
+
+    return {"status": "success", "item_id": item.id, "is_active": item.is_active}
+
 
 @router.post(
     "/items/{item_id}/files",
@@ -135,11 +189,11 @@ async def download_actionkit_file(
     file_record = await get_file_by_id(session, file_id)
     if not file_record:
         raise HTTPException(status_code=404, detail="File not found")
-    
+
     import os
     if not os.path.exists(file_record.object_key):
         raise HTTPException(status_code=404, detail="File not found on disk")
-    
+
     return FileResponse(
         path=file_record.object_key,
         filename=file_record.original_filename or "download",
