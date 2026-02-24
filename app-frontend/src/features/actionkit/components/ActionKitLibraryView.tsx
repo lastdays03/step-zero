@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import { useActionKit } from '../hooks/useActionKit';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,9 @@ import {
     Users,
     Building,
     Eye,
+    Star,
+    X,
+    Trash2,
     LucideIcon,
 } from 'lucide-react';
 import { ActionKitItem, RelatedLaw } from '../types';
@@ -89,16 +94,69 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
     useEffect(() => {
         setSelectedTag("all");
     }, [selectedCategory, searchQuery, activeStarterPack]);
+
     const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+    const [bookmarkedItems, setBookmarkedItems] = useState<Record<string, ActionKitItem>>({});
+    const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+    const [isZipping, setIsZipping] = useState(false);
 
     useEffect(() => {
-        const stored = localStorage.getItem('actionkit_checklists');
-        if (stored) {
-            try {
-                setCheckedItems(JSON.parse(stored));
-            } catch (e) { }
+        const storedChecklists = localStorage.getItem('actionkit_checklists');
+        if (storedChecklists) {
+            try { setCheckedItems(JSON.parse(storedChecklists)); } catch (e) { }
+        }
+        const storedBookmarks = localStorage.getItem('actionkit_bookmarks');
+        if (storedBookmarks) {
+            try { setBookmarkedItems(JSON.parse(storedBookmarks)); } catch (e) { }
         }
     }, []);
+
+    const toggleBookmark = (kit: ActionKitItem, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const identifier = (kit as any).id || kit.name;
+        const newBookmarks = { ...bookmarkedItems };
+        if (newBookmarks[identifier]) {
+            delete newBookmarks[identifier];
+        } else {
+            newBookmarks[identifier] = kit;
+        }
+        setBookmarkedItems(newBookmarks);
+        localStorage.setItem('actionkit_bookmarks', JSON.stringify(newBookmarks));
+    };
+
+    const handleBulkDownload = async () => {
+        setIsZipping(true);
+        try {
+            const zip = new JSZip();
+            const items = Object.values(bookmarkedItems);
+
+            await Promise.all(items.map(async (item) => {
+                const itemId = (item as any).id;
+                let blob: Blob;
+                if (itemId) {
+                    const res = await apiClient.get(`/ops/actionkit/items/${itemId}/download`, { responseType: 'blob' });
+                    // API from ops for testing or public endpoint
+                    blob = new Blob([res.data]);
+                } else if (item.path.startsWith('http')) {
+                    const res = await fetch(item.path);
+                    blob = await res.blob();
+                } else {
+                    const res = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL || ''}${item.path}`);
+                    blob = await res.blob();
+                }
+                const filename = (item as any).files?.[0]?.original_filename || `${item.name}.${(item as any).ext || 'pdf'}`;
+                zip.file(filename, blob);
+            }));
+
+            const content = await zip.generateAsync({ type: 'blob' });
+            saveAs(content, '나만의_액션키트_보관함.zip');
+        } catch (error) {
+            console.error(error);
+            alert("다운로드 중 오류가 발생했습니다.");
+        } finally {
+            setIsZipping(false);
+        }
+    };
 
     const toggleChecklist = (kitId: number | string, itemText: string) => {
         const key = `${kitId}_${itemText}`;
@@ -191,15 +249,29 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                         {searchQuery ? `'${searchQuery}' 검색 결과` : "실무에 즉시 투입 가능한 문서와 도구들을 확인하세요."}
                     </p>
                 </div>
-                <div className="relative w-full md:w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
-                    <input
-                        type="text"
-                        placeholder="키트 검색..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-full text-sm focus:ring-2 focus:ring-[#36a4f2]/20 transition-all outline-none"
-                    />
+                <div className="flex items-center gap-2 w-full md:w-auto">
+                    <div className="relative w-full md:w-64">
+                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 w-4 h-4" />
+                        <input
+                            type="text"
+                            placeholder="키트 검색..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-full text-sm focus:ring-2 focus:ring-[#36a4f2]/20 transition-all outline-none"
+                        />
+                    </div>
+                    <Button
+                        onClick={() => setIsDrawerOpen(true)}
+                        className="rounded-full bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 text-yellow-700 relative h-10 px-4 whitespace-nowrap"
+                    >
+                        <Star className={`w-4 h-4 mr-1 ${Object.keys(bookmarkedItems).length > 0 ? 'fill-yellow-500 text-yellow-500' : ''}`} />
+                        서랍장
+                        {Object.keys(bookmarkedItems).length > 0 && (
+                            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full border-2 border-white shadow-sm">
+                                {Object.keys(bookmarkedItems).length}
+                            </span>
+                        )}
+                    </Button>
                 </div>
             </div>
 
@@ -316,6 +388,12 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                                             <Badge variant="secondary" className="text-[10px] font-bold text-slate-400 py-0 h-5">
                                                 {item.type}
                                             </Badge>
+                                            <button
+                                                onClick={(e) => toggleBookmark(item, e)}
+                                                className={`p-1 -mr-2 rounded-full transition-colors ${bookmarkedItems[(item as any).id || item.name] ? 'text-yellow-400 hover:text-yellow-500' : 'text-slate-200 hover:text-yellow-400'}`}
+                                            >
+                                                <Star className={`w-5 h-5 ${bookmarkedItems[(item as any).id || item.name] ? 'fill-current' : ''}`} />
+                                            </button>
                                         </div>
                                     </div>
                                     <h4 className="font-bold text-slate-800 mb-2 group-hover:text-[#36a4f2] transition-colors leading-tight min-h-[2.5rem] line-clamp-2">
@@ -558,6 +636,61 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                                 원본 다운로드
                             </Button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Bookmark Drawer */}
+            {isDrawerOpen && (
+                <div className="fixed inset-0 z-50 flex mb-0 bg-slate-900/40 backdrop-blur-sm justify-end">
+                    <div className="w-full max-w-sm h-full bg-white shadow-2xl animate-in slide-in-from-right duration-300 flex flex-col">
+                        <div className="p-4 border-b border-slate-100 flex justify-between items-center bg-yellow-50/50">
+                            <h3 className="font-bold flex items-center gap-2 text-slate-800">
+                                <Star className="w-5 h-5 fill-yellow-400 text-yellow-500" />
+                                나만의 서랍장
+                            </h3>
+                            <button onClick={() => setIsDrawerOpen(false)} className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                            {Object.values(bookmarkedItems).length === 0 ? (
+                                <div className="py-20 text-center text-slate-400">
+                                    <Star className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                                    <p className="text-sm font-bold">서랍장이 비어있습니다.</p>
+                                    <p className="text-xs mt-2">필요한 키트에 ⭐️ 별을 눌러 담아보세요.</p>
+                                </div>
+                            ) : (
+                                Object.values(bookmarkedItems).map((item, i) => (
+                                    <div key={i} className="flex gap-3 bg-white border border-slate-100 p-3 rounded-xl shadow-sm relative group pr-10">
+                                        <div className="w-8 h-8 rounded bg-slate-50 border border-slate-100 flex items-center justify-center flex-shrink-0">
+                                            <FolderOpen className="w-4 h-4 text-slate-400" />
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-sm text-slate-800 line-clamp-1">{item.name}</h4>
+                                            <p className="text-[10px] text-slate-500 mt-1 line-clamp-1">{item.summary}</p>
+                                        </div>
+                                        <button
+                                            onClick={(e) => toggleBookmark(item, e)}
+                                            className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-slate-300 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                                        >
+                                            <Trash2 className="w-4 h-4" />
+                                        </button>
+                                    </div>
+                                ))
+                            )}
+                        </div>
+                        {Object.values(bookmarkedItems).length > 0 && (
+                            <div className="p-4 border-t border-slate-100 bg-slate-50">
+                                <Button
+                                    className="w-full bg-[#36a4f2] hover:bg-[#258bd1] text-white font-bold h-12 rounded-xl"
+                                    onClick={handleBulkDownload}
+                                    disabled={isZipping}
+                                >
+                                    {isZipping ? '압축하는 중...' : `${Object.keys(bookmarkedItems).length}개 한 번에 ZIP 다운로드`}
+                                </Button>
+                            </div>
+                        )}
                     </div>
                 </div>
             )}
