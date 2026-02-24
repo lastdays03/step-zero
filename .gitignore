@@ -96,6 +96,9 @@ pgdata/
 # app-backend/uploads/
 # app-backend/static/uploads/
 
+*.db
+*.sqlite3
+
 # ---------------
 # Testing & Tools
 # ---------------
