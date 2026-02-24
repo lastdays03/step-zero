@@ -35,6 +35,9 @@ export function OpsActionKitView() {
   const [isCreating, setIsCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [summary, setSummary] = useState<any>(null);
+  const [activeDomain, setActiveDomain] = useState<"kits" | "laws">("kits");
+
+  const filteredCategories = categories.filter(cat => cat.domain === activeDomain);
 
   const filteredItems = items.filter(item => {
     const q = searchQuery.toLowerCase();
@@ -70,7 +73,10 @@ export function OpsActionKitView() {
     fetchCategories()
       .then((data) => {
         setCategories(data);
-        if (data.length > 0) {
+        const kitsCategories = data.filter((c: any) => c.domain === "kits");
+        if (kitsCategories.length > 0) {
+          setActiveCategory(kitsCategories[0].id);
+        } else if (data.length > 0) {
           setActiveCategory(data[0].id);
         }
       })
@@ -95,6 +101,14 @@ export function OpsActionKitView() {
     void load();
     return () => { cancelled = true; };
   }, [activeCategory]);
+
+  const handleDomainChange = (domain: "kits" | "laws") => {
+    setActiveDomain(domain);
+    const domainCats = categories.filter(c => c.domain === domain);
+    if (domainCats.length > 0) {
+      setActiveCategory(domainCats[0].id);
+    }
+  };
 
   if (!canRender) return <OpsAccessPlaceholder />;
 
@@ -141,9 +155,33 @@ export function OpsActionKitView() {
         </div>
       )}
 
-      {/* Category Tabs */}
+      {/* Domain Tabs (Top Level) */}
+      <div className="flex p-1 bg-slate-100 rounded-2xl w-full max-w-sm shadow-inner">
+        <button
+          onClick={() => handleDomainChange("kits")}
+          className={`flex items-center justify-center gap-2 flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeDomain === "kits"
+              ? "bg-white text-[#36a4f2] shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+            }`}
+        >
+          <FolderOpen className="w-4 h-4" />
+          액션 키트
+        </button>
+        <button
+          onClick={() => handleDomainChange("laws")}
+          className={`flex items-center justify-center gap-2 flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeDomain === "laws"
+              ? "bg-white text-[#36a4f2] shadow-sm"
+              : "text-slate-500 hover:text-slate-700"
+            }`}
+        >
+          <Scale className="w-4 h-4" />
+          법령 가이드
+        </button>
+      </div>
+
+      {/* Category Tabs (Sub Level) */}
       <div className="flex gap-2 border-b border-slate-200 pb-2 overflow-x-auto">
-        {categories.map((cat) => (
+        {filteredCategories.map((cat) => (
           <button
             key={cat.id}
             onClick={() => setActiveCategory(cat.id)}
@@ -152,7 +190,7 @@ export function OpsActionKitView() {
               : "text-slate-500 hover:bg-slate-50"
               }`}
           >
-            {cat.title} ({cat.domain})
+            {cat.title}
           </button>
         ))}
       </div>
