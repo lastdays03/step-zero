@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Download, Bookmark, TrendingUp, Users, Calendar, BarChart3, TrendingDown, Search } from "lucide-react";
+import { Download, Bookmark, TrendingUp, Users, Calendar, BarChart3, TrendingDown, Search, AlertCircle } from "lucide-react";
 
 const POPULAR_DOCS = [
     { title: "근로계약서 (정규직)", downloads: 1250, saves: 430, trend: "+12%" },
@@ -14,11 +14,47 @@ const POPULAR_DOCS = [
 
 const SEARCH_KEYWORDS = ["근로계약서", "스톡옵션", "동업계약", "투자계약", "개인정보", "사직서"];
 
-export function OpsActionKitStatsDashboard() {
+interface OpsActionKitStatsDashboardProps {
+    items: any[];
+}
+
+export function OpsActionKitStatsDashboard({ items }: OpsActionKitStatsDashboardProps) {
     const [timeRange, setTimeRange] = useState<"week" | "month" | "year">("month");
+
+    // Calculate Outdated Items
+    const outdatedItems = items.filter(item => {
+        if (!item.updated_at) return false;
+        const diffTime = Math.abs(new Date().getTime() - new Date(item.updated_at).getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays > 365;
+    });
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
+            {outdatedItems.length > 0 && (
+                <div className="bg-red-50 border border-red-200 rounded-2xl p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-sm animate-in zoom-in-95 duration-300">
+                    <div className="flex items-start gap-3">
+                        <div className="bg-white p-2 rounded-full shadow-sm text-red-500 shrink-0 mt-1 md:mt-0">
+                            <AlertCircle className="w-6 h-6" />
+                        </div>
+                        <div>
+                            <h3 className="font-bold text-red-800 text-lg">💡 긴급 갱신 필요: {outdatedItems.length}건의 노후 서류가 발견되었습니다!</h3>
+                            <p className="text-sm text-red-600/90 mt-1">업데이트 된 지 1년 이상 경과된 파일입니다. 최신 법령에 맞게 문서 파일을 새로 교체해주세요.</p>
+                            <ul className="mt-2 space-y-1">
+                                {outdatedItems.slice(0, 3).map(item => (
+                                    <li key={item.id} className="text-xs font-medium text-red-700 flex items-center gap-1.5 before:content-[''] before:w-1 before:h-1 before:bg-red-400 before:rounded-full">
+                                        [{item.domain === 'laws' ? '법령' : '키트'}] {item.name} <span className="text-red-400 font-normal ml-1">({new Date(item.updated_at).toLocaleDateString()})</span>
+                                    </li>
+                                ))}
+                                {outdatedItems.length > 3 && (
+                                    <li className="text-xs font-medium text-red-500 italic pl-3">+ {outdatedItems.length - 3}건 더 보기...</li>
+                                )}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Header / Filter */}
             <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
                 <div>

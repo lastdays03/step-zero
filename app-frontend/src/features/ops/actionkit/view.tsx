@@ -13,7 +13,8 @@ interface OpsActionKitItem extends ActionKitItem {
   sort_order: number;
   ext?: string;
   file_type?: string;
-  files?: { id: number; version: number; is_current: boolean }[];
+  updated_at?: string;
+  files?: { id: number; version: number; is_current: boolean, created_at?: string }[];
 }
 
 import { OpsAccessPlaceholder } from "@/features/ops/shared/ops-access-placeholder";
@@ -21,7 +22,7 @@ import { useOpsAccessGuard } from "@/features/ops/shared/use-ops-access-guard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, FolderOpen, Loader2, Edit3, Trash2, Package, Paperclip, EyeOff, Scale, Highlighter, Settings, Plus, GripVertical, BarChart3 } from "lucide-react";
+import { Search, FolderOpen, Loader2, Edit3, Trash2, Package, Paperclip, EyeOff, Scale, Highlighter, Settings, Plus, GripVertical, BarChart3, AlertTriangle } from "lucide-react";
 import { ActionKitEditModal } from "@/features/ops/actionkit/components/actionkit-edit-modal";
 import { CategoryEditModal } from "@/features/ops/actionkit/components/category-edit-modal";
 import { OpsActionKitStatsDashboard } from "@/features/ops/actionkit/components/stats-dashboard";
@@ -238,7 +239,7 @@ export function OpsActionKitView() {
       </div>
 
       {activeDomain === "stats" ? (
-        <OpsActionKitStatsDashboard />
+        <OpsActionKitStatsDashboard items={items} />
       ) : (
         <>
           {/* Category Tabs (Sub Level) */}
@@ -344,7 +345,24 @@ export function OpsActionKitView() {
                                       </Badge>
                                     </td>
                                     <td className="px-6 py-4">
-                                      <p className="font-bold text-slate-800 line-clamp-1">{item.name}</p>
+                                      <div className="font-bold flex items-center gap-2">
+                                        {item.name}
+                                        {!item.is_active && <Badge variant="secondary" className="text-xs bg-slate-100 text-slate-500 hover:bg-slate-200 border-none px-1.5 py-0">미공개</Badge>}
+                                        {(() => {
+                                          let isOutdated = false;
+                                          if (item.updated_at) {
+                                            const updatedDate = new Date(item.updated_at);
+                                            const now = new Date();
+                                            const diffTime = Math.abs(now.getTime() - updatedDate.getTime());
+                                            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                                            if (diffDays > 365) isOutdated = true;
+                                          }
+                                          if (isOutdated) {
+                                            return <Badge variant="destructive" className="text-[10px] bg-red-50 text-red-600 border border-red-200 hover:bg-red-100 px-1.5 py-0 shadow-none"><AlertTriangle className="w-3 h-3 mr-1" />갱신 필요</Badge>
+                                          }
+                                          return null;
+                                        })()}
+                                      </div>
                                       <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">{item.summary}</p>
                                     </td>
                                     <td className="px-6 py-4">
