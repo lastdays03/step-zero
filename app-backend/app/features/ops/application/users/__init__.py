@@ -1,3 +1,23 @@
-from .service import OpsUserRead, list_users
+from .schemas import (
+    BulkStatusUpdateRequest,
+    DisciplineHistoryRead,
+    OpsUserRead,
+    UserStatusUpdateRequest,
+)
+from .service import (
+    bulk_update_user_status,
+    get_user_discipline_history,
+    list_users,
+    update_user_status,
+)
 
-__all__ = ["OpsUserRead", "list_users"]
+__all__ = [
+    "BulkStatusUpdateRequest",
+    "DisciplineHistoryRead",
+    "OpsUserRead",
+    "UserStatusUpdateRequest",
+    "bulk_update_user_status",
+    "get_user_discipline_history",
+    "list_users",
+    "update_user_status",
+]

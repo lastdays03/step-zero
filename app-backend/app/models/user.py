@@ -15,6 +15,10 @@ class UserBase(SQLModel):
 class User(UserBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     hashed_password: str
+    status: str = Field(default="active", index=True)
+    report_count: int = Field(default=0, index=True)
+    suspended_until: Optional[datetime] = Field(default=None, index=True)
+    last_login_at: Optional[datetime] = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

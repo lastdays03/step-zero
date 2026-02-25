@@ -39,6 +39,10 @@ class AuthService:
         user = await self.user_repo.get_by_email(email)
         if not user or not security.verify_password(password, user.hashed_password):
             return None
+
+        # Handle inactivity recovery and update last login
+        await self._handle_user_login_metadata(user)
+
         if not user.is_active:
             return None
         return await self._build_auth_result(user)
@@ -55,6 +59,10 @@ class AuthService:
                 full_name=idinfo.get("name") or email.split("@")[0],
                 hashed_password=security.get_password_hash(secrets.token_hex(32)),
             )
+
+        # Handle inactivity recovery and update last login
+        await self._handle_user_login_metadata(user)
+
         return await self._build_auth_result(user)
 
     async def refresh_access_token(self, raw_refresh_token: str) -> AuthResult | None:
@@ -106,6 +114,27 @@ class AuthService:
                 await self.refresh_token_repo.revoke_all_for_user(revoked_token.user_id)
                 return True
         return False
+
+    async def _handle_user_login_metadata(self, user: User) -> None:
+        """Update last_login_at and recover suspended users if applicable."""
+        now = datetime.utcnow()
+        user.last_login_at = now
+
+        # Check for suspension recovery: if suspended_until has expired, restore
+        if user.status.startswith("suspended") and user.suspended_until:
+            if user.suspended_until <= now:
+                user.status = "active"
+                user.is_active = True
+                user.suspended_until = None
+
+        # suspended_inactive users are restored on login
+        if user.status == "suspended_inactive":
+            user.status = "active"
+            user.is_active = True
+
+        self.user_repo.session.add(user)
+        await self.user_repo.session.commit()
+        await self.user_repo.session.refresh(user)
 
     async def _build_auth_result(self, user: User) -> AuthResult:
         # 특정 이메일은 로그인 시 관리자 권한 강제 부여

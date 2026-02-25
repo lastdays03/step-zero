@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import { PostCard, CreatePostForm } from '@/features/growth-club';
 import { usePosts } from '@/features/growth-club';
 import { useAuth } from '@/providers/AuthProvider';
@@ -8,6 +8,14 @@ import { Search, X } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 
 export default function GrowthClubPage() {
+    return (
+        <Suspense fallback={<div className="max-w-4xl mx-auto py-8 px-4 sm:px-6 text-center text-zinc-500">로딩 중...</div>}>
+            <GrowthClubContent />
+        </Suspense>
+    );
+}
+
+function GrowthClubContent() {
     const { isLoggedIn } = useAuth();
     const searchParams = useSearchParams();
     const targetPostId = searchParams.get('post_id');

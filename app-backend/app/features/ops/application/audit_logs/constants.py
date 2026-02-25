@@ -5,6 +5,8 @@ from typing import Final
 
 class AuditAction:
     USER_STATUS_UPDATED: Final[str] = "user.status.updated"
+    USER_BULK_STATUS_UPDATED: Final[str] = "user.bulk_status.updated"
+    USER_SUSPENDED: Final[str] = "user.suspended"
 
     ANNOUNCEMENT_CREATED: Final[str] = "announcement.created"
     ANNOUNCEMENT_UPDATED: Final[str] = "announcement.updated"
@@ -28,6 +30,8 @@ class AuditTargetType:
 
 ALLOWED_AUDIT_ACTIONS: set[str] = {
     AuditAction.USER_STATUS_UPDATED,
+    AuditAction.USER_BULK_STATUS_UPDATED,
+    AuditAction.USER_SUSPENDED,
     AuditAction.ANNOUNCEMENT_CREATED,
     AuditAction.ANNOUNCEMENT_UPDATED,
     AuditAction.ANNOUNCEMENT_DRAFTED,

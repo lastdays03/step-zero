@@ -81,11 +81,11 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
         comment: Comment,
         isReply?: boolean,
         isLoggedIn: boolean,
-        user: { id: number; nickname?: string } | null,
+        user: { id: number | string; nickname?: string; is_superuser?: boolean } | null,
         replyTo: number | null,
         setReplyTo: (id: number | null) => void,
         handleDelete: (id: number) => void,
-        handleSubmit: (e: React.FormEvent, parentId?: number) => void,
+        handleSubmit: (e: React.FormEvent<HTMLFormElement>, parentId?: number) => void,
         isSubmitting: boolean,
         replies: Comment[]
     }) => {

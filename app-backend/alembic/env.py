@@ -8,7 +8,7 @@ from alembic import context
 from sqlmodel import SQLModel
 
 from app.core.config import get_settings
-from app.models import profile, roadmap, team, user, growth_club, actionkit, notification  # noqa: F401
+from app.models import profile, roadmap, team, user, growth_club, actionkit, notification, user_discipline_history, admin_audit_log, announcement, refresh_token  # noqa: F401
 
 config = context.config
 settings = get_settings()

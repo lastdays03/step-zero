@@ -2,7 +2,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from app.core.config import get_settings
-from app.models import actionkit, admin_audit_log, announcement, growth_club, notification, refresh_token, roadmap, team, user  # noqa: F401
+from app.models import actionkit, admin_audit_log, announcement, growth_club, notification, profile, refresh_token, roadmap, team, user, user_discipline_history  # noqa: F401
 
 settings = get_settings()
 
