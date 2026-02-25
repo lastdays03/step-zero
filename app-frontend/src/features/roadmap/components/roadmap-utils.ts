@@ -118,10 +118,11 @@ export function derivePhaseGroups(steps: RoadmapDetailStep[]): EnhancedPhaseGrou
 export function deriveStepItemState(
     step: RoadmapDetailStep,
     phaseState: PhaseState,
+    isNextActionable?: boolean,
 ): StepItemState {
     if (step.status === "COMPLETED") return "DONE";
     if (phaseState === "CURRENT" && step.status === "IN_PROGRESS") return "ACTIVE";
-    if (phaseState === "CURRENT" && step.status === "PENDING") return "LOCKED";
+    if (phaseState === "CURRENT" && step.status === "PENDING" && isNextActionable) return "ACTIVE";
     return "LOCKED";
 }
 

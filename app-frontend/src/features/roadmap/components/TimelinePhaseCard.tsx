@@ -211,7 +211,11 @@ export function TimelinePhaseCard({
 
                 <div className="space-y-4 relative">
                     {group.steps.map((step, idx) => {
-                        const state = deriveStepItemState(step, "CURRENT");
+                        const hasInProgress = group.steps.some((s) => s.status === "IN_PROGRESS");
+                        const isNextActionable = !hasInProgress
+                            && step.status === "PENDING"
+                            && group.steps.slice(0, idx).every((s) => s.status === "COMPLETED");
+                        const state = deriveStepItemState(step, "CURRENT", isNextActionable);
                         const prevStep = idx > 0 ? group.steps[idx - 1] : undefined;
                         return (
                             <TimelineStepItem
