@@ -1,5 +1,13 @@
+import os
+
 import pytest
 from httpx import AsyncClient
+
+_skip_no_openai = pytest.mark.skipif(
+    not os.environ.get("OPENAI_API_KEY"),
+    reason="OPENAI_API_KEY not set",
+)
+
 
 class _MockRagService:
     def __init__(self, response_text: str):
@@ -23,6 +31,7 @@ async def _login_headers(client: AsyncClient) -> dict[str, str]:
     }
 
 
+@_skip_no_openai
 @pytest.mark.asyncio
 async def test_validate_input_success(client: AsyncClient, monkeypatch: pytest.MonkeyPatch):
     mock_service = _MockRagService(
@@ -50,6 +59,7 @@ async def test_validate_input_success(client: AsyncClient, monkeypatch: pytest.M
     assert data["normalized_location"] == "서울특별시 강남구"
 
 
+@_skip_no_openai
 @pytest.mark.asyncio
 async def test_validate_input_invalid(client: AsyncClient, monkeypatch: pytest.MonkeyPatch):
     mock_service = _MockRagService(
@@ -76,6 +86,7 @@ async def test_validate_input_invalid(client: AsyncClient, monkeypatch: pytest.M
     assert data["reason"] == "지역 정보가 모호합니다."
 
 
+@_skip_no_openai
 @pytest.mark.asyncio
 async def test_create_job_blocks_invalid_input(client: AsyncClient, monkeypatch: pytest.MonkeyPatch):
     mock_service = _MockRagService(
