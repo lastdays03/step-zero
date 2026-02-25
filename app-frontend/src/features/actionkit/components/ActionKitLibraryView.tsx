@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { ActionKitItem, RelatedLaw } from '../types';
 import { apiClient } from '@/lib/api-client';
+import { ActionKitDetailModal } from './ActionKitDetailModal';
 
 const STARTER_PACKS = [
     {
@@ -90,6 +91,8 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
     const [activeStarterPack, setActiveStarterPack] = useState<string | null>(null);
     const [selectedTag, setSelectedTag] = useState<string>("all");
     const [previewKit, setPreviewKit] = useState<ActionKitItem | null>(null);
+    const [detailItem, setDetailItem] = useState<ActionKitItem | null>(null);
+
 
     useEffect(() => {
         setSelectedTag("all");
@@ -458,7 +461,7 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {displayItems.length > 0 ? (
                     displayItems.map((item, index) => (
-                        <Card key={`${item.name}-${index}`} className="group hover:border-[#36a4f2] transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between overflow-hidden">
+                        <Card key={`${item.name}-${index}`} className="group hover:border-[#36a4f2] transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between overflow-hidden" onClick={() => setDetailItem(item)}>
                             <CardContent className="p-0 flex flex-col h-full">
                                 <div className="p-6 pb-0">
                                     <div className="flex justify-between items-start mb-4">
@@ -609,121 +612,19 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                 )}
             </div>
 
-            {/* Checklist Modal Preview */}
-            {previewKit && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden animate-in zoom-in-95 duration-200">
-                        <div className="p-6 border-b border-slate-100 flex justify-between items-start bg-slate-50">
-                            <div>
-                                <Badge className="mb-2 bg-[#36a4f2]/10 text-[#36a4f2] hover:bg-[#36a4f2]/20 border-none">
-                                    {previewKit.type}
-                                </Badge>
-                                <h3 className="text-xl font-bold text-slate-900">{previewKit.name}</h3>
-                            </div>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="h-8 w-8 p-0 rounded-full"
-                                onClick={() => setPreviewKit(null)}
-                            >
-                                ✕
-                            </Button>
-                        </div>
-                        <div className="p-6 max-h-[60vh] overflow-y-auto space-y-6">
-                            {previewKit.complianceChecklist && previewKit.complianceChecklist.length > 0 && (
-                                <div className="space-y-4">
-                                    <div className="flex justify-between items-end border-b border-slate-100 pb-3">
-                                        <div>
-                                            <h4 className="font-bold flex items-center gap-2 text-slate-800">
-                                                <CheckSquare className="w-4 h-4 text-emerald-500" />
-                                                사용 전 필수 체크리스트
-                                            </h4>
-                                            <p className="text-xs text-slate-500 mt-1 pl-6">서류 사용 전 아래 항목을 반드시 점검하세요.</p>
-                                        </div>
-                                        {(() => {
-                                            const progress = getKitProgress(previewKit);
-                                            if (!progress) return null;
-                                            return (
-                                                <div className="text-right">
-                                                    <div className="text-2xl font-black text-slate-800 tracking-tighter">
-                                                        {progress.percentage}<span className="text-sm font-bold text-slate-400 ml-0.5">%</span>
-                                                    </div>
-                                                    <div className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-0.5">
-                                                        {progress.checked} of {progress.total} Completed
-                                                    </div>
-                                                    <div className="w-24 bg-slate-100 rounded-full h-1 mt-1.5 ml-auto overflow-hidden">
-                                                        <div
-                                                            className={`h-1 auto rounded-full transition-all duration-500 ${progress.percentage === 100 ? 'bg-emerald-500' : 'bg-[#36a4f2]'}`}
-                                                            style={{ width: `${progress.percentage}%` }}
-                                                        />
-                                                    </div>
-                                                </div>
-                                            );
-                                        })()}
-                                    </div>
-                                    <div className="space-y-2">
-                                        {previewKit.complianceChecklist.map((item, i) => {
-                                            const kitIdentifier = (previewKit as any).id || previewKit.name;
-                                            const key = `${kitIdentifier}_${item}`;
-                                            const isChecked = !!checkedItems[key];
-                                            return (
-                                                <label key={i} className={`flex items-start gap-3 p-3 rounded-xl border transition-colors cursor-pointer group ${isChecked ? 'border-emerald-500 bg-emerald-50' : 'border-slate-100 hover:border-[#36a4f2]/30 hover:bg-[#36a4f2]/5'}`}>
-                                                    <input
-                                                        type="checkbox"
-                                                        className="mt-1 w-4 h-4 rounded border-slate-300 text-emerald-500 focus:ring-emerald-500 cursor-pointer"
-                                                        checked={isChecked}
-                                                        onChange={() => toggleChecklist(kitIdentifier, item)}
-                                                    />
-                                                    <span className={`text-sm leading-tight transition-all ${isChecked ? 'text-emerald-700 font-medium line-through opacity-70' : 'text-slate-600 group-hover:text-slate-900'}`}>
-                                                        {item}
-                                                    </span>
-                                                </label>
-                                            );
-                                        })}
-                                    </div>
-                                    <p className="text-[10px] text-slate-400 mt-2 ml-7">* 이 체크리스트는 법률 컨설팅을 대체하지 않습니다.</p>
-                                </div>
-                            )}
-                            {(previewKit as any).highlights?.length > 0 && (
-                                <div className="space-y-3">
-                                    <h4 className="font-bold flex items-center gap-2 text-slate-800">
-                                        <Sparkles className="w-4 h-4 text-amber-500" />
-                                        핵심 포인트
-                                    </h4>
-                                    <div className="space-y-2">
-                                        {(previewKit as any).highlights.map((hl: any, i: number) => (
-                                            <div key={hl.id || i} className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-100">
-                                                <span className="text-amber-500 font-bold text-sm mt-0.5">⭐</span>
-                                                <span className="text-sm text-slate-700 leading-relaxed">{hl.content}</span>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-                            <div>
-                                <h4 className="font-bold mb-2 text-slate-800 text-sm">문서 내용 요약</h4>
-                                <p className="text-sm text-slate-600 leading-relaxed bg-slate-50 p-4 rounded-xl border border-slate-100">
-                                    {previewKit.summary}
-                                </p>
-                            </div>
-                        </div>
-                        <div className="p-6 border-t border-slate-100 flex justify-end gap-3 bg-white">
-                            <Button variant="outline" onClick={() => setPreviewKit(null)}>
-                                닫기
-                            </Button>
-                            <Button
-                                className="bg-[#36a4f2] hover:bg-[#258bd1] gap-2"
-                                onClick={() => {
-                                    handleDownload(previewKit.path, previewKit.name, (previewKit as any).id);
-                                    setPreviewKit(null);
-                                }}
-                            >
-                                <Download className="w-4 h-4" />
-                                원본 다운로드
-                            </Button>
-                        </div>
-                    </div>
-                </div>
+            {/* Detail View Modal */}
+            {(detailItem || previewKit) && (
+                <ActionKitDetailModal
+                    item={(detailItem || previewKit)!}
+                    onClose={() => { setDetailItem(null); setPreviewKit(null); }}
+                    onDownload={handleDownload}
+                    onNavigateToLaw={onNavigateToLaw}
+                    onToggleBookmark={toggleBookmark}
+                    isBookmarked={!!bookmarkedItems[(detailItem || previewKit as any)?.id || (detailItem || previewKit)?.name]}
+                    checkedItems={checkedItems}
+                    onToggleChecklist={toggleChecklist}
+                    getKitProgress={getKitProgress}
+                />
             )}
 
             {/* Bookmark Drawer */}
