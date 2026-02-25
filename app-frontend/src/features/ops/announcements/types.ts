@@ -8,6 +8,7 @@ export interface OpsAnnouncement {
   created_by: number;
   updated_by: number;
   created_at: string;
+  published_at?: string;
   updated_at: string;
 }
 

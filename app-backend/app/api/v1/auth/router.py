@@ -111,6 +111,8 @@ async def login_access_token(
     service = _auth_service(session)
     try:
         result = await service.login_with_password(form_data.username, form_data.password)
+    except HTTPException:
+        raise
     except Exception as error:
         if _is_backend_unavailable_error(error):
             raise HTTPException(
@@ -187,6 +189,8 @@ async def login_social(
 
     try:
         return await _login_social_mock_user(provider, session)
+    except HTTPException:
+        raise
     except Exception as error:
         if _is_backend_unavailable_error(error):
             raise HTTPException(

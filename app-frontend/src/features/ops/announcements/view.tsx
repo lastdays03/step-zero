@@ -148,10 +148,9 @@ export function OpsAnnouncementsView() {
       });
       // if publish flag changed, update status
       if (data.publish && selectedAnnouncement.status !== "published") {
-        await updateOpsAnnouncementStatus(
-          selectedAnnouncement.id,
-          "published",
-        );
+        await updateOpsAnnouncementStatus(selectedAnnouncement.id, {
+          status: "published",
+        });
       }
     } else {
       // create new announcement (always created as draft)
@@ -161,7 +160,7 @@ export function OpsAnnouncementsView() {
       });
       // if user chose to publish immediately
       if (data.publish) {
-        await updateOpsAnnouncementStatus(created.id, "published");
+        await updateOpsAnnouncementStatus(created.id, { status: "published" });
       }
     }
     await load();
@@ -177,12 +176,12 @@ export function OpsAnnouncementsView() {
     if (!confirm(msg)) return;
 
     try {
-      await updateOpsAnnouncementStatus(announcement.id, newStatus);
+      await updateOpsAnnouncementStatus(announcement.id, { status: newStatus });
       await load();
     } catch (err) {
       alert(
         "상태 변경에 실패했습니다: " +
-          (err instanceof Error ? err.message : String(err)),
+        (err instanceof Error ? err.message : String(err)),
       );
     }
   };
@@ -219,11 +218,10 @@ export function OpsAnnouncementsView() {
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`relative px-4 py-2 text-sm font-bold transition-colors ${
-              activeTab === tab.key
+            className={`relative px-4 py-2 text-sm font-bold transition-colors ${activeTab === tab.key
                 ? "text-blue-600"
                 : "text-slate-500 hover:text-slate-700"
-            }`}
+              }`}
           >
             {tab.label}
             {activeTab === tab.key && (
@@ -337,11 +335,10 @@ export function OpsAnnouncementsView() {
                           variant="ghost"
                           size="sm"
                           onClick={() => handleStatusToggle(item)}
-                          className={`h-8 w-8 p-0 transition-colors ${
-                            item.status === "published"
+                          className={`h-8 w-8 p-0 transition-colors ${item.status === "published"
                               ? "text-amber-500 hover:text-amber-600"
                               : "text-green-500 hover:text-green-600"
-                          }`}
+                            }`}
                           title={
                             item.status === "published"
                               ? "게시 중단"

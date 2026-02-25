@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
@@ -18,6 +19,11 @@ from app.features.ops.application.audit_logs import AuditAction, AuditTargetType
 from app.models.user import AuthenticatedUser
 
 router = APIRouter(prefix="/announcements")
+
+
+class AnnouncementStatusUpdate(BaseModel):
+    status: AnnouncementStatus
+    audit_log_reason: str | None = Field(default=None, description="상태 변경 사유")
 
 
 @router.get(
@@ -107,7 +113,7 @@ async def update_ops_announcement(
     response_description="상태 변경된 운영 공지를 반환합니다.",
 )
 async def update_ops_announcement_status(
-    status: AnnouncementStatus,
+    payload: AnnouncementStatusUpdate,
     announcement_id: int = Path(description="상태를 변경할 공지 ID"),
     session: AsyncSession = Depends(get_session),
     admin_user: AuthenticatedUser = Depends(deps.get_current_user),
@@ -115,7 +121,7 @@ async def update_ops_announcement_status(
     row = await update_announcement_status(
         session,
         announcement_id=announcement_id,
-        status=status,
+        status=payload.status,
         actor_id=admin_user.id,
     )
     if not row:
@@ -125,13 +131,14 @@ async def update_ops_announcement_status(
         "draft": AuditAction.ANNOUNCEMENT_DRAFTED,
         "published": AuditAction.ANNOUNCEMENT_PUBLISHED,
         "archived": AuditAction.ANNOUNCEMENT_ARCHIVED,
-    }[status]
+    }[payload.status]
     await record_admin_audit_log(
         session,
         admin_id=admin_user.id,
         action=action_code,
         target_type=AuditTargetType.ANNOUNCEMENT,
         target_id=str(row.id),
+        reason=payload.audit_log_reason,
         meta={"after": {"status": row.status}},
     )
     await session.commit()

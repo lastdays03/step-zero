@@ -8,5 +8,5 @@ export const useAuth = () => {
         await loginWithCredentials(username, password);
     };
 
-    return { login };
+    return { login, loginWithCredentials };
 };

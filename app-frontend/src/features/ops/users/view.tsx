@@ -241,7 +241,7 @@ export function OpsUsersView() {
                 </th>
                 <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">사용자</th>
                 <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">상태 / 권한</th>
-                <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">신고 / 활동 (KST)</th>
+                <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider">활동 (KST)</th>
                 <th className="px-6 py-3 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">관리</th>
               </tr>
             </thead>
@@ -309,6 +309,7 @@ export function OpsUsersView() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1 text-[11px]">
+                            {/* [BLIND] Growth Club Report Link - 팀 회의 결정에 따라 블라인드 처리
                             <a
                               href={`/ops/reports?user_id=${user.id}`}
                               onClick={(e) => { e.preventDefault(); alert('관련 게시물 이동 (Placeholder)'); }}
@@ -317,6 +318,7 @@ export function OpsUsersView() {
                               {isHighReport ? <AlertOctagon size={12} /> : <AlertCircle size={12} />}
                               {user.report_count}건 신고
                             </a>
+                            */}
                             <div className="flex items-center gap-1 text-slate-400 font-medium whitespace-nowrap">
                               <History size={12} />
                               마지막 접속: {user.last_login_at ? toKST(user.last_login_at).split(' ').slice(-2).join(' ') : "-"}

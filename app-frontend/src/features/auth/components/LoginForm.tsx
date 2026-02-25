@@ -3,19 +3,43 @@
 
 import React, { useState } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { SuspensionModal } from './SuspensionModal';
 
 export const LoginForm = () => {
-    const { login } = useAuth();
+    const { loginWithCredentials } = useAuth();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [suspensionInfo, setSuspensionInfo] = useState<{ reason: string; suspended_until: string; status: string } | null>(null);
+    const [isSuspensionOpen, setIsSuspensionOpen] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setError('');
         try {
-            await login(email, password);
-        } catch {
-            setError('Login failed');
+            await loginWithCredentials(email, password);
+        } catch (err: any) {
+            console.error('Login error:', err);
+
+            // Axios error response check
+            const status = err?.response?.status;
+            const data = err?.response?.data;
+            const detail = data?.detail;
+
+            if (status === 403 && data?.code === 'ACCOUNT_RESTRICTED') {
+                setSuspensionInfo({
+                    reason: data.reason || '운영 정책 위반으로 계정이 제한되었습니다.',
+                    suspended_until: data.suspended_until || '영구',
+                    status: data.status || 'suspended'
+                });
+                setIsSuspensionOpen(true);
+                return;
+            }
+
+            const message = typeof data?.detail === 'string'
+                ? data.detail
+                : (data?.message || '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.');
+            setError(message);
         }
     };
 
@@ -42,10 +66,16 @@ export const LoginForm = () => {
             {error && <div className="text-red-500">{error}</div>}
             <button
                 type="submit"
-                className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="w-full p-2 bg-zinc-900 text-white rounded font-bold hover:bg-zinc-800 transition-colors"
             >
-                Login
+                로그인
             </button>
+
+            <SuspensionModal
+                isOpen={isSuspensionOpen}
+                onClose={() => setIsSuspensionOpen(false)}
+                suspensionInfo={suspensionInfo}
+            />
         </form>
     );
 };

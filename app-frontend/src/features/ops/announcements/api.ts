@@ -41,12 +41,11 @@ export async function updateOpsAnnouncement(
 /** PATCH /ops/announcements/:id/status -- 공지 상태 변경 */
 export async function updateOpsAnnouncementStatus(
   id: number,
-  status: OpsAnnouncementStatus,
+  payload: { status: OpsAnnouncementStatus; reason?: string },
 ): Promise<OpsAnnouncement> {
   const { data } = await apiClient.patch<OpsAnnouncement>(
     `/ops/announcements/${id}/status`,
-    status,
-    { headers: { "Content-Type": "application/json" } },
+    payload,
   );
   return data;
 }

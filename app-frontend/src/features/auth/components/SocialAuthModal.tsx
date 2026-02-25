@@ -13,6 +13,7 @@ import { GoogleLogin } from '@react-oauth/google';
 
 import { apiClient } from '@/lib/api-client';
 import { useAuth } from '@/providers/AuthProvider';
+import { SuspensionModal } from './SuspensionModal';
 
 interface SocialAuthModalProps {
     isOpen: boolean;
@@ -21,6 +22,8 @@ interface SocialAuthModalProps {
 
 export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
     const { login } = useAuth();
+    const [suspensionInfo, setSuspensionInfo] = React.useState<{ reason: string; suspended_until: string; status: string } | null>(null);
+    const [isSuspensionOpen, setIsSuspensionOpen] = React.useState(false);
 
     const completeLogin = (payload: {
         access_token: string;
@@ -53,9 +56,21 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                 id_token: credentialResponse.credential,
             });
             completeLogin(response.data);
-        } catch (error: unknown) {
-            const status = (error as { response?: { status?: number } })?.response?.status;
-            const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+        } catch (error: any) {
+            console.error('Google login error:', error);
+            const status = error?.response?.status;
+            const data = error?.response?.data;
+            const detail = data?.detail;
+
+            if (status === 403 && data?.code === 'ACCOUNT_RESTRICTED') {
+                setSuspensionInfo({
+                    reason: data.reason || '운영 정책 위반으로 계정 이용이 정지되었습니다.',
+                    suspended_until: data.suspended_until || '영구',
+                    status: data.status || 'suspended'
+                });
+                setIsSuspensionOpen(true);
+                return;
+            }
 
             console.error('Google login verification failed:', error);
             if (status === 401) {
@@ -63,7 +78,7 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                 return;
             }
             if (status === 503) {
-                if (detail === 'Authentication backend unavailable') {
+                if (detail === 'Authentication backend unavailable' || data?.detail === 'Authentication backend unavailable') {
                     alert('로그인 서버가 데이터베이스에 연결되지 않았습니다. 백엔드/DB 상태를 먼저 확인해주세요.');
                     return;
                 }
@@ -71,59 +86,79 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                     const fallback = await apiClient.post('/auth/login/social/google');
                     completeLogin(fallback.data);
                     return;
-                } catch (fallbackError: unknown) {
-                    const fallbackDetail =
-                        (fallbackError as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+                } catch (fallbackError: any) {
+                    console.error('Google fallback login error:', fallbackError);
+                    const fallbackStatus = fallbackError?.response?.status;
+                    const fallbackData = fallbackError?.response?.data;
+
+                    if (fallbackStatus === 403 && fallbackData?.code === 'ACCOUNT_RESTRICTED') {
+                        setSuspensionInfo({
+                            reason: fallbackData.reason || '운영 정책 위반으로 계정 이용이 정지되었습니다.',
+                            suspended_until: fallbackData.suspended_until || '영구',
+                            status: fallbackData.status || 'suspended'
+                        });
+                        setIsSuspensionOpen(true);
+                        return;
+                    }
+
                     alert(
-                        fallbackDetail
+                        (typeof fallbackData?.detail === 'string' ? fallbackData.detail : null)
                         || '구글 인증 서비스 연결에 실패했습니다. 잠시 후 다시 시도하거나 일반 로그인으로 진행해주세요.',
                     );
                     return;
                 }
             }
-            alert(detail || '구글 로그인 검증에 실패했습니다.');
+            alert((typeof data?.detail === 'string' ? data.detail : null) || '구글 로그인 검증에 실패했습니다.');
         }
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-md bg-white/90 backdrop-blur-xl border-white/50 shadow-2xl rounded-2xl p-8">
-                <DialogHeader className="flex flex-col items-center text-center space-y-4">
-                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#36a4f2] to-purple-400 flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
-                        <Sparkles className="w-8 h-8 text-white" />
-                    </div>
-                    <div className="space-y-2">
-                        <DialogTitle className="text-2xl font-bold text-slate-900">
-                            창업의 시작, StepZero
-                        </DialogTitle>
-                        <DialogDescription className="text-slate-500 font-medium">
-                            3초 만에 시작하고 나만의 로드맵을 평생 소장하세요.
-                        </DialogDescription>
-                    </div>
-                </DialogHeader>
+        <>
+            <Dialog open={isOpen} onOpenChange={onClose}>
+                <DialogContent className="sm:max-w-md bg-white/90 backdrop-blur-xl border-white/50 shadow-2xl rounded-2xl p-8 text-slate-900">
+                    <DialogHeader className="flex flex-col items-center text-center space-y-4">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#36a4f2] to-purple-400 flex items-center justify-center shadow-lg transform rotate-3 hover:rotate-0 transition-transform duration-300">
+                            <Sparkles className="w-8 h-8 text-white" />
+                        </div>
+                        <div className="space-y-2 text-slate-900">
+                            <DialogTitle className="text-2xl font-bold">
+                                창업의 시작, StepZero
+                            </DialogTitle>
+                            <DialogDescription className="text-slate-500 font-medium">
+                                3초 만에 시작하고 나만의 로드맵을 평생 소장하세요.
+                            </DialogDescription>
+                        </div>
+                    </DialogHeader>
 
-                <div className="flex flex-col gap-3 mt-6">
-                    <div className="w-full flex justify-center py-2">
-                        <GoogleLogin
-                            onSuccess={handleGoogleSuccess}
-                            onError={() => {
-                                console.error('Google Login Failed');
-                                alert('구글 로그인에 실패했습니다.');
-                            }}
-                            text="signin_with"
-                            shape="pill"
-                            size="large"
-                            width="320"
-                        />
+                    <div className="flex flex-col gap-3 mt-6">
+                        <div className="w-full flex justify-center py-2 text-slate-900">
+                            <GoogleLogin
+                                onSuccess={handleGoogleSuccess}
+                                onError={() => {
+                                    console.error('Google Login Failed');
+                                    alert('구글 로그인에 실패했습니다.');
+                                }}
+                                text="signin_with"
+                                shape="pill"
+                                size="large"
+                                width="320"
+                            />
+                        </div>
                     </div>
-                </div>
 
-                <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col items-center gap-2">
-                    <p className="text-[10px] text-slate-400 text-center">
-                        계속 진행함으로써 StepZero의 <span className="underline cursor-pointer">이용약관</span> 및 <span className="underline cursor-pointer">개인정보처리방침</span>에 동의하게 됩니다.
-                    </p>
-                </div>
-            </DialogContent>
-        </Dialog>
+                    <div className="mt-8 pt-6 border-t border-slate-100 flex flex-col items-center gap-2">
+                        <p className="text-[10px] text-slate-400 text-center">
+                            계속 진행함으로써 StepZero의 <span className="underline cursor-pointer">이용약관</span> 및 <span className="underline cursor-pointer">개인정보처리방침</span>에 동의하게 됩니다.
+                        </p>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            <SuspensionModal
+                isOpen={isSuspensionOpen}
+                onClose={() => setIsSuspensionOpen(false)}
+                suspensionInfo={suspensionInfo}
+            />
+        </>
     );
 };

@@ -1,17 +1,24 @@
+import logging
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-
+from fastapi import HTTPException, status
 from google.auth.transport import requests
 from google.oauth2 import id_token
+from sqlalchemy import desc
+from sqlmodel import select
 
 from app.core import security
 from app.core.config import get_settings
 from app.models.team import Team
 from app.models.user import User
+from app.models.user_discipline_history import UserDisciplineHistory
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.team_repository import TeamRepository
 from app.repositories.user_repository import UserRepository
+
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -43,8 +50,9 @@ class AuthService:
         # Handle inactivity recovery and update last login
         await self._handle_user_login_metadata(user)
 
-        if not user.is_active:
-            return None
+        if user.status != "active":
+            await self._raise_suspension_error(user)
+
         return await self._build_auth_result(user)
 
     async def login_with_google(self, google_client_id: str, token: str) -> AuthResult | None:
@@ -62,6 +70,9 @@ class AuthService:
 
         # Handle inactivity recovery and update last login
         await self._handle_user_login_metadata(user)
+
+        if user.status != "active":
+            await self._raise_suspension_error(user)
 
         return await self._build_auth_result(user)
 
@@ -115,14 +126,23 @@ class AuthService:
                 return True
         return False
 
+    def _get_kst_now(self) -> datetime:
+        """KST(UTC+9) 기준 현재 시각 반환"""
+        return datetime.now(timezone(timedelta(hours=9)))
+
     async def _handle_user_login_metadata(self, user: User) -> None:
         """Update last_login_at and recover suspended users if applicable."""
         now = datetime.utcnow()
         user.last_login_at = now
 
+        # Normalize suspended_until to naive UTC for comparison
+        suspended_until = user.suspended_until
+        if suspended_until and suspended_until.tzinfo is not None:
+            suspended_until = suspended_until.astimezone(timezone.utc).replace(tzinfo=None)
+
         # Check for suspension recovery: if suspended_until has expired, restore
-        if user.status.startswith("suspended") and user.suspended_until:
-            if user.suspended_until <= now:
+        if user.status.startswith("suspended") and suspended_until:
+            if suspended_until <= now:
                 user.status = "active"
                 user.is_active = True
                 user.suspended_until = None
@@ -135,6 +155,27 @@ class AuthService:
         self.user_repo.session.add(user)
         await self.user_repo.session.commit()
         await self.user_repo.session.refresh(user)
+
+    async def _raise_suspension_error(self, user: User) -> None:
+        """정지/차단된 유저에 대해 403 에러 발생 및 사유 전달"""
+        reason = user.audit_log_reason or "운영 정책 위반으로 인해 계정이 제한되었습니다."
+        if user.suspended_until:
+            # Display KST to user
+            kst_tz = timezone(timedelta(hours=9))
+            kst_time = user.suspended_until.replace(tzinfo=timezone.utc).astimezone(kst_tz)
+            suspended_until_str = kst_time.strftime("%Y.%m.%d")
+        else:
+            suspended_until_str = "영구"
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "ACCOUNT_RESTRICTED",
+                "status": user.status,
+                "reason": reason,
+                "suspended_until": suspended_until_str
+            }
+        )
 
     async def _build_auth_result(self, user: User) -> AuthResult:
         # 특정 이메일은 로그인 시 관리자 권한 강제 부여
