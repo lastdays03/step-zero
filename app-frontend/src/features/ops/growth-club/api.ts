@@ -19,8 +19,9 @@ export const unblindComment = async (commentId: number): Promise<void> => {
     await apiClient.post(`/ops/growth-club/comments/${commentId}/unblind`);
 };
 
-export const suspendUser = async (userId: number): Promise<void> => {
-    await apiClient.post(`/ops/growth-club/users/${userId}/suspend`);
+export const suspendUser = async (userId: number): Promise<string> => {
+    const res = await apiClient.post<{ suspended_at: string }>(`/ops/growth-club/users/${userId}/suspend`);
+    return res.data.suspended_at;
 };
 
 export const unsuspendUser = async (userId: number): Promise<void> => {

@@ -19,6 +19,7 @@ class AuthorRead(SQLModel):
     neighborhood: Optional[str] = None
     industry: Optional[str] = None
     is_suspended: bool = False
+    suspended_at: Optional[datetime] = None
 
     @model_validator(mode="before")
     @classmethod
@@ -47,6 +48,7 @@ class AuthorRead(SQLModel):
                 "industry": getattr(p, "category", None),
                 "neighborhood": getattr(p, "region", None),
                 "is_suspended": getattr(data, "is_suspended", False),
+                "suspended_at": getattr(data, "suspended_at", None),
             }
         return data
 

@@ -237,7 +237,10 @@ async def suspend_user(
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
         
+    from datetime import datetime, timezone
+    now_utc = datetime.now(timezone.utc)
     user.is_suspended = True
+    user.suspended_at = now_utc.replace(tzinfo=None)  # DB는 naive UTC로 저장
     session.add(user)
     
     # 감사 로그 기록
@@ -253,7 +256,9 @@ async def suspend_user(
     )
     
     await session.commit()
-    return {"status": "success", "message": "User suspended successfully"}
+    # Z suffix를 붙여 프론트엔드가 UTC로 올바르게 파싱하도록 함
+    suspended_at_iso = now_utc.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
+    return {"status": "success", "message": "User suspended successfully", "suspended_at": suspended_at_iso}
 
 @router.post(
     "/users/{user_id}/unsuspend",
@@ -270,6 +275,7 @@ async def unsuspend_user(
         raise HTTPException(status_code=404, detail="User not found")
         
     user.is_suspended = False
+    user.suspended_at = None
     session.add(user)
     
     # 감사 로그 기록

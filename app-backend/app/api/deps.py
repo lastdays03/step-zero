@@ -56,6 +56,7 @@ async def get_current_user(
         full_name=user.full_name,
         is_superuser=user.is_superuser,
         is_suspended=user.is_suspended,
+        suspended_at=user.suspended_at,
     )
 
 
@@ -132,6 +133,7 @@ async def get_optional_current_user(
         full_name=user.full_name,
         is_superuser=user.is_superuser,
         is_suspended=user.is_suspended,
+        suspended_at=user.suspended_at,
     )
 
 
