@@ -100,6 +100,18 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
     const [isDrawerOpen, setIsDrawerOpen] = useState(false);
     const [isZipping, setIsZipping] = useState(false);
 
+    // Onboarding State
+    const [isOnboardingOpen, setIsOnboardingOpen] = useState(false);
+    const [onboardingStep, setOnboardingStep] = useState<1 | 2>(1);
+    const [selectedPackId, setSelectedPackId] = useState<string | null>(null);
+
+    useEffect(() => {
+        const hasSeenOnboarding = localStorage.getItem('actionkit_onboarding_shown');
+        if (!hasSeenOnboarding) {
+            setIsOnboardingOpen(true);
+        }
+    }, []);
+
     useEffect(() => {
         const storedChecklists = localStorage.getItem('actionkit_checklists');
         if (storedChecklists) {
@@ -178,6 +190,46 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
         const newChecked = { ...checkedItems, [key]: !checkedItems[key] };
         setCheckedItems(newChecked);
         localStorage.setItem('actionkit_checklists', JSON.stringify(newChecked));
+    };
+
+    const handleAddPackToDrawer = () => {
+        if (!selectedPackId || !data) return;
+        const pack = STARTER_PACKS.find(p => p.id === selectedPackId);
+        if (!pack) return;
+
+        const newBookmarks = { ...bookmarkedItems };
+        let addedCount = 0;
+
+        Object.values(data).forEach(cat => {
+            cat.items.forEach(item => {
+                const isMatch = pack.keywords.some(keyword =>
+                    item.name.toLowerCase().includes(keyword.toLowerCase()) ||
+                    item.summary.toLowerCase().includes(keyword.toLowerCase()) ||
+                    (item.tag && item.tag.toLowerCase() === keyword.toLowerCase())
+                );
+                if (isMatch) {
+                    const identifier = (item as any).id || item.name;
+                    if (!newBookmarks[identifier]) {
+                        newBookmarks[identifier] = item;
+                        addedCount++;
+                    }
+                }
+            });
+        });
+
+        if (addedCount > 0) {
+            setBookmarkedItems(newBookmarks);
+            localStorage.setItem('actionkit_bookmarks', JSON.stringify(newBookmarks));
+        }
+
+        setIsOnboardingOpen(false);
+        localStorage.setItem('actionkit_onboarding_shown', 'true');
+        setTimeout(() => setIsDrawerOpen(true), 300);
+    };
+
+    const handleOnboardingSkip = () => {
+        setIsOnboardingOpen(false);
+        localStorage.setItem('actionkit_onboarding_shown', 'true');
     };
 
     const getKitProgress = (kit: ActionKitItem) => {
@@ -283,6 +335,17 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                             className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-full text-sm focus:ring-2 focus:ring-[#36a4f2]/20 transition-all outline-none"
                         />
                     </div>
+                    <Button
+                        onClick={() => {
+                            setOnboardingStep(1);
+                            setSelectedPackId(null);
+                            setIsOnboardingOpen(true);
+                        }}
+                        variant="outline"
+                        className="rounded-full border-[#36a4f2]/30 text-[#36a4f2] hover:bg-[#36a4f2]/5 whitespace-nowrap h-10 px-4"
+                    >
+                        🎁 맞춤 팩 받기
+                    </Button>
                     <Button
                         onClick={() => setIsDrawerOpen(true)}
                         className="rounded-full bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 text-yellow-700 relative h-10 px-4 whitespace-nowrap"
@@ -714,6 +777,102 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                                 </Button>
                             </div>
                         )}
+                    </div>
+                </div>
+            )}
+
+            {/* Onboarding Modal */}
+            {isOnboardingOpen && (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+                    <div className="bg-white rounded-3xl w-full max-w-lg shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+                        {/* Header */}
+                        <div className="p-6 pb-0 flex justify-between items-start">
+                            <div className="pr-8">
+                                <h3 className="text-xl md:text-2xl font-bold text-slate-800 tracking-tight leading-tight">
+                                    {onboardingStep === 1 ? "대표님, 지금 가장 고민되시는 단계가 어디인가요?" : "대표님을 위한 맞춤 스타터 팩이 준비되었습니다!"}
+                                </h3>
+                                <p className="text-slate-500 text-sm mt-2">
+                                    {onboardingStep === 1
+                                        ? "현재 상황에 꼭 맞는 필수 서류 세트를 즉시 추천해 드릴게요."
+                                        : "버튼 한 번만 누르면 내 서랍장에 쏙! 일괄 다운로드도 가능합니다."}
+                                </p>
+                            </div>
+                            <button onClick={handleOnboardingSkip} className="p-2 -my-2 -mx-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-100 transition-colors shrink-0">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-6">
+                            {onboardingStep === 1 ? (
+                                <div className="space-y-3">
+                                    {STARTER_PACKS.map(pack => (
+                                        <button
+                                            key={pack.id}
+                                            onClick={() => {
+                                                setSelectedPackId(pack.id);
+                                                setOnboardingStep(2);
+                                            }}
+                                            className={`w-full text-left p-4 rounded-2xl border-2 transition-all group flex items-center gap-4 ${selectedPackId === pack.id
+                                                ? 'border-[#36a4f2] bg-[#36a4f2]/5 shadow-sm'
+                                                : 'border-slate-100 hover:border-[#36a4f2]/30 hover:bg-slate-50'
+                                                }`}
+                                        >
+                                            <div className={`w-12 h-12 rounded-xl flex items-center justify-center shrink-0 ${pack.bg} ${pack.color}`}>
+                                                <pack.icon className="w-6 h-6" />
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-slate-800 text-lg group-hover:text-[#36a4f2] transition-colors">{pack.title}</h4>
+                                                <p className="text-xs text-slate-500 mt-1 line-clamp-1">포함 서류: {pack.keywords.join(', ')} 등</p>
+                                            </div>
+                                        </button>
+                                    ))}
+                                    <button
+                                        onClick={handleOnboardingSkip}
+                                        className="w-full text-center p-4 rounded-2xl border-2 border-transparent text-slate-400 hover:text-slate-600 hover:bg-slate-50 transition-colors text-sm font-medium mt-2"
+                                    >
+                                        ⚖️ 기타 / 나중에 혼자 둘러볼래요 (스킵)
+                                    </button>
+                                </div>
+                            ) : (
+                                <div className="space-y-6">
+                                    {(() => {
+                                        const pack = STARTER_PACKS.find(p => p.id === selectedPackId);
+                                        if (!pack) return null;
+                                        return (
+                                            <div className="flex flex-col items-center py-6 text-center">
+                                                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center mb-4 ${pack.bg} ${pack.color}`}>
+                                                    <pack.icon className="w-10 h-10" />
+                                                </div>
+                                                <h4 className="text-xl font-bold text-slate-800">
+                                                    <span className={pack.color}>{pack.title}</span> 증정
+                                                </h4>
+                                                <div className="flex flex-wrap justify-center gap-2 mt-4">
+                                                    {pack.keywords.map((kw, i) => (
+                                                        <Badge key={i} variant="outline" className="bg-slate-50 border-slate-200 text-slate-600 font-medium">
+                                                            {kw}
+                                                        </Badge>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        );
+                                    })()}
+                                    <Button
+                                        onClick={handleAddPackToDrawer}
+                                        className="w-full h-14 rounded-2xl bg-[#36a4f2] hover:bg-[#258bd1] text-white font-bold text-lg shadow-lg shadow-[#36a4f2]/20 gap-2"
+                                    >
+                                        <Star className="w-5 h-5 fill-white" />
+                                        내 서랍장에 모두 담기
+                                    </Button>
+                                    <button
+                                        onClick={() => setOnboardingStep(1)}
+                                        className="w-full text-center text-sm text-slate-400 hover:text-slate-600 underline underline-offset-4"
+                                    >
+                                        이전으로 돌아가기
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
