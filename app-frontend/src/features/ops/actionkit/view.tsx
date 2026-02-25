@@ -204,35 +204,35 @@ export function OpsActionKitView() {
       )}
 
       {/* Domain Tabs (Top Level) */}
-      <div className="flex p-1 bg-slate-100 rounded-2xl w-full max-w-sm shadow-inner">
+      <div className="flex p-1 bg-slate-100 rounded-2xl w-full md:w-fit shadow-inner overflow-x-auto">
         <button
           onClick={() => handleDomainChange("kits")}
-          className={`flex items-center justify-center gap-2 flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeDomain === "kits"
+          className={`flex items-center justify-center gap-1.5 md:gap-2 flex-1 md:flex-none py-2.5 px-4 md:px-6 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${activeDomain === "kits"
             ? "bg-white text-[#36a4f2] shadow-sm"
             : "text-slate-500 hover:text-slate-700"
             }`}
         >
-          <FolderOpen className="w-4 h-4" />
+          <FolderOpen className="w-4 h-4 shrink-0" />
           액션 키트
         </button>
         <button
           onClick={() => handleDomainChange("laws")}
-          className={`flex items-center justify-center gap-2 flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeDomain === "laws"
+          className={`flex items-center justify-center gap-1.5 md:gap-2 flex-1 md:flex-none py-2.5 px-4 md:px-6 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${activeDomain === "laws"
             ? "bg-white text-[#36a4f2] shadow-sm"
             : "text-slate-500 hover:text-slate-700"
             }`}
         >
-          <Scale className="w-4 h-4" />
+          <Scale className="w-4 h-4 shrink-0" />
           법령 가이드
         </button>
         <button
           onClick={() => handleDomainChange("stats")}
-          className={`flex items-center justify-center gap-2 flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeDomain === "stats"
+          className={`flex items-center justify-center gap-1.5 md:gap-2 flex-1 md:flex-none py-2.5 px-4 md:px-6 rounded-xl text-sm font-bold whitespace-nowrap transition-all ${activeDomain === "stats"
             ? "bg-white text-[#36a4f2] shadow-sm"
             : "text-slate-500 hover:text-slate-700"
             }`}
         >
-          <BarChart3 className="w-4 h-4" />
+          <BarChart3 className="w-4 h-4 shrink-0" />
           통계 대시보드
         </button>
       </div>
