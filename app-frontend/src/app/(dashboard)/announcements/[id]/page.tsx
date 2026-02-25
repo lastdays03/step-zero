@@ -22,9 +22,10 @@ export default function AnnouncementDetailPage() {
                 const data = await announcementsApi.fetchPublishedAnnouncement(id);
                 setAnnouncement(data);
                 setError(null);
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error('Failed to load announcement:', err);
-                if (err.response?.status === 404) {
+                const axiosErr = err as { response?: { status?: number } };
+                if (axiosErr.response?.status === 404) {
                     setError('게시가 종료된 공지입니다.');
                 } else {
                     setError('공지사항을 불러오는 데 실패했습니다.');

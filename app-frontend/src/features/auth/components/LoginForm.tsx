@@ -18,13 +18,13 @@ export const LoginForm = () => {
         setError('');
         try {
             await loginWithCredentials(email, password);
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error('Login error:', err);
 
             // Axios error response check
-            const status = err?.response?.status;
-            const data = err?.response?.data;
-            const detail = data?.detail;
+            const axiosErr = err as { response?: { status?: number; data?: Record<string, string> } };
+            const status = axiosErr?.response?.status;
+            const data = axiosErr?.response?.data;
 
             if (status === 403 && data?.code === 'ACCOUNT_RESTRICTED') {
                 setSuspensionInfo({

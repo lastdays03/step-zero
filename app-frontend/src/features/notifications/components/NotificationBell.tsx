@@ -41,15 +41,33 @@ export const NotificationBell = () => {
             const data = await notificationsApi.getNotifications();
             setNotifications(data);
             setHasUnread(data.some(n => !n.is_read));
-        } catch (error: any) {
-            if (error?.response?.status !== 401) {
+        } catch (error: unknown) {
+            const axiosErr = error as { response?: { status?: number } };
+            if (axiosErr?.response?.status !== 401) {
                 console.error('Failed to fetch notifications:', error);
             }
         }
     };
 
     useEffect(() => {
-        fetchNotifications();
+        const load = async () => {
+            if (!user) {
+                setNotifications([]);
+                setHasUnread(false);
+                return;
+            }
+            try {
+                const data = await notificationsApi.getNotifications();
+                setNotifications(data);
+                setHasUnread(data.some(n => !n.is_read));
+            } catch (error: unknown) {
+                const axiosErr = error as { response?: { status?: number } };
+                if (axiosErr?.response?.status !== 401) {
+                    console.error('Failed to fetch notifications:', error);
+                }
+            }
+        };
+        void load();
 
         let interval: ReturnType<typeof setInterval> | null = null;
         if (user) {
@@ -59,6 +77,7 @@ export const NotificationBell = () => {
         return () => {
             if (interval) clearInterval(interval);
         };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
 
     useEffect(() => {

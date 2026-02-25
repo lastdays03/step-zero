@@ -56,11 +56,11 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                 id_token: credentialResponse.credential,
             });
             completeLogin(response.data);
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Google login error:', error);
-            const status = error?.response?.status;
-            const data = error?.response?.data;
-            const detail = data?.detail;
+            const axiosErr = error as { response?: { status?: number; data?: Record<string, string> } };
+            const status = axiosErr?.response?.status;
+            const data = axiosErr?.response?.data;
 
             if (status === 403 && data?.code === 'ACCOUNT_RESTRICTED') {
                 setSuspensionInfo({
@@ -86,10 +86,11 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                     const fallback = await apiClient.post('/auth/login/social/google');
                     completeLogin(fallback.data);
                     return;
-                } catch (fallbackError: any) {
+                } catch (fallbackError: unknown) {
                     console.error('Google fallback login error:', fallbackError);
-                    const fallbackStatus = fallbackError?.response?.status;
-                    const fallbackData = fallbackError?.response?.data;
+                    const fbErr = fallbackError as { response?: { status?: number; data?: Record<string, string> } };
+                    const fallbackStatus = fbErr?.response?.status;
+                    const fallbackData = fbErr?.response?.data;
 
                     if (fallbackStatus === 403 && fallbackData?.code === 'ACCOUNT_RESTRICTED') {
                         setSuspensionInfo({
