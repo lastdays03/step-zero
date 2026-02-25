@@ -35,6 +35,15 @@ export const useDashboard = () => {
     const loadData = useCallback(async () => {
         setLoading(true);
         setError(null);
+
+        // If the user is not logged in, skip the API call entirely and
+        // show guest data.  This avoids a guaranteed 401 → refresh loop.
+        if (!localStorage.getItem('token')) {
+            setData(GUEST_DASHBOARD_DATA);
+            setLoading(false);
+            return;
+        }
+
         try {
             const response = await apiClient.get('/dashboard');
             setData(response.data);
