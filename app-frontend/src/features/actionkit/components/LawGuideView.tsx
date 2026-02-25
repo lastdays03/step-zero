@@ -286,10 +286,11 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
             {/* Disclaimer */}
             <div className="mt-12 text-center border-t border-slate-100 pt-8 pb-4">
                 <p className="text-xs font-bold text-slate-400 mb-2">📌 법적 면책 조항 (Disclaimer)</p>
-                <p className="text-[11px] leading-relaxed text-slate-400 max-w-3xl mx-auto">
-                    본 서비스에서 제공하는 창업 법령 가이드 콘텐츠는 초기 창업가의 이해를 돕기 위해 작성된 <span className="text-slate-500 font-bold">단순 참고용 자료</span>입니다.<br />
-                    각 비즈니스의 구체적 상황, 업종, 규모 및 최신 법 개정 상황에 따라 적용 내용이 달라질 수 있으므로, 실제 의사결정 및 행정/세무 절차 진행 시에는 반드시 <span className="text-slate-500 font-bold">해당 분야 전문가(변호사, 노무사, 세무사 등)의 검토와 자문</span>을 거치시길 권장합니다.<br />
-                    본 자료의 활용으로 인해 발생하는 직접·간접적인 결과에 대해 플랫폼은 법적인 책임을 지지 않습니다.
+                <p className="text-[11px] leading-relaxed text-slate-400 max-w-3xl mx-auto break-keep">
+                    본 조사자료는 고객의 창업에 정보를 제공할 목적으로 작성되었으며, 어떠한 경우에도 무단 복제 및 배포 될 수 없습니다.
+                    또한 본 자료에 수록된 내용은 당사가 신뢰할 만한 자료 및 정보로 얻어진 것이나,
+                    그 정확성이나 완전성을 보장할 수 없으므로 창업자 자신의 판단과 책임하에 최종결정을 하시기 바랍니다.<br />
+                    <span className="text-slate-500 font-bold">따라서 어떠한 경우에도 본 자료는 고객의 창업의 결과에 대한 법적 책임소재의 증빙자료로 사용될 수 없습니다.</span>
                 </p>
             </div>
         </div>
