@@ -184,8 +184,8 @@ async def _restore_from_backup(backup_file: Path, vector_store: VectorStoreServi
     )
 
     # RecursiveCharacterTextSplitter로 청킹 적용
-    from langchain.text_splitter import RecursiveCharacterTextSplitter
-    from langchain.schema import Document
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    from langchain_core.documents import Document
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=600,
@@ -213,7 +213,16 @@ async def _restore_from_backup(backup_file: Path, vector_store: VectorStoreServi
         len(chunked_docs),
     )
 
-    await vector_store.add_documents(chunked_docs)
+    # 이미 청킹된 Document이므로 PGVector에 직접 적재
+    from langchain_postgres import PGVector
+
+    pg_vector = PGVector(
+        embeddings=vector_store.embeddings,
+        collection_name=vector_store.collection_name,
+        connection=vector_store.db_url,
+        use_jsonb=True,
+    )
+    pg_vector.add_documents(chunked_docs)
     logger.info(
         "--restore-backup: 복원 완료. %d 청크를 law_vectors에 추가했습니다.", len(chunked_docs)
     )
