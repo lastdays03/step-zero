@@ -15,3 +15,4 @@ class Announcement(SQLModel, table=True):
     updated_by: int = Field(foreign_key="user.id", index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    published_at: Optional[datetime] = Field(default=None)

@@ -29,11 +29,13 @@ export function OpsHomeView() {
           <p className="mt-1 text-sm text-slate-600">최근 가입자 조회, 운영자 권한 대상 확인</p>
           <Link href="/ops/users" className="mt-4 inline-block text-sm font-semibold text-blue-600">열기</Link>
         </article>
+        {/* [BLIND] 그로스 클럽 기능 임시 숨김 처리 (요구사항)
         <article className="rounded-2xl border border-slate-200 bg-white p-5">
           <h2 className="text-base font-semibold text-slate-900">그로스 클럽 관리</h2>
           <p className="mt-1 text-sm text-slate-600">신고 콘텐츠 검토 및 블라인드/해제 운영</p>
           <Link href="/ops/growth-club" className="mt-4 inline-block text-sm font-semibold text-blue-600">열기</Link>
         </article>
+        */}
         <article className="rounded-2xl border border-slate-200 bg-white p-5">
           <h2 className="text-base font-semibold text-slate-900">액션 키트 관리</h2>
           <p className="mt-1 text-sm text-slate-600">문서 라이브러리 운영과 업로드 정책 점검</p>

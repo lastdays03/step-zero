@@ -28,8 +28,12 @@ def problem_response(
 
 async def http_exception_to_problem(request: Request, exc: HTTPException) -> JSONResponse:
     title = "HTTP Error"
+    extra = None
     if isinstance(exc.detail, str):
         detail = exc.detail
+    elif isinstance(exc.detail, dict):
+        extra = exc.detail
+        detail = extra.get("message", "Request failed")
     else:
         detail = "Request failed"
     return problem_response(
@@ -37,6 +41,7 @@ async def http_exception_to_problem(request: Request, exc: HTTPException) -> JSO
         status_code=exc.status_code,
         title=title,
         detail=detail,
+        extra=extra,
     )
 
 

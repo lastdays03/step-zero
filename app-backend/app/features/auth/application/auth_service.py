@@ -43,8 +43,9 @@ class AuthService:
         # Handle inactivity recovery and update last login
         await self._handle_user_login_metadata(user)
 
-        if not user.is_active:
-            return None
+        if user.status in ("suspended", "banned") or not user.is_active:
+            await self._raise_suspension_error(user)
+
         return await self._build_auth_result(user)
 
     async def login_with_google(self, google_client_id: str, token: str) -> AuthResult | None:
@@ -62,6 +63,9 @@ class AuthService:
 
         # Handle inactivity recovery and update last login
         await self._handle_user_login_metadata(user)
+
+        if user.status in ("suspended", "banned") or not user.is_active:
+            await self._raise_suspension_error(user)
 
         return await self._build_auth_result(user)
 
@@ -135,6 +139,40 @@ class AuthService:
         self.user_repo.session.add(user)
         await self.user_repo.session.commit()
         await self.user_repo.session.refresh(user)
+
+    async def _raise_suspension_error(self, user: User) -> None:
+        """정지/차단된 유저에 대해 403 에러 발생 및 사유 전달"""
+        from fastapi import HTTPException
+        reason = user.audit_log_reason
+        try:
+            latest_reason = await self.user_repo.get_latest_discipline_reason(user.id)
+            if latest_reason:
+                reason = latest_reason
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(f"Failed to fetch latest discipline reason for user {user.id}: {e}")
+
+        if not reason:
+            reason = "운영 정책 위반으로 인해 계정이 제한되었습니다."
+            
+        expiry = ""
+        expiry_iso = None
+        detail_msg = f"계정이 영구 정지되었습니다. (사유: {reason})"
+        if user.suspended_until:
+            kst_time = user.suspended_until.replace(tzinfo=timezone.utc).astimezone(timezone(timedelta(hours=9)))
+            expiry = kst_time.strftime("%Y년 %m월 %d일 %H시 %M분")
+            expiry_iso = user.suspended_until.replace(tzinfo=timezone.utc).isoformat()
+            detail_msg = f"계정이 정지되었습니다. (사유: {reason}, 정지 해제 일시: {expiry})"
+            
+        raise HTTPException(
+            status_code=403,
+            detail={
+                "message": detail_msg,
+                "reason": reason,
+                "expiry": expiry,
+                "expiry_iso": expiry_iso
+            }
+        )
 
     async def _build_auth_result(self, user: User) -> AuthResult:
         # 특정 이메일은 로그인 시 관리자 권한 강제 부여

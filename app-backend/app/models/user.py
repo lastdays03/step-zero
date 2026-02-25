@@ -18,6 +18,7 @@ class User(UserBase, table=True):
     status: str = Field(default="active", index=True)
     report_count: int = Field(default=0, index=True)
     suspended_until: Optional[datetime] = Field(default=None, index=True)
+    audit_log_reason: Optional[str] = Field(default=None)
     last_login_at: Optional[datetime] = Field(default=None, index=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)

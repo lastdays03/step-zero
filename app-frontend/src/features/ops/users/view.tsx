@@ -309,6 +309,7 @@ export function OpsUsersView() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1 text-[11px]">
+                            {/* [BLIND] 신고 링크 임시 숨김
                             <a
                               href={`/ops/reports?user_id=${user.id}`}
                               onClick={(e) => { e.preventDefault(); alert('관련 게시물 이동 (Placeholder)'); }}
@@ -317,6 +318,7 @@ export function OpsUsersView() {
                               {isHighReport ? <AlertOctagon size={12} /> : <AlertCircle size={12} />}
                               {user.report_count}건 신고
                             </a>
+                            */}
                             <div className="flex items-center gap-1 text-slate-400 font-medium whitespace-nowrap">
                               <History size={12} />
                               마지막 접속: {user.last_login_at ? toKST(user.last_login_at).split(' ').slice(-2).join(' ') : "-"}
