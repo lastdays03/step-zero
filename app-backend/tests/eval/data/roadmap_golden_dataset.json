@@ -1,0 +1,272 @@
+[
+  {
+    "id": "roadmap-001",
+    "description": "휴게음식점(카페) + 서울강남 + 신규 + 6개월 + 5000만원 + 초보자",
+    "payload": {
+      "business_type": "카페",
+      "location": "서울특별시 강남구",
+      "startup_type": "신규",
+      "open_timeline": "6개월",
+      "budget_range": "5000만원",
+      "experience_level": "BEGINNER"
+    },
+    "expected": {
+      "min_phases": 5,
+      "expected_phases": [
+        "입지 검토",
+        "영업 인허가",
+        "안전·소방",
+        "세무 설정",
+        "인사·노무"
+      ],
+      "min_legal_basis": 5,
+      "min_documents": 3,
+      "expected_actionkit_mapping_rate": 0.8,
+      "expected_categories": [
+        "chapter-1",
+        "chapter-2",
+        "chapter-3",
+        "tax",
+        "hr"
+      ],
+      "personalization_notes": "초보자용 상세 체크리스트, 각 단계별 일정 명시"
+    }
+  },
+  {
+    "id": "roadmap-002",
+    "description": "일반음식점 + 부산 + 신규 + 6개월 + 1억원 + 경험자",
+    "payload": {
+      "business_type": "일반음식점",
+      "location": "부산광역시 해운대구",
+      "startup_type": "신규",
+      "open_timeline": "6개월",
+      "budget_range": "1억원",
+      "experience_level": "EXPERIENCED"
+    },
+    "expected": {
+      "min_phases": 4,
+      "expected_phases": [
+        "입지 검토",
+        "영업 인허가",
+        "안전·소방",
+        "세무 설정"
+      ],
+      "min_legal_basis": 4,
+      "min_documents": 3,
+      "expected_actionkit_mapping_rate": 0.85,
+      "expected_categories": [
+        "chapter-1",
+        "chapter-2",
+        "chapter-3",
+        "tax"
+      ],
+      "personalization_notes": "경험자용 간결한 체크리스트, 핵심만 집중"
+    }
+  },
+  {
+    "id": "roadmap-003",
+    "description": "소매업(편의점) + 대구 + 신규 + 6개월 + 3000만원 + 초보자",
+    "payload": {
+      "business_type": "편의점",
+      "location": "대구광역시 중구",
+      "startup_type": "신규",
+      "open_timeline": "6개월",
+      "budget_range": "3000만원",
+      "experience_level": "BEGINNER"
+    },
+    "expected": {
+      "min_phases": 3,
+      "expected_phases": [
+        "입지 검토",
+        "영업 인허가",
+        "안전·소방"
+      ],
+      "min_legal_basis": 3,
+      "min_documents": 2,
+      "expected_actionkit_mapping_rate": 0.6,
+      "expected_categories": [
+        "chapter-1",
+        "chapter-2",
+        "chapter-3"
+      ],
+      "personalization_notes": "소매업은 ActionKit 커버리지 부분적, 일반 소매업 기준 적용"
+    }
+  },
+  {
+    "id": "roadmap-004",
+    "description": "프랜차이즈 가맹점(음식점) + 인천 + 프랜차이즈 + 3개월 + 5000만원 + 초보자",
+    "payload": {
+      "business_type": "프랜차이즈 음식점",
+      "location": "인천광역시 남동구",
+      "startup_type": "프랜차이즈",
+      "open_timeline": "3개월",
+      "budget_range": "5000만원",
+      "experience_level": "BEGINNER"
+    },
+    "expected": {
+      "min_phases": 5,
+      "expected_phases": [
+        "입지 검토",
+        "가맹계약 검토",
+        "영업 인허가",
+        "안전·소방",
+        "세무 설정"
+      ],
+      "min_legal_basis": 5,
+      "min_documents": 4,
+      "expected_actionkit_mapping_rate": 0.75,
+      "expected_categories": [
+        "chapter-1",
+        "chapter-2",
+        "chapter-3",
+        "tax"
+      ],
+      "personalization_notes": "프랜차이즈 관련 법규 강조(가맹사업법), 본사 지원 항목 구분"
+    }
+  },
+  {
+    "id": "roadmap-005",
+    "description": "미용업(미용실) + 경기도 수원 + 신규 + 6개월 + 3000만원 + 경험자",
+    "payload": {
+      "business_type": "미용실",
+      "location": "경기도 수원시 팔달구",
+      "startup_type": "신규",
+      "open_timeline": "6개월",
+      "budget_range": "3000만원",
+      "experience_level": "EXPERIENCED"
+    },
+    "expected": {
+      "min_phases": 3,
+      "expected_phases": [
+        "입지 검토",
+        "영업 인허가",
+        "안전·소방"
+      ],
+      "min_legal_basis": 3,
+      "min_documents": 2,
+      "expected_actionkit_mapping_rate": 0.5,
+      "expected_categories": [
+        "chapter-1",
+        "chapter-2",
+        "chapter-3"
+      ],
+      "personalization_notes": "미용업은 음식점 관련 특화 지원 부분적, 일반 기준 적용"
+    }
+  },
+  {
+    "id": "roadmap-006",
+    "description": "카페 + 서울강남 + 신규 + 3개월 + 3000만원 + 초보자 (빠른 오픈)",
+    "payload": {
+      "business_type": "카페",
+      "location": "서울특별시 강남구",
+      "startup_type": "신규",
+      "open_timeline": "3개월",
+      "budget_range": "3000만원",
+      "experience_level": "BEGINNER"
+    },
+    "expected": {
+      "min_phases": 5,
+      "expected_phases": [
+        "입지 검토",
+        "영업 인허가",
+        "안전·소방",
+        "세무 설정",
+        "인사·노무"
+      ],
+      "min_legal_basis": 5,
+      "min_documents": 3,
+      "expected_actionkit_mapping_rate": 0.8,
+      "expected_categories": [
+        "chapter-1",
+        "chapter-2",
+        "chapter-3",
+        "tax",
+        "hr"
+      ],
+      "personalization_markers": [
+        "병렬 진행",
+        "소규모 예산",
+        "초보자 상세"
+      ],
+      "comparison_pair_id": "roadmap-007",
+      "comparison_note": "roadmap-007과 동일 업종/지역, 다른 일정/예산/경험으로 개인화 비교"
+    }
+  },
+  {
+    "id": "roadmap-007",
+    "description": "카페 + 서울강남 + 양수양도 + 6개월 + 1억원 + 경험자",
+    "payload": {
+      "business_type": "카페",
+      "location": "서울특별시 강남구",
+      "startup_type": "양수양도",
+      "open_timeline": "6개월",
+      "budget_range": "1억원",
+      "experience_level": "EXPERIENCED"
+    },
+    "expected": {
+      "min_phases": 5,
+      "expected_phases": [
+        "입지 검토",
+        "영업양도 절차",
+        "영업 인허가",
+        "안전·소방",
+        "세무 설정"
+      ],
+      "min_legal_basis": 5,
+      "min_documents": 4,
+      "expected_actionkit_mapping_rate": 0.75,
+      "expected_categories": [
+        "chapter-1",
+        "chapter-2",
+        "chapter-3",
+        "tax"
+      ],
+      "personalization_markers": [
+        "양수양도",
+        "영업양도 절차",
+        "대규모 예산"
+      ],
+      "comparison_pair_id": "roadmap-006",
+      "comparison_note": "roadmap-006과 동일 업종/지역, 다른 창업 형태로 개인화 비교"
+    }
+  },
+  {
+    "id": "roadmap-008",
+    "description": "일반음식점 + 부산 + 프랜차이즈 + 3개월 + 3000만원 + 초보자",
+    "payload": {
+      "business_type": "프랜차이즈 음식점",
+      "location": "부산광역시 해운대구",
+      "startup_type": "프랜차이즈",
+      "open_timeline": "3개월",
+      "budget_range": "3000만원",
+      "experience_level": "BEGINNER"
+    },
+    "expected": {
+      "min_phases": 5,
+      "expected_phases": [
+        "입지 검토",
+        "가맹계약 검토",
+        "영업 인허가",
+        "안전·소방",
+        "세무 설정"
+      ],
+      "min_legal_basis": 5,
+      "min_documents": 4,
+      "expected_actionkit_mapping_rate": 0.75,
+      "expected_categories": [
+        "chapter-1",
+        "chapter-2",
+        "chapter-3",
+        "tax"
+      ],
+      "personalization_markers": [
+        "프랜차이즈",
+        "가맹사업법",
+        "병렬 진행",
+        "초보자 상세"
+      ],
+      "comparison_pair_id": "roadmap-002",
+      "comparison_note": "roadmap-002와 동일 지역/업종 범주, 다른 창업 형태/일정/예산으로 개인화 비교"
+    }
+  }
+]

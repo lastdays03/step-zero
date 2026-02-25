@@ -1,3 +1,5 @@
+import os
+
 import pytest
 
 from app.core import db
@@ -7,6 +9,7 @@ from app.features.roadmaps.application.roadmap_generation_service import (
 )
 
 
+@pytest.mark.skipif(not os.environ.get("OPENAI_API_KEY"), reason="OPENAI_API_KEY not set")
 @pytest.mark.asyncio
 async def test_generate_phase_detail_normalizes_document_source_url():
     async with db.async_session() as session:

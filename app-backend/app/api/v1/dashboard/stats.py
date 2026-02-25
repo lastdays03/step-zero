@@ -1,7 +1,7 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Header
+from fastapi import APIRouter, Depends, Header, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
@@ -29,7 +29,18 @@ async def get_dashboard_stats(
         alias="X-Team-Id",
         description="조회 대상 팀 ID. 생략 시 현재 사용자 기본 팀을 사용합니다.",
     ),
+    roadmap_id: str | None = Query(
+        default=None,
+        description="조회 대상 로드맵 ID. 생략 시 최신 로드맵을 사용합니다.",
+    ),
 ) -> Any:
+    parsed_roadmap_id: UUID | None = None
+    if roadmap_id:
+        try:
+            parsed_roadmap_id = UUID(roadmap_id)
+        except ValueError:
+            pass
+
     service = DashboardService(roadmap_repo=RoadmapRepository(session))
     if not current_user:
         result = await service.get_dashboard(
@@ -48,5 +59,6 @@ async def get_dashboard_stats(
         team_id=current_team.id,
         user_name=current_user.full_name or current_user.email.split("@")[0],
         is_guest=False,
+        roadmap_id=parsed_roadmap_id,
     )
     return result.__dict__

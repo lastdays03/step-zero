@@ -1,20 +1,31 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { apiClient } from "@/lib/api-client";
 import { useDashboard } from '../hooks/useDashboard';
 import { ProgressCard } from './ProgressCard';
 import { RoadmapStepper } from './RoadmapStepper';
 import { GrowthClubCard } from './GrowthClubCard';
 import { RoadmapGenerationPanel } from '@/features/roadmap/components';
+import { fetchRoadmapDetail } from '@/features/roadmap/api';
 import { useAuth } from "@/providers/AuthProvider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, CheckSquare } from 'lucide-react';
 import type { RoadmapDetailResponse } from '@/features/roadmap/components/RoadmapExecutionView';
 
+const ACTIVE_ROADMAP_STORAGE_KEY = "stepzero_active_roadmap_id";
+
 export const DashboardView = () => {
     const { isLoggedIn } = useAuth();
-    const { data, loading: isLoading, reload } = useDashboard();
+    const router = useRouter();
+
+    const [activeRoadmapId] = useState<string | null>(() => {
+        if (typeof window === "undefined") return null;
+        return localStorage.getItem(ACTIVE_ROADMAP_STORAGE_KEY);
+    });
+
+    const { data, loading: isLoading, reload } = useDashboard(activeRoadmapId);
     const [roadmapDetail, setRoadmapDetail] = useState<RoadmapDetailResponse | null>(null);
     const [documentsLoading, setDocumentsLoading] = useState(false);
     const [documentsError, setDocumentsError] = useState<string | null>(null);
@@ -35,13 +46,19 @@ export const DashboardView = () => {
         }
 
         let cancelled = false;
-        const loadLatestRoadmapDetail = async () => {
+        const loadRoadmapDetail = async () => {
             setDocumentsLoading(true);
             setDocumentsError(null);
             try {
-                const response = await apiClient.get<RoadmapDetailResponse>("/roadmaps/latest/detail");
+                let detail: RoadmapDetailResponse;
+                if (activeRoadmapId) {
+                    detail = await fetchRoadmapDetail(activeRoadmapId);
+                } else {
+                    const response = await apiClient.get<RoadmapDetailResponse>("/roadmaps/latest/detail");
+                    detail = response.data;
+                }
                 if (!cancelled) {
-                    setRoadmapDetail(response.data);
+                    setRoadmapDetail(detail);
                 }
             } catch (e) {
                 console.error("Failed to load roadmap documents", e);
@@ -56,12 +73,12 @@ export const DashboardView = () => {
             }
         };
 
-        void loadLatestRoadmapDetail();
+        void loadRoadmapDetail();
 
         return () => {
             cancelled = true;
         };
-    }, [isRoadmapNotReady]);
+    }, [isRoadmapNotReady, activeRoadmapId]);
 
     const currentStep = useMemo(() => {
         if (!roadmapDetail) return null;
@@ -127,6 +144,14 @@ export const DashboardView = () => {
             });
     }, [currentStep]);
 
+    const handleGenerated = useCallback(
+        (roadmapId: string | number) => {
+            localStorage.setItem(ACTIVE_ROADMAP_STORAGE_KEY, String(roadmapId));
+            router.push("/roadmap");
+        },
+        [router],
+    );
+
     if (isLoading || !data) {
         return <div className="p-8 text-center">Loading...</div>;
     }
@@ -136,7 +161,7 @@ export const DashboardView = () => {
             <RoadmapGenerationPanel
                 isAuthenticated={isLoggedIn}
                 onRefresh={() => void reload()}
-                onGenerated={() => void reload()}
+                onGenerated={handleGenerated}
             />
         );
     }

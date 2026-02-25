@@ -53,6 +53,26 @@ class DashboardResponse(BaseModel):
     growth_club: GrowthClub
 
 
+class RoadmapSummaryItem(BaseModel):
+    roadmap_id: UUID
+    title: str
+    business_type: str
+    location: str
+    created_at: str
+    progress: int
+    total_steps: int
+    completed_steps: int
+
+
+class RoadmapListResponse(BaseModel):
+    items: list[RoadmapSummaryItem]
+    total: int
+
+
+class RoadmapUpdateRequest(BaseModel):
+    title: str = Field(min_length=1, max_length=200)
+
+
 class RoadmapCreateRequest(BaseModel):
     business_type: str
     location: str

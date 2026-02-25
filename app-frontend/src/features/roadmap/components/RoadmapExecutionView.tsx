@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { RoadmapHeader } from "./RoadmapHeader";
 import { TimelinePhaseCard } from "./TimelinePhaseCard";
 import { RoadmapSidebar } from "./RoadmapSidebar";
@@ -16,6 +16,7 @@ interface RoadmapExecutionViewProps {
     onActionCompletionChange: (stepId: number, actionId: number, completed: boolean) => Promise<void>;
     updatingStepId: number | null;
     updatingActionId: number | null;
+    hideHeader?: boolean;
 }
 
 export const RoadmapExecutionView = ({
@@ -24,6 +25,7 @@ export const RoadmapExecutionView = ({
     onActionCompletionChange,
     updatingStepId,
     updatingActionId,
+    hideHeader,
 }: RoadmapExecutionViewProps) => {
     const phaseGroups = useMemo(() => derivePhaseGroups(data.steps), [data.steps]);
 
@@ -42,8 +44,10 @@ export const RoadmapExecutionView = ({
     }, [data.steps]);
 
     const timelineRef = useRef<HTMLDivElement>(null);
+    const [hasScrolled, setHasScrolled] = useState(false);
 
     useEffect(() => {
+        if (hasScrolled) return;
         const container = timelineRef.current;
         if (!container) return;
         const currentEl = container.querySelector<HTMLElement>('[data-phase="current"]');
@@ -55,16 +59,19 @@ export const RoadmapExecutionView = ({
             const elementRect = currentEl.getBoundingClientRect();
             const offset = elementRect.top - containerRect.top + container.scrollTop - 16;
             container.scrollTo({ top: offset, behavior: "smooth" });
+            setHasScrolled(true);
         }, 100);
         return () => clearTimeout(timer);
-    }, [phaseGroups]);
+    }, [phaseGroups, hasScrolled]);
 
     return (
         <section>
-            <RoadmapHeader
-                title={data.title}
-                currentPhaseName={currentPhase?.phase ?? null}
-            />
+            {!hideHeader && (
+                <RoadmapHeader
+                    title={data.title}
+                    currentPhaseName={currentPhase?.phase ?? null}
+                />
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative lg:h-[calc(100vh-220px)]">
                 {/* Timeline Section */}

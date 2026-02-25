@@ -28,11 +28,11 @@ dependencies = [
     "langchain-core>=0.1.20",
     "langchain-community>=0.0.20",
     "langchain-postgres>=0.0.3",
-    "langchain-text-splitters>=0.0.1",
     "pdfplumber>=0.10.3",
     "psycopg2-binary>=2.9.9",
     "alembic>=1.13.2",
-    "arq>=0.25.0"
+    "arq>=0.25.0",
+    "numpy>=1.26.0"
 ]
 requires-python = ">=3.11"
 
@@ -47,10 +47,6 @@ dev = [
     "flake8>=7.0.0",
     "mypy>=1.8.0",
     "polyfactory>=2.14.0"
-]
-eval = [
-    "ragas>=0.1.0",
-    "datasets>=2.14.0",
 ]
 
 [build-system]
@@ -77,7 +73,5 @@ ignore_missing_imports = true
 asyncio_mode = "auto"
 testpaths = ["tests"]
 markers = [
-    "eval: RAG evaluation tests",
-    "slow: slow tests that call external APIs",
-    "full_eval: full evaluation requiring GPT-4o",
+    "requires_openai: tests that require OPENAI_API_KEY to be set",
 ]

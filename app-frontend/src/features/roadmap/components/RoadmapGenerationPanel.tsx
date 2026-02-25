@@ -37,6 +37,7 @@ interface RoadmapGenerationPanelProps {
     isAuthenticated: boolean;
     onRefresh?: () => void;
     onGenerated: (roadmapId: string | number) => Promise<void> | void;
+    onCancel?: () => void;
 }
 
 export const RoadmapGenerationPanel = ({

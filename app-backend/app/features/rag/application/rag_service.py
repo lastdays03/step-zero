@@ -1,14 +1,56 @@
 import asyncio
+
 from fastapi.concurrency import run_in_threadpool
-from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.output_parsers import StrOutputParser
+from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.runnables import RunnablePassthrough
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_postgres import PGVector
+
 from app.core.config import get_settings
 from app.core.logging import get_logger
 
 logger = get_logger("services.rag")
+
+RAG_SYSTEM_PROMPT = """\
+당신은 한국 창업 법률·행정 전문 AI 어시스턴트입니다.
+
+[규칙]
+1. 아래 제공된 컨텍스트 문서에 기반해서만 답변하세요.
+2. 컨텍스트에 답변 근거가 없으면 "제공된 문서에서 해당 정보를 찾을 수 없습니다."라고 솔직히 답하세요.
+3. 관련 법령이 있으면 법령명과 조항을 인용하세요.
+4. 창업 초보자도 이해할 수 있는 쉬운 한국어로 설명하세요.
+5. 핵심 내용은 불릿 포인트로 정리하세요.
+
+[컨텍스트]
+{context}
+
+[질문]
+{question}
+
+[답변]"""
+
+
+def format_docs_with_metadata(docs):
+    """Format retrieved documents with source metadata for better citation."""
+    if not docs:
+        return "관련 법령 문서를 찾을 수 없습니다."
+    parts = []
+    for i, doc in enumerate(docs, 1):
+        meta = doc.metadata
+        header = (
+            f"[출처 {i}] {meta.get('title', '제목 없음')} ({meta.get('category', '')})"
+        )
+        ref = (
+            f"법령 참조: {meta.get('law_reference', '')}"
+            if meta.get("law_reference")
+            else ""
+        )
+        content = doc.page_content
+        part = f"{header}\n{ref}\n{content}" if ref else f"{header}\n{content}"
+        parts.append(part)
+    return "\n\n---\n\n".join(parts)
+
 
 class RagService:
     def __init__(self):
@@ -25,7 +67,9 @@ class RagService:
             api_key=settings.OPENAI_API_KEY,
         )
 
-        sync_db_url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
+        sync_db_url = settings.DATABASE_URL.replace(
+            "postgresql+asyncpg://", "postgresql://"
+        )
         try:
             self.vector_store = PGVector(
                 embeddings=self.embeddings,
@@ -33,7 +77,7 @@ class RagService:
                 connection=sync_db_url,
                 use_jsonb=True,
             )
-            self.retriever = self.vector_store.as_retriever(search_kwargs={"k": 3})
+            self.retriever = self.vector_store.as_retriever(search_kwargs={"k": 5})
             self.llm = ChatOpenAI(
                 model=settings.OPENAI_CHAT_MODEL,
                 api_key=settings.OPENAI_API_KEY,
@@ -41,33 +85,22 @@ class RagService:
                 max_retries=2,
             )
 
-            self.prompt = ChatPromptTemplate.from_template("""
-            You are an AI assistant for startup founders in Korea.
-            Answer the question based ONLY on the following context.
-            If the answer is not in the context, say "제공된 법령 문서에서는 해당 정보를 찾을 수 없습니다."
-
-            Context:
-            {context}
-
-            Question: {question}
-
-            Answer (in Korean):
-            """)
-
-            def format_docs(docs):
-                if not docs:
-                    return "No relevant legal documents found."
-                return "\n\n".join(doc.page_content for doc in docs)
+            self.prompt = ChatPromptTemplate.from_template(RAG_SYSTEM_PROMPT)
 
             self.chain = (
-                {"context": self.retriever | format_docs, "question": RunnablePassthrough()}
+                {
+                    "context": self.retriever | format_docs_with_metadata,
+                    "question": RunnablePassthrough(),
+                }
                 | self.prompt
                 | self.llm
                 | StrOutputParser()
             )
             self.ready = True
         except Exception as exc:
-            self.unavailable_reason = f"RAG initialization failed: {exc.__class__.__name__}"
+            self.unavailable_reason = (
+                f"RAG initialization failed: {exc.__class__.__name__}"
+            )
             logger.exception("Failed to initialize RAG service")
 
     async def query(self, question: str) -> str:

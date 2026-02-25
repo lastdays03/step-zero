@@ -27,7 +27,7 @@ const GUEST_DASHBOARD_DATA: DashboardData = {
     },
 };
 
-export const useDashboard = () => {
+export const useDashboard = (roadmapId?: string | null) => {
     const [data, setData] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -36,7 +36,9 @@ export const useDashboard = () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await apiClient.get('/dashboard');
+            const params: Record<string, string> = {};
+            if (roadmapId) params.roadmap_id = roadmapId;
+            const response = await apiClient.get('/dashboard', { params });
             setData(response.data);
         } catch (err) {
             console.error('Failed to load dashboard data:', err);
@@ -52,7 +54,7 @@ export const useDashboard = () => {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [roadmapId]);
 
     useEffect(() => {
         void loadData();

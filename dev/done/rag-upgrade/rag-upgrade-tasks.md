@@ -1,7 +1,7 @@
 # RAG 파이프라인 업그레이드 - 작업 체크리스트
 
-> Last Updated: 2026-02-24
-> Status: Step 1~5 완료, 후속 분석 필요
+> Last Updated: 2026-02-25
+> Status: **전체 완료** (Step 1~5 + 후속 P-1~P-4)
 
 ---
 
@@ -87,16 +87,23 @@
 | Step 3: ActionKit 적재 | **완료** ✅ | 5/5 |
 | Step 4: 데이터셋 확장 | **완료** ✅ | 5/5 |
 | Step 5: 최종 평가 | **완료** ✅ | 4/4 |
-| **합계** | | **28/28** |
+| 후속 작업 | **완료** ✅ | 5/5 |
+| **합계** | | **33/33** |
 
 ---
 
-## 후속 작업 (미착수)
+## 후속 작업 — 완료 ✅
 
-> 아래 항목은 최종 평가 후 발견된 이슈로, 별도 분석 후 진행 필요
+> rag-integration 계획(dev/active/rag-integration/)에서 해결
 
-- [ ] **P-1** 기존 법령 샘플 3건 재적재 (백업 데이터 활용, 청킹 적용)
-- [ ] **P-2** golden_dataset legal-001~015 재검토 (실제 데이터 커버리지와 매칭)
-- [ ] **P-3** classify_query 키워드 사전 확장 (행정심판, 행정조사, 소방, 개인정보, 근로계약)
-- [ ] **P-4** 시스템 프롬프트 한국어 전환
-- [ ] **P-5** 리랭킹(Reranking) 도입 검토
+- [x] **P-1** 기존 법령 샘플 3건 재적재
+  - rag-integration T-1.4 → `--restore-backup` 구현
+  - 2026-02-25 실행 완료: 3건 → 5청크 적재
+- [x] **P-2** golden_dataset legal-001~015 재검토
+  - rag-integration T-1.1 + T-1.2 → 커버리지 매핑 + 9건 재작성
+- [x] **P-3** classify_query 키워드 사전 확장
+  - rag-integration T-1.3 → 13개 → 20개
+- [x] **P-4** 시스템 프롬프트 한국어 전환
+  - rag-integration T-2A.1 → RAG+General 한국어 전환
+- [x] **P-5** 리랭킹(Reranking) 도입 검토
+  - rag-integration F-1로 이관 → `dev/active/rag-integration/rag-integration-tasks.md`

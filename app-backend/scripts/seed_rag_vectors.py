@@ -19,12 +19,17 @@ Usage:
 
     # ActionKit만 추가 (기존 법률 데이터 유지)
     python -m scripts.seed_rag_vectors --actionkit-only
+
+    # 백업 JSON으로부터 법률 벡터 복원 (기존 314 벡터 유지하며 추가)
+    python -m scripts.seed_rag_vectors --restore-backup
+    python -m scripts.seed_rag_vectors --restore-backup --backup-file .temp/backups/law_vectors_20260224_153755.json
 """
 
 from __future__ import annotations
 
 import argparse
 import asyncio
+import json
 from pathlib import Path
 
 from app.core.config import get_settings
@@ -66,6 +71,19 @@ def parse_args() -> argparse.Namespace:
         "--actionkit-only",
         action="store_true",
         help="ActionKit 데이터만 인제스트 (법률 문서 건너뜀).",
+    )
+
+    backend_root_for_backup = Path(__file__).resolve().parents[1]
+    default_backup = backend_root_for_backup / ".temp" / "backups" / "law_vectors_20260224_153755.json"
+    parser.add_argument(
+        "--restore-backup",
+        action="store_true",
+        help="백업 JSON 파일의 법률 벡터를 law_vectors 컬렉션에 추가 적재 (기존 벡터 삭제 없음).",
+    )
+    parser.add_argument(
+        "--backup-file",
+        default=str(default_backup),
+        help=f"복원할 백업 JSON 파일 경로 (기본값: {default_backup}).",
     )
     return parser.parse_args()
 
@@ -136,6 +154,81 @@ async def _ingest_laws(source_dir: Path, limit: int, vector_store: VectorStoreSe
     return len(processed)
 
 
+async def _restore_from_backup(backup_file: Path, vector_store: VectorStoreService) -> int:
+    """백업 JSON 파일로부터 법률 벡터를 복원하여 law_vectors 컬렉션에 추가한다.
+
+    기존 벡터(ActionKit 314건 등)는 삭제하지 않고, 백업의 3건만 청킹 후 추가한다.
+    chunk_size=600, overlap=100, RecursiveCharacterTextSplitter 적용.
+
+    반환: 추가된 문서 수.
+    """
+    if not backup_file.exists():
+        logger.warning(
+            "--restore-backup: 백업 파일을 찾을 수 없습니다. 건너뜀. (경로: %s)", backup_file
+        )
+        return 0
+
+    with open(backup_file, encoding="utf-8") as f:
+        backup = json.load(f)
+
+    records = backup.get("records", [])
+    if not records:
+        logger.warning("--restore-backup: 백업 파일에 records가 없습니다. 건너뜀.")
+        return 0
+
+    logger.info(
+        "--restore-backup: 백업 파일 로드 완료 (collection=%s, records=%d, backed_up_at=%s)",
+        backup.get("collection_name", "unknown"),
+        len(records),
+        backup.get("backed_up_at", "unknown"),
+    )
+
+    # RecursiveCharacterTextSplitter로 청킹 적용
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+    from langchain_core.documents import Document
+
+    splitter = RecursiveCharacterTextSplitter(
+        chunk_size=600,
+        chunk_overlap=100,
+        length_function=len,
+    )
+
+    chunked_docs: list[Document] = []
+    for record in records:
+        raw_text = record.get("document", "")
+        metadata = record.get("cmetadata", {})
+        if not raw_text:
+            continue
+        chunks = splitter.split_text(raw_text)
+        for chunk in chunks:
+            chunked_docs.append(Document(page_content=chunk, metadata=metadata))
+
+    if not chunked_docs:
+        logger.warning("--restore-backup: 청킹 후 문서가 없습니다. 건너뜀.")
+        return 0
+
+    logger.info(
+        "--restore-backup: 청킹 완료 (원본 %d건 → 청크 %d건), law_vectors에 추가 중...",
+        len(records),
+        len(chunked_docs),
+    )
+
+    # 이미 청킹된 Document이므로 PGVector에 직접 적재
+    from langchain_postgres import PGVector
+
+    pg_vector = PGVector(
+        embeddings=vector_store.embeddings,
+        collection_name=vector_store.collection_name,
+        connection=vector_store.db_url,
+        use_jsonb=True,
+    )
+    pg_vector.add_documents(chunked_docs)
+    logger.info(
+        "--restore-backup: 복원 완료. %d 청크를 law_vectors에 추가했습니다.", len(chunked_docs)
+    )
+    return len(records)
+
+
 async def _ingest_actionkit(vector_store: VectorStoreService) -> int:
     """Step 2: ActionKitDataSource → ActionKitETLBridge → VectorStore."""
     from app.services.actionkit_data_source import ActionKitDataSource
@@ -174,8 +267,20 @@ async def run() -> int:
     vector_store = VectorStoreService()
     total_ingested = 0
 
-    # Step 1: 법률 문서 (--actionkit-only가 아닌 경우)
-    if not args.actionkit_only:
+    # --restore-backup: 백업 JSON으로부터 복원 (단독 실행 또는 다른 옵션과 병행 가능)
+    if args.restore_backup:
+        backup_file = Path(args.backup_file).expanduser().resolve()
+        total_ingested += await _restore_from_backup(backup_file, vector_store)
+        if not args.actionkit_only and not args.include_actionkit:
+            # restore-backup 단독 실행인 경우 여기서 종료
+            if total_ingested == 0:
+                logger.error("--restore-backup: 복원된 문서가 없습니다.")
+                return 1
+            logger.info("=== 백업 복원 완료: 총 %d건 ===", total_ingested)
+            return 0
+
+    # Step 1: 법률 문서 (--actionkit-only 및 --restore-backup 단독이 아닌 경우)
+    if not args.actionkit_only and not args.restore_backup:
         source_dir = Path(args.source_dir).expanduser().resolve()
         if source_dir.exists():
             total_ingested += await _ingest_laws(source_dir, args.limit, vector_store)
