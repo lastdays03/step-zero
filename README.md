@@ -121,15 +121,21 @@ docker exec -it stepzero-backend bash -lc "cd /app && ./scripts/run_alembic.sh u
 docker exec -it stepzero-backend bash -lc "cd /app && python scripts/seed_actionkit.py"
 ```
 
-**4. 전체 DB 마이그레이션 순차 실행 (팀 공통)**
-`alembic upgrade head` 대신 리비전 단위(`+1`)로 순차 적용/로그 확인이 필요한 경우 사용합니다.
+**4. DB 마이그레이션 관리 (팀 공통)**
+마이그레이션 통합 스크립트 `reset_migrations.sh`를 사용합니다.
 
 ```bash
-# 컨테이너 이름 기준
-docker exec -it stepzero-backend bash -lc "cd /app && ./scripts/migrate_all_sequential.sh"
+# 새 DB에 마이그레이션 전체 적용
+docker exec -it stepzero-backend bash -lc "cd /app && ./scripts/reset_migrations.sh fresh"
 
-# docker compose 서비스명 기준
-docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && ./scripts/migrate_all_sequential.sh"
+# 기존 DB에 alembic_version만 최신으로 stamp (스키마 변경 없음)
+docker exec -it stepzero-backend bash -lc "cd /app && ./scripts/reset_migrations.sh stamp"
+
+# 모델과 DB 스키마 차이 검증
+docker exec -it stepzero-backend bash -lc "cd /app && ./scripts/reset_migrations.sh verify"
+
+# 현재 마이그레이션 상태 확인
+docker exec -it stepzero-backend bash -lc "cd /app && ./scripts/reset_migrations.sh status"
 ```
 
 **5. RAG 벡터 마이그레이션 + 시드 (팀 공통)**
@@ -161,7 +167,7 @@ RAG_BOOTSTRAP_MODE=docker ./scripts/bootstrap_rag.sh
 # 서비스명 기준으로 실행(컨테이너 이름 비의존)
 docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && ./scripts/run_alembic.sh upgrade head"
 docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && python scripts/seed_actionkit.py"
-docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && ./scripts/migrate_all_sequential.sh"
+docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && ./scripts/reset_migrations.sh fresh"
 docker compose -f docker-compose.dev.yml exec -T app-backend bash -lc "cd /app && ./scripts/bootstrap_rag.sh"
 ```
 
@@ -257,6 +263,19 @@ step-zero/
 ├── scripts/                # 유틸리티 스크립트 (DB 초기화 등)
 └── docker-compose.dev.yml  # 🐳 로컬 개발 환경 구성 파일
 ```
+
+### Backend 스크립트 (`app-backend/scripts/`)
+
+| 스크립트 | 용도 |
+| :--- | :--- |
+| `run_alembic.sh` | Alembic 래퍼 (예: `./scripts/run_alembic.sh upgrade head`) |
+| `reset_migrations.sh` | 마이그레이션 통합 관리 (`fresh` / `stamp` / `verify` / `status` / `history`) |
+| `setup_dev.sh` | 로컬 개발환경 초기화 (Python venv + 의존성 + .env) |
+| `bootstrap_actionkit.sh` | ActionKit 마이그레이션 + 시드 통합 실행 |
+| `bootstrap_rag.sh` | RAG 마이그레이션 + 벡터 시드 통합 실행 |
+| `seed_actionkit.py` | ActionKit 시드 데이터 적재 |
+| `seed_rag_vectors.py` | RAG 벡터 임베딩 적재 |
+| `export_openapi.py` | OpenAPI 스펙 추출 |
 
 ---
 
