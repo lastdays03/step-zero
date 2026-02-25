@@ -27,6 +27,7 @@ import {
     X,
     Trash2,
     LucideIcon,
+    History,
 } from 'lucide-react';
 import { ActionKitItem, RelatedLaw } from '../types';
 import { apiClient } from '@/lib/api-client';
@@ -92,6 +93,8 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
     const [selectedTag, setSelectedTag] = useState<string>("all");
     const [previewKit, setPreviewKit] = useState<ActionKitItem | null>(null);
     const [detailItem, setDetailItem] = useState<ActionKitItem | null>(null);
+    const [recentItems, setRecentItems] = useState<ActionKitItem[]>([]);
+    const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
 
     useEffect(() => {
@@ -124,7 +127,21 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
         if (storedBookmarks) {
             try { setBookmarkedItems(JSON.parse(storedBookmarks)); } catch (e) { }
         }
+        const storedRecents = localStorage.getItem('actionkit_recents');
+        if (storedRecents) {
+            try { setRecentItems(JSON.parse(storedRecents)); } catch (e) { }
+        }
     }, []);
+
+    const handleItemClick = (item: ActionKitItem) => {
+        setDetailItem(item);
+        setRecentItems(prev => {
+            const filtered = prev.filter(i => i.name !== item.name);
+            const next = [item, ...filtered].slice(0, 5); // Keep up to 5 items
+            localStorage.setItem('actionkit_recents', JSON.stringify(next));
+            return next;
+        });
+    };
 
     const toggleBookmark = (kit: ActionKitItem, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -349,6 +366,72 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                     >
                         🎁 맞춤 팩 받기
                     </Button>
+
+                    {/* Recent Items Dropdown */}
+                    <div className="relative">
+                        <Button
+                            variant="outline"
+                            onClick={() => setIsHistoryOpen(!isHistoryOpen)}
+                            className="rounded-full border-slate-200 text-slate-600 hover:bg-slate-50 h-10 px-4 gap-2 whitespace-nowrap"
+                        >
+                            <History className="w-4 h-4" />
+                            <span className="hidden sm:inline">최근 본 액션키트</span>
+                            {recentItems.length > 0 && (
+                                <span className="bg-slate-100 text-slate-500 text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[1.25rem] text-center">
+                                    {recentItems.length}
+                                </span>
+                            )}
+                        </Button>
+
+                        {isHistoryOpen && (
+                            <>
+                                <div className="fixed inset-0 z-40" onClick={() => setIsHistoryOpen(false)} />
+                                <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl shadow-slate-200/50 border border-slate-100 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+                                    <div className="p-3 border-b border-slate-50 bg-slate-50/50 flex justify-between items-center">
+                                        <h4 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                                            <History className="w-3.5 h-3.5 text-slate-400" />
+                                            최근 열람한 문서
+                                        </h4>
+                                        {recentItems.length > 0 && (
+                                            <button onClick={() => { setRecentItems([]); localStorage.setItem('actionkit_recents', '[]'); }} className="text-[10px] text-slate-400 hover:text-red-500 font-medium px-2 py-1 rounded hover:bg-red-50 transition-colors">
+                                                기록 지우기
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="max-h-64 overflow-y-auto">
+                                        {recentItems.length === 0 ? (
+                                            <div className="p-6 text-center text-slate-400 text-xs">
+                                                열람한 문서 기록이 없습니다.
+                                            </div>
+                                        ) : (
+                                            <div className="p-2 space-y-1">
+                                                {recentItems.map((item, i) => (
+                                                    <button
+                                                        key={i}
+                                                        onClick={() => { handleItemClick(item); setIsHistoryOpen(false); }}
+                                                        className="w-full text-left p-2 hover:bg-[#36a4f2]/5 rounded-xl transition-colors group flex items-start gap-2.5 outline-none focus:bg-[#36a4f2]/5"
+                                                    >
+                                                        <div className="w-6 h-6 rounded bg-slate-100 flex items-center justify-center shrink-0 group-hover:bg-[#36a4f2]/10 transition-colors">
+                                                            <FolderOpen className="w-3 h-3 text-slate-400 group-hover:text-[#36a4f2]" />
+                                                        </div>
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-[11px] font-bold text-slate-700 truncate group-hover:text-[#36a4f2] transition-colors">
+                                                                {item.name}
+                                                            </p>
+                                                            <p className="text-[9px] text-slate-400 truncate mt-0.5">
+                                                                {item.tag || item.type}
+                                                            </p>
+                                                        </div>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </>
+                        )}
+                    </div>
+
                     <Button
                         onClick={() => setIsDrawerOpen(true)}
                         className="rounded-full bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 text-yellow-700 relative h-10 px-4 whitespace-nowrap"
@@ -461,13 +544,20 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {displayItems.length > 0 ? (
                     displayItems.map((item, index) => (
-                        <Card key={`${item.name}-${index}`} className="group hover:border-[#36a4f2] transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between overflow-hidden" onClick={() => setDetailItem(item)}>
+                        <Card key={`${item.name}-${index}`} className="group hover:border-[#36a4f2] transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between overflow-hidden" onClick={() => handleItemClick(item)}>
                             <CardContent className="p-0 flex flex-col h-full">
                                 <div className="p-6 pb-0">
                                     <div className="flex justify-between items-start mb-4">
-                                        <Badge variant="outline" className="text-[10px] font-black text-[#36a4f2] bg-[#36a4f2]/5 border-[#36a4f2]/10 uppercase py-0.5 px-2">
-                                            {item.tag || '[실무]'}
-                                        </Badge>
+                                        <div className="flex items-center gap-2">
+                                            <Badge variant="outline" className="text-[10px] font-black text-[#36a4f2] bg-[#36a4f2]/5 border-[#36a4f2]/10 uppercase py-0.5 px-2">
+                                                {item.tag || '[실무]'}
+                                            </Badge>
+                                            {(item.name.includes("근로계약서") || item.name.includes("임대차") || item.name.includes("동업") || item.name.includes("주주") || item.name.includes("정관")) && (
+                                                <Badge className="bg-gradient-to-r from-rose-500 to-orange-500 hover:from-rose-600 hover:to-orange-600 border-none px-1.5 py-0 h-4 text-[9px] font-black shadow-sm gap-1">
+                                                    <span className="animate-pulse">🔥</span> HOT
+                                                </Badge>
+                                            )}
+                                        </div>
                                         <div className="flex items-center gap-2">
                                             {item.dday && (
                                                 <Badge className="bg-orange-500 hover:bg-orange-600 text-[10px] font-bold py-0 h-5">
