@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 from app.core import db
 from app.models.notification import Notification
 from app.models.user import User
-from tests.api.test_announcement_notifications import _get_admin_user
+from .test_announcement_notifications import _get_admin_user
 from app.features.ops.application.announcements.service import update_announcement_status, create_announcement
 from app.api.v1.notifications import list_notifications, delete_notification
 
