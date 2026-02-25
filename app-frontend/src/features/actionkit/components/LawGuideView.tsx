@@ -159,7 +159,7 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
                             <CardContent className="p-6">
                                 <div className="flex justify-between items-start mb-4">
                                     <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${isCompleted ? 'bg-emerald-100 text-emerald-600' :
-                                            item.ext === '.pdf' ? 'bg-red-50 text-red-500' : 'bg-[#36a4f2]/10 text-[#36a4f2]'
+                                        item.ext === '.pdf' ? 'bg-red-50 text-red-500' : 'bg-[#36a4f2]/10 text-[#36a4f2]'
                                         }`}>
                                         {isCompleted ? <CheckCircle2 className="w-5 h-5" /> : <FileText className="w-5 h-5" />}
                                     </div>
@@ -281,6 +281,16 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
                         AI 상담 시작하기
                     </Button>
                 </div>
+            </div>
+
+            {/* Disclaimer */}
+            <div className="mt-12 text-center border-t border-slate-100 pt-8 pb-4">
+                <p className="text-xs font-bold text-slate-400 mb-2">📌 법적 면책 조항 (Disclaimer)</p>
+                <p className="text-[11px] leading-relaxed text-slate-400 max-w-3xl mx-auto">
+                    본 서비스에서 제공하는 창업 법령 가이드 콘텐츠는 초기 창업가의 이해를 돕기 위해 작성된 <span className="text-slate-500 font-bold">단순 참고용 자료</span>입니다.<br />
+                    각 비즈니스의 구체적 상황, 업종, 규모 및 최신 법 개정 상황에 따라 적용 내용이 달라질 수 있으므로, 실제 의사결정 및 행정/세무 절차 진행 시에는 반드시 <span className="text-slate-500 font-bold">해당 분야 전문가(변호사, 노무사, 세무사 등)의 검토와 자문</span>을 거치시길 권장합니다.<br />
+                    본 자료의 활용으로 인해 발생하는 직접·간접적인 결과에 대해 플랫폼은 법적인 책임을 지지 않습니다.
+                </p>
             </div>
         </div>
     );
