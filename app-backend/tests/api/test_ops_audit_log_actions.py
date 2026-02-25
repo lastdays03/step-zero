@@ -159,7 +159,7 @@ async def test_ops_announcement_create_and_publish_records_audit_log(client: Asy
 
     publish_response = await client.patch(
         f"/api/v1/ops/announcements/{announcement_id}/status",
-        params={"status": "published"},
+        json={"status": "published"},
         headers={"Authorization": f"Bearer {token}"},
     )
     assert publish_response.status_code == 200
