@@ -18,7 +18,9 @@ class DashboardService:
     def __init__(self, roadmap_repo: RoadmapRepository):
         self.roadmap_repo = roadmap_repo
 
-    async def get_dashboard(self, *, team_id: UUID, user_name: str, is_guest: bool) -> DashboardResult:
+    async def get_dashboard(
+        self, *, team_id: UUID, user_name: str, is_guest: bool, roadmap_id: UUID | None = None,
+    ) -> DashboardResult:
         if is_guest:
             return DashboardResult(
                 user_name="Guest",
@@ -32,7 +34,10 @@ class DashboardService:
                 growth_club={"founders_online": 1250},
             )
 
-        latest_roadmap = await self.roadmap_repo.get_latest_for_team(team_id)
+        if roadmap_id:
+            latest_roadmap = await self.roadmap_repo.get_by_id_for_team(roadmap_id, team_id)
+        else:
+            latest_roadmap = await self.roadmap_repo.get_latest_for_team(team_id)
         if not latest_roadmap:
             return DashboardResult(
                 user_name=user_name,
