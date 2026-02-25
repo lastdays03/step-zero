@@ -7,9 +7,18 @@ from uuid import UUID
 from pydantic import BaseModel, Field, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.logging import get_logger
 from app.features.rag.application.deps import get_rag_service
+from app.features.roadmaps.application.actionkit_matcher import ActionKitMatcher, MatchedActionKit
+from app.features.roadmaps.application.llm_personalizer import LLMPersonalizer, PersonalizedStepDetail
 from app.repositories.roadmap_job_repository import RoadmapJobRepository
 from app.repositories.roadmap_repository import RoadmapRepository
+
+logger = get_logger(__name__)
+
+# Minimum number of ActionKit matches required to use the direct mapping path.
+# Below this threshold, the service falls back to legacy LLM generation.
+_MIN_ACTIONKIT_MATCHES = 3
 
 
 class LegalBasisItem(BaseModel):
@@ -66,11 +75,29 @@ class GenerationPayload:
 
 
 class RoadmapGenerationService:
-    def __init__(self, session: AsyncSession):
+    def __init__(
+        self,
+        session: AsyncSession,
+        *,
+        actionkit_matcher: ActionKitMatcher | None = None,
+        llm_personalizer: LLMPersonalizer | None = None,
+    ):
         self.session = session
         self.job_repo = RoadmapJobRepository(session)
         self.roadmap_repo = RoadmapRepository(session)
         self.rag_service = get_rag_service()
+
+        # Lazy-import deps to avoid circular imports at module level
+        if actionkit_matcher is None or llm_personalizer is None:
+            from app.features.roadmaps.application.deps import (
+                get_actionkit_matcher,
+                get_llm_personalizer,
+            )
+            self.actionkit_matcher = actionkit_matcher or get_actionkit_matcher()
+            self.llm_personalizer = llm_personalizer or get_llm_personalizer()
+        else:
+            self.actionkit_matcher = actionkit_matcher
+            self.llm_personalizer = llm_personalizer
 
     async def submit_job(self, *, team_id: UUID, user_id: int, payload: dict) -> UUID:
         job = await self.job_repo.create_job(team_id=team_id, user_id=user_id, payload=payload)
@@ -115,14 +142,55 @@ class RoadmapGenerationService:
         await self.job_repo.mark_running(job)
         try:
             payload = GenerationPayload(**job.input_payload)
-            master = await self._generate_master_with_retry(payload)
-            await self.job_repo.set_progress(job, stage="DETAIL_GENERATING", progress=35)
-            details = await self._generate_details_parallel(master, payload)
-            await self.job_repo.set_progress(job, stage="PERSISTING", progress=80)
 
+            # --- Step 1: ActionKit matching (fact layer) ---
+            matched_items = await self.actionkit_matcher.match(
+                business_type=payload.business_type,
+                location=payload.location,
+                session=self.session,
+            )
+            await self.job_repo.set_progress(job, stage="MATCHING_COMPLETE", progress=20)
+
+            if len(matched_items) >= _MIN_ACTIONKIT_MATCHES:
+                # --- Step 2a: Sufficient matches -> LLM personalization ---
+                logger.info(
+                    "ActionKit matched %d items; using personalized generation",
+                    len(matched_items),
+                )
+                await self.job_repo.set_progress(job, stage="PERSONALIZING", progress=35)
+
+                payload_dict = self._payload_to_dict(payload)
+                personalized = await self.llm_personalizer.personalize(
+                    matched_items=matched_items,
+                    payload=payload_dict,
+                )
+                await self.job_repo.set_progress(job, stage="PERSISTING", progress=80)
+
+                # Convert personalized details to step payload format
+                steps_payload = self._personalized_to_steps_payload(personalized)
+                generation_mode = "ACTIONKIT_RAG"
+                title = f"{payload.business_type} 창업 로드맵"
+
+            else:
+                # --- Step 2b: Insufficient matches -> fallback to legacy ---
+                logger.info(
+                    "ActionKit matched only %d items (< %d); falling back to LLM generation",
+                    len(matched_items),
+                    _MIN_ACTIONKIT_MATCHES,
+                )
+                master = await self._generate_master_with_retry(payload)
+                await self.job_repo.set_progress(job, stage="DETAIL_GENERATING", progress=35)
+                details = await self._generate_details_parallel(master, payload)
+                await self.job_repo.set_progress(job, stage="PERSISTING", progress=80)
+
+                steps_payload = [item.model_dump() for item in details]
+                generation_mode = "RAG"
+                title = master.title
+
+            # --- Step 3: Persist ---
             roadmap = await self.roadmap_repo.create_roadmap(
                 team_id=job.team_id,
-                title=master.title,
+                title=title,
                 business_type=payload.business_type,
                 location=payload.location,
                 description=payload.description,
@@ -134,17 +202,89 @@ class RoadmapGenerationService:
             )
             await self.roadmap_repo.create_steps_with_details(
                 roadmap_id=roadmap.id,
-                steps_payload=[item.model_dump() for item in details],
-                generation_mode="RAG",
+                steps_payload=steps_payload,
+                generation_mode=generation_mode,
             )
             await self.roadmap_repo.commit()
             await self.job_repo.mark_succeeded(job, roadmap_id=roadmap.id)
         except Exception as exc:
+            logger.exception("Roadmap generation failed for job=%s", job_id)
             await self.job_repo.mark_failed(
                 job,
                 code="GENERATION_FAILED",
                 message=str(exc),
             )
+
+    @staticmethod
+    def _payload_to_dict(payload: GenerationPayload) -> dict:
+        """Convert GenerationPayload dataclass to dict."""
+        return {
+            "business_type": payload.business_type,
+            "location": payload.location,
+            "description": payload.description,
+            "startup_type": payload.startup_type,
+            "open_timeline": payload.open_timeline,
+            "budget_range": payload.budget_range,
+            "additional_notes": payload.additional_notes,
+            "goal_horizon_days": payload.goal_horizon_days,
+            "experience_level": payload.experience_level,
+        }
+
+    @staticmethod
+    def _personalized_to_steps_payload(
+        personalized: list[PersonalizedStepDetail],
+    ) -> list[dict]:
+        """Convert PersonalizedStepDetail list to the dict format expected by
+        ``RoadmapRepository.create_steps_with_details()``.
+
+        The repository expects each dict to contain:
+          phase, title, objective, estimated_days, risk_notes,
+          checklist (list[str]),
+          legal_basis (list[dict] with title, snippet, source_url, ...),
+          documents (list[dict] with name, type, source_url, ...)
+        """
+        results: list[dict] = []
+        for detail in personalized:
+            # Build legal_basis entries compatible with LegalBasisItem / repository
+            legal_basis_items: list[dict] = []
+            for lb in detail.legal_basis:
+                legal_basis_items.append({
+                    "title": lb.get("title", ""),
+                    "snippet": lb.get("snippet", ""),
+                    "source_url": lb.get("source_url"),
+                    "actionkit_item_id": lb.get("actionkit_item_id"),
+                    "mapping_source": detail.mapping_source,
+                })
+
+            # Build document entries compatible with DocumentItem / repository
+            document_items: list[dict] = []
+            for doc in detail.documents:
+                document_items.append({
+                    "name": doc.get("name", "서류"),
+                    "type": doc.get("type", "FORM"),
+                    "file_url": doc.get("file_url"),
+                    "source_url": doc.get("file_url"),
+                    "actionkit_item_id": doc.get("actionkit_item_id"),
+                    "actionkit_file_id": doc.get("actionkit_file_id"),
+                    "mapping_source": detail.mapping_source,
+                })
+
+            # Build checklist with metadata
+            checklist_items: list[str] = detail.checklist or ["필수 요건 확인"]
+
+            results.append({
+                "phase": detail.phase,
+                "title": detail.title or f"{detail.phase} 단계",
+                "objective": detail.objective,
+                "estimated_days": detail.estimated_days,
+                "risk_notes": detail.risk_notes,
+                "checklist": checklist_items,
+                "legal_basis": legal_basis_items,
+                "documents": document_items,
+                "mapping_source": detail.mapping_source,
+                "actionkit_items": detail.actionkit_items,
+            })
+        return results
 
     async def _generate_master_with_retry(self, payload: GenerationPayload) -> MasterRoadmap:
         prompt = (

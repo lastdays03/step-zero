@@ -1,0 +1,485 @@
+{
+  "timestamp": "2026-02-25T12:59:41.147426",
+  "total_scenarios": 8,
+  "mode": "mock",
+  "actionkit_mapping_rate": 1.0,
+  "legal_basis_accuracy": 0.25,
+  "document_validity": 1.0,
+  "generation_success_rate": 1.0,
+  "personalization_score": 0.9167,
+  "overall_score": 0.8333,
+  "avg_personalization_difference": 0.5772,
+  "scenario_results": [
+    {
+      "roadmap_id": null,
+      "actionkit_mapping_rate": 1.0,
+      "legal_basis_accuracy": 0.0,
+      "document_validity": 1.0,
+      "generation_success_rate": 1.0,
+      "personalization_score": 0.6666666666666666,
+      "overall_score": 0.7333333333333333,
+      "details": {
+        "total_steps": 5,
+        "total_legal_basis": 5,
+        "total_documents": 0,
+        "mapping": {
+          "total": 5,
+          "mapped": 5,
+          "unmapped": []
+        },
+        "accuracy": {
+          "total": 5,
+          "relevant": 0,
+          "irrelevant": [
+            "관련 법령 1",
+            "관련 법령 2",
+            "관련 법령 3",
+            "관련 법령 4",
+            "관련 법령 5"
+          ],
+          "mode": "keyword_match",
+          "hints_used": [
+            "식품위생법",
+            "위생",
+            "영업신고"
+          ]
+        },
+        "document": {
+          "total": 0,
+          "valid": 0,
+          "invalid": [],
+          "mode": "n/a"
+        },
+        "success": {
+          "total": 20,
+          "direct": 20,
+          "llm_generated": 0
+        },
+        "personalization": {
+          "signals_hit": 2,
+          "total_signals": 3,
+          "details": {
+            "business_type": "FOUND",
+            "experience_level": "FOUND (BEGINNER)",
+            "timeline": "NOT REFLECTED (6개월)"
+          }
+        }
+      },
+      "scenario_id": "roadmap-001",
+      "description": "휴게음식점(카페) + 서울강남 + 신규 + 6개월 + 5000만원 + 초보자"
+    },
+    {
+      "roadmap_id": null,
+      "actionkit_mapping_rate": 1.0,
+      "legal_basis_accuracy": 0.0,
+      "document_validity": 1.0,
+      "generation_success_rate": 1.0,
+      "personalization_score": 1.0,
+      "overall_score": 0.8,
+      "details": {
+        "total_steps": 4,
+        "total_legal_basis": 4,
+        "total_documents": 0,
+        "mapping": {
+          "total": 4,
+          "mapped": 4,
+          "unmapped": []
+        },
+        "accuracy": {
+          "total": 4,
+          "relevant": 0,
+          "irrelevant": [
+            "관련 법령 1",
+            "관련 법령 2",
+            "관련 법령 3",
+            "관련 법령 4"
+          ],
+          "mode": "keyword_match",
+          "hints_used": [
+            "식품위생법",
+            "위생",
+            "영업신고",
+            "소방",
+            "건축"
+          ]
+        },
+        "document": {
+          "total": 0,
+          "valid": 0,
+          "invalid": [],
+          "mode": "n/a"
+        },
+        "success": {
+          "total": 12,
+          "direct": 12,
+          "llm_generated": 0
+        },
+        "personalization": {
+          "signals_hit": 3,
+          "total_signals": 3,
+          "details": {
+            "business_type": "FOUND",
+            "experience_level": "FOUND (EXPERIENCED)",
+            "timeline": "REFLECTED (6개월)"
+          }
+        }
+      },
+      "scenario_id": "roadmap-002",
+      "description": "일반음식점 + 부산 + 신규 + 6개월 + 1억원 + 경험자"
+    },
+    {
+      "roadmap_id": null,
+      "actionkit_mapping_rate": 1.0,
+      "legal_basis_accuracy": 0.0,
+      "document_validity": 1.0,
+      "generation_success_rate": 1.0,
+      "personalization_score": 0.6666666666666666,
+      "overall_score": 0.7333333333333333,
+      "details": {
+        "total_steps": 3,
+        "total_legal_basis": 3,
+        "total_documents": 0,
+        "mapping": {
+          "total": 3,
+          "mapped": 3,
+          "unmapped": []
+        },
+        "accuracy": {
+          "total": 3,
+          "relevant": 0,
+          "irrelevant": [
+            "관련 법령 1",
+            "관련 법령 2",
+            "관련 법령 3"
+          ],
+          "mode": "keyword_match",
+          "hints_used": [
+            "유통산업발전법",
+            "식품위생법",
+            "위생"
+          ]
+        },
+        "document": {
+          "total": 0,
+          "valid": 0,
+          "invalid": [],
+          "mode": "n/a"
+        },
+        "success": {
+          "total": 12,
+          "direct": 12,
+          "llm_generated": 0
+        },
+        "personalization": {
+          "signals_hit": 2,
+          "total_signals": 3,
+          "details": {
+            "business_type": "FOUND",
+            "experience_level": "FOUND (BEGINNER)",
+            "timeline": "NOT REFLECTED (6개월)"
+          }
+        }
+      },
+      "scenario_id": "roadmap-003",
+      "description": "소매업(편의점) + 대구 + 신규 + 6개월 + 3000만원 + 초보자"
+    },
+    {
+      "roadmap_id": null,
+      "actionkit_mapping_rate": 1.0,
+      "legal_basis_accuracy": 1.0,
+      "document_validity": 1.0,
+      "generation_success_rate": 1.0,
+      "personalization_score": 1.0,
+      "overall_score": 1.0,
+      "details": {
+        "total_steps": 5,
+        "total_legal_basis": 5,
+        "total_documents": 0,
+        "mapping": {
+          "total": 5,
+          "mapped": 5,
+          "unmapped": []
+        },
+        "accuracy": {
+          "total": 5,
+          "relevant": 5,
+          "irrelevant": [],
+          "mode": "non_empty_check",
+          "hints_used": []
+        },
+        "document": {
+          "total": 0,
+          "valid": 0,
+          "invalid": [],
+          "mode": "n/a"
+        },
+        "success": {
+          "total": 25,
+          "direct": 25,
+          "llm_generated": 0
+        },
+        "personalization": {
+          "signals_hit": 4,
+          "total_signals": 4,
+          "details": {
+            "business_type": "FOUND",
+            "startup_type": "FOUND (프랜차이즈)",
+            "experience_level": "FOUND (BEGINNER)",
+            "timeline": "OK (timeline neutral)"
+          }
+        }
+      },
+      "scenario_id": "roadmap-004",
+      "description": "프랜차이즈 가맹점(음식점) + 인천 + 프랜차이즈 + 3개월 + 5000만원 + 초보자"
+    },
+    {
+      "roadmap_id": null,
+      "actionkit_mapping_rate": 1.0,
+      "legal_basis_accuracy": 0.0,
+      "document_validity": 1.0,
+      "generation_success_rate": 1.0,
+      "personalization_score": 1.0,
+      "overall_score": 0.8,
+      "details": {
+        "total_steps": 3,
+        "total_legal_basis": 3,
+        "total_documents": 0,
+        "mapping": {
+          "total": 3,
+          "mapped": 3,
+          "unmapped": []
+        },
+        "accuracy": {
+          "total": 3,
+          "relevant": 0,
+          "irrelevant": [
+            "관련 법령 1",
+            "관련 법령 2",
+            "관련 법령 3"
+          ],
+          "mode": "keyword_match",
+          "hints_used": [
+            "공중위생관리법",
+            "위생"
+          ]
+        },
+        "document": {
+          "total": 0,
+          "valid": 0,
+          "invalid": [],
+          "mode": "n/a"
+        },
+        "success": {
+          "total": 9,
+          "direct": 9,
+          "llm_generated": 0
+        },
+        "personalization": {
+          "signals_hit": 3,
+          "total_signals": 3,
+          "details": {
+            "business_type": "FOUND",
+            "experience_level": "FOUND (EXPERIENCED)",
+            "timeline": "REFLECTED (6개월)"
+          }
+        }
+      },
+      "scenario_id": "roadmap-005",
+      "description": "미용업(미용실) + 경기도 수원 + 신규 + 6개월 + 3000만원 + 경험자"
+    },
+    {
+      "roadmap_id": null,
+      "actionkit_mapping_rate": 1.0,
+      "legal_basis_accuracy": 0.0,
+      "document_validity": 1.0,
+      "generation_success_rate": 1.0,
+      "personalization_score": 1.0,
+      "overall_score": 0.8,
+      "details": {
+        "total_steps": 5,
+        "total_legal_basis": 5,
+        "total_documents": 0,
+        "mapping": {
+          "total": 5,
+          "mapped": 5,
+          "unmapped": []
+        },
+        "accuracy": {
+          "total": 5,
+          "relevant": 0,
+          "irrelevant": [
+            "관련 법령 1",
+            "관련 법령 2",
+            "관련 법령 3",
+            "관련 법령 4",
+            "관련 법령 5"
+          ],
+          "mode": "keyword_match",
+          "hints_used": [
+            "식품위생법",
+            "위생",
+            "영업신고"
+          ]
+        },
+        "document": {
+          "total": 0,
+          "valid": 0,
+          "invalid": [],
+          "mode": "n/a"
+        },
+        "success": {
+          "total": 20,
+          "direct": 20,
+          "llm_generated": 0
+        },
+        "personalization": {
+          "signals_hit": 3,
+          "total_signals": 3,
+          "details": {
+            "business_type": "FOUND",
+            "experience_level": "FOUND (BEGINNER)",
+            "timeline": "OK (timeline neutral)"
+          }
+        }
+      },
+      "scenario_id": "roadmap-006",
+      "description": "카페 + 서울강남 + 신규 + 3개월 + 3000만원 + 초보자 (빠른 오픈)"
+    },
+    {
+      "roadmap_id": null,
+      "actionkit_mapping_rate": 1.0,
+      "legal_basis_accuracy": 0.0,
+      "document_validity": 1.0,
+      "generation_success_rate": 1.0,
+      "personalization_score": 1.0,
+      "overall_score": 0.8,
+      "details": {
+        "total_steps": 5,
+        "total_legal_basis": 5,
+        "total_documents": 0,
+        "mapping": {
+          "total": 5,
+          "mapped": 5,
+          "unmapped": []
+        },
+        "accuracy": {
+          "total": 5,
+          "relevant": 0,
+          "irrelevant": [
+            "관련 법령 1",
+            "관련 법령 2",
+            "관련 법령 3",
+            "관련 법령 4",
+            "관련 법령 5"
+          ],
+          "mode": "keyword_match",
+          "hints_used": [
+            "식품위생법",
+            "위생",
+            "영업신고"
+          ]
+        },
+        "document": {
+          "total": 0,
+          "valid": 0,
+          "invalid": [],
+          "mode": "n/a"
+        },
+        "success": {
+          "total": 20,
+          "direct": 20,
+          "llm_generated": 0
+        },
+        "personalization": {
+          "signals_hit": 4,
+          "total_signals": 4,
+          "details": {
+            "business_type": "FOUND",
+            "startup_type": "FOUND (양수양도)",
+            "experience_level": "FOUND (EXPERIENCED)",
+            "timeline": "REFLECTED (6개월)"
+          }
+        }
+      },
+      "scenario_id": "roadmap-007",
+      "description": "카페 + 서울강남 + 양수양도 + 6개월 + 1억원 + 경험자"
+    },
+    {
+      "roadmap_id": null,
+      "actionkit_mapping_rate": 1.0,
+      "legal_basis_accuracy": 1.0,
+      "document_validity": 1.0,
+      "generation_success_rate": 1.0,
+      "personalization_score": 1.0,
+      "overall_score": 1.0,
+      "details": {
+        "total_steps": 5,
+        "total_legal_basis": 5,
+        "total_documents": 0,
+        "mapping": {
+          "total": 5,
+          "mapped": 5,
+          "unmapped": []
+        },
+        "accuracy": {
+          "total": 5,
+          "relevant": 5,
+          "irrelevant": [],
+          "mode": "non_empty_check",
+          "hints_used": []
+        },
+        "document": {
+          "total": 0,
+          "valid": 0,
+          "invalid": [],
+          "mode": "n/a"
+        },
+        "success": {
+          "total": 25,
+          "direct": 25,
+          "llm_generated": 0
+        },
+        "personalization": {
+          "signals_hit": 4,
+          "total_signals": 4,
+          "details": {
+            "business_type": "FOUND",
+            "startup_type": "FOUND (프랜차이즈)",
+            "experience_level": "FOUND (BEGINNER)",
+            "timeline": "OK (timeline neutral)"
+          }
+        }
+      },
+      "scenario_id": "roadmap-008",
+      "description": "일반음식점 + 부산 + 프랜차이즈 + 3개월 + 3000만원 + 초보자"
+    }
+  ],
+  "personalization_comparisons": [
+    {
+      "pair_description": "'카페 / 신규 / BEGINNER' vs '카페 / 양수양도 / EXPERIENCED'",
+      "checklist_difference": 1.0,
+      "phase_difference": 0.3333,
+      "risk_notes_difference": 0.3333,
+      "estimated_days_difference": 0.3333,
+      "overall_personalization_score": 0.6,
+      "analysis": "개인화 수준: 높음 (overall=0.60) | 체크리스트 차이: 1.00 | 단계 차이: 0.33 | 위험 메모 차이: 0.33 | 예상 일수 차이: 0.33 | 입력 차이: startup_type: '신규' vs '양수양도', experience_level: 'BEGINNER' vs 'EXPERIENCED', budget_range: '3000만원' vs '1억원'",
+      "scenario_ids": [
+        "roadmap-006",
+        "roadmap-007"
+      ]
+    },
+    {
+      "pair_description": "'프랜차이즈 음식점 / 프랜차이즈 / BEGINNER' vs '일반음식점 / 신규 / EXPERIENCED'",
+      "checklist_difference": 1.0,
+      "phase_difference": 0.2,
+      "risk_notes_difference": 0.2,
+      "estimated_days_difference": 0.4286,
+      "overall_personalization_score": 0.5543,
+      "analysis": "개인화 수준: 높음 (overall=0.55) | 체크리스트 차이: 1.00 | 단계 차이: 0.20 | 위험 메모 차이: 0.20 | 예상 일수 차이: 0.43 | 입력 차이: business_type: '프랜차이즈 음식점' vs '일반음식점', startup_type: '프랜차이즈' vs '신규', experience_level: 'BEGINNER' vs 'EXPERIENCED', budget_range: '3000만원' vs '1억원'",
+      "scenario_ids": [
+        "roadmap-008",
+        "roadmap-002"
+      ]
+    }
+  ]
+}

@@ -124,6 +124,41 @@ class RoadmapRepository:
             steps.append(step)
         return steps
 
+    @staticmethod
+    def _build_actionkit_metadata(item: dict, action_type: str) -> dict:
+        """Build metadata_json with ActionKit traceability fields.
+
+        Adds ``actionkit_item_id``, ``actionkit_file_id``,
+        ``actionkit_highlight_id``, ``actionkit_domain``,
+        ``actionkit_category``, and ``mapping_source`` when present.
+        Backward-compatible: old data without these fields is unaffected.
+        """
+        metadata = dict(item)
+
+        # Ensure mapping_source is present (default to llm_generated)
+        if "mapping_source" not in metadata:
+            metadata["mapping_source"] = "llm_generated"
+
+        # For LEGAL_BASIS: extract actionkit_item_id
+        if action_type == "LEGAL_BASIS":
+            for key in ("actionkit_item_id", "actionkit_domain", "actionkit_category"):
+                if key in item:
+                    metadata[key] = item[key]
+
+        # For DOCUMENT: extract actionkit_item_id and actionkit_file_id
+        elif action_type == "DOCUMENT":
+            for key in ("actionkit_item_id", "actionkit_file_id"):
+                if key in item:
+                    metadata[key] = item[key]
+
+        # For CHECKLIST: extract actionkit_item_id and actionkit_highlight_id
+        elif action_type == "CHECKLIST":
+            for key in ("actionkit_item_id", "actionkit_highlight_id"):
+                if key in item:
+                    metadata[key] = item[key]
+
+        return metadata
+
     async def create_steps_with_details(
         self,
         *,
@@ -152,36 +187,58 @@ class RoadmapRepository:
             )
             self.session.add(detail)
 
+            # Determine step-level mapping_source for checklist items
+            step_mapping_source = payload.get("mapping_source", "llm_generated")
+
             for item in payload.get("checklist", []):
-                action = RoadmapStepAction(
-                    roadmap_step_id=step.id,
-                    action_type="CHECKLIST",
-                    title=str(item),
-                    description="",
-                    metadata_json={},
-                )
+                if isinstance(item, str):
+                    checklist_metadata = {
+                        "mapping_source": step_mapping_source,
+                    }
+                    # Propagate actionkit_items from step payload if available
+                    actionkit_items = payload.get("actionkit_items", [])
+                    if actionkit_items:
+                        checklist_metadata["actionkit_item_ids"] = actionkit_items
+                    action = RoadmapStepAction(
+                        roadmap_step_id=step.id,
+                        action_type="CHECKLIST",
+                        title=str(item),
+                        description="",
+                        metadata_json=checklist_metadata,
+                    )
+                else:
+                    # dict-style checklist item (future extension)
+                    action = RoadmapStepAction(
+                        roadmap_step_id=step.id,
+                        action_type="CHECKLIST",
+                        title=str(item.get("title", item)),
+                        description=str(item.get("description", "")),
+                        metadata_json=self._build_actionkit_metadata(item, "CHECKLIST"),
+                    )
                 self.session.add(action)
 
             for item in payload.get("legal_basis", []):
+                metadata_json = self._build_actionkit_metadata(item, "LEGAL_BASIS")
                 action = RoadmapStepAction(
                     roadmap_step_id=step.id,
                     action_type="LEGAL_BASIS",
                     title=str(item.get("title", "근거")),
                     description=str(item.get("snippet", "")),
                     source_url=item.get("source_url"),
-                    metadata_json=item,
+                    metadata_json=metadata_json,
                 )
                 self.session.add(action)
 
             for item in payload.get("documents", []):
                 source_url = self._resolve_document_source_url(item)
+                metadata_json = self._build_actionkit_metadata(item, "DOCUMENT")
                 action = RoadmapStepAction(
                     roadmap_step_id=step.id,
                     action_type="DOCUMENT",
                     title=str(item.get("name", "서류")),
                     description=str(item.get("type", "")),
                     source_url=source_url,
-                    metadata_json=item,
+                    metadata_json=metadata_json,
                 )
                 self.session.add(action)
 
