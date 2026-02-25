@@ -73,10 +73,15 @@ export function useActiveRoadmap(): UseActiveRoadmapReturn {
 
     const reloadActiveRoadmap = useCallback(async () => {
         const currentId = localStorage.getItem(STORAGE_KEY);
-        if (currentId) {
-            await loadDetail(currentId);
+        if (!currentId) return;
+        try {
+            const detail = await fetchRoadmapDetail(currentId);
+            setActiveRoadmapId(currentId);
+            setActiveRoadmap(detail);
+        } catch {
+            // Silently fail on background refresh
         }
-    }, [loadDetail]);
+    }, []);
 
     return {
         activeRoadmapId,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useMemo } from "react";
+import { useEffect, useRef, useMemo, useState } from "react";
 import { RoadmapHeader } from "./RoadmapHeader";
 import { TimelinePhaseCard } from "./TimelinePhaseCard";
 import { RoadmapSidebar } from "./RoadmapSidebar";
@@ -44,8 +44,10 @@ export const RoadmapExecutionView = ({
     }, [data.steps]);
 
     const timelineRef = useRef<HTMLDivElement>(null);
+    const [hasScrolled, setHasScrolled] = useState(false);
 
     useEffect(() => {
+        if (hasScrolled) return;
         const container = timelineRef.current;
         if (!container) return;
         const currentEl = container.querySelector<HTMLElement>('[data-phase="current"]');
@@ -57,9 +59,10 @@ export const RoadmapExecutionView = ({
             const elementRect = currentEl.getBoundingClientRect();
             const offset = elementRect.top - containerRect.top + container.scrollTop - 16;
             container.scrollTo({ top: offset, behavior: "smooth" });
+            setHasScrolled(true);
         }, 100);
         return () => clearTimeout(timer);
-    }, [phaseGroups]);
+    }, [phaseGroups, hasScrolled]);
 
     return (
         <section>
