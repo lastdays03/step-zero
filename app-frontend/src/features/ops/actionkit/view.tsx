@@ -21,9 +21,10 @@ import { useOpsAccessGuard } from "@/features/ops/shared/use-ops-access-guard";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Search, FolderOpen, Loader2, Edit3, Trash2, Package, Paperclip, EyeOff, Scale, Highlighter, Settings, Plus, GripVertical } from "lucide-react";
+import { Search, FolderOpen, Loader2, Edit3, Trash2, Package, Paperclip, EyeOff, Scale, Highlighter, Settings, Plus, GripVertical, BarChart3 } from "lucide-react";
 import { ActionKitEditModal } from "@/features/ops/actionkit/components/actionkit-edit-modal";
 import { CategoryEditModal } from "@/features/ops/actionkit/components/category-edit-modal";
+import { OpsActionKitStatsDashboard } from "@/features/ops/actionkit/components/stats-dashboard";
 import { apiClient } from "@/lib/api-client";
 
 export function OpsActionKitView() {
@@ -37,7 +38,7 @@ export function OpsActionKitView() {
   const [isCreating, setIsCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [summary, setSummary] = useState<any>(null);
-  const [activeDomain, setActiveDomain] = useState<"kits" | "laws">("kits");
+  const [activeDomain, setActiveDomain] = useState<"kits" | "laws" | "stats">("kits");
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<any>(null);
@@ -133,11 +134,13 @@ export function OpsActionKitView() {
     return () => { cancelled = true; };
   }, [activeCategory]);
 
-  const handleDomainChange = (domain: "kits" | "laws") => {
+  const handleDomainChange = (domain: "kits" | "laws" | "stats") => {
     setActiveDomain(domain);
-    const domainCats = categories.filter(c => c.domain === domain);
-    if (domainCats.length > 0) {
-      setActiveCategory(domainCats[0].id);
+    if (domain !== "stats") {
+      const domainCats = categories.filter(c => c.domain === domain);
+      if (domainCats.length > 0) {
+        setActiveCategory(domainCats[0].id);
+      }
     }
   };
 
@@ -222,185 +225,201 @@ export function OpsActionKitView() {
           <Scale className="w-4 h-4" />
           법령 가이드
         </button>
-      </div>
-
-      {/* Category Tabs (Sub Level) */}
-      <div className="flex gap-2 border-b border-slate-200 pb-2 overflow-x-auto items-center">
-        {filteredCategories.map((cat) => (
-          <div key={cat.id} className="group relative flex items-center">
-            <button
-              onClick={() => setActiveCategory(cat.id)}
-              onDoubleClick={() => {
-                setEditingCategory(cat);
-                setIsCategoryModalOpen(true);
-              }}
-              className={`px-4 py-2 font-bold text-sm rounded-t-xl transition-colors ${activeCategory === cat.id
-                ? "bg-slate-100 text-[#36a4f2] border-b-2 border-[#36a4f2]"
-                : "text-slate-500 hover:bg-slate-50"
-                }`}
-              title="더블 클릭하여 수정"
-            >
-              {cat.title}
-            </button>
-            <button
-              title="카테고리 수정/삭제"
-              onClick={() => { setEditingCategory(cat); setIsCategoryModalOpen(true); }}
-              className="opacity-0 group-hover:opacity-100 absolute right-1 top-1 text-slate-400 hover:text-[#36a4f2] bg-white rounded-full p-0.5"
-            >
-              <Settings className="w-3 h-3" />
-            </button>
-          </div>
-        ))}
         <button
-          title="새 카테고리 추가"
-          onClick={() => { setEditingCategory(null); setIsCategoryModalOpen(true); }}
-          className="ml-2 w-8 h-8 rounded-full border border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:text-[#36a4f2] hover:border-[#36a4f2] transition-colors"
+          onClick={() => handleDomainChange("stats")}
+          className={`flex items-center justify-center gap-2 flex-1 py-2.5 px-4 rounded-xl text-sm font-bold transition-all ${activeDomain === "stats"
+            ? "bg-white text-[#36a4f2] shadow-sm"
+            : "text-slate-500 hover:text-slate-700"
+            }`}
         >
-          <Plus className="w-5 h-5" />
+          <BarChart3 className="w-4 h-4" />
+          통계 대시보드
         </button>
       </div>
 
-      <Card className="shadow-sm border-slate-200">
-        <div className="p-4 border-b border-slate-100 flex justify-between">
-          <div className="relative w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input
-              type="text"
-              placeholder="항목 검색..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-1.5 text-sm border-slate-200 rounded-lg focus:ring-[#36a4f2]/20 outline-none border"
+      {activeDomain === "stats" ? (
+        <OpsActionKitStatsDashboard />
+      ) : (
+        <>
+          {/* Category Tabs (Sub Level) */}
+          <div className="flex gap-2 border-b border-slate-200 pb-2 overflow-x-auto items-center">
+            {filteredCategories.map((cat) => (
+              <div key={cat.id} className="group relative flex items-center">
+                <button
+                  onClick={() => setActiveCategory(cat.id)}
+                  onDoubleClick={() => {
+                    setEditingCategory(cat);
+                    setIsCategoryModalOpen(true);
+                  }}
+                  className={`px-4 py-2 font-bold text-sm rounded-t-xl transition-colors ${activeCategory === cat.id
+                    ? "bg-slate-100 text-[#36a4f2] border-b-2 border-[#36a4f2]"
+                    : "text-slate-500 hover:bg-slate-50"
+                    }`}
+                  title="더블 클릭하여 수정"
+                >
+                  {cat.title}
+                </button>
+                <button
+                  title="카테고리 수정/삭제"
+                  onClick={() => { setEditingCategory(cat); setIsCategoryModalOpen(true); }}
+                  className="opacity-0 group-hover:opacity-100 absolute right-1 top-1 text-slate-400 hover:text-[#36a4f2] bg-white rounded-full p-0.5"
+                >
+                  <Settings className="w-3 h-3" />
+                </button>
+              </div>
+            ))}
+            <button
+              title="새 카테고리 추가"
+              onClick={() => { setEditingCategory(null); setIsCategoryModalOpen(true); }}
+              className="ml-2 w-8 h-8 rounded-full border border-dashed border-slate-300 flex items-center justify-center text-slate-400 hover:text-[#36a4f2] hover:border-[#36a4f2] transition-colors"
+            >
+              <Plus className="w-5 h-5" />
+            </button>
+          </div>
+
+          <Card className="shadow-sm border-slate-200">
+            <div className="p-4 border-b border-slate-100 flex justify-between">
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="항목 검색..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-4 py-1.5 text-sm border-slate-200 rounded-lg focus:ring-[#36a4f2]/20 outline-none border"
+                />
+              </div>
+              <div className="text-sm font-semibold text-slate-500 flex items-center">
+                총 {filteredItems.length}개 항목
+              </div>
+            </div>
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="py-20 flex justify-center items-center text-slate-400">
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                </div>
+              ) : filteredItems.length === 0 ? (
+                <div className="py-20 text-center text-slate-400">
+                  <FolderOpen className="w-12 h-12 mx-auto mb-4 opacity-20" />
+                  <p className="text-sm font-bold">
+                    {searchQuery ? "검색 결과가 없습니다." : "이 카테고리에는 아직 항목이 없습니다."}
+                  </p>
+                </div>
+              ) : (
+                <div className="w-full">
+                  <table className="w-full text-left text-sm whitespace-nowrap">
+                    <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
+                      <tr>
+                        <th className="px-3 py-3 w-8"></th>
+                        <th className="px-6 py-3">상태</th>
+                        <th className="px-6 py-3 w-1/3">제목</th>
+                        <th className="px-6 py-3">종류/태그</th>
+                        <th className="px-6 py-3">첨부버전</th>
+                        <th className="px-6 py-3">순서</th>
+                        <th className="px-6 py-3 text-right">관리</th>
+                      </tr>
+                    </thead>
+                    <DragDropContext onDragEnd={handleDragEnd}>
+                      <Droppable droppableId="items_list">
+                        {(provided) => (
+                          <tbody
+                            className="divide-y divide-slate-100"
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
+                          >
+                            {filteredItems.map((item, index) => (
+                              <Draggable key={item.id.toString()} draggableId={item.id.toString()} index={index} isDragDisabled={!!searchQuery}>
+                                {(provided, snapshot) => (
+                                  <tr
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className={`transition-colors ${snapshot.isDragging ? 'bg-white shadow-xl ring-1 ring-[#36a4f2]/20' : 'hover:bg-slate-50'}`}
+                                  >
+                                    <td className="px-3 py-4" {...provided.dragHandleProps}>
+                                      <GripVertical className="w-4 h-4 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing" />
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <Badge className={`border-none ${item.is_active ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
+                                        {item.is_active ? '게시중' : '숨김'}
+                                      </Badge>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <p className="font-bold text-slate-800 line-clamp-1">{item.name}</p>
+                                      <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">{item.summary}</p>
+                                    </td>
+                                    <td className="px-6 py-4">
+                                      <Badge variant="outline" className="text-[10px] text-slate-500">{item.type || item.ext || item.file_type || "유형없음"}</Badge>
+                                    </td>
+                                    <td className="px-6 py-4 text-xs font-semibold text-slate-500">
+                                      v{item.files?.length ? item.files[0].version : "1"} (최신)
+                                    </td>
+                                    <td className="px-6 py-4 text-xs text-slate-500">
+                                      {item.sort_order || 0}
+                                    </td>
+                                    <td className="px-6 py-4 text-right">
+                                      <div className="flex justify-end gap-2">
+                                        <Button
+                                          variant="outline"
+                                          size="icon"
+                                          onClick={() => setEditingItem(item)}
+                                          className="w-8 h-8 rounded-md text-slate-400 hover:text-[#36a4f2]"
+                                        >
+                                          <Edit3 className="w-4 h-4" />
+                                        </Button>
+                                        <Button variant="outline" size="icon" className="w-8 h-8 rounded-md text-slate-400 hover:text-red-500" onClick={() => handleDelete(item)}>
+                                          <Trash2 className="w-4 h-4" />
+                                        </Button>
+                                      </div>
+                                    </td>
+                                  </tr>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                          </tbody>
+                        )}
+                      </Droppable>
+                    </DragDropContext>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {editingItem && (
+            <ActionKitEditModal
+              item={editingItem}
+              isOpen={!!editingItem}
+              onClose={() => setEditingItem(null)}
+              onSaved={() => {
+                if (activeCategory) loadItems(activeCategory);
+                fetchSummary().then(setSummary).catch(console.error);
+              }}
             />
-          </div>
-          <div className="text-sm font-semibold text-slate-500 flex items-center">
-            총 {filteredItems.length}개 항목
-          </div>
-        </div>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="py-20 flex justify-center items-center text-slate-400">
-              <Loader2 className="w-8 h-8 animate-spin" />
-            </div>
-          ) : filteredItems.length === 0 ? (
-            <div className="py-20 text-center text-slate-400">
-              <FolderOpen className="w-12 h-12 mx-auto mb-4 opacity-20" />
-              <p className="text-sm font-bold">
-                {searchQuery ? "검색 결과가 없습니다." : "이 카테고리에는 아직 항목이 없습니다."}
-              </p>
-            </div>
-          ) : (
-            <div className="w-full">
-              <table className="w-full text-left text-sm whitespace-nowrap">
-                <thead className="bg-slate-50 text-slate-500 font-semibold border-b border-slate-100">
-                  <tr>
-                    <th className="px-3 py-3 w-8"></th>
-                    <th className="px-6 py-3">상태</th>
-                    <th className="px-6 py-3 w-1/3">제목</th>
-                    <th className="px-6 py-3">종류/태그</th>
-                    <th className="px-6 py-3">첨부버전</th>
-                    <th className="px-6 py-3">순서</th>
-                    <th className="px-6 py-3 text-right">관리</th>
-                  </tr>
-                </thead>
-                <DragDropContext onDragEnd={handleDragEnd}>
-                  <Droppable droppableId="items_list">
-                    {(provided) => (
-                      <tbody
-                        className="divide-y divide-slate-100"
-                        {...provided.droppableProps}
-                        ref={provided.innerRef}
-                      >
-                        {filteredItems.map((item, index) => (
-                          <Draggable key={item.id.toString()} draggableId={item.id.toString()} index={index} isDragDisabled={!!searchQuery}>
-                            {(provided, snapshot) => (
-                              <tr
-                                ref={provided.innerRef}
-                                {...provided.draggableProps}
-                                className={`transition-colors ${snapshot.isDragging ? 'bg-white shadow-xl ring-1 ring-[#36a4f2]/20' : 'hover:bg-slate-50'}`}
-                              >
-                                <td className="px-3 py-4" {...provided.dragHandleProps}>
-                                  <GripVertical className="w-4 h-4 text-slate-300 hover:text-slate-500 cursor-grab active:cursor-grabbing" />
-                                </td>
-                                <td className="px-6 py-4">
-                                  <Badge className={`border-none ${item.is_active ? 'bg-emerald-100 text-emerald-600' : 'bg-slate-100 text-slate-400'}`}>
-                                    {item.is_active ? '게시중' : '숨김'}
-                                  </Badge>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <p className="font-bold text-slate-800 line-clamp-1">{item.name}</p>
-                                  <p className="text-xs text-slate-400 line-clamp-1 mt-0.5">{item.summary}</p>
-                                </td>
-                                <td className="px-6 py-4">
-                                  <Badge variant="outline" className="text-[10px] text-slate-500">{item.type || item.ext || item.file_type || "유형없음"}</Badge>
-                                </td>
-                                <td className="px-6 py-4 text-xs font-semibold text-slate-500">
-                                  v{item.files?.length ? item.files[0].version : "1"} (최신)
-                                </td>
-                                <td className="px-6 py-4 text-xs text-slate-500">
-                                  {item.sort_order || 0}
-                                </td>
-                                <td className="px-6 py-4 text-right">
-                                  <div className="flex justify-end gap-2">
-                                    <Button
-                                      variant="outline"
-                                      size="icon"
-                                      onClick={() => setEditingItem(item)}
-                                      className="w-8 h-8 rounded-md text-slate-400 hover:text-[#36a4f2]"
-                                    >
-                                      <Edit3 className="w-4 h-4" />
-                                    </Button>
-                                    <Button variant="outline" size="icon" className="w-8 h-8 rounded-md text-slate-400 hover:text-red-500" onClick={() => handleDelete(item)}>
-                                      <Trash2 className="w-4 h-4" />
-                                    </Button>
-                                  </div>
-                                </td>
-                              </tr>
-                            )}
-                          </Draggable>
-                        ))}
-                        {provided.placeholder}
-                      </tbody>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-              </table>
-            </div>
           )}
-        </CardContent>
-      </Card>
 
-      {editingItem && (
-        <ActionKitEditModal
-          item={editingItem}
-          isOpen={!!editingItem}
-          onClose={() => setEditingItem(null)}
-          onSaved={() => {
-            if (activeCategory) loadItems(activeCategory);
-            fetchSummary().then(setSummary).catch(console.error);
-          }}
-        />
-      )}
+          {isCreating && activeCategory && (
+            <ActionKitEditModal
+              item={{ category_id: activeCategory, isNew: true }}
+              isOpen={isCreating}
+              onClose={() => setIsCreating(false)}
+              onSaved={() => {
+                if (activeCategory) loadItems(activeCategory);
+                fetchSummary().then(setSummary).catch(console.error);
+              }}
+            />
+          )}
 
-      {isCreating && activeCategory && (
-        <ActionKitEditModal
-          item={{ category_id: activeCategory, isNew: true }}
-          isOpen={isCreating}
-          onClose={() => setIsCreating(false)}
-          onSaved={() => {
-            if (activeCategory) loadItems(activeCategory);
-            fetchSummary().then(setSummary).catch(console.error);
-          }}
-        />
-      )}
-
-      {(isCategoryModalOpen) && (
-        <CategoryEditModal
-          isOpen={isCategoryModalOpen}
-          onClose={() => setIsCategoryModalOpen(false)}
-          onSaved={handleCategorySaved}
-          category={editingCategory}
-          activeDomain={activeDomain}
-        />
+          {(isCategoryModalOpen) && (
+            <CategoryEditModal
+              isOpen={isCategoryModalOpen}
+              onClose={() => setIsCategoryModalOpen(false)}
+              onSaved={handleCategorySaved}
+              category={editingCategory}
+              activeDomain={activeDomain}
+            />
+          )}
+        </>
       )}
     </div>
   );
