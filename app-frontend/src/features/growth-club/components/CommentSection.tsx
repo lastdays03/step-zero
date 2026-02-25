@@ -45,8 +45,9 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
             if (!parentId) setNewComment('');
             setReplyTo(null);
             onCommentAdded();
-        } catch {
-            alert('댓글 작성에 실패했습니다.');
+        } catch (error: any) {
+            const message = error.response?.data?.detail || '댓글 작성에 실패했습니다.';
+            alert(message);
         } finally {
             setIsSubmitting(false);
         }

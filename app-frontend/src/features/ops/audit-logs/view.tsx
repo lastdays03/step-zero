@@ -461,7 +461,7 @@ export function OpsAuditLogsView() {
                     <th className="px-6 py-4 text-xs font-bold text-slate-500 w-40">일시</th>
                     <th className="px-6 py-4 text-xs font-bold text-slate-500 w-36">운영자</th>
                     <th className="px-6 py-4 text-xs font-bold text-slate-500 w-48">수행 작업</th>
-                    <th className="px-6 py-4 text-xs font-bold text-slate-500 w-24">대상 타입</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-500 w-24 whitespace-nowrap">대상 타입</th>
                     <th className="px-6 py-4 text-xs font-bold text-slate-500 w-24">대상 ID</th>
                     <th className="px-6 py-4 text-xs font-bold text-slate-500 w-36">대상자 계정</th>
                     <th className="px-6 py-4 text-xs font-bold text-slate-500">상세 내용</th>
@@ -493,7 +493,7 @@ export function OpsAuditLogsView() {
                         </td>
                         <td className="px-6 py-4">
                           {ttMeta ? (
-                            <span className={`flex items-center gap-1 text-xs font-semibold ${ttMeta.color}`}>
+                            <span className={`flex items-center gap-1 text-xs font-semibold whitespace-nowrap ${ttMeta.color}`}>
                               <ttMeta.Icon className="h-3.5 w-3.5" />
                               {ttMeta.label}
                             </span>
@@ -550,8 +550,8 @@ export function OpsAuditLogsView() {
                           key={pageIdx}
                           onClick={() => setPage(pageIdx)}
                           className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${pageIdx === page
-                              ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
-                              : "hover:bg-slate-100 text-slate-500"
+                            ? "bg-blue-600 text-white shadow-sm shadow-blue-200"
+                            : "hover:bg-slate-100 text-slate-500"
                             }`}
                         >
                           {pageIdx + 1}
