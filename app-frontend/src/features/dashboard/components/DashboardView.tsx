@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { apiClient } from "@/lib/api-client";
 import { useDashboard } from '../hooks/useDashboard';
 import { ProgressCard } from './ProgressCard';
@@ -12,8 +13,11 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Clock, CheckSquare } from 'lucide-react';
 import type { RoadmapDetailResponse } from '@/features/roadmap/components/RoadmapExecutionView';
 
+const ACTIVE_ROADMAP_STORAGE_KEY = "stepzero_active_roadmap_id";
+
 export const DashboardView = () => {
     const { isLoggedIn } = useAuth();
+    const router = useRouter();
     const { data, loading: isLoading, reload } = useDashboard();
     const [roadmapDetail, setRoadmapDetail] = useState<RoadmapDetailResponse | null>(null);
     const [documentsLoading, setDocumentsLoading] = useState(false);
@@ -127,6 +131,14 @@ export const DashboardView = () => {
             });
     }, [currentStep]);
 
+    const handleGenerated = useCallback(
+        (roadmapId: string | number) => {
+            localStorage.setItem(ACTIVE_ROADMAP_STORAGE_KEY, String(roadmapId));
+            router.push("/roadmap");
+        },
+        [router],
+    );
+
     if (isLoading || !data) {
         return <div className="p-8 text-center">Loading...</div>;
     }
@@ -136,7 +148,7 @@ export const DashboardView = () => {
             <RoadmapGenerationPanel
                 isAuthenticated={isLoggedIn}
                 onRefresh={() => void reload()}
-                onGenerated={() => void reload()}
+                onGenerated={handleGenerated}
             />
         );
     }

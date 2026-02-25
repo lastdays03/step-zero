@@ -16,6 +16,7 @@ interface RoadmapExecutionViewProps {
     onActionCompletionChange: (stepId: number, actionId: number, completed: boolean) => Promise<void>;
     updatingStepId: number | null;
     updatingActionId: number | null;
+    hideHeader?: boolean;
 }
 
 export const RoadmapExecutionView = ({
@@ -24,6 +25,7 @@ export const RoadmapExecutionView = ({
     onActionCompletionChange,
     updatingStepId,
     updatingActionId,
+    hideHeader,
 }: RoadmapExecutionViewProps) => {
     const phaseGroups = useMemo(() => derivePhaseGroups(data.steps), [data.steps]);
 
@@ -61,10 +63,12 @@ export const RoadmapExecutionView = ({
 
     return (
         <section>
-            <RoadmapHeader
-                title={data.title}
-                currentPhaseName={currentPhase?.phase ?? null}
-            />
+            {!hideHeader && (
+                <RoadmapHeader
+                    title={data.title}
+                    currentPhaseName={currentPhase?.phase ?? null}
+                />
+            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative lg:h-[calc(100vh-220px)]">
                 {/* Timeline Section */}

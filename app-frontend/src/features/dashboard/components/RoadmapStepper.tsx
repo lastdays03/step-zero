@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { DashboardData } from '../hooks/useDashboard';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,7 @@ interface RoadmapStepperProps {
 }
 
 export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
+    const router = useRouter();
     const scrollRef = useRef<HTMLDivElement | null>(null);
     const dragStateRef = useRef<{ pointerId: number | null; startX: number; startScrollLeft: number }>({
         pointerId: null,
@@ -63,7 +65,7 @@ export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
                     <button
                         type="button"
                         onClick={() => {
-                            window.location.href = "/roadmap";
+                            router.push("/roadmap");
                         }}
                         className="text-sm text-[#36a4f2] font-medium hover:underline flex items-center"
                     >

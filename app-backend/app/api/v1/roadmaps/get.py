@@ -14,6 +14,8 @@ from app.api.v1.schemas import (
     RoadmapStepDetailResponse,
     RoadmapStepResponse,
     RoadmapStepStatusUpdateRequest,
+    RoadmapSummaryItem,
+    RoadmapUpdateRequest,
 )
 from app.core.db import get_session
 from app.features.roadmaps.application.roadmap_progress_service import (
@@ -82,6 +84,60 @@ async def _serialize_roadmap_detail(
         title=roadmap.title,
         created_at=roadmap.created_at.isoformat(),
         steps=output_steps,
+    )
+
+
+@router.delete(
+    "/{roadmap_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+    summary="로드맵 삭제",
+    description="로드맵을 소프트 삭제합니다.",
+)
+async def delete_roadmap(
+    roadmap_id: UUID = Path(..., description="삭제할 로드맵 ID"),
+    current_team: Team = Depends(deps.get_current_team),
+    session: AsyncSession = Depends(get_session),
+) -> None:
+    repo = RoadmapRepository(session)
+    deleted = await repo.soft_delete(roadmap_id, current_team.id)
+    if not deleted:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found")
+    await repo.commit()
+
+
+@router.patch(
+    "/{roadmap_id}",
+    response_model=RoadmapSummaryItem,
+    summary="로드맵 제목 수정",
+    description="로드맵의 제목을 수정합니다.",
+    response_description="수정된 로드맵 요약 정보를 반환합니다.",
+)
+async def update_roadmap(
+    request: RoadmapUpdateRequest,
+    roadmap_id: UUID = Path(..., description="수정할 로드맵 ID"),
+    current_team: Team = Depends(deps.get_current_team),
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    repo = RoadmapRepository(session)
+    roadmap = await repo.update_title(roadmap_id, current_team.id, request.title)
+    if not roadmap:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found")
+    await repo.commit()
+
+    steps = await repo.list_steps(roadmap.id)
+    total_steps = len(steps)
+    completed_steps = sum(1 for s in steps if s.status == "COMPLETED")
+    progress = int(completed_steps / total_steps * 100) if total_steps > 0 else 0
+
+    return RoadmapSummaryItem(
+        roadmap_id=roadmap.id,
+        title=roadmap.title,
+        business_type=roadmap.business_type,
+        location=roadmap.location,
+        created_at=roadmap.created_at.isoformat(),
+        progress=progress,
+        total_steps=total_steps,
+        completed_steps=completed_steps,
     )
 
 

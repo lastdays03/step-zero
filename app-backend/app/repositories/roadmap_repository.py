@@ -1,4 +1,7 @@
+from datetime import datetime
 from uuid import UUID
+
+from sqlalchemy import func
 from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -262,6 +265,48 @@ class RoadmapRepository:
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
+
+    async def list_for_team(
+        self, team_id: UUID, offset: int = 0, limit: int = 20
+    ) -> tuple[list[Roadmap], int]:
+        count_stmt = (
+            select(func.count())
+            .select_from(Roadmap)
+            .where(Roadmap.team_id == team_id, Roadmap.deleted_at.is_(None))
+        )
+        count_result = await self.session.execute(count_stmt)
+        total = count_result.scalar_one()
+
+        stmt = (
+            select(Roadmap)
+            .where(Roadmap.team_id == team_id, Roadmap.deleted_at.is_(None))
+            .order_by(Roadmap.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all()), total
+
+    async def soft_delete(self, roadmap_id: UUID, team_id: UUID) -> bool:
+        roadmap = await self.get_by_id_for_team(roadmap_id, team_id)
+        if not roadmap:
+            return False
+        roadmap.deleted_at = datetime.utcnow()
+        self.session.add(roadmap)
+        await self.session.flush()
+        return True
+
+    async def update_title(
+        self, roadmap_id: UUID, team_id: UUID, new_title: str
+    ) -> Roadmap | None:
+        roadmap = await self.get_by_id_for_team(roadmap_id, team_id)
+        if not roadmap:
+            return None
+        roadmap.title = new_title
+        roadmap.updated_at = datetime.utcnow()
+        self.session.add(roadmap)
+        await self.session.flush()
+        return roadmap
 
     async def commit(self) -> None:
         await self.session.commit()

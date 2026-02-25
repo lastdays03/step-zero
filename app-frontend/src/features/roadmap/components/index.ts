@@ -9,3 +9,6 @@ export { RoadmapHeader } from "./RoadmapHeader";
 export { TimelineStepItem } from "./TimelineStepItem";
 export { TimelinePhaseCard } from "./TimelinePhaseCard";
 export { RoadmapSidebar } from "./RoadmapSidebar";
+export { RoadmapSwitcher } from "./RoadmapSwitcher";
+export { RoadmapDeleteDialog } from "./RoadmapDeleteDialog";
+export { RoadmapRenameDialog } from "./RoadmapRenameDialog";
