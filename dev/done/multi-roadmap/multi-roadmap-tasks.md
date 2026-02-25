@@ -1,11 +1,11 @@
 # Multi-Roadmap - Task Checklist (v2)
 
 ## Status Legend
-- [ ] Not started
+- [x] Complete
 - [x] Complete (use when marking done)
 
 ## Progress Summary
-0 / 25 tasks complete (0%)
+25 / 25 tasks complete (100%) — **완료됨 (2026-02-25)**
 
 ## v1 -> v2 변경 요약
 - **삭제**: RoadmapCard, RoadmapListView, `/roadmap/[id]` 상세 페이지, useRoadmapDetail, RoadmapHeader "목록 돌아가기"
@@ -25,7 +25,7 @@
 - Acceptance: 메서드 단독 테스트에서 정상 동작
 - Size: S
 - Dependencies: 없음
-- [ ] Not started
+- [x] Complete
 
 ### 1-2. Repository: `soft_delete()` 메서드 추가
 - File: `app-backend/app/repositories/roadmap_repository.py`
@@ -36,7 +36,7 @@
 - Acceptance: 삭제 후 `get_by_id_for_team()`에서 None 반환
 - Size: S
 - Dependencies: 없음
-- [ ] Not started
+- [x] Complete
 
 ### 1-3. Repository: `update_title()` 메서드 추가
 - File: `app-backend/app/repositories/roadmap_repository.py`
@@ -46,7 +46,7 @@
 - Acceptance: 업데이트 후 재조회 시 새 제목 반환
 - Size: S
 - Dependencies: 없음
-- [ ] Not started
+- [x] Complete
 
 ### 1-4. Schema: Response/Request 모델 추가
 - File: `app-backend/app/api/v1/schemas.py`
@@ -72,7 +72,7 @@
 - Acceptance: Pydantic 직렬화/역직렬화 정상 동작
 - Size: S
 - Dependencies: 없음
-- [ ] Not started
+- [x] Complete
 
 ### 1-5. API: `GET /roadmaps` 목록 조회 엔드포인트
 - File: `app-backend/app/api/v1/roadmaps/get.py`
@@ -84,7 +84,7 @@
 - Acceptance: 멀티 로드맵 팀에서 전체 목록 정상 반환, soft-delete 항목 제외
 - Size: M
 - Dependencies: 1-1, 1-4
-- [ ] Not started
+- [x] Complete
 
 ### 1-6. API: `DELETE /roadmaps/{id}` 소프트 삭제 엔드포인트
 - File: `app-backend/app/api/v1/roadmaps/get.py`
@@ -96,7 +96,7 @@
 - Acceptance: 삭제 후 목록에서 사라지고, `GET /roadmaps/{id}` 시 404
 - Size: M
 - Dependencies: 1-2
-- [ ] Not started
+- [x] Complete
 
 ### 1-7. API: `PATCH /roadmaps/{id}` 이름 변경 엔드포인트
 - File: `app-backend/app/api/v1/roadmaps/get.py`
@@ -111,7 +111,7 @@
 - Acceptance: 이름 변경 후 재조회 시 새 제목 반영
 - Size: S
 - Dependencies: 1-3, 1-4
-- [ ] Not started
+- [x] Complete
 
 ### 1-8. Tests: 멀티 로드맵 API 테스트
 - File: `app-backend/tests/api/test_roadmap_multi.py`
@@ -128,7 +128,7 @@
 - Acceptance: 모든 테스트 PASSED
 - Size: M
 - Dependencies: 1-5, 1-6, 1-7
-- [ ] Not started
+- [x] Complete
 
 ---
 
@@ -157,7 +157,7 @@
 - Acceptance: 타입 컴파일 통과 (`npx tsc --noEmit`)
 - Size: S
 - Dependencies: Phase 1 완료
-- [ ] Not started
+- [x] Complete
 
 ### 2-2. API 함수 추가
 - File: `app-frontend/src/features/roadmap/api/index.ts`
@@ -172,7 +172,7 @@
 - Acceptance: 타입 컴파일 통과
 - Size: M
 - Dependencies: 2-1
-- [ ] Not started
+- [x] Complete
 
 ### 2-3. Hook: `useActiveRoadmap`
 - File: `app-frontend/src/features/roadmap/hooks/useActiveRoadmap.ts`
@@ -187,7 +187,7 @@
 - Acceptance: localStorage 연동, 상세 로드, fallback 동작 확인
 - Size: M
 - Dependencies: 2-2
-- [ ] Not started
+- [x] Complete
 
 ### 2-4. Hook: `useRoadmapList`
 - File: `app-frontend/src/features/roadmap/hooks/useRoadmapList.ts`
@@ -201,7 +201,7 @@
 - Acceptance: Hook 정상 동작 (목록 로드, 삭제, 이름 변경)
 - Size: M
 - Dependencies: 2-2
-- [ ] Not started
+- [x] Complete
 
 ---
 
@@ -225,7 +225,7 @@
 - Acceptance: 패널 열기/닫기, 아이템 표시, 전환/삭제/이름변경/생성 이벤트 정상 발생
 - Size: L
 - Dependencies: 2-1
-- [ ] Not started
+- [x] Complete
 
 ### 3-2. RoadmapDeleteDialog
 - File: `app-frontend/src/features/roadmap/components/RoadmapDeleteDialog.tsx`
@@ -238,7 +238,7 @@
 - Acceptance: 다이얼로그 열기/닫기 정상, 확인 시 콜백 호출
 - Size: S
 - Dependencies: 없음
-- [ ] Not started
+- [x] Complete
 
 ### 3-3. RoadmapRenameDialog
 - File: `app-frontend/src/features/roadmap/components/RoadmapRenameDialog.tsx`
@@ -251,7 +251,7 @@
 - Acceptance: 다이얼로그 열기/닫기, 입력/제출 정상
 - Size: S
 - Dependencies: 없음
-- [ ] Not started
+- [x] Complete
 
 ### 3-4. RoadmapHeader 확장 (Switcher 트리거 통합)
 - File: `app-frontend/src/features/roadmap/components/RoadmapHeader.tsx`
@@ -268,7 +268,7 @@
 - Acceptance: 트리거 버튼 표시/클릭 동작, 기존 동작 유지 (하위 호환)
 - Size: M
 - Dependencies: 없음
-- [ ] Not started
+- [x] Complete
 
 ### 3-5. `/roadmap` 페이지 리팩토링 (활성 로드맵 기반) - 핵심 태스크
 - File: `app-frontend/src/app/(dashboard)/roadmap/page.tsx`
@@ -307,7 +307,7 @@
 - Acceptance: 전체 상태 전환 정상 동작, 기존 step/action 변경 동작 유지
 - Size: XL
 - Dependencies: 2-3, 2-4, 3-1, 3-2, 3-3, 3-4
-- [ ] Not started
+- [x] Complete
 
 ### 3-6. Feature exports 업데이트
 - File: `app-frontend/src/features/roadmap/components/index.ts`
@@ -319,7 +319,7 @@
 - Acceptance: 외부에서 import 가능
 - Size: S
 - Dependencies: 3-1 ~ 3-5
-- [ ] Not started
+- [x] Complete
 
 ---
 
@@ -334,7 +334,7 @@
 - Acceptance: 클릭 시 `/roadmap` 활성 로드맵 뷰로 정상 이동
 - Size: S
 - Dependencies: 3-5
-- [ ] Not started
+- [x] Complete
 
 ### 4-2. DashboardView 생성 후 이동 로직 수정
 - File: `app-frontend/src/features/dashboard/components/DashboardView.tsx`
@@ -348,7 +348,7 @@
 - Acceptance: 대시보드에서 로드맵 생성 후 `/roadmap` 페이지에서 해당 로드맵 바로 표시
 - Size: M
 - Dependencies: 3-5
-- [ ] Not started
+- [x] Complete
 
 ### 4-3. RoadmapGenerationPanel `onGenerated` 콜백 정비
 - File: `app-frontend/src/features/roadmap/components/RoadmapGenerationPanel.tsx`
@@ -366,7 +366,7 @@
 - Acceptance: 콜백 정상 동작, 하위 호환 유지
 - Size: M
 - Dependencies: 3-5
-- [ ] Not started
+- [x] Complete
 
 ### 4-4. 신규 로드맵 추가 플로우 통합
 - File: `app-frontend/src/app/(dashboard)/roadmap/page.tsx`
@@ -387,7 +387,7 @@
 - Acceptance: 생성 완료/취소 전체 플로우 정상 동작
 - Size: M
 - Dependencies: 3-5, 4-3
-- [ ] Not started
+- [x] Complete
 
 ---
 
@@ -406,7 +406,7 @@
 - Acceptance: 전체 플로우 정상 동작
 - Size: M
 - Dependencies: Phase 1-4 모두 완료
-- [ ] Not started
+- [x] Complete
 
 ### 5-2. 엣지 케이스: 마지막 로드맵 삭제
 - Details:
@@ -416,7 +416,7 @@
 - Acceptance: 정상 전환
 - Size: S
 - Dependencies: 5-1
-- [ ] Not started
+- [x] Complete
 
 ### 5-3. 엣지 케이스: localStorage의 활성 ID가 삭제된 로드맵인 경우
 - Details:
@@ -428,7 +428,7 @@
 - Acceptance: 404 시 자동 fallback, 사용자에게 에러 메시지 없이 자연스러운 전환
 - Size: S
 - Dependencies: 2-3
-- [ ] Not started
+- [x] Complete
 
 ### 5-4. 엣지 케이스: 생성 중 취소
 - Details:
@@ -438,7 +438,7 @@
 - Acceptance: 취소 시 이전 활성 로드맵 정상 표시, 폴링 정리
 - Size: S
 - Dependencies: 4-4
-- [ ] Not started
+- [x] Complete
 
 ### 5-5. 로딩/에러 상태 UX 점검
 - Details:
@@ -449,7 +449,7 @@
 - Acceptance: 모든 비동기 상태에 적절한 UI 피드백
 - Size: S
 - Dependencies: 3-5
-- [ ] Not started
+- [x] Complete
 
 ### 5-6. 기존 테스트 회귀 확인
 - Details:
@@ -459,7 +459,7 @@
 - Acceptance: 전체 PASSED, 타입 에러 0건
 - Size: S
 - Dependencies: 전체
-- [ ] Not started
+- [x] Complete
 
 ---
 
