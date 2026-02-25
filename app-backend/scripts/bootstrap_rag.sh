@@ -12,8 +12,8 @@ LIMIT="${RAG_BOOTSTRAP_LIMIT:-0}"
 
 run_local() {
   echo "[bootstrap_rag] mode=local"
-  echo "[bootstrap_rag] applying all migrations sequentially..."
-  ./scripts/migrate_all_sequential.sh
+  echo "[bootstrap_rag] applying migrations..."
+  ./scripts/run_alembic.sh upgrade head
 
   PYTHON_BIN=".venv/bin/python"
   if [[ ! -x "$PYTHON_BIN" ]]; then
@@ -51,10 +51,10 @@ run_docker() {
   echo "[bootstrap_rag] mode=docker"
   if [[ "$LIMIT" -gt 0 ]]; then
     docker compose -f "$COMPOSE_FILE" exec -T "$BACKEND_SERVICE" bash -lc \
-      "cd /app && ./scripts/migrate_all_sequential.sh && python scripts/seed_rag_vectors.py --source-dir \"$SOURCE_DIR\" --limit \"$LIMIT\""
+      "cd /app && ./scripts/run_alembic.sh upgrade head && python scripts/seed_rag_vectors.py --source-dir \"$SOURCE_DIR\" --limit \"$LIMIT\""
   else
     docker compose -f "$COMPOSE_FILE" exec -T "$BACKEND_SERVICE" bash -lc \
-      "cd /app && ./scripts/migrate_all_sequential.sh && python scripts/seed_rag_vectors.py --source-dir \"$SOURCE_DIR\""
+      "cd /app && ./scripts/run_alembic.sh upgrade head && python scripts/seed_rag_vectors.py --source-dir \"$SOURCE_DIR\""
   fi
 }
 

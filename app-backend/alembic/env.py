@@ -34,6 +34,26 @@ if config.config_file_name is not None:
 
 target_metadata = SQLModel.metadata
 
+# autogenerate에서 수동 생성 인덱스를 삭제 대상으로 감지하지 않도록 설정
+MANUAL_INDEXES = {
+    "ix_admin_audit_logs_action_target_type_created_at",
+    "ix_admin_audit_logs_admin_id_created_at",
+}
+
+# LangChain이 직접 관리하는 테이블 (autogenerate에서 제외)
+EXCLUDED_TABLES = {
+    "langchain_pg_collection",
+    "langchain_pg_embedding",
+}
+
+
+def include_name(name, type_, parent_names):
+    if type_ == "table" and name in EXCLUDED_TABLES:
+        return False
+    if type_ == "index" and name in MANUAL_INDEXES:
+        return False
+    return True
+
 
 def run_migrations_offline() -> None:
     context.configure(
@@ -42,6 +62,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        include_name=include_name,
     )
 
     with context.begin_transaction():
@@ -55,7 +76,12 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
-        context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata,
+            compare_type=True,
+            include_name=include_name,
+        )
 
         with context.begin_transaction():
             context.run_migrations()
