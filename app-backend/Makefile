@@ -1,4 +1,4 @@
-.PHONY: setup run worker test migrate-up migrate-revision migrate-check migrate-all rag-bootstrap
+.PHONY: setup run worker test migrate-up migrate-revision migrate-verify migrate-status rag-bootstrap
 
 setup:
 	@./scripts/setup_dev.sh
@@ -18,11 +18,11 @@ migrate-up:
 migrate-revision:
 	@./scripts/run_alembic.sh revision --autogenerate -m "$(m)"
 
-migrate-check:
-	@./scripts/check_migrations.sh
+migrate-verify:
+	@./scripts/reset_migrations.sh verify
 
-migrate-all:
-	@./scripts/migrate_all_sequential.sh
+migrate-status:
+	@./scripts/reset_migrations.sh status
 
 rag-bootstrap:
 	@./scripts/bootstrap_rag.sh
