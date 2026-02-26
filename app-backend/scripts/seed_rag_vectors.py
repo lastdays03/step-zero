@@ -33,7 +33,10 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import hashlib
 import json
+import re
+import shutil
 from pathlib import Path
 
 from sqlmodel import select
@@ -41,7 +44,12 @@ from sqlmodel import select
 from app.core.config import get_settings
 from app.core.db import async_session
 from app.core.logging import get_logger
-from app.models.actionkit import ActionKitCategory, ActionKitItem, ActionKitItemHighlight
+from app.models.actionkit import (
+    ActionKitCategory,
+    ActionKitFile,
+    ActionKitItem,
+    ActionKitItemHighlight,
+)
 from app.services.vector_store import VectorStoreService
 
 logger = get_logger("scripts.seed_rag_vectors")
@@ -301,12 +309,50 @@ _BUSINESS_TYPE_TO_CHAPTER: dict[str, tuple[str, str]] = {
 }
 
 
+def _normalize_filename(filename: str) -> str:
+    """파일명에서 특수 문자를 제거하고 공백을 _로 치환한다."""
+    cleaned = filename.strip().replace(" ", "_")
+    cleaned = re.sub(r"[^A-Za-z0-9._\-가-힣]", "", cleaned)
+    return cleaned or "file.bin"
+
+
+def _copy_file_to_storage(
+    source: Path,
+    *,
+    item_id: int,
+    chapter_slug: str,
+) -> tuple[str, int, str]:
+    """큐레이션 파일을 ActionKit 스토리지에 복사한다.
+
+    반환: (object_key, size_bytes, checksum)
+    """
+    settings = get_settings()
+    storage_root = settings.ACTIONKIT_STORAGE_PATH
+
+    normalized = _normalize_filename(source.name)
+    object_key = f"laws/chapter-{chapter_slug}/{item_id}/v1/{normalized}"
+    dest = storage_root / object_key
+    dest.parent.mkdir(parents=True, exist_ok=True)
+
+    shutil.copy2(source, dest)
+
+    size_bytes = dest.stat().st_size
+    sha = hashlib.sha256()
+    with dest.open("rb") as f:
+        for chunk in iter(lambda: f.read(1024 * 1024), b""):
+            sha.update(chunk)
+    checksum = sha.hexdigest()
+
+    return object_key, size_bytes, checksum
+
+
 async def _ensure_actionkit_items(
     curated_files: list[Path],
 ) -> int:
-    """큐레이션 파일 목록으로부터 ActionKitCategory/Item/Highlight를 생성한다.
+    """큐레이션 파일 목록으로부터 ActionKitCategory/Item/Highlight/File을 생성한다.
 
     이미 동일 name의 Item이 존재하면 건너뛴다 (멱등).
+    파일이 없는 기존 Item에 대해서는 ActionKitFile을 보강한다.
     반환: 새로 생성된 ActionKitItem 수.
     """
     created_count = 0
@@ -314,9 +360,17 @@ async def _ensure_actionkit_items(
     async with async_session() as session:
         # 기존 아이템 이름 로드 (중복 체크용)
         existing_result = await session.execute(
-            select(ActionKitItem.name)
+            select(ActionKitItem.id, ActionKitItem.name, ActionKitItem.category_id)
         )
-        existing_names: set[str] = {row[0] for row in existing_result.fetchall()}
+        existing_rows = existing_result.fetchall()
+        existing_names: set[str] = {row[1] for row in existing_rows}
+        name_to_item_id: dict[str, int] = {row[1]: row[0] for row in existing_rows}
+
+        # 기존 파일 레코드 로드 (item_id → 존재 여부)
+        file_result = await session.execute(
+            select(ActionKitFile.item_id).where(ActionKitFile.is_current.is_(True))
+        )
+        items_with_files: set[int] = {row[0] for row in file_result.fetchall()}
 
         # 기존 카테고리 로드
         cat_result = await session.execute(
@@ -365,14 +419,36 @@ async def _ensure_actionkit_items(
 
             category = slug_to_category[chapter_slug]
 
-            # 아이템 생성
+            # 아이템 생성 + 파일 등록
             for sort_idx, fpath in enumerate(sorted(files), start=1):
                 law_name = _detect_law_name(fpath.name)
 
                 if law_name in existing_names:
-                    logger.info(
-                        "[ActionKit] 이미 존재, 건너뜀: %s", law_name
-                    )
+                    # 기존 Item에 파일이 없으면 보강
+                    item_id = name_to_item_id.get(law_name)
+                    if item_id and item_id not in items_with_files:
+                        object_key, size_bytes, checksum = _copy_file_to_storage(
+                            fpath, item_id=item_id, chapter_slug=chapter_slug,
+                        )
+                        session.add(ActionKitFile(
+                            item_id=item_id,
+                            version=1,
+                            object_key=object_key,
+                            original_filename=fpath.name,
+                            mime_type="text/markdown",
+                            size_bytes=size_bytes,
+                            checksum=checksum,
+                            is_current=True,
+                        ))
+                        items_with_files.add(item_id)
+                        logger.info(
+                            "[ActionKit] 기존 아이템 파일 보강: id=%d, name=%s",
+                            item_id, law_name,
+                        )
+                    else:
+                        logger.info(
+                            "[ActionKit] 이미 존재, 건너뜀: %s", law_name
+                        )
                     continue
 
                 content = fpath.read_text(encoding="utf-8")
@@ -402,13 +478,31 @@ async def _ensure_actionkit_items(
                         )
                     )
 
+                # 파일 복사 + ActionKitFile 레코드 생성
+                object_key, size_bytes, checksum = _copy_file_to_storage(
+                    fpath, item_id=item.id, chapter_slug=chapter_slug,
+                )
+                session.add(ActionKitFile(
+                    item_id=item.id,
+                    version=1,
+                    object_key=object_key,
+                    original_filename=fpath.name,
+                    mime_type="text/markdown",
+                    size_bytes=size_bytes,
+                    checksum=checksum,
+                    is_current=True,
+                ))
+
                 existing_names.add(law_name)
+                name_to_item_id[law_name] = item.id
+                items_with_files.add(item.id)
                 created_count += 1
                 logger.info(
-                    "[ActionKit] 아이템 생성: id=%d, name=%s, highlights=%d",
+                    "[ActionKit] 아이템+파일 생성: id=%d, name=%s, highlights=%d, file=%s",
                     item.id,
                     law_name,
                     len(highlights),
+                    object_key,
                 )
 
         await session.commit()
