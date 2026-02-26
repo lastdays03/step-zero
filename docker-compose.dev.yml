@@ -18,7 +18,7 @@ services:
       - db_data:/var/lib/postgresql/data
       - ./scripts/init_db.sh:/docker-entrypoint-initdb.d/init_db.sh
     networks:
-      - nginx-proxy
+      - stepzero-network
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U stepzero_admin -d stepzero_db" ]
       interval: 5s
@@ -34,7 +34,7 @@ services:
     ports:
       - "6379:6379"
     networks:
-      - nginx-proxy
+      - stepzero-network
     healthcheck:
       test: [ "CMD", "redis-cli", "ping" ]
       interval: 5s
@@ -67,7 +67,7 @@ services:
       app-redis:
         condition: service_healthy
     networks:
-      - nginx-proxy
+      - stepzero-network
 
   # ---------------------------------------------------------------------------
   # Frontend Service (Next.js)
@@ -93,7 +93,7 @@ services:
       app-redis:
         condition: service_healthy
     networks:
-      - nginx-proxy
+      - stepzero-network
 
   # ---------------------------------------------------------------------------
   # Frontend Service (Next.js)
@@ -120,13 +120,12 @@ services:
       - app-backend
       - app-worker
     networks:
-      - nginx-proxy
+      - stepzero-network
 
 volumes:
   db_data:
 
 
 networks:
-  default:
-    external: true
-    name: nginx-proxy
+  stepzero-network:
+    driver: bridge
