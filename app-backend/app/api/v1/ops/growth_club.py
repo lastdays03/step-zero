@@ -10,7 +10,9 @@ from app.models.growth_club import GrowthClubPost, GrowthClubPostRead, GrowthClu
 from app.features.ops.application.growth_club import get_queue_summary
 from app.features.ops.application.audit_logs.service import save_audit_log
 from app.api.deps import get_current_user
+from pydantic import BaseModel
 from app.models.user import AuthenticatedUser, User
+from app.models.notification import Notification
 
 router = APIRouter(prefix="/growth-club")
 
@@ -223,12 +225,20 @@ async def unblind_comment(
     
     return {"status": "success", "message": "Comment unblinded successfully"}
 
+
+class SuspendRequest(BaseModel):
+    reason: str
+    target_type: str  # "POST" or "COMMENT"
+    target_id: int
+
+
 @router.post(
     "/users/{user_id}/suspend",
     summary="작성자 정지",
     description="작성자를 정지하여 그로스 클럽 활동을 제한합니다.",
 )
 async def suspend_user(
+    suspend_data: SuspendRequest,
     user_id: int = Path(..., description="정지할 사용자 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
     session: AsyncSession = Depends(get_session)
@@ -241,7 +251,22 @@ async def suspend_user(
     now_utc = datetime.now(timezone.utc)
     user.is_suspended = True
     user.suspended_at = now_utc.replace(tzinfo=None)  # DB는 naive UTC로 저장
+    user.suspension_reason = suspend_data.reason
     session.add(user)
+    
+    # 알림 생성
+    target_label = "게시글" if suspend_data.target_type == "POST" else "댓글"
+    message = f"사용자의 {target_label}이 부적절함에 따라 관리자에 의해 그로스 클럽의 이용이 불가합니다. 사유: {suspend_data.reason}"
+    
+    notification = Notification(
+        user_id=user_id,
+        actor_id=current_user.id,
+        action_type="SUSPENSION",
+        target_id=suspend_data.target_id,
+        target_type=suspend_data.target_type,
+        message=message
+    )
+    session.add(notification)
     
     # 감사 로그 기록
     from app.features.ops.application.audit_logs.service import save_audit_log
@@ -252,7 +277,7 @@ async def suspend_user(
         target_type="user",
         target_id=str(user_id),
         target_author=user.email,
-        details=f"사용자 '{user.email}' 이용 정지 처리"
+        details=f"사용자 '{user.email}' 이용 정지 처리 (사유: {suspend_data.reason})"
     )
     
     await session.commit()

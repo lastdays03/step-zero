@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Bell, Heart, MessageCircle, Reply, X, CheckCheck } from 'lucide-react';
 import { useNotifications } from '../hooks/useNotifications';
 import { Notification } from '../api/notifications';
+import { useTimeAgo } from '@/features/growth-club/hooks/useTimeAgo';
 
 const ACTION_ICON: Record<string, React.ReactNode> = {
     LIKE: <Heart className="w-4 h-4 text-red-500" />,
@@ -12,15 +13,6 @@ const ACTION_ICON: Record<string, React.ReactNode> = {
     REPLY: <Reply className="w-4 h-4 text-green-500" />,
 };
 
-function timeAgo(dateStr: string): string {
-    const diff = Date.now() - new Date(dateStr).getTime();
-    const mins = Math.floor(diff / 60000);
-    if (mins < 1) return '방금 전';
-    if (mins < 60) return `${mins}분 전`;
-    const hours = Math.floor(mins / 60);
-    if (hours < 24) return `${hours}시간 전`;
-    return `${Math.floor(hours / 24)}일 전`;
-}
 
 function NotificationItem({
     notification,
@@ -31,6 +23,8 @@ function NotificationItem({
     onRead: (id: number) => void;
     onNavigate: (notification: Notification) => void;
 }) {
+    const timeAgo = useTimeAgo(notification.created_at);
+
     const handleClick = () => {
         if (!notification.is_read) onRead(notification.id);
         onNavigate(notification);
@@ -43,8 +37,8 @@ function NotificationItem({
             tabIndex={0}
             onKeyDown={e => e.key === 'Enter' && handleClick()}
             className={`flex items-start gap-3 px-4 py-3 border-b border-zinc-100 last:border-0 cursor-pointer transition-colors ${notification.is_read
-                    ? 'bg-white hover:bg-zinc-50'
-                    : 'bg-blue-50 hover:bg-blue-100/70'
+                ? 'bg-white hover:bg-zinc-50'
+                : 'bg-blue-50 hover:bg-blue-100/70'
                 }`}
         >
             <div className="mt-0.5 flex-shrink-0">
@@ -57,7 +51,7 @@ function NotificationItem({
                     {notification.message}
                 </p>
                 <span className="text-xs text-zinc-400 mt-0.5 block">
-                    {timeAgo(notification.created_at)}
+                    {timeAgo}
                 </span>
             </div>
             {!notification.is_read && (

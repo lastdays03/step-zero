@@ -108,6 +108,82 @@ function PreviewModal({
   );
 }
 
+// ─── 정지 사유 입력 모달 ──────────────────────────────────────────────────────
+function SuspensionModal({
+  userId,
+  username,
+  targetType,
+  onClose,
+  onConfirm,
+}: {
+  userId: number;
+  username: string;
+  targetType: "POST" | "COMMENT";
+  onClose: () => void;
+  onConfirm: (reason: string) => void;
+}) {
+  const [reason, setReason] = useState("");
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [onClose]);
+
+  return (
+    <div
+      className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 backdrop-blur-sm animate-in fade-in duration-200"
+      onClick={onClose}
+    >
+      <div
+        className="relative w-full max-w-md mx-4 bg-white rounded-3xl shadow-2xl p-8 animate-in zoom-in-95 duration-200"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center gap-3 mb-6">
+          <div className="p-2 bg-orange-50 rounded-xl">
+            <Ban className="h-5 w-5 text-orange-500" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-slate-900">유저 이용 정지</h3>
+            <p className="text-sm text-slate-500">{username}님을 정지 처리합니다.</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">
+              정지 사유 입력
+            </label>
+            <textarea
+              autoFocus
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="부적절한 게시글 작성 등의 사유를 입력해주세요."
+              className="w-full h-32 px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-sm focus:outline-none focus:ring-2 focus:ring-orange-300 transition-all resize-none"
+            />
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 rounded-xl bg-slate-100 text-slate-600 font-bold text-sm hover:bg-slate-200 transition-all"
+            >
+              취소
+            </button>
+            <button
+              disabled={!reason.trim()}
+              onClick={() => onConfirm(reason)}
+              className="flex-2 px-8 py-3 rounded-xl bg-orange-500 text-white font-bold text-sm hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-lg shadow-orange-200"
+            >
+              정지하기
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─── 메인 뷰 ─────────────────────────────────────────────────────────────────
 export function OpsGrowthClubView() {
   const { canRender, isAuthReady } = useOpsAccessGuard();
@@ -133,6 +209,14 @@ export function OpsGrowthClubView() {
   const [previewItem, setPreviewItem] = useState<{
     item: Post | Comment;
     type: "post" | "comment";
+  } | null>(null);
+
+  // 정지 모달
+  const [suspensionTarget, setSuspensionTarget] = useState<{
+    userId: number;
+    username: string;
+    targetType: "POST" | "COMMENT";
+    targetId: number;
   } | null>(null);
 
   // ── 데이터 로드 ───────────────────────────────────────────────────────────
@@ -219,20 +303,37 @@ export function OpsGrowthClubView() {
     }
   };
 
-  const handleSuspendUser = async (userId: number, isSuspended: boolean) => {
-    const action = isSuspended ? "정지 해제" : "정지";
-    if (!confirm(`이 유저를 ${action} 처리하시겠습니까?`)) return;
-    try {
-      if (isSuspended) {
+  const handleSuspendUser = async (userId: number, isSuspended: boolean, targetType: "POST" | "COMMENT" = "POST", targetId: number = 0, username: string = "") => {
+    if (isSuspended) {
+      if (!confirm("이 유저의 정지 처리를 해제하시겠습니까?")) return;
+      try {
         await unsuspendUser(userId);
         setSuspendedUsers((prev) => ({ ...prev, [userId]: false }));
-      } else {
-        await suspendUser(userId);
-        setSuspendedUsers((prev) => ({ ...prev, [userId]: true }));
+        alert("정지 해제 처리가 완료되었습니다.");
+        void loadData(true);
+      } catch {
+        alert("정지 해제 중 오류가 발생했습니다.");
       }
-      alert(`유저 ${action} 처리가 완료되었습니다.`);
+    } else {
+      setSuspensionTarget({ userId, username, targetType, targetId });
+    }
+  };
+
+  const confirmSuspension = async (reason: string) => {
+    if (!suspensionTarget) return;
+    try {
+      await suspendUser(
+        suspensionTarget.userId,
+        reason,
+        suspensionTarget.targetType,
+        suspensionTarget.targetId
+      );
+      setSuspendedUsers((prev) => ({ ...prev, [suspensionTarget.userId]: true }));
+      setSuspensionTarget(null);
+      alert("유저 정지 처리가 완료되었습니다.");
+      void loadData(true);
     } catch {
-      alert(`${action} 처리 중 오류가 발생했습니다.`);
+      alert("정지 처리 중 오류가 발생했습니다.");
     }
   };
 
@@ -338,6 +439,17 @@ export function OpsGrowthClubView() {
           item={previewItem.item as (Post | Comment) & { report_count: number; report_reason?: string }}
           type={previewItem.type}
           onClose={() => setPreviewItem(null)}
+        />
+      )}
+
+      {/* 정지 사유 모달 */}
+      {suspensionTarget && (
+        <SuspensionModal
+          userId={suspensionTarget.userId}
+          username={suspensionTarget.username}
+          targetType={suspensionTarget.targetType}
+          onClose={() => setSuspensionTarget(null)}
+          onConfirm={confirmSuspension}
         />
       )}
 
@@ -591,8 +703,8 @@ export function OpsGrowthClubView() {
                           <td className="px-6 py-5">
                             <div className="flex flex-col items-center gap-1.5">
                               <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ring-1 ${post.report_count >= 10
-                                  ? "bg-red-200 text-red-800 ring-red-300"
-                                  : "bg-red-100 text-red-700 ring-red-200"
+                                ? "bg-red-200 text-red-800 ring-red-300"
+                                : "bg-red-100 text-red-700 ring-red-200"
                                 }`}>
                                 {post.report_count}회
                               </span>
@@ -638,7 +750,7 @@ export function OpsGrowthClubView() {
                                   </button>
                                 ) : (
                                   <button
-                                    onClick={() => handleSuspendUser(authorId, false)}
+                                    onClick={() => handleSuspendUser(authorId, false, "POST", post.id, post.author?.username || "")}
                                     className="inline-flex items-center gap-1.5 rounded-xl bg-orange-100 px-3 py-2 text-xs font-bold text-orange-800 hover:bg-orange-200 border border-orange-200 transition-all active:scale-95"
                                   >
                                     <Ban className="h-3.5 w-3.5" />
@@ -734,8 +846,8 @@ export function OpsGrowthClubView() {
                           <td className="px-6 py-5">
                             <div className="flex flex-col items-center gap-1.5">
                               <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ring-1 ${comment.report_count >= 10
-                                  ? "bg-red-200 text-red-800 ring-red-300"
-                                  : "bg-red-100 text-red-700 ring-red-200"
+                                ? "bg-red-200 text-red-800 ring-red-300"
+                                : "bg-red-100 text-red-700 ring-red-200"
                                 }`}>
                                 {comment.report_count}회
                               </span>
@@ -781,7 +893,7 @@ export function OpsGrowthClubView() {
                                   </button>
                                 ) : (
                                   <button
-                                    onClick={() => handleSuspendUser(authorId, false)}
+                                    onClick={() => handleSuspendUser(authorId, false, "COMMENT", comment.id, comment.author?.username || "")}
                                     className="inline-flex items-center gap-1.5 rounded-xl bg-orange-100 px-3 py-2 text-xs font-bold text-orange-800 hover:bg-orange-200 border border-orange-200 transition-all active:scale-95"
                                   >
                                     <Ban className="h-3.5 w-3.5" />
@@ -861,8 +973,8 @@ function TabButton({
     <button
       onClick={onClick}
       className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all flex items-center gap-2 ${active
-          ? "bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200"
-          : "text-slate-500 hover:text-slate-700"
+        ? "bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200"
+        : "text-slate-500 hover:text-slate-700"
         }`}
     >
       {label}
