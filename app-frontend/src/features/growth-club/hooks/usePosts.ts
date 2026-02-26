@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { Post } from '../types';
 import { growthClubApi } from '../api';
 
-export const usePosts = (category: string = 'all', search?: string, searchType: string = 'all') => {
+export const usePosts = (category: string = 'all', search?: string, searchType?: string) => {
     const [posts, setPosts] = useState<Post[]>([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<Error | null>(null);

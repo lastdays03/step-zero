@@ -146,7 +146,9 @@ export default function ProfilePage() {
             if (authUser) {
                 updateUser({
                     full_name: updated.full_name ?? undefined,
-                    username: updated.full_name || authUser.username
+                    username: updated.nickname || updated.full_name || authUser.username,
+                    nickname: updated.nickname ?? undefined,
+                    profile_img: updated.profile_img ?? undefined
                 });
             }
 
@@ -176,11 +178,10 @@ export default function ProfilePage() {
             const updated = await uploadProfileImage(file);
             setProfile(updated);
 
-            // 이미지 업로드 후 전역 상태 동기화 (필요한 경우)
+            // 이미지 업로드 후 전역 상태 동기화
             if (authUser) {
                 updateUser({
-                    full_name: updated.full_name ?? undefined,
-                    username: updated.full_name || authUser.username
+                    profile_img: updated.profile_img ?? undefined
                 });
             }
 

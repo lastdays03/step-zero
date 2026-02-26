@@ -9,6 +9,8 @@ interface User {
     username: string;
     email: string;
     full_name?: string;
+    nickname?: string;
+    profile_img?: string;
     is_superuser?: boolean;
 }
 
@@ -76,7 +78,7 @@ const getServerAuthState = (): AuthState => LOGGED_OUT_STATE;
 
 const subscribeAuthState = (onStoreChange: () => void): (() => void) => {
     if (typeof window === 'undefined') {
-        return () => {};
+        return () => { };
     }
 
     const onChange = () => onStoreChange();

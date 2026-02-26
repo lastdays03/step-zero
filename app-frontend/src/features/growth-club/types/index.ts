@@ -3,9 +3,11 @@ export type PostCategory = 'free' | 'notice' | 'neighborhood' | 'industry';
 export interface Author {
     id: number;
     username: string;
+    nickname?: string;
+    profile_img?: string;
+    profile_image?: string;
     neighborhood?: string;
     industry?: string;
-    profile_img?: string;
 }
 
 export interface Comment {
@@ -15,6 +17,9 @@ export interface Comment {
     created_at: string;
     replies?: Comment[];
     parent_id?: number;
+    report_count?: number;
+    is_blinded?: boolean;
+    report_reason?: string;
 }
 
 export interface PostAttachment {
@@ -34,14 +39,13 @@ export interface Post {
     category: PostCategory;
     neighborhood: string;
     industry: string;
-    author_id: number;
     author: Author;
     created_at: string;
     comments: Comment[];
     attachments?: PostAttachment[];
     report_count: number;
+    is_blinded?: boolean;
+    report_reason?: string;
     likes_count: number;
     is_liked: boolean;
-    is_reported: boolean;
-    tags: string[];
 }

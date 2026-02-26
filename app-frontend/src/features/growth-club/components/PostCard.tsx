@@ -2,51 +2,38 @@
 
 import React, { useState } from 'react';
 import { Post } from '../types';
-import { MessageSquare, ThumbsUp, Trash2, AlertCircle, Paperclip, Hash } from 'lucide-react';
+import { MessageSquare, ThumbsUp, Trash2, AlertCircle, Paperclip } from 'lucide-react';
 
 import { useAuth } from '@/providers/AuthProvider';
 import { growthClubApi } from '../api';
 import { CommentSection } from './CommentSection';
 import { resolveUploadUrl } from '../utils/upload-url';
-import { useTimeAgo } from '../hooks';
+import { useTimeAgo } from '../hooks/useTimeAgo';
 
 interface PostCardProps {
     post: Post;
     onDeleteSuccess?: () => void;
     onReportSuccess?: () => void;
-    isHighlighted?: boolean;
-    initialShowComments?: boolean;
 }
 
 
 
-export const PostCard: React.FC<PostCardProps> = ({
-    post,
-    onDeleteSuccess,
-    onReportSuccess,
-    isHighlighted,
-    initialShowComments = false
-}) => {
+export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onReportSuccess }) => {
     const { user } = useAuth();
     const [isDeleting, setIsDeleting] = useState(false);
-    const [showComments, setShowComments] = useState(initialShowComments);
+    const [showComments, setShowComments] = useState(false);
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+    const timeAgo = useTimeAgo(post.created_at);
 
     // 좋아요 상태 관리를 위한 로컬 스테이트
     const [liked, setLiked] = useState(post.is_liked);
     const [likesCount, setLikesCount] = useState(post.likes_count);
     const [isLiking, setIsLiking] = useState(false);
-
-    // 신고 상태 관리를 위한 로컬 스테이트
-    const [isReported, setIsReported] = useState(post.is_reported);
-    const [isReporting, setIsReporting] = useState(false);
     const attachments = post.attachments ?? [];
     const imageAttachments = attachments.filter((it) => it.kind === "image");
     const fileAttachments = attachments.filter((it) => it.kind === "file");
 
-    const timeAgo = useTimeAgo(post.created_at);
-
     const isAuthor = user && String(user.id) === String(post.author_id);
-    const isSuperuser = user?.is_superuser;
 
     const handleDelete = async () => {
         if (!window.confirm('정말 이 게시글을 삭제하시겠습니까?')) return;
@@ -57,55 +44,32 @@ export const PostCard: React.FC<PostCardProps> = ({
             if (onDeleteSuccess) {
                 onDeleteSuccess();
             }
-        } catch (error: unknown) {
+        } catch (error) {
             console.error('Failed to delete post:', error);
-            const err = error as { response?: { status?: number } };
-            if (err.response?.status === 401) {
-                alert('인증이 만료되었습니다. 다시 로그인해주세요.');
-            } else if (err.response?.status === 403) {
-                alert('삭제 권한이 없습니다.');
-            } else {
-                alert('게시글 삭제에 실패했습니다. 네트워크 상태를 확인해주세요.');
-            }
+            alert('게시글 삭제에 실패했습니다.');
         } finally {
             setIsDeleting(false);
         }
     };
 
-    const handleReport = async () => {
-        if (!user) {
-            alert('게시글을 신고하려면 로그인해야 합니다.');
-            return;
-        }
+    const handleReport = () => {
+        setIsReportModalOpen(true);
+    };
 
-        if (isReported) {
-            alert('이미 신고한 게시글입니다.');
-            return;
-        }
-
-        if (!window.confirm('이 게시물을 신고하시겠습니까?')) return;
-
-        setIsReporting(true);
+    const submitReport = async (reason: string) => {
+        setIsReportModalOpen(false);
         try {
-            const result = await growthClubApi.reportPost(post.id);
-            setIsReported(true);
+            const result = await growthClubApi.reportPost(post.id, reason);
             alert(result.message);
             if (result.is_blinded && onDeleteSuccess) {
                 onDeleteSuccess();
             } else if (onReportSuccess) {
                 onReportSuccess();
             }
-        } catch (error: unknown) {
-            const err = error as { response?: { status?: number } };
-            if (err.response?.status === 409) {
-                alert('이미 신고한 게시글입니다.');
-                setIsReported(true);
-            } else {
-                console.error('Failed to report post:', error);
-                alert('게시글 신고에 실패했습니다.');
-            }
-        } finally {
-            setIsReporting(false);
+        } catch (error: any) {
+            console.error('Failed to report post:', error);
+            const message = error.response?.data?.detail || '게시글 신고에 실패했습니다.';
+            alert(message);
         }
     };
 
@@ -139,36 +103,34 @@ export const PostCard: React.FC<PostCardProps> = ({
     };
 
     return (
-        <article
-            id={`post-${post.id}`}
-            className={`bg-white dark:bg-zinc-900 rounded-xl shadow-sm border p-6 transition-all duration-500 ${isDeleting ? 'opacity-50 pointer-events-none' : ''} ${isHighlighted
-                    ? 'border-blue-500 shadow-lg shadow-blue-500/10 ring-2 ring-blue-500/20 scale-[1.01] z-10'
-                    : 'border-zinc-200 dark:border-zinc-800 hover:shadow-md'
-                }`}
-        >
+        <article id={`post-${post.id}`} className={`bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-6 transition-all hover:shadow-md ${isDeleting ? 'opacity-50 pointer-events-none' : ''}`}>
             <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
-                    {post.author.profile_img && post.author.profile_img !== 'default.png' ? (
-                        <img
-                            src={resolveUploadUrl(post.author.profile_img)}
-                            alt={post.author.username}
-                            className="w-10 h-10 rounded-full object-cover shrink-0"
-                        />
-                    ) : (
-                        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold shrink-0">
-                            {post.author.username?.[0] || '?'}
-                        </div>
-                    )}
+                    <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-zinc-100 dark:border-zinc-800">
+                        {post.author.profile_img && post.author.profile_img !== 'default.png' ? (
+                            <img
+                                src={resolveUploadUrl(post.author.profile_img)}
+                                alt={post.author.username}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                    // Fallback if image fails to load
+                                    (e.target as HTMLImageElement).style.display = 'none';
+                                    (e.target as HTMLImageElement).parentElement!.innerText = post.author.username[0] || '?';
+                                }}
+                            />
+                        ) : (
+                            post.author.username[0] || '?'
+                        )}
+                    </div>
                     <div>
                         <h3 className="text-sm font-semibold text-zinc-900 dark:text-white">{post.author.username}</h3>
                         <p className="text-xs text-zinc-500">
                             {timeAgo} · {post.neighborhood}
                         </p>
-
                     </div>
                 </div>
 
-                {(isAuthor || isSuperuser) && (
+                {(isAuthor || user?.is_superuser) && (
                     <button
                         onClick={handleDelete}
                         className="p-2 text-zinc-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
@@ -192,17 +154,6 @@ export const PostCard: React.FC<PostCardProps> = ({
             <p className="text-zinc-600 dark:text-zinc-400 text-sm leading-relaxed mb-4 whitespace-pre-wrap">
                 {post.content}
             </p>
-
-            {post.tags && post.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                    {post.tags.map((tag) => (
-                        <span key={tag} className="flex items-center text-blue-600 dark:text-blue-400 text-sm hover:underline cursor-pointer">
-                            <Hash size={14} className="mr-0.5" />
-                            {tag}
-                        </span>
-                    ))}
-                </div>
-            )}
 
             {imageAttachments.length > 0 && (
                 <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -255,15 +206,11 @@ export const PostCard: React.FC<PostCardProps> = ({
                 {!isAuthor && (
                     <button
                         onClick={handleReport}
-                        disabled={isReported || isReporting}
-                        className={`flex items-center gap-2 text-sm ml-auto transition-colors ${isReported
-                            ? 'text-red-500 cursor-default opacity-80'
-                            : 'text-zinc-500 hover:text-red-500'
-                            }`}
-                        title={isReported ? '이미 신고한 게시글입니다' : '게시글 신고'}
+                        className="flex items-center gap-2 text-zinc-500 hover:text-red-500 text-sm ml-auto"
+                        title="게시글 신고"
                     >
-                        <AlertCircle size={18} fill={isReported ? "currentColor" : "none"} />
-                        <span>{isReported ? '신고됨' : '신고'}</span>
+                        <AlertCircle size={18} />
+                        <span>신고</span>
                     </button>
                 )}
             </div>
@@ -274,6 +221,28 @@ export const PostCard: React.FC<PostCardProps> = ({
                     initialComments={post.comments}
                     onCommentAdded={onDeleteSuccess || (() => { })}
                 />
+            )}
+
+            {isReportModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl max-w-sm w-full p-6 shadow-xl border border-zinc-200 dark:border-zinc-800">
+                        <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">신고 사유 선택</h3>
+                        <div className="space-y-2">
+                            <button onClick={() => submitReport('폭언과 욕설')} className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300">
+                                폭언과 욕설
+                            </button>
+                            <button onClick={() => submitReport('광고')} className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300">
+                                광고
+                            </button>
+                            <button onClick={() => submitReport('기타')} className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300">
+                                기타 불건전한 내용
+                            </button>
+                        </div>
+                        <button onClick={() => setIsReportModalOpen(false)} className="mt-4 w-full p-3 font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+                            취소
+                        </button>
+                    </div>
+                </div>
             )}
         </article>
     );

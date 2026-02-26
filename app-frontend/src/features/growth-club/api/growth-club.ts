@@ -2,12 +2,10 @@ import { apiClient } from '@/lib/api-client';
 import { Post } from '../types';
 
 export const growthClubApi = {
-    getPosts: async (category: string = 'all', search?: string, searchType: string = 'all'): Promise<Post[]> => {
+    getPosts: async (category: string = 'all', search?: string, searchType?: string): Promise<Post[]> => {
         const params: { category: string; search?: string; search_type?: string } = { category };
-        if (search) {
-            params.search = search;
-            params.search_type = searchType;
-        }
+        if (search) params.search = search;
+        if (searchType) params.search_type = searchType;
         try {
             const res = await apiClient.get<Post[]>('/growth-club/posts', { params });
             return res.data;
@@ -41,9 +39,9 @@ export const growthClubApi = {
         }
     },
 
-    reportPost: async (postId: number) => {
+    reportPost: async (postId: number, reason: string) => {
         try {
-            const res = await apiClient.post(`/growth-club/posts/${postId}/report`);
+            const res = await apiClient.post(`/growth-club/posts/${postId}/report`, { reason });
             return res.data;
         } catch (error) {
             console.error('reportPost error:', error);
@@ -77,6 +75,16 @@ export const growthClubApi = {
             return res.data;
         } catch (error) {
             console.error('likePost error:', error);
+            throw error;
+        }
+    },
+
+    reportComment: async (commentId: number, reason: string) => {
+        try {
+            const res = await apiClient.post(`/growth-club/comments/${commentId}/report`, { reason });
+            return res.data;
+        } catch (error) {
+            console.error('reportComment error:', error);
             throw error;
         }
     }

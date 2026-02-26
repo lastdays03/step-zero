@@ -4,6 +4,7 @@ import React, { useState, useRef } from 'react';
 import { Camera, Paperclip, Send, X, FileText } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { growthClubApi } from '../api';
+import { useAuth } from '@/providers/AuthProvider';
 
 interface CreatePostFormProps {
     onSuccess: () => void;
@@ -24,8 +25,6 @@ const getExt = (name: string) => {
     const idx = name.lastIndexOf(".");
     return idx >= 0 ? name.slice(idx).toLowerCase() : "";
 };
-
-import { useAuth } from '@/providers/AuthProvider';
 
 export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => {
     const { user } = useAuth();
@@ -151,8 +150,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
         if (fileInputRef.current) fileInputRef.current.value = '';
     };
 
-
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!title || !content) return;
@@ -189,16 +186,17 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
         }
     };
 
+    const categories = [
+        { id: 'free', label: '자유게시판' },
+        { id: 'neighborhood', label: '동네 소식' },
+        { id: 'industry', label: '업종 이야기' },
+    ];
+
     return (
         <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-zinc-200 dark:border-zinc-800 p-6">
             <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="flex flex-wrap gap-2">
-                    {[
-                        { id: 'free', label: '자유게시판' },
-                        { id: 'neighborhood', label: '동네 소식' },
-                        { id: 'industry', label: '업종 이야기' },
-                        ...(user?.is_superuser ? [{ id: 'notice', label: '공지사항' }] : [])
-                    ].map((cat) => (
+                    {categories.map((cat) => (
                         <button
                             key={cat.id}
                             type="button"
@@ -228,8 +226,6 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
                     rows={4}
                     className="w-full bg-transparent text-sm placeholder:text-zinc-400 focus:outline-none resize-none dark:text-zinc-300"
                 />
-
-
 
                 {/* 이미지 미리보기 및 파일 목록 */}
                 {(imagePreviews.length > 0 || otherFiles.length > 0) && (
