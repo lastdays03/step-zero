@@ -25,15 +25,15 @@
 | 국가법령정보센터 OC | **설정 완료** | `.env.local` (`LAW_API_OC=lastdays03`) |
 | law.go.kr API 테스트 | **성공** | 식품위생법 검색 → 6법령 수집 완료 |
 
-### DB 데이터 현황 (세션 5 업데이트)
+### DB 데이터 현황 (세션 5 최종)
 
 | 항목 | 수치 |
 |---|---|
 | 로드맵 | 11건 (휴게음식점 4, 일반음식점 1, + Wave 1~3 6업종 각 1건) |
-| 벡터 총 수 | **1,207건** (기존 329 + Wave 1~3 법률 878) |
+| 벡터 총 수 | **1,777건** (기존 329 + Wave 1~3 법률 1,448) |
 | Alembic head | `ea3b65f32267` (품질 메타 컬럼 추가) |
-| ActionKitItem | **65건** (기존 시드 46 + Wave 1~3 보강 19) |
-| ActionKitFile | **65건** (기존 시드 46 + Wave 1~3 보강 19) |
+| ActionKitItem | **67건** (기존 시드 46 + Wave 1~3 보강 21) |
+| ActionKitFile | **67건** (기존 시드 46 + Wave 1~3 보강 21) |
 | 지원 업종 | 휴게음식점, 일반음식점 + **6개 신규 업종** (Wave 1~3) |
 
 ### DB 스키마 - `roadmap_step_details` 컬럼 (업데이트됨)
@@ -54,9 +54,9 @@ source_count(int), has_fallback(bool), mapping_source(str)  ← P0-2에서 추�
 | 킷 원본 (PDF/HWP/PPTX) | `uploads/actionkit/kits/{legal,tax,hr,grant}/` | 25건 |
 | Wave 1 법률 | `.temp/rag/식품제조가공업/`, `.temp/rag/통신판매업/` | 12건 (6 md + 6 meta.json) |
 | Wave 2 법률 | `.temp/rag/미용업/`, `.temp/rag/일반소매업/` | 12건 (6 md + 6 meta.json) |
-| Wave 3 법률 | `.temp/rag/학원업/`, `.temp/rag/숙박업/` | 14건 (7 md + 7 meta.json) |
-| 전체 큐레이션 | `.temp/rag/*/\*_curated.md` | **19건** |
-| ActionKitFile | `uploads/actionkit/laws/chapter-7~12/` | **19건** (.md) |
+| Wave 3 법률 | `.temp/rag/학원업/`, `.temp/rag/숙박업/` | 18건 (9 md + 9 meta.json) |
+| 전체 큐레이션 | `.temp/rag/*/\*_curated.md` | **21건** |
+| ActionKitFile | `uploads/actionkit/laws/chapter-7~12/` | **21건** (.md) |
 
 ### 주요 코드 경로 (업데이트됨)
 
@@ -147,12 +147,9 @@ scripts/
 | **Wave 2 큐레이션+적재** | **2026-02-26** | 미용업+일반소매업 6건 큐레이션, 벡터+Item+File 생성 |
 | **Wave 3 수집+큐레이션+적재** | **2026-02-26** | 학원업+숙박업 7건 큐레이션, 벡터+Item+File 생성 |
 | **품질 테스트 통과** | **2026-02-26** | 6업종 모두 ACTIONKIT_RAG, fallback_rate=0, precision@3=1.0 |
+| **숙박업 시행령/시행규칙 보강** | **2026-02-26** | 관광진흥법 시행령/시행규칙 추가 수집+큐레이션+적재 (item 66, 67) |
 
 ### 다음 착수 대상
-
-| 태스크 | 트랙 | 내용 | 명령어/비고 |
-|---|---|---|---|
-| 숙박업 시행령/시행규칙 수집 보완 | B-BE | 관광진흥법 시행령/시행규칙 미수집 | `fetch_laws --law "관광진흥법" --hierarchy 시행령 시행규칙` |
 
 ### 구간 4 (Wave 2/3과 병렬 가능)
 
@@ -172,7 +169,7 @@ scripts/
 | ~~통신판매업 mapping_source=None~~ | **해결됨** | source_url enrichment + 서버 재생성 |
 | ~~seed_rag_vectors 이름 중복 건너뜀~~ | **해결됨** | name+category_id 기반 dedup |
 | `alembic upgrade head` 미실행 | 중간 | Docker DB 실행 후 적용 필요 |
-| 숙박업 관광진흥법 시행령/시행규칙 미수집 | 낮음 | 법률만 수집됨, 하위 법령 추가 필요 |
+| ~~숙박업 관광진흥법 시행령/시행규칙 미수집~~ | **해결됨** | 관광진흥법 시행령/시행규칙 추가 (item 66, 67) |
 | 행정규칙 수집 미완료 | 낮음 | 키워드 조정 필요 |
 
 ---
