@@ -114,30 +114,69 @@ class RoadmapGenerationService:
         location: str,
         description: str = "",
     ) -> InputValidationResult:
+        """Validate and normalize business type / location using direct LLM call.
+
+        Uses the LLM's general knowledge (NOT the RAG chain) so that
+        business types absent from the vector store can still be normalized
+        to standard administrative categories.
+        """
         prompt = (
-            "다음 창업 입력값을 검증하고 JSON만 반환해 주세요.\n"
-            "필수 키: valid(boolean), normalized_business_type(string|null), normalized_location(string|null),"
-            " reason(string|null), confidence(number:0~1).\n"
-            "규칙:\n"
-            "1) 업종이 일상 표현이면 행정/인허가 기준 업종으로 정규화합니다. 예: 카페 -> 휴게음식점.\n"
-            "2) 지역은 대한민국 행정구역 기준으로 해석 가능한 경우만 valid=true.\n"
-            "3) 모호하거나 해석 불가하면 valid=false와 reason을 반환합니다.\n"
+            "당신은 한국 창업 전문가입니다. 사용자가 창업하려는 업종과 지역을 입력했습니다.\n"
+            "입력값을 검증하고 JSON만 반환해 주세요.\n\n"
+            "필수 키: valid(boolean), normalized_business_type(string|null), "
+            "normalized_location(string|null), reason(string|null), confidence(number:0~1).\n\n"
+            "업종 정규화 규칙 (중요: 사용자는 창업을 원하므로 최대한 관련 업종을 찾아 정규화하세요):\n"
+            "1) 아래 '우선 매칭 업종'으로 매핑 가능하면 해당 값을 사용하세요:\n"
+            "   휴게음식점, 일반음식점, 식품제조가공업, 통신판매업, 미용업, 일반소매업, 학원업, 숙박업\n"
+            "2) 정규화 예시:\n"
+            "   카페/커피숍/베이커리/디저트가게 -> 휴게음식점\n"
+            "   식당/음식점/레스토랑/치킨집/분식집 -> 일반음식점\n"
+            "   온라인쇼핑몰/쇼핑몰/앱서비스/어플리케이션사업/플랫폼사업/이커머스 -> 통신판매업\n"
+            "   네일샵/헤어샵/피부관리/에스테틱/왁싱 -> 미용업\n"
+            "   편의점/마트/잡화점/의류매장/꽃집 -> 일반소매업\n"
+            "   학원/교습소/코딩학원/영어학원/피아노학원 -> 학원업\n"
+            "   펜션/게스트하우스/민박/호텔/모텔 -> 숙박업\n"
+            "   식품공장/제과공장/음료제조/건강식품 -> 식품제조가공업\n"
+            "3) 위 목록에 해당하지 않아도 사업 활동이면 valid=true + 한국 행정 기준 업종명으로 정규화하세요.\n"
+            "   예: 여행업/여행플래너 -> 관광사업, 물류 -> 화물운송업, 건축 -> 건설업\n"
+            "4) 지역은 대한민국 행정구역으로 해석 가능해야 valid=true.\n"
+            "5) 의미 없는 문자열이거나 사업과 무관한 입력만 valid=false로 처리.\n\n"
             f"입력 업종: {business_type}\n입력 지역: {location}\n추가 설명: {description}"
         )
-        for _ in range(2):
-            raw = await self.rag_service.query(prompt)
+
+        raw = await self._invoke_llm(prompt)
+        if raw:
             parsed = self._parse_json(raw)
-            if not parsed:
-                continue
-            try:
-                result = InputValidationResult(**parsed)
-                if result.valid:
-                    result.normalized_business_type = (result.normalized_business_type or business_type).strip()
-                    result.normalized_location = (result.normalized_location or location).strip()
-                return result
-            except ValidationError:
-                continue
+            if parsed:
+                try:
+                    result = InputValidationResult(**parsed)
+                    if result.valid:
+                        result.normalized_business_type = (
+                            result.normalized_business_type or business_type
+                        ).strip()
+                        result.normalized_location = (
+                            result.normalized_location or location
+                        ).strip()
+                    return result
+                except ValidationError:
+                    pass
         return self._fallback_validation(business_type=business_type, location=location)
+
+    async def _invoke_llm(self, prompt: str) -> str | None:
+        """Invoke the LLM directly without RAG retrieval context."""
+        if not self.rag_service.ready:
+            return None
+        try:
+            from fastapi.concurrency import run_in_threadpool
+
+            result = await asyncio.wait_for(
+                run_in_threadpool(self.rag_service.llm.invoke, prompt),
+                timeout=15,
+            )
+            return result.content if hasattr(result, "content") else str(result)
+        except Exception:
+            logger.exception("Direct LLM invocation failed")
+            return None
 
     async def process_job(self, job_id: UUID) -> None:
         job = await self.job_repo.get_by_id(job_id=job_id)

@@ -9,9 +9,26 @@ _skip_no_openai = pytest.mark.skipif(
 )
 
 
+class _MockLLM:
+    """Mock LLM that returns a predefined response."""
+
+    def __init__(self, response_text: str):
+        self.response_text = response_text
+
+    def invoke(self, _prompt: str) -> "_MockLLMResult":
+        return _MockLLMResult(self.response_text)
+
+
+class _MockLLMResult:
+    def __init__(self, content: str):
+        self.content = content
+
+
 class _MockRagService:
     def __init__(self, response_text: str):
         self.response_text = response_text
+        self.ready = True
+        self.llm = _MockLLM(response_text)
 
     async def query(self, _question: str) -> str:
         return self.response_text
