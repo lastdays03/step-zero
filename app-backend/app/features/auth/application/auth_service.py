@@ -4,6 +4,7 @@ from datetime import datetime, timedelta, timezone
 
 from google.auth.transport import requests
 from google.oauth2 import id_token
+from starlette.concurrency import run_in_threadpool
 
 from app.core import security
 from app.core.config import get_settings
@@ -49,7 +50,13 @@ class AuthService:
         return await self._build_auth_result(user)
 
     async def login_with_google(self, google_client_id: str, token: str) -> AuthResult | None:
-        idinfo = id_token.verify_oauth2_token(token, requests.Request(), google_client_id)
+        # Wrap blocking Google library call in a threadpool
+        idinfo = await run_in_threadpool(
+            id_token.verify_oauth2_token,
+            token,
+            requests.Request(),
+            google_client_id
+        )
         email = idinfo.get("email")
         if not email:
             return None

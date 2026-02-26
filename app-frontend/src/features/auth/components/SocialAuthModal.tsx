@@ -58,9 +58,10 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                 id_token: credentialResponse.credential,
             });
             completeLogin(response.data);
-        } catch (error: unknown) {
-            const status = (error as { response?: { status?: number } })?.response?.status;
-            const detail = (error as { response?: { data?: { detail?: string } } })?.response?.data?.detail;
+        } catch (error: any) {
+            const status = error.response?.status;
+            const data = error.response?.data || {};
+            const detail = data.detail;
 
             console.error('Google login verification failed:', error);
             if (status === 401) {
@@ -78,17 +79,16 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                     return;
                 } catch (fallbackError: any) {
                     if (fallbackError?.response?.status === 403) {
-                        const fallbackDetail = fallbackError.response.data?.detail || {};
-                        setSuspensionReason(fallbackDetail.reason || '운영 정책 위반');
-                        setSuspensionExpiry(fallbackDetail.expiry || '영구 정지');
-                        setSuspensionExpiryIso(fallbackDetail.expiry_iso || null);
+                        const fallbackData = fallbackError.response.data || {};
+                        setSuspensionReason(fallbackData.reason || '운영 정책 위반');
+                        setSuspensionExpiry(fallbackData.expiry || '영구 정지');
+                        setSuspensionExpiryIso(fallbackData.expiry_iso || null);
                         setIsSuspended(true);
                         return;
                     }
 
-                    const fallbackDetailStr = fallbackError?.response?.data?.detail;
                     alert(
-                        fallbackDetailStr
+                        fallbackError?.response?.data?.detail
                         || '구글 인증 서비스 연결에 실패했습니다. 잠시 후 다시 시도하거나 일반 로그인으로 진행해주세요.',
                     );
                     return;
@@ -96,10 +96,9 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
             }
 
             if (status === 403) {
-                const detailObj = (error as any)?.response?.data?.detail || {};
-                setSuspensionReason(detailObj.reason || '운영 정책 위반');
-                setSuspensionExpiry(detailObj.expiry || '영구 정지');
-                setSuspensionExpiryIso(detailObj.expiry_iso || null);
+                setSuspensionReason(data.reason || '운영 정책 위반');
+                setSuspensionExpiry(data.expiry || '영구 정지');
+                setSuspensionExpiryIso(data.expiry_iso || null);
                 setIsSuspended(true);
                 return;
             }

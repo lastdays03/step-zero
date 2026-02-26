@@ -8,6 +8,7 @@ from app.features.ops.application.announcements import (
     AnnouncementItem,
     AnnouncementList,
     AnnouncementStatus,
+    AnnouncementStatusUpdate,
     AnnouncementUpdate,
     create_announcement,
     list_announcements,
@@ -107,11 +108,12 @@ async def update_ops_announcement(
     response_description="상태 변경된 운영 공지를 반환합니다.",
 )
 async def update_ops_announcement_status(
-    status: AnnouncementStatus,
+    payload: AnnouncementStatusUpdate,
     announcement_id: int = Path(description="상태를 변경할 공지 ID"),
     session: AsyncSession = Depends(get_session),
     admin_user: AuthenticatedUser = Depends(deps.get_current_user),
 ) -> AnnouncementItem:
+    status = payload.status
     row = await update_announcement_status(
         session,
         announcement_id=announcement_id,
@@ -150,7 +152,8 @@ async def update_ops_announcement_status(
                 user_id=u.id,
                 content=f"[공지] {row.title}",
                 type="announcement",
-                link=f"/announcements/{row.id}"
+                link=f"/announcements/{row.id}",
+                resource_id=row.id
             ))
         session.add_all(notifications_to_create)
 

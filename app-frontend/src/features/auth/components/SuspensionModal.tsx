@@ -38,17 +38,19 @@ export const SuspensionModal: React.FC<SuspensionModalProps> = ({ isOpen, onClos
             const days = Math.floor(diff / (1000 * 60 * 60 * 24));
             const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
             let remainingString = "";
             if (days > 0) remainingString += `${days}일 `;
             if (hours > 0) remainingString += `${hours}시간 `;
-            remainingString += `${minutes}분 남음`;
+            if (minutes > 0 || (days === 0 && hours === 0)) remainingString += `${minutes}분 `;
+            remainingString += `${seconds}초 남음`;
 
             setTimeRemaining(remainingString);
         };
 
         updateRemainingTime();
-        const interval = setInterval(updateRemainingTime, 60000); // 1분마다 업데이트
+        const interval = setInterval(updateRemainingTime, 1000); // 1초마다 업데이트하여 실시간성 강화
 
         return () => clearInterval(interval);
     }, [isOpen, expiryIso]);

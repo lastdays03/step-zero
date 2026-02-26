@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Bell, Heart, MessageSquare, Reply, ChevronDown, ChevronUp } from 'lucide-react';
+import { Bell, Heart, MessageSquare, Reply, ChevronDown, ChevronUp, X } from 'lucide-react';
 import { notificationsApi } from '../api';
 import { Notification } from '../types';
 import { formatTimeAgo } from '@/features/growth-club/hooks/useTimeAgo';
@@ -135,6 +135,18 @@ export const NotificationBell = () => {
         }
     };
 
+    const handleDelete = async (e: React.MouseEvent, id: number) => {
+        e.stopPropagation();
+        try {
+            // Optimistic update
+            setNotifications(prev => prev.filter(n => n.id !== id));
+            await notificationsApi.deleteNotification(id);
+        } catch (error) {
+            console.error('Failed to delete notification:', error);
+            // Rollback if needed (simplified here by re-fetching if critical)
+        }
+    };
+
     const getIcon = (type: string) => {
         switch (type) {
             case 'like': return <Heart className="w-4 h-4 text-red-500" />;
@@ -192,15 +204,24 @@ export const NotificationBell = () => {
                                                 <span className="text-[10px] text-zinc-400">
                                                     {formatTimeAgo(group.created_at)}
                                                 </span>
-                                                {group.items.length > 1 && (
+                                                <div className="flex items-center gap-2">
+                                                    {group.items.length > 1 && (
+                                                        <button
+                                                            onClick={(e) => toggleGroup(e, group.id)}
+                                                            className="flex items-center text-[10px] text-zinc-500 hover:text-zinc-700 bg-white border border-zinc-200 px-1.5 py-0.5 rounded shadow-sm focus:outline-none"
+                                                        >
+                                                            {expandedGroups[group.id] ? '접기' : '더보기'}
+                                                            {expandedGroups[group.id] ? <ChevronUp size={12} className="ml-0.5" /> : <ChevronDown size={12} className="ml-0.5" />}
+                                                        </button>
+                                                    )}
                                                     <button
-                                                        onClick={(e) => toggleGroup(e, group.id)}
-                                                        className="flex items-center text-[10px] text-zinc-500 hover:text-zinc-700 bg-white border border-zinc-200 px-1.5 py-0.5 rounded shadow-sm focus:outline-none"
+                                                        onClick={(e) => handleDelete(e, group.id)}
+                                                        className="p-1 text-zinc-300 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                                                        title="알림 삭제"
                                                     >
-                                                        {expandedGroups[group.id] ? '접기' : '더보기'}
-                                                        {expandedGroups[group.id] ? <ChevronUp size={12} className="ml-0.5" /> : <ChevronDown size={12} className="ml-0.5" />}
+                                                        <X size={12} />
                                                     </button>
-                                                )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
@@ -209,12 +230,20 @@ export const NotificationBell = () => {
                                             {group.items.map((item) => (
                                                 <div
                                                     key={item.id}
-                                                    className="px-5 py-2.5 flex items-start gap-3 hover:bg-zinc-100 transition-colors cursor-pointer"
+                                                    className="px-5 py-2.5 flex items-start gap-3 hover:bg-zinc-100 transition-colors cursor-pointer group"
                                                     onClick={() => handleNotificationClick(item.link)}
                                                 >
                                                     <div className="mt-0.5 opacity-50 scale-75">{getIcon(item.type)}</div>
                                                     <div className="flex-1">
-                                                        <p className="text-xs text-zinc-600 leading-tight">{item.content}</p>
+                                                        <div className="flex justify-between items-start">
+                                                            <p className="text-xs text-zinc-600 leading-tight">{item.content}</p>
+                                                            <button
+                                                                onClick={(e) => handleDelete(e, item.id)}
+                                                                className="opacity-0 group-hover:opacity-100 p-0.5 text-zinc-300 hover:text-red-500 transition-opacity ml-2"
+                                                            >
+                                                                <X size={10} />
+                                                            </button>
+                                                        </div>
                                                         <span className="text-[9px] text-zinc-400 mt-1 block">
                                                             {formatTimeAgo(item.created_at)}
                                                         </span>

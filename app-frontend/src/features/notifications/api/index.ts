@@ -13,5 +13,9 @@ export const notificationsApi = {
 
     markAsRead: async (id: number): Promise<void> => {
         await apiClient.post(`/notifications/${id}/read`);
+    },
+
+    deleteNotification: async (id: number): Promise<void> => {
+        await apiClient.delete(`/notifications/${id}`);
     }
 };

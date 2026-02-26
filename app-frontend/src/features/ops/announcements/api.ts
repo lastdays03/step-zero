@@ -45,7 +45,7 @@ export async function updateOpsAnnouncementStatus(
 ): Promise<OpsAnnouncement> {
   const { data } = await apiClient.patch<OpsAnnouncement>(
     `/ops/announcements/${id}/status`,
-    status,
+    { status },
     { headers: { "Content-Type": "application/json" } },
   );
   return data;
