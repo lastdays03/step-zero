@@ -38,11 +38,17 @@ export function OpsActionKitView() {
   const [editingItem, setEditingItem] = useState<OpsActionKitItem | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [summary, setSummary] = useState<any>(null);
+  const [summary, setSummary] = useState<{
+    total_items: number;
+    items_with_files: number;
+    inactive_items: number;
+    total_related_laws: number;
+    total_highlights: number;
+  } | null>(null);
   const [activeDomain, setActiveDomain] = useState<"kits" | "laws" | "stats">("kits");
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<any>(null);
+  const [editingCategory, setEditingCategory] = useState<{ id: number; title: string; domain: string } | null>(null);
 
   const filteredCategories = categories.filter(cat => cat.domain === activeDomain);
 
@@ -89,7 +95,7 @@ export function OpsActionKitView() {
   };
 
   const handleDelete = async (item: OpsActionKitItem) => {
-    if (!confirm(`"${item.name}" 항목을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
+    if (!confirm(`\u0022${item.name}\u0022 항목을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
     try {
       await apiClient.delete(`/ops/actionkit/items/${item.id}`);
       if (activeCategory) loadItems(activeCategory);
@@ -104,9 +110,9 @@ export function OpsActionKitView() {
     if (!canRender) return;
 
     fetchCategories()
-      .then((data) => {
+      .then((data: { id: number; title: string; domain: string }[]) => {
         setCategories(data);
-        const kitsCategories = data.filter((c: any) => c.domain === "kits");
+        const kitsCategories = data.filter((c) => c.domain === "kits");
         if (kitsCategories.length > 0) {
           setActiveCategory(kitsCategories[0].id);
         } else if (data.length > 0) {
@@ -147,10 +153,10 @@ export function OpsActionKitView() {
 
   const handleCategorySaved = () => {
     fetchCategories()
-      .then((data) => {
+      .then((data: { id: number; title: string; domain: string }[]) => {
         setCategories(data);
-        const domainCats = data.filter((c: any) => c.domain === activeDomain);
-        if (domainCats.length > 0 && !domainCats.find((c: any) => c.id === activeCategory)) {
+        const domainCats = data.filter((c) => c.domain === activeDomain);
+        if (domainCats.length > 0 && !domainCats.find((c) => c.id === activeCategory)) {
           setActiveCategory(domainCats[0].id);
         } else if (data.length > 0 && !activeCategory) {
           setActiveCategory(data[0].id);
