@@ -18,7 +18,11 @@ logger = get_logger(__name__)
 
 # Minimum number of ActionKit matches required to use the direct mapping path.
 # Below this threshold, the service falls back to legacy LLM generation.
-_MIN_ACTIONKIT_MATCHES = 3
+# Lowered from 3 to 1: even a single quality ActionKit match provides
+# structured fact data (law names, files, highlights) that is superior
+# to purely LLM-generated content.  The LLMPersonalizer already handles
+# small match counts by grouping available facts into phases.
+_MIN_ACTIONKIT_MATCHES = 1
 
 
 class LegalBasisItem(BaseModel):
@@ -151,11 +155,24 @@ class RoadmapGenerationService:
             )
             await self.job_repo.set_progress(job, stage="MATCHING_COMPLETE", progress=20)
 
-            if len(matched_items) >= _MIN_ACTIONKIT_MATCHES:
+            # --- Decision point: ACTIONKIT_RAG vs RAG ---
+            match_count = len(matched_items)
+            top_scores = [f"{m.relevance_score:.3f}" for m in matched_items[:5]]
+            logger.info(
+                "generation_mode decision: matched=%d, threshold=%d, "
+                "business_type=%s, top_scores=%s -> %s",
+                match_count,
+                _MIN_ACTIONKIT_MATCHES,
+                payload.business_type,
+                top_scores,
+                "ACTIONKIT_RAG" if match_count >= _MIN_ACTIONKIT_MATCHES else "RAG",
+            )
+
+            if match_count >= _MIN_ACTIONKIT_MATCHES:
                 # --- Step 2a: Sufficient matches -> LLM personalization ---
                 logger.info(
                     "ActionKit matched %d items; using personalized generation",
-                    len(matched_items),
+                    match_count,
                 )
                 await self.job_repo.set_progress(job, stage="PERSONALIZING", progress=35)
 
@@ -175,15 +192,22 @@ class RoadmapGenerationService:
                 # --- Step 2b: Insufficient matches -> fallback to legacy ---
                 logger.info(
                     "ActionKit matched only %d items (< %d); falling back to LLM generation",
-                    len(matched_items),
+                    match_count,
                     _MIN_ACTIONKIT_MATCHES,
                 )
                 master = await self._generate_master_with_retry(payload)
                 await self.job_repo.set_progress(job, stage="DETAIL_GENERATING", progress=35)
-                details = await self._generate_details_parallel(master, payload)
+                details, fallback_phases = await self._generate_details_parallel(master, payload)
                 await self.job_repo.set_progress(job, stage="PERSISTING", progress=80)
 
                 steps_payload = [item.model_dump() for item in details]
+                # Attach quality metadata to each legacy RAG step
+                for sp in steps_payload:
+                    phase = sp.get("phase", "")
+                    is_fb = phase in fallback_phases
+                    sp["mapping_source"] = "fallback" if is_fb else "rag"
+                    sp["source_count"] = 0
+                    sp["has_fallback"] = is_fb
                 generation_mode = "RAG"
                 title = master.title
 
@@ -272,6 +296,10 @@ class RoadmapGenerationService:
             # Build checklist with metadata
             checklist_items: list[str] = detail.checklist or ["필수 요건 확인"]
 
+            # Quality metadata
+            source_count = len(detail.actionkit_items) if detail.actionkit_items else 0
+            is_fallback = detail.mapping_source == "fallback"
+
             results.append({
                 "phase": detail.phase,
                 "title": detail.title or f"{detail.phase} 단계",
@@ -283,6 +311,8 @@ class RoadmapGenerationService:
                 "documents": document_items,
                 "mapping_source": detail.mapping_source,
                 "actionkit_items": detail.actionkit_items,
+                "source_count": source_count,
+                "has_fallback": is_fallback,
             })
         return results
 
@@ -312,21 +342,27 @@ class RoadmapGenerationService:
         self,
         master: MasterRoadmap,
         payload: GenerationPayload,
-    ) -> list[StepDetail]:
+    ) -> tuple[list[StepDetail], set[str]]:
+        """Generate details in parallel. Returns (details, fallback_phase_names)."""
         semaphore = asyncio.Semaphore(3)
+        fallback_phases: set[str] = set()
 
         async def _run(phase_name: str) -> StepDetail:
             async with semaphore:
-                return await self._generate_phase_detail_with_retry(phase_name, payload)
+                detail, is_fallback = await self._generate_phase_detail_with_retry(phase_name, payload)
+                if is_fallback:
+                    fallback_phases.add(phase_name)
+                return detail
 
         tasks = [asyncio.create_task(_run(phase)) for phase in master.phases]
-        return list(await asyncio.gather(*tasks))
+        return list(await asyncio.gather(*tasks)), fallback_phases
 
     async def _generate_phase_detail_with_retry(
         self,
         phase_name: str,
         payload: GenerationPayload,
-    ) -> StepDetail:
+    ) -> tuple[StepDetail, bool]:
+        """Generate detail for a phase. Returns (detail, is_fallback)."""
         prompt = (
             "다음 phase의 상세 실행 단계를 JSON으로 생성해 주세요.\n"
             "필수 키: phase, title, objective, checklist(array), legal_basis(array[{title,snippet,source_url}]),"
@@ -345,10 +381,11 @@ class RoadmapGenerationService:
                 continue
             try:
                 detail = StepDetail(**parsed)
-                return self._normalize_document_urls(detail)
+                return self._normalize_document_urls(detail), False
             except ValidationError:
                 continue
-        return self._fallback_detail(phase_name)
+        logger.warning("Phase detail generation failed for '%s'; using fallback template", phase_name)
+        return self._fallback_detail(phase_name), True
 
     @staticmethod
     def _normalize_document_urls(detail: StepDetail) -> StepDetail:
@@ -383,23 +420,155 @@ class RoadmapGenerationService:
             phases=["준비", "인허가", "운영준비"],
         )
 
-    @staticmethod
-    def _fallback_detail(phase_name: str) -> StepDetail:
+    # Phase-specific fallback templates for non-law steps
+    _PHASE_FALLBACK_TEMPLATES: dict[str, dict] = {
+        "세무 설정": {
+            "title": "세무·회계 기초 설정",
+            "objective": "사업자등록 및 세무 신고 체계를 구축합니다.",
+            "checklist": [
+                "사업자등록 신청 (관할 세무서 또는 홈택스)",
+                "업종별 부가가치세 과세/면세 여부 확인",
+                "세금계산서 발행 체계 준비",
+                "세무사/회계사 선임 검토",
+                "간이과세 vs 일반과세 선택 판단",
+            ],
+            "legal_basis_title": "부가가치세법, 소득세법",
+            "legal_basis_snippet": "사업자등록 의무 및 세금 신고 절차 관련 법령",
+            "estimated_days": 7,
+            "risk_notes": ["사업자등록 지연 시 매입세액 공제 불가", "간이과세 선택 오류 시 세금 부담 증가"],
+        },
+        "인사·노무": {
+            "title": "인사·노무 관리 체계 수립",
+            "objective": "근로자 채용 및 노무 관리 기초를 마련합니다.",
+            "checklist": [
+                "근로계약서 표준 양식 준비",
+                "4대보험 사업장 가입 신고",
+                "취업규칙 작성 (10인 이상 사업장)",
+                "최저임금 및 근로시간 기준 확인",
+                "산업재해보상보험 가입",
+            ],
+            "legal_basis_title": "근로기준법, 고용보험법",
+            "legal_basis_snippet": "근로계약, 임금, 4대보험 가입 의무 관련 법령",
+            "estimated_days": 5,
+            "risk_notes": ["근로계약서 미작성 시 과태료 부과", "4대보험 미가입 시 사업주 부담금 소급 징수"],
+        },
+        "정책자금 신청": {
+            "title": "정책자금·지원사업 신청",
+            "objective": "소상공인 정책자금 및 창업 지원사업을 확인하고 신청합니다.",
+            "checklist": [
+                "소상공인진흥공단 정책자금 공고 확인",
+                "지자체 창업지원사업 모집 확인",
+                "신용보증재단 보증 신청 검토",
+                "사업계획서 작성",
+                "필요 구비서류 목록 확인 및 준비",
+            ],
+            "legal_basis_title": "소상공인 보호 및 지원에 관한 법률",
+            "legal_basis_snippet": "소상공인 정책자금 지원 근거 및 신청 절차",
+            "estimated_days": 14,
+            "risk_notes": ["신청 기간 경과 시 다음 차수까지 대기 필요", "서류 미비 시 심사 탈락 가능"],
+        },
+        "법률 준비": {
+            "title": "법률·행정 기초 준비",
+            "objective": "사업 형태 결정 및 법률적 기초를 준비합니다.",
+            "checklist": [
+                "사업 형태 결정 (개인/법인)",
+                "법인 설립 시 정관 작성 및 등기",
+                "사업장 임대차 계약 검토",
+                "업종별 인허가 요건 사전 확인",
+                "상호 및 상표 등록 검토",
+            ],
+            "legal_basis_title": "상법, 민법",
+            "legal_basis_snippet": "법인 설립, 계약, 상호 관련 법률 기초",
+            "estimated_days": 7,
+            "risk_notes": ["법인 형태 선택 오류 시 세금·책임 구조 변경 곤란", "임대차 특약 미확인 시 분쟁 가능"],
+        },
+        "준비": {
+            "title": "창업 사전 준비",
+            "objective": "창업에 필요한 기초 사항을 점검하고 준비합니다.",
+            "checklist": [
+                "사업 아이템 구체화 및 시장 조사",
+                "사업계획서 초안 작성",
+                "예상 비용 및 자금 계획 수립",
+                "사업장 입지 선정 및 임대차 검토",
+                "업종별 필요 자격·면허 확인",
+            ],
+            "legal_basis_title": "관련 업종별 개별법",
+            "legal_basis_snippet": "업종에 따라 적용되는 개별 법령 확인 필요",
+            "estimated_days": 14,
+            "risk_notes": ["사전 조사 부족 시 인허가 단계에서 변경 비용 발생"],
+        },
+        "인허가": {
+            "title": "영업 인허가 취득",
+            "objective": "관할 관청에 영업 인허가를 신청하고 취득합니다.",
+            "checklist": [
+                "업종별 인허가 종류 확인 (허가/등록/신고)",
+                "관할 관청 방문 또는 온라인 신청",
+                "구비서류 목록 확인 및 준비",
+                "현장 점검 일정 확인",
+                "인허가증 수령 및 보관",
+            ],
+            "legal_basis_title": "업종별 개별법",
+            "legal_basis_snippet": "업종에 따른 인허가 근거 법령 (식품위생법, 공중위생관리법 등)",
+            "estimated_days": 10,
+            "risk_notes": ["서류 미비 시 보완 명령으로 개업 지연", "시설 기준 미달 시 불허 가능"],
+        },
+        "운영준비": {
+            "title": "영업 운영 준비",
+            "objective": "개업 전 운영 체계를 구축합니다.",
+            "checklist": [
+                "매장 인테리어 및 설비 설치",
+                "POS/결제 시스템 설치",
+                "원재료·상품 초도 물량 확보",
+                "영업배상책임보험 가입",
+                "위생교육 이수 확인",
+            ],
+            "legal_basis_title": "관련 업종별 개별법",
+            "legal_basis_snippet": "영업장 시설 기준 및 위생 관리 의무",
+            "estimated_days": 14,
+            "risk_notes": ["시설 기준 미달 시 영업정지 가능", "보험 미가입 시 사고 발생 시 전액 배상 부담"],
+        },
+    }
+
+    @classmethod
+    def _fallback_detail(cls, phase_name: str) -> StepDetail:
+        template = cls._PHASE_FALLBACK_TEMPLATES.get(phase_name)
+        if template:
+            return StepDetail(
+                phase=phase_name,
+                title=template["title"],
+                objective=template["objective"],
+                checklist=template["checklist"],
+                legal_basis=[
+                    LegalBasisItem(
+                        title=template["legal_basis_title"],
+                        snippet=template["legal_basis_snippet"],
+                        source_url=None,
+                    )
+                ],
+                documents=[],
+                estimated_days=template["estimated_days"],
+                risk_notes=template["risk_notes"],
+            )
+        # Generic fallback for unknown phases
         return StepDetail(
             phase=phase_name,
             title=f"{phase_name} 단계 진행",
-            objective="핵심 절차를 확인하고 준비합니다.",
-            checklist=["필수 요건 확인", "제출 항목 준비"],
+            objective=f"{phase_name} 관련 핵심 절차를 확인하고 준비합니다.",
+            checklist=[
+                f"{phase_name} 관련 필수 요건 확인",
+                "관할 기관 문의 및 구비서류 목록 확인",
+                "제출 서류 준비 및 접수",
+            ],
             legal_basis=[
                 LegalBasisItem(
                     title="근거 보강 필요",
-                    snippet="RAG 근거를 확인하지 못해 기본 단계로 생성되었습니다.",
+                    snippet="RAG 근거를 확인하지 못해 기본 단계로 생성되었습니다. 관할 기관에 확인하세요.",
                     source_url=None,
                 )
             ],
             documents=[],
-            estimated_days=3,
-            risk_notes=["세부 근거 확인 전 진행 시 재작업 가능성"],
+            estimated_days=5,
+            risk_notes=["세부 근거 미확인 상태이므로 관할 기관에 직접 확인 필요"],
         )
 
     @staticmethod

@@ -67,6 +67,9 @@ async def _serialize_roadmap_detail(
                 estimated_days=detail.estimated_days,
                 risk_notes=detail.risk_notes,
                 generation_mode=detail.generation_mode,
+                source_count=detail.source_count,
+                has_fallback=detail.has_fallback,
+                mapping_source=detail.mapping_source,
                 actions=action_map.get(step.id, []),
             )
         output_steps.append(

@@ -336,12 +336,17 @@ class LLMPersonalizer:
         matched_items: list[MatchedActionKit],
         payload: dict,
     ) -> list[PersonalizedStepDetail]:
-        """Generate basic details from ActionKit facts without LLM."""
+        """Generate basic details from ActionKit facts without LLM.
+
+        This fallback path preserves ActionKit data with mapping_source='actionkit_direct'
+        since we have real source data, just without LLM personalization.
+        """
         phase_groups: dict[str, list[MatchedActionKit]] = {}
         for m in matched_items:
             phase = m.phase_group or "기타"
             phase_groups.setdefault(phase, []).append(m)
 
+        business_type = payload.get("business_type", "사업체")
         details: list[PersonalizedStepDetail] = []
         for phase, items in phase_groups.items():
             checklist: list[str] = []
@@ -372,17 +377,17 @@ class LLMPersonalizer:
                     })
 
             if not checklist:
-                checklist = ["필수 요건 확인"]
+                checklist = [f"{business_type} {phase} 관련 필수 요건 확인"]
 
             detail = PersonalizedStepDetail(
                 phase=phase,
-                title=f"{phase} 단계 진행",
-                objective=f"{payload.get('business_type', '사업체')} {phase} 절차를 진행합니다.",
+                title=f"{business_type} {phase} 단계 진행",
+                objective=f"{business_type} 창업을 위한 {phase} 절차를 진행합니다.",
                 estimated_days=5,
                 checklist=checklist,
-                legal_basis=legal_basis if legal_basis else [{"title": "관련 법령 확인 필요", "snippet": "ActionKit 데이터를 기반으로 확인하세요."}],
+                legal_basis=legal_basis if legal_basis else [{"title": "관련 법령 확인 필요", "snippet": f"{business_type} {phase} 관련 법령을 확인하세요."}],
                 documents=documents,
-                risk_notes=["세부 요건 확인 전 진행 시 보완 명령 가능성"],
+                risk_notes=[f"{phase} 세부 요건 미확인 시 보완 명령 가능성"],
                 actionkit_items=actionkit_ids,
                 mapping_source="actionkit_direct",
             )

@@ -13,6 +13,7 @@ import {
     Sparkles,
     Wallet,
 } from "lucide-react";
+import { INTAKE_FIELD_SUGGESTIONS, VALIDATE_FALLBACK_MESSAGE } from "./roadmap-constants";
 
 export interface RoadmapIntakePayload {
     business_type: string;
@@ -73,13 +74,6 @@ const QUESTIONS: Array<{ key: FieldKey; prompt: string; required: boolean; label
     { key: "description", prompt: "추가로 고려 중인 조건이나 설명이 있나요? (선택)", required: false, label: "추가 설명" },
 ];
 
-const SUGGESTIONS: Partial<Record<FieldKey, string[]>> = {
-    business_type: ["카페", "온라인 쇼핑몰", "SaaS"],
-    location: ["서울 마포구", "서울 강남구", "부산 해운대구"],
-    startup_type: ["개인사업자", "법인", "미정"],
-    open_timeline: ["3개월 내", "6개월 내", "1년 내"],
-    budget_range: ["3천만 원 이하", "1억 이하", "1억 이상"],
-};
 
 const PANEL_ROWS: Array<{ key: FieldKey; label: string; icon: React.ReactNode }> = [
     { key: "business_type", label: "업종", icon: <Briefcase className="h-3 w-3" /> },
@@ -184,7 +178,7 @@ export const RoadmapChatIntake = ({
             setValidated(result);
         } catch (e) {
             console.error(e);
-            setError("입력 검증에 실패했습니다. 업종/지역 정보를 다시 확인해 주세요.");
+            setError(VALIDATE_FALLBACK_MESSAGE);
         } finally {
             setValidating(false);
         }
@@ -217,7 +211,7 @@ export const RoadmapChatIntake = ({
         .filter((q) => answers[q.key])
         .map((q) => ({ prompt: q.prompt, answer: answers[q.key] || "(미입력)" }));
 
-    const suggestionItems = validated ? [] : (SUGGESTIONS[current.key] || []);
+    const suggestionItems = validated ? [] : (INTAKE_FIELD_SUGGESTIONS[current.key] || []);
 
     return (
         <section className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50/60">

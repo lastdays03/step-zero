@@ -1,6 +1,7 @@
 "use client";
 
 import { Search, Sparkles } from "lucide-react";
+import { HERO_SUGGESTIONS } from "./roadmap-constants";
 
 interface RoadmapEmptyHeroProps {
     title?: string;
@@ -9,8 +10,6 @@ interface RoadmapEmptyHeroProps {
     primaryLabel?: string;
     onRefreshClick?: () => void;
 }
-
-const SUGGESTIONS = ["카페 프랜차이즈", "SaaS 스타트업", "온라인 의류 쇼핑몰", "샐러드 배달 전문점"];
 
 export const RoadmapEmptyHero = ({
     title = "StepZero와 함께 당신의 비즈니스 여정을 시작하세요",
@@ -59,7 +58,7 @@ export const RoadmapEmptyHero = ({
 
                 <div className="mt-6 flex flex-wrap items-center justify-center gap-2">
                     <span className="text-xs font-semibold text-slate-500">추천 검색어:</span>
-                    {SUGGESTIONS.map((keyword) => (
+                    {HERO_SUGGESTIONS.map((keyword) => (
                         <span
                             key={keyword}
                             className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600"

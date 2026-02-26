@@ -187,6 +187,9 @@ class RoadmapRepository:
                 estimated_days=int(payload.get("estimated_days") or 0),
                 risk_notes=payload.get("risk_notes", []),
                 generation_mode=generation_mode,
+                source_count=payload.get("source_count"),
+                has_fallback=payload.get("has_fallback"),
+                mapping_source=payload.get("mapping_source"),
             )
             self.session.add(detail)
 

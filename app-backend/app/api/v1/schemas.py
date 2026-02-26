@@ -121,6 +121,9 @@ class RoadmapStepDetailResponse(BaseModel):
     estimated_days: int
     risk_notes: list[str]
     generation_mode: str
+    source_count: int | None = None
+    has_fallback: bool | None = None
+    mapping_source: str | None = None
     actions: list[RoadmapStepActionResponse]
 
 

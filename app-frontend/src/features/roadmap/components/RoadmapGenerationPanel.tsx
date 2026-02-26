@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { ROADMAP_POLLING_CLEARED_EVENT, apiClient } from "@/lib/api-client";
 import { RoadmapChatIntake, type RoadmapRawInput, type RoadmapValidationResult } from "./RoadmapChatIntake";
+import { mapJobFailureMessage, VALIDATE_FALLBACK_MESSAGE } from "./roadmap-constants";
 import { useRoadmapJob } from "@/features/roadmap/hooks";
 import type { RoadmapIntakePayload } from "@/features/roadmap/hooks/useRoadmapJob";
 import { SocialAuthModal } from "@/features/auth/components/SocialAuthModal";
@@ -16,22 +17,6 @@ interface RoadmapInputValidateResponse {
 }
 
 const ROADMAP_JOB_STORAGE_KEY = "roadmap_polling_job_id";
-
-const mapJobFailureMessage = (errorCode?: string | null, errorMessage?: string | null): string => {
-    if (errorMessage?.trim()) return errorMessage;
-    switch (errorCode) {
-        case "QUEUE_UNAVAILABLE":
-            return "작업 대기열 연결이 불안정합니다. 잠시 후 다시 시도해 주세요.";
-        case "VALIDATION_FAILED":
-            return "입력값 검증에 실패했습니다. 업종/지역 정보를 다시 확인해 주세요.";
-        case "GENERATION_TIMEOUT":
-            return "로드맵 생성 시간이 초과되었습니다. 다시 시도해 주세요.";
-        case "GENERATION_FAILED":
-            return "AI 로드맵 생성 중 오류가 발생했습니다. 다시 시도해 주세요.";
-        default:
-            return "로드맵 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.";
-    }
-};
 
 interface RoadmapGenerationPanelProps {
     isAuthenticated: boolean;
@@ -126,7 +111,7 @@ export const RoadmapGenerationPanel = ({
         );
         const validation = validateResponse.data;
         if (!validation.valid) {
-            const reason = validation.reason || "입력값 검증에 실패했습니다.";
+            const reason = validation.reason || VALIDATE_FALLBACK_MESSAGE;
             setGenerationError(reason);
             throw new Error(reason);
         }

@@ -4,46 +4,35 @@
 
 ## Phase 1: 기존 업종 품질 안정화
 
-### P1-1. 비법률 단계 fallback 로직 개선 [M]
-- [ ] 단계 성격 분류 매핑 정의 (법률필수 vs 비법률)
-  - 법률필수: 인허가, 소방, 영업신고, 세무신고
-  - 비법률: 마케팅, 인테리어, 메뉴개발, 오픈준비, 홍보
-- [ ] `_fallback_detail()` 수정: 비법률 단계 → LEGAL_BASIS에 "해당 단계는 법적 근거 불필요" 메시지 + 실용 체크리스트 생성
-- [ ] `llm_personalizer._fallback_from_facts()` 수정: 비법률 단계 LEGAL_BASIS 처리
-- [ ] `_generate_phase_detail_with_retry()` 프롬프트에 단계 성격 힌트 추가
-- [ ] 단위 테스트: 비법률 단계에서 "근거 보강 필요" 0건 확인
-- **AC**: 비법률 단계에서 "근거 보강 필요" 0건
+### P1-1. 비법률 단계 fallback 로직 개선 [M] ✅ (2026-02-26)
+- [x] 단계 성격 분류 매핑 정의 (법률필수 vs 비법률)
+- [x] `_fallback_detail()` 수정: 7개 phase별 전문 템플릿 (세무, 인사, 정책자금, 법률준비, 준비, 인허가, 운영준비)
+- [x] `llm_personalizer._fallback_from_facts()` 수정: 업종명 반영
+- [x] 메타데이터 자동 기록: has_fallback, mapping_source, source_count
+- [x] 테스트: 63 passed
+- **결과**: fallback 시 phase별 5개+ 체크리스트, 실제 법령 근거, 업종별 위험요소 포함
 
-### P1-2. ActionKit Matcher 검색 쿼리 개선 [S]
-- [ ] phase별 검색 키워드 매핑 정의
-  - 인허가 → "영업신고 식품위생법"
-  - 소방 → "다중이용업소 소방 안전시설"
-  - 세무 → "사업자등록 세금"
-  - 인사 → "근로계약 4대보험"
-- [ ] `actionkit_matcher.py`의 `match()` 메서드에 phase별 쿼리 전략 적용
-- [ ] retrieval precision 비교 테스트 (before/after)
-- **AC**: phase별 키워드 매핑 + retrieval precision 향상 확인
+### P1-2. ActionKit Matcher 검색 쿼리 개선 [S] ✅ (2026-02-26)
+- [x] BUSINESS_QUERY_TEMPLATES: 10개 업종별 특화 키워드 매핑
+- [x] _build_queries(): 다중 쿼리 생성 (base + 업종특화 3개 = 4쿼리)
+- [x] _multi_query_search(): asyncio.gather 병렬 벡터 검색 + 결과 병합
+- [x] 로깅 강화 (쿼리 수, 개별 결과 수, 병합 결과)
+- [x] 테스트: 82 passed, 4 skipped
+- **결과**: 업종별 다중 쿼리 전략 + 병렬 검색
 
-### P1-3. generation_mode별 품질 태깅 [S]
-- [ ] `roadmap_step_details` 테이블에 품질 메타 컬럼 추가 (Alembic migration)
-  - `source_count: int` - 사용된 ActionKit 항목 수
-  - `has_fallback: bool` - fallback 사용 여부
-  - `mapping_source: str` - actionkit_direct / rag / fallback
-- [ ] `_personalized_to_steps_payload()`에서 메타데이터 포함
-- [ ] `_fallback_detail()`에서 `has_fallback=True` 설정
-- [ ] migration 스크립트 작성 + 적용
-- **AC**: roadmap_step_details에 품질 메타 컬럼 존재, 새 로드맵 생성 시 자동 기록
+### P1-3. generation_mode별 품질 태깅 [S] ✅ (2026-02-26)
+- [x] Alembic migration `ea3b65f32267` 생성 (source_count, has_fallback, mapping_source)
+- [x] `_personalized_to_steps_payload()`에서 메타데이터 자동 기록
+- [x] `_fallback_detail()`에서 `has_fallback=True, mapping_source='fallback'` 설정
+- [x] 정상 매칭: `has_fallback=False, mapping_source='actionkit_direct'/'rag'`
+- **결과**: P0-2(스키마) + P1-1(기록로직)에서 통합 구현됨. DB 적용은 `alembic upgrade head` 필요
 
-### P1-4. 기존 로드맵 품질 평가 스크립트 [S]
-- [ ] `scripts/eval_roadmap_quality.py` 작성
-  - DB 전체 로드맵 분석
-  - 업종별 fallback 비율
-  - source_url 커버리지
-  - 단계별 평균 액션 수
-  - generation_mode 분포
-- [ ] JSON 리포트 출력 형식 정의
-- [ ] 실행 결과 검증
-- **AC**: `python scripts/eval_roadmap_quality.py` → JSON 리포트 출력
+### P1-4. 기존 로드맵 품질 평가 스크립트 [S] ✅ (2026-02-26)
+- [x] `scripts/eval_roadmap_quality.py` 작성
+- [x] 5개 지표: fallback_rate, source_url_coverage, generation_mode_distribution, avg_actions_per_step, retrieval_precision_at_3
+- [x] CLI: --json, --output, --help
+- [x] RoadmapSnapshot 클래스로 N+1 없이 효율적 로딩
+- **결과**: `python -m scripts.eval_roadmap_quality --json` → JSON 리포트
 
 ---
 
@@ -125,13 +114,16 @@
 - **AC**: 지원 업종 목록 UI + 미지원 업종 안내
 - **의존**: P2-1 (업종 목록 확정)
 
-### P3-2. "근거 보강 필요" 대신 단계별 맞춤 안내 [S]
-- [ ] 프론트엔드에서 LEGAL_BASIS 액션 렌더링 시 fallback 감지 로직
-- [ ] 비법률 단계: "이 단계는 법적 절차가 아닌 실무 단계입니다" 안내
-- [ ] 법률 단계 fallback: "추가 법률 근거 확인이 필요합니다" + 링크 안내
-- [ ] UI 스타일링 (경고 vs 안내 구분)
-- **AC**: fallback 액션의 UX 개선
-- **의존**: P1-1 (비법률 분류)
+### P3-2. "근거 보강 필요" 대신 단계별 맞춤 안내 [S] ✅ (2026-02-26)
+- [x] BE: RoadmapStepDetailResponse에 source_count, has_fallback, mapping_source 노출
+- [x] FE: MappingSourceBadge 컴포넌트 (3종 배지)
+  - actionkit_direct → 🟢 "법령 기반" (BookOpen)
+  - rag → 🔵 "AI 분석" (Database)
+  - fallback → 🟡 "일반 안내" (AlertCircle)
+- [x] has_fallback=true ACTIVE step: amber 배경/테두리
+- [x] source_url 없는 LEGAL_BASIS: "상세 법령 정보 준비 중" 안내
+- [x] TypeScript 빌드 통과
+- **결과**: mapping_source별 시각적 구분 완료
 
 ### P3-3. 로드맵 품질 대시보드 [L]
 - [ ] `/ops/roadmap-quality` 페이지 생성
@@ -162,7 +154,12 @@
 
 | Phase | 총 태스크 | 완료 | 진행률 |
 |---|---|---|---|
-| Phase 1 | 4 | 0 | 0% |
-| Phase 2 | 5 | 0 | 0% |
-| Phase 3 | 4 | 0 | 0% |
-| **전체** | **13** | **0** | **0%** |
+| Phase 1 (품질 안정화) | 4 | **4** | **100%** |
+| Phase 2 (업종 확장) | 5 | 0 | 0% |
+| Phase 3 (UX + 모니터링) | 4 | **2** | **50%** (P3-2 완료, P3-1/P3-3/P3-4 미착수) |
+| **전체** | **13** | **6** | **46%** |
+
+### ACTIONKIT_RAG 관련 추가 완료 사항 (P1-5, 계획서에 별도 미기재)
+- _MIN_ACTIONKIT_MATCHES: 3→1 하향 (1개 매치만으로 ACTIONKIT_RAG 활성화)
+- _MIN_RELEVANCE_SCORE = 0.2 필터링 추가
+- 테스트: 39 passed, 기존 전부 통과

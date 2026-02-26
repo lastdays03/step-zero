@@ -2,10 +2,17 @@
 
 Matches a business type + location to relevant ActionKit items using
 hybrid search (vector similarity + relational DB JOIN).
+
+Multi-query strategy:
+  1. Base query: "{business_type} {location} 창업 인허가"
+  2. Business-specific queries from BUSINESS_QUERY_TEMPLATES
+  3. All queries executed in parallel via asyncio.gather
+  4. Results merged with dedup + best-score retention
 """
 
 from __future__ import annotations
 
+import asyncio
 from dataclasses import dataclass, field
 from typing import Sequence
 
@@ -24,6 +31,10 @@ from app.models.actionkit import (
 
 logger = get_logger(__name__)
 
+# Minimum vector similarity score to keep a match.
+# Scores below this are considered noise and filtered out.
+_MIN_RELEVANCE_SCORE: float = 0.2
+
 # ActionKit category slug -> roadmap phase name mapping
 CATEGORY_TO_PHASE: dict[str, str] = {
     # LAW_DATA chapter keys (domain=laws, slug="1".."6")
@@ -39,6 +50,23 @@ CATEGORY_TO_PHASE: dict[str, str] = {
     "hr": "인사·노무",
     "grant": "정책자금 신청",
 }
+
+# Business type -> specialized search keyword templates
+BUSINESS_QUERY_TEMPLATES: dict[str, list[str]] = {
+    "휴게음식점": ["위생 허가", "식품 안전", "영업 신고"],
+    "카페": ["위생 허가", "식품 안전", "영업 신고"],
+    "일반음식점": ["위생 허가", "식품 안전", "영업 허가"],
+    "식품제조가공업": ["식품 제조 허가", "HACCP", "위생 관리", "식품위생법"],
+    "통신판매업": ["통신판매업 신고", "전자상거래", "소비자 보호", "청약철회"],
+    "미용실": ["공중위생 신고", "미용업 면허", "위생 관리"],
+    "미용업": ["공중위생 신고", "미용업 면허", "위생 관리"],
+    "학원": ["학원 등록", "교육청 신고", "소방 안전"],
+    "숙박업": ["숙박업 허가", "소방 안전", "위생 관리"],
+    "소매업": ["영업 신고", "통신판매업", "사업자 등록"],
+    "일반소매업": ["영업 신고", "통신판매업", "사업자 등록"],
+}
+
+DEFAULT_QUERY_KEYWORDS: list[str] = ["창업 인허가", "영업 신고", "사업자 등록"]
 
 
 @dataclass
@@ -73,50 +101,146 @@ class ActionKitMatcher:
         location: str,
         session: AsyncSession,
     ) -> list[MatchedActionKit]:
-        """Find relevant ActionKit items for a business type via hybrid search."""
+        """Find relevant ActionKit items for a business type via multi-query hybrid search."""
         if not self.rag_service.ready:
             logger.warning("RagService not ready; returning empty match list")
             return []
 
-        # 1. Vector similarity search
-        search_query = f"{business_type} {location} 창업 인허가"
+        # 1. Build multiple queries for broader recall
+        queries = self._build_queries(business_type, location)
+        logger.info(
+            "Multi-query search: business_type=%s, queries=%d, queries=%s",
+            business_type,
+            len(queries),
+            queries,
+        )
+
+        # 2. Execute all queries in parallel via asyncio.gather
         try:
-            docs = await self._vector_search(search_query, k=10)
+            docs = await self._multi_query_search(queries, k_per_query=6)
         except Exception:
-            logger.exception("Vector search failed for query=%s", search_query)
+            logger.exception(
+                "Multi-query search failed for business_type=%s", business_type
+            )
             return []
 
         if not docs:
-            logger.info("Vector search returned no results for query=%s", search_query)
+            logger.info(
+                "Multi-query search returned no results for business_type=%s",
+                business_type,
+            )
             return []
 
-        # 2. Extract unique item titles from metadata
+        # 3. Extract unique item titles from metadata
         item_titles = self._extract_item_titles(docs)
         if not item_titles:
             logger.info("No actionkit item titles found in vector results metadata")
             return []
 
-        # 3. Query DB for full ActionKit data
+        # 4. Query DB for full ActionKit data
         matched = await self._load_full_items(item_titles, session)
 
-        # 4. Assign relevance scores based on vector result ordering
+        # 5. Assign relevance scores based on vector result ordering
         title_to_score = self._build_score_map(docs)
         for m in matched:
             m.relevance_score = title_to_score.get(m.item.name, 0.0)
 
-        # 5. Sort by relevance (highest first)
+        # 6. Filter out low-relevance matches
+        pre_filter_count = len(matched)
+        matched = [m for m in matched if m.relevance_score >= _MIN_RELEVANCE_SCORE]
+
+        # 7. Sort by relevance (highest first)
         matched.sort(key=lambda m: m.relevance_score, reverse=True)
 
         logger.info(
-            "ActionKit match complete: query=%s, matched_items=%d",
-            search_query,
+            "ActionKit match complete: business_type=%s, queries=%d, "
+            "db_items=%d, after_score_filter=%d (min_score=%.2f), "
+            "scores=%s",
+            business_type,
+            len(queries),
+            pre_filter_count,
             len(matched),
+            _MIN_RELEVANCE_SCORE,
+            [(m.item.name[:30], f"{m.relevance_score:.3f}") for m in matched[:10]],
         )
         return matched
 
     # ------------------------------------------------------------------ #
     # Internal helpers
     # ------------------------------------------------------------------ #
+
+    @staticmethod
+    def _build_queries(business_type: str, location: str) -> list[str]:
+        """Build multiple search queries for broader recall.
+
+        Strategy:
+          - Base query: "{business_type} {location} 창업 인허가"
+          - Business-specific queries: "{business_type} {keyword}" per template
+          - Falls back to DEFAULT_QUERY_KEYWORDS if no template match
+        """
+        queries: list[str] = []
+
+        # Base query (always included)
+        queries.append(f"{business_type} {location} 창업 인허가")
+
+        # Business-specific keyword queries
+        keywords = BUSINESS_QUERY_TEMPLATES.get(
+            business_type, DEFAULT_QUERY_KEYWORDS
+        )
+        for kw in keywords:
+            queries.append(f"{business_type} {kw}")
+
+        return queries
+
+    async def _multi_query_search(
+        self, queries: list[str], k_per_query: int = 6
+    ) -> list:
+        """Execute multiple vector searches in parallel and merge results.
+
+        Returns a deduplicated list of (Document, score) tuples, keeping the
+        highest score when the same document (by page_content) appears in
+        multiple query results.
+        """
+        tasks = [self._vector_search(q, k=k_per_query) for q in queries]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        # Merge all results, dedup by page_content keeping best score
+        seen: dict[str, tuple] = {}  # page_content -> (Document, score)
+        for i, result in enumerate(results):
+            if isinstance(result, Exception):
+                logger.warning(
+                    "Query %d failed: %s (query=%s)",
+                    i,
+                    result,
+                    queries[i],
+                )
+                continue
+
+            logger.debug(
+                "Query %d returned %d results (query=%s)",
+                i,
+                len(result),
+                queries[i],
+            )
+
+            for doc_or_tuple in result:
+                if isinstance(doc_or_tuple, tuple):
+                    doc, score = doc_or_tuple
+                else:
+                    doc, score = doc_or_tuple, 1.0
+
+                content_key = doc.page_content
+                existing = seen.get(content_key)
+                if existing is None or score > existing[1]:
+                    seen[content_key] = (doc, score)
+
+        merged = list(seen.values())
+        logger.info(
+            "Multi-query merge: total_unique=%d from %d queries",
+            len(merged),
+            len(queries),
+        )
+        return merged
 
     async def _vector_search(self, query: str, k: int = 10) -> list:
         """Execute vector similarity search using the RagService's vector_store."""

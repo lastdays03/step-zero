@@ -36,6 +36,9 @@ class Settings(BaseSettings):
     # Google OAuth
     GOOGLE_CLIENT_ID: str | None = None
 
+    # Law API (국가법령정보센터 Open API)
+    LAW_API_OC: str | None = None
+
     # Feature Flags
     ENABLE_SOCIAL_MOCK: bool = False
     OPENAI_CHAT_MODEL: str = "gpt-4o-mini"
@@ -72,6 +75,7 @@ class Settings(BaseSettings):
             raise ValueError("SECRET_KEY must not use a default value in production")
         self.OPENAI_API_KEY = self._normalize_optional_secret(self.OPENAI_API_KEY)
         self.GOOGLE_CLIENT_ID = self._normalize_optional_secret(self.GOOGLE_CLIENT_ID)
+        self.LAW_API_OC = self._normalize_optional_secret(self.LAW_API_OC)
         return self
 
     @property

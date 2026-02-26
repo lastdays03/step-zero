@@ -1,7 +1,167 @@
 # 실행 순서 가이드 - 로드맵 품질 개선 + 법률 데이터 수집
 
-> Last Updated: 2026-02-25
+> Last Updated: 2026-02-26 (세션 3 완료 후 — ActionKitItem 누락 이슈 수정)
 > 이 문서는 두 트랙의 최적 병렬 실행 순서를 정리한 빠른 참조 문서이다.
+
+---
+
+## 환경 현황 (2026-02-26 세션 2 완료 후)
+
+### 인프라 상태
+
+| 항목 | 상태 | 비고 |
+|---|---|---|
+| PostgreSQL (stepzero-db) | **Running** | `localhost:5432`, healthy |
+| Redis (stepzero-redis) | **Running** | `localhost:6379`, healthy |
+| Worker (stepzero-worker) | **Running** | arq 기반 백그라운드 워커 |
+| Python venv | **Ready** | `.venv/bin/python` (cpython-3.11.14) |
+| httpx | **Ready** | v0.28.1 (`pyproject.toml` dev deps에 포함) |
+
+### API 키 / 인증
+
+| 항목 | 상태 | 위치 |
+|---|---|---|
+| OpenAI API Key | **설정 완료** | `.env.local` |
+| 국가법령정보센터 OC | **설정 완료** | `.env.local` (`LAW_API_OC=lastdays03`) |
+| law.go.kr API 테스트 | **성공** | 식품위생법 검색 → 6법령 수집 완료 |
+
+### DB 데이터 현황 (업데이트됨)
+
+| 항목 | 수치 |
+|---|---|
+| 로드맵 | 7건 (휴게음식점 6, 일반음식점 1) |
+| 벡터 총 수 | **371건** (기존 329 + Wave 1 법률 42) |
+| 고유 문서 수 | **53건** (기존 47 + 큐레이션 법률 6) |
+| Alembic head | `ea3b65f32267` (품질 메타 컬럼 추가) |
+| ActionKitItem | **52건** (기존 시드 46 + Wave 1 보강 6) |
+| 지원 업종 | 휴게음식점, 일반음식점 + **식품제조가공업, 통신판매업** (Wave 1) |
+
+### DB 스키마 - `roadmap_step_details` 컬럼 (업데이트됨)
+
+```
+id, roadmap_step_id, phase, objective, estimated_days,
+risk_notes(json), generation_mode, created_at, updated_at,
+source_count(int), has_fallback(bool), mapping_source(str)  ← P0-2에서 추가 완료
+```
+
+⚠️ `alembic upgrade head` 실제 DB 적용은 아직 필요 (Docker DB 실행 후)
+
+### 원본 파일 위치 (업데이트됨)
+
+| 데이터 | 경로 | 파일 수 |
+|---|---|---|
+| 법률 원본 (PDF) | `uploads/actionkit/laws/chapter-1~6/` | 21건 |
+| 킷 원본 (PDF/HWP/PPTX) | `uploads/actionkit/kits/{legal,tax,hr,grant}/` | 25건 |
+| Wave 1 수집 법률 | `.temp/rag/식품제조가공업/`, `.temp/rag/통신판매업/` | **12건** (6 md + 6 meta.json) |
+| Wave 1 큐레이션 | `.temp/rag/*/\*_curated.md` | **6건** |
+
+### 주요 코드 경로 (업데이트됨)
+
+```
+# Backend - 로드맵 생성 (구간 2에서 개선됨)
+app/features/roadmaps/application/
+├── actionkit_matcher.py      # 다중 쿼리 전략 (BUSINESS_QUERY_TEMPLATES, asyncio.gather)
+├── llm_personalizer.py       # 7 phase 전문 fallback 템플릿
+├── roadmap_generation_service.py  # ACTIONKIT_RAG 임계값 3→1, 메타데이터 기록
+└── deps.py                   # DI 싱글톤
+
+# Backend - RAG
+app/features/rag/application/
+├── rag_service.py            # 벡터 스토어 + 검색
+├── chat_service.py           # 하이브리드 (RAG + LLM)
+└── semantic_router.py        # 임베딩 기반 분류
+
+# Backend - 서비스 (업데이트됨)
+app/services/
+├── law_api_client.py         # ✅ 신규: LawApiClient (httpx, Pydantic 모델, rate limit)
+├── law_fetcher.py            # LawDataSource ABC + LocalFileSource + ✅ MolegApiSource
+├── law_etl.py                # LawETLProcessor (GPT-4 가이드 변환)
+├── vector_store.py           # VectorStoreService (청킹 600/100)
+└── actionkit_data_source.py  # ActionKit 데이터 소스
+
+# Backend - API (업데이트됨)
+app/api/v1/
+├── schemas.py                # ✅ RoadmapStepDetailResponse에 메타 필드 추가
+└── roadmaps/get.py           # ✅ 메타데이터 API 노출
+
+# Backend - 모델 (업데이트됨)
+app/models/roadmap.py         # ✅ source_count, has_fallback, mapping_source 추가
+
+# Frontend - 로드맵 (업데이트됨)
+app-frontend/src/features/roadmap/
+├── components/
+│   ├── TimelinePhaseCard.tsx  # ✅ COMPLETED 기본 축소
+│   ├── TimelineStepItem.tsx   # ✅ MappingSourceBadge (법령기반/AI분석/일반안내)
+│   └── ...
+├── roadmap-constants.ts       # ✅ 신규: 공유 상수 (SUGGESTIONS, validate 메시지)
+├── hooks/
+├── types/
+│   └── roadmap-utils.ts       # ✅ MappingSource 타입 추가
+└── api/
+
+# 스크립트 (업데이트됨)
+scripts/
+├── eval_roadmap_quality.py    # ✅ 신규: 품질 baseline 측정 (5개 지표 JSON)
+├── fetch_laws.py              # ✅ 신규: 법률 수집 CLI (--wave, --list, --dry-run)
+├── fetch_laws_config.py       # ✅ 신규: WAVE_CONFIG (3 Wave, 6 업종)
+├── seed_rag_vectors.py        # ✅ --curated + --sync-actionkit 옵션 추가
+├── eval/                      # 평가 (tier 2/4)
+└── seeds/                     # 시드 데이터
+```
+
+---
+
+## 진행 현황
+
+### 완료된 태스크
+
+| 태스크 | 완료일 | 비고 |
+|---|---|---|
+| B-P0-1: open.law.go.kr 회원가입 + OC 발급 | 2026-02-26 | OC=lastdays03 |
+| B-P0-2: 환경변수 및 설정 추가 | 2026-02-26 | .env.local, .env, .env.example, config.py |
+| B-P0-3: API 연결 테스트 | 2026-02-26 | curl로 식품위생법 검색 성공 |
+| B-P0-4: httpx 의존성 확인 | 2026-02-26 | 이미 설치됨 (v0.28.1) |
+| **P0-1: Baseline 스크립트** | **2026-02-26** | `eval_roadmap_quality.py` (5개 지표, --json/--output) |
+| **P0-2: Alembic Migration** | **2026-02-26** | `ea3b65f32267` (source_count, has_fallback, mapping_source) |
+| **P1-QW: FE Quick Win 3건** | **2026-02-26** | TimelinePhaseCard 축소, SUGGESTIONS 통합, validate 통합 |
+| **B-P1-1: API 클라이언트** | **2026-02-26** | `law_api_client.py` (24 tests), API 버그 2건 수정 |
+| **B-P1-3~4: WAVE_CONFIG + CLI** | **2026-02-26** | `fetch_laws.py` + `fetch_laws_config.py` + MolegApiSource |
+| **P1-1: fallback 개선** | **2026-02-26** | 7 phase 전문 템플릿, 메타데이터 자동 기록 |
+| **P1-2: 쿼리 개선** | **2026-02-26** | 다중 쿼리 + asyncio.gather (10개 업종 매핑) |
+| **P1-5: ACTIONKIT_RAG 해소** | **2026-02-26** | 임계값 3→1, 점수 필터링 0.2 추가 |
+| **P3-2: Fallback UX** | **2026-02-26** | BE 스키마 노출 + FE 배지 3종 (법령기반/AI분석/일반안내) |
+| **B-P2-1: Wave 1 수집** | **2026-02-26** | 6법령 (식품위생법×3 + 전자상거래법×3), API 버그 2건 수정 |
+| **B-P2-2: Wave 1 큐레이션** | **2026-02-26** | 6개 _curated.md (업종별 핵심 조문 선별) |
+| **B-P2-3: Wave 1 벡터 적재** | **2026-02-26** | 42청크 적재, 검색 테스트 통과 |
+| **P2A: Wave 1 업종 확장** | **2026-02-26** | 품질 게이트 통과 (155 tests), SOFT FAIL 1건 (통신판매업 2매치) |
+| **B-P2-4: ActionKitItem 보강** | **2026-02-26** | seed_rag_vectors.py에 `_ensure_actionkit_items()` 추가, Wave 1 업종 +6건 (총 52건) |
+
+### 다음 착수 대상
+
+| 태스크 | 트랙 | 내용 | 명령어/비고 |
+|---|---|---|---|
+| **서버 재시작 후 매칭 재테스트** | A+B | 통신판매업 ActionKitMatcher 매칭 재검증 | 서버 캐시 초기화 후 3건+ 매칭 확인 |
+| Wave 2 수집 | B-BE | 미용업 + 일반소매업 법률 수집 | `python -m scripts.fetch_laws --wave 2` |
+| Wave 2 큐레이션 | B-BE | 수집된 법률 조문 필터링 | _curated.md 생성 |
+| Wave 2 벡터 적재 + ActionKitItem | B-BE | 큐레이션 결과 벡터화 + ActionKitItem 자동 생성 | `python -m scripts.seed_rag_vectors --curated` |
+| Wave 2 검증 | B-BE | 품질 게이트 + 교차 오염 테스트 | eval_roadmap_quality.py |
+
+### 구간 4 (Wave 2/3과 병렬 가능)
+
+| 태스크 | 의존 | 내용 |
+|---|---|---|
+| P3-1: 업종 선택 가이드 FE | P2A ✅ | 2-tier SUGGESTIONS |
+| P3-3: 품질 대시보드 | P0-2 ✅ | `/ops/roadmap-quality` |
+| P3-4: 골든 데이터셋 확장 | Wave 적재 완료 | 업종당 3건+ |
+
+### 알려진 이슈
+
+| 이슈 | 심각도 | 비고 |
+|---|---|---|
+| ~~ActionKitItem 누락으로 매칭 0건~~ | **해결됨** | `seed_rag_vectors.py`에 `_ensure_actionkit_items()` 추가, `--sync-actionkit` 옵션으로 기존 보강 가능 |
+| 통신판매업 로드맵: mapping_source=None, generation_mode=RAG | 높음 | ActionKitItem은 DB에 있으나 매칭이 RAG fallback으로 동작. 서버 캐시 문제 가능성 — 재시작 후 재테스트 필요 |
+| `alembic upgrade head` 미실행 | 중간 | Docker DB 실행 후 적용 필요 |
+| 행정규칙 수집 미완료 | 낮음 | 식품제조가공업/통신판매업 행정규칙 검색 결과 없음. 키워드 조정 필요 |
 
 ---
 
@@ -97,7 +257,7 @@ Track B는 수집 스크립트 완성 후 Wave 1 실행 단계이다.
 |---|---|
 | B-P2-1 | Wave 1 법률 수집 실행 (`fetch_laws --wave 1`) |
 | B-P2-2 | 관련 조문 큐레이션 (LLM 1차 + 수동 2차) -- 핵심 병목 |
-| B-P2-3 | Wave 1 벡터 적재 (`seed_rag_vectors --wave 1`) |
+| B-P2-3 | Wave 1 벡터 적재 + ActionKitItem 자동 생성 (`seed_rag_vectors --curated`) |
 
 ---
 
@@ -105,10 +265,17 @@ Track B는 수집 스크립트 완성 후 Wave 1 실행 단계이다.
 
 Track B의 수집 결과물이 Track A의 업종 확장에 직접 입력된다.
 
+**Wave 파이프라인 (수정됨)**
+```
+기존 (버그): 법률 수집 → 큐레이션 → 벡터 적재 → (ActionKitItem 누락!) → 테스트
+수정 후:     법률 수집 → 큐레이션 → 벡터 적재 + ActionKitItem 자동 생성 → 테스트
+보강 전용:   seed_rag_vectors.py --sync-actionkit (벡터 적재 없이 ActionKitItem만 생성)
+```
+
 **Wave 1 (식품제조가공업 + 통신판매업)**
 | 태스크 | 내용 |
 |---|---|
-| P2A-2 | Wave 1 벡터 적재 (수집된 법률 문서 필요) |
+| P2A-2 | Wave 1 벡터 적재 + ActionKitItem 자동 생성 (수집된 법률 문서 필요) |
 | P2A-3 | 매핑/Validate/쿼리 확장 |
 | 게이트 | fallback < 10%, ActionKit >= 3건, 기존 hit_rate >= 0.85, 교차 오염 통과 |
 

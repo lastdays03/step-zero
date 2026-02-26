@@ -1,10 +1,51 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Lock, ExternalLink, Undo2 } from "lucide-react";
+import { Check, Lock, ExternalLink, Undo2, BookOpen, AlertCircle, Database } from "lucide-react";
 import { cn } from "@/lib/utils";
-import type { RoadmapDetailStep, StepItemState } from "./roadmap-utils";
+import type { RoadmapDetailStep, StepItemState, MappingSource } from "./roadmap-utils";
 import { TOGGLE_ACTION_TYPES, ACTION_TYPE_LABEL } from "./roadmap-utils";
+
+const MAPPING_SOURCE_CONFIG: Record<MappingSource, { label: string; className: string; icon: typeof BookOpen }> = {
+    actionkit_direct: {
+        label: "법령 기반",
+        className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        icon: BookOpen,
+    },
+    rag: {
+        label: "AI 분석",
+        className: "bg-blue-50 text-blue-700 border-blue-200",
+        icon: Database,
+    },
+    fallback: {
+        label: "일반 안내",
+        className: "bg-amber-50 text-amber-700 border-amber-200",
+        icon: AlertCircle,
+    },
+};
+
+function MappingSourceBadge({ source }: { source: MappingSource }) {
+    const config = MAPPING_SOURCE_CONFIG[source];
+    const Icon = config.icon;
+    return (
+        <span
+            className={cn(
+                "inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium border",
+                config.className,
+            )}
+            title={
+                source === "actionkit_direct"
+                    ? "법령·규정에서 직접 매칭된 정보입니다"
+                    : source === "rag"
+                        ? "AI가 관련 자료를 분석하여 생성한 정보입니다"
+                        : "일반적인 창업 안내 정보입니다"
+            }
+        >
+            <Icon className="w-3 h-3" />
+            {config.label}
+        </span>
+    );
+}
 
 interface TimelineStepItemProps {
     step: RoadmapDetailStep;
@@ -101,8 +142,15 @@ export function TimelineStepItem({
         }
     };
 
+    const isFallback = step.detail?.has_fallback === true;
+
     return (
-        <div className="group flex items-start gap-4 p-4 rounded-xl bg-white border border-[#36a4f2] shadow-sm ring-1 ring-[#36a4f2]/10">
+        <div className={cn(
+            "group flex items-start gap-4 p-4 rounded-xl shadow-sm ring-1",
+            isFallback
+                ? "bg-amber-50/30 border border-amber-300/50 ring-amber-200/20"
+                : "bg-white border border-[#36a4f2] ring-[#36a4f2]/10",
+        )}>
             <div className="flex-shrink-0 pt-1">
                 <button
                     type="button"
@@ -120,10 +168,13 @@ export function TimelineStepItem({
                 </button>
             </div>
             <div className="flex-grow min-w-0">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                     <h4 className="text-base font-bold text-slate-900">
                         {step.title}
                     </h4>
+                    {step.detail?.mapping_source ? (
+                        <MappingSourceBadge source={step.detail.mapping_source} />
+                    ) : null}
                 </div>
                 {step.detail?.objective ? (
                     <p className="text-sm text-slate-600 mt-1 mb-3">
@@ -199,6 +250,10 @@ export function TimelineStepItem({
                                                                     근거/원문 보기
                                                                     <ExternalLink className="w-3 h-3" />
                                                                 </a>
+                                                            ) : item.action_type === "LEGAL_BASIS" ? (
+                                                                <span className="inline-flex items-center gap-1 mt-1 text-xs text-slate-400">
+                                                                    상세 법령 정보 준비 중
+                                                                </span>
                                                             ) : null}
                                                         </div>
                                                     </div>

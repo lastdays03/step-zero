@@ -63,6 +63,9 @@ class RoadmapStepDetail(SQLModel, table=True):
     estimated_days: int = Field(default=0)
     risk_notes: list[str] = Field(default_factory=list, sa_column=sa.Column(sa.JSON, nullable=False))
     generation_mode: str = Field(default="RAG")
+    source_count: int | None = Field(default=None, nullable=True)
+    has_fallback: bool | None = Field(default=None, nullable=True)
+    mapping_source: str | None = Field(default=None, nullable=True)
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
 

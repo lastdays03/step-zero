@@ -9,6 +9,8 @@ export interface RoadmapDetailAction {
     metadata_json?: Record<string, unknown>;
 }
 
+export type MappingSource = "actionkit_direct" | "rag" | "fallback";
+
 export interface RoadmapDetailStep {
     id: number;
     title: string;
@@ -19,6 +21,9 @@ export interface RoadmapDetailStep {
         phase: string;
         objective: string;
         estimated_days: number;
+        source_count?: number | null;
+        has_fallback?: boolean | null;
+        mapping_source?: MappingSource | null;
         actions: RoadmapDetailAction[];
     } | null;
 }

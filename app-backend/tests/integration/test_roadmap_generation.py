@@ -174,7 +174,7 @@ def _mock_llm_response(phases: list[str]) -> str:
 
 @pytest.mark.asyncio
 async def test_cafe_seoul_actionkit_mapping_success():
-    """카페(휴게음식점) + 서울 -> ActionKit mapping should succeed with >= 3 matches."""
+    """카페(휴게음식점) + 서울 -> ActionKit mapping should succeed with >= 1 match."""
     matched = _build_matched_items(5)
     phases = list({m.phase_group for m in matched})
 
@@ -333,18 +333,15 @@ async def test_general_restaurant_gyeonggi_mapping_success():
 
 
 # ------------------------------------------------------------------ #
-#  Test 3: IT startup + Pangyo -> Insufficient matches -> fallback
+#  Test 3: Zero matches -> fallback to legacy RAG
 # ------------------------------------------------------------------ #
 
 
 @pytest.mark.asyncio
-async def test_it_startup_pangyo_fallback():
-    """IT 스타트업 + 판교 -> Insufficient ActionKit matches -> legacy fallback."""
-    # Only 2 matches (below threshold of 3)
-    matched = _build_matched_items(2)
-
+async def test_zero_matches_fallback():
+    """0 ActionKit matches -> legacy fallback to RAG generation."""
     mock_matcher = MagicMock(spec=ActionKitMatcher)
-    mock_matcher.match = AsyncMock(return_value=matched)
+    mock_matcher.match = AsyncMock(return_value=[])  # No matches at all
 
     mock_personalizer = MagicMock(spec=LLMPersonalizer)
     # personalizer should NOT be called in fallback path
@@ -408,6 +405,80 @@ async def test_it_startup_pangyo_fallback():
     call_kwargs = service.roadmap_repo.create_steps_with_details.call_args[1]
     assert call_kwargs["generation_mode"] == "RAG"
     assert len(call_kwargs["steps_payload"]) >= 1
+    service.job_repo.mark_succeeded.assert_called_once()
+
+
+# ------------------------------------------------------------------ #
+#  Test 3b: Small match count (1-2) -> ACTIONKIT_RAG (lowered threshold)
+# ------------------------------------------------------------------ #
+
+
+@pytest.mark.asyncio
+async def test_small_match_count_uses_actionkit_rag():
+    """1-2 ActionKit matches should now use ACTIONKIT_RAG (threshold lowered to 1)."""
+    matched = _build_matched_items(2)
+
+    mock_matcher = MagicMock(spec=ActionKitMatcher)
+    mock_matcher.match = AsyncMock(return_value=matched)
+
+    phases = list({m.phase_group for m in matched})
+    mock_personalizer = MagicMock(spec=LLMPersonalizer)
+    mock_personalizer.personalize = AsyncMock(
+        return_value=[
+            PersonalizedStepDetail(
+                phase=phase,
+                title=f"{phase} 단계",
+                objective=f"IT 스타트업 {phase}",
+                estimated_days=5,
+                checklist=["확인 항목"],
+                legal_basis=[{"title": "관련법", "snippet": "요약", "actionkit_item_id": 1}],
+                documents=[],
+                risk_notes=["위험 요소"],
+                actionkit_items=[1],
+                mapping_source="actionkit_direct",
+            )
+            for phase in phases
+        ]
+    )
+
+    mock_session = AsyncMock()
+    mock_job = MagicMock()
+    mock_job.id = uuid4()
+    mock_job.team_id = uuid4()
+    mock_job.user_id = 1
+    mock_job.input_payload = {
+        "business_type": "IT 스타트업",
+        "location": "경기도 성남시 분당구 판교",
+        "description": "소프트웨어 개발",
+    }
+
+    with patch.object(RoadmapGenerationService, "__init__", lambda self, *a, **kw: None):
+        service = RoadmapGenerationService.__new__(RoadmapGenerationService)
+        service.session = mock_session
+        service.actionkit_matcher = mock_matcher
+        service.llm_personalizer = mock_personalizer
+        service.rag_service = MagicMock()
+
+        service.job_repo = MagicMock()
+        service.job_repo.get_by_id = AsyncMock(return_value=mock_job)
+        service.job_repo.mark_running = AsyncMock()
+        service.job_repo.set_progress = AsyncMock()
+        service.job_repo.mark_succeeded = AsyncMock()
+
+        service.roadmap_repo = MagicMock()
+        mock_roadmap = MagicMock()
+        mock_roadmap.id = uuid4()
+        service.roadmap_repo.create_roadmap = AsyncMock(return_value=mock_roadmap)
+        service.roadmap_repo.create_steps_with_details = AsyncMock(return_value=[])
+        service.roadmap_repo.commit = AsyncMock()
+
+        await service.process_job(mock_job.id)
+
+    # Personalizer SHOULD be called now (threshold lowered to 1)
+    mock_personalizer.personalize.assert_called_once()
+
+    call_kwargs = service.roadmap_repo.create_steps_with_details.call_args[1]
+    assert call_kwargs["generation_mode"] == "ACTIONKIT_RAG"
     service.job_repo.mark_succeeded.assert_called_once()
 
 
@@ -477,7 +548,7 @@ async def test_beauty_salon_busan_partial_mapping():
 
         await service.process_job(mock_job.id)
 
-    # Should use ActionKit path (>= 3 matches)
+    # Should use ActionKit path (>= 1 match)
     mock_personalizer.personalize.assert_called_once()
     call_kwargs = service.roadmap_repo.create_steps_with_details.call_args[1]
     assert call_kwargs["generation_mode"] == "ACTIONKIT_RAG"
@@ -595,6 +666,18 @@ class TestLLMPersonalizerParsing:
 
 class TestActionKitMatcherHelpers:
     """Unit tests for ActionKitMatcher static helpers."""
+
+    def test_build_queries_default_keywords(self):
+        """Unknown business type falls back to DEFAULT_QUERY_KEYWORDS."""
+        queries = ActionKitMatcher._build_queries("드론 배달업", "서울시")
+        assert len(queries) == 4  # 1 base + 3 defaults
+        assert queries[0] == "드론 배달업 서울시 창업 인허가"
+
+    def test_build_queries_business_specific(self):
+        """Known business type uses BUSINESS_QUERY_TEMPLATES."""
+        queries = ActionKitMatcher._build_queries("휴게음식점", "강남구")
+        assert len(queries) == 4  # 1 base + 3 template keywords
+        assert "휴게음식점 위생 허가" in queries
 
     def test_extract_item_titles_from_tuples(self):
         """Test extraction from (Document, score) tuples."""

@@ -120,3 +120,72 @@ class LocalFileSource(LawDataSource):
             
         logger.info(f"Fetched documents from local source: count={len(results)}, root_dir={self.root_dir}")
         return results
+
+
+class MolegApiSource(LawDataSource):
+    """fetch_laws.py 로 수집된 .temp/rag/ 파일을 LawData 객체로 반환하는 소스.
+
+    국가법령정보센터 API를 통해 수집된 .md + _meta.json 파일 쌍을
+    읽어서 LawData 리스트로 변환한다.
+    """
+
+    def __init__(self, root_dir: str | None = None):
+        if root_dir:
+            self.root_dir = Path(root_dir)
+        else:
+            # 기본값: app-backend/.temp/rag
+            self.root_dir = Path(__file__).resolve().parents[2] / ".temp" / "rag"
+
+    async def fetch_all_laws(self) -> List[LawData]:
+        results = []
+        if not self.root_dir.exists():
+            logger.warning(f"MolegApiSource: directory does not exist: {self.root_dir}")
+            return results
+
+        for md_path in sorted(self.root_dir.rglob("*.md")):
+            if md_path.name.startswith("."):
+                continue
+
+            content = md_path.read_text(encoding="utf-8")
+            if not content.strip():
+                continue
+
+            category = self._get_category(md_path)
+            metadata = self._load_metadata(md_path)
+
+            law_data = LawData(
+                title=md_path.stem,
+                category=category,
+                content_body=content,
+                source_type=SourceType.API,
+                file_path=str(md_path),
+                url=metadata.get("source_url"),
+                metadata=metadata,
+            )
+            results.append(law_data)
+
+        logger.info(
+            f"MolegApiSource: fetched {len(results)} documents from {self.root_dir}"
+        )
+        return results
+
+    def _get_category(self, md_path: Path) -> str:
+        """파일 경로에서 업종 카테고리를 추출한다."""
+        try:
+            relative = md_path.relative_to(self.root_dir)
+            return relative.parts[0] if len(relative.parts) > 1 else "Uncategorized"
+        except Exception:
+            return "Uncategorized"
+
+    def _load_metadata(self, md_path: Path) -> dict:
+        """동반 _meta.json 파일에서 메타데이터를 로드한다."""
+        import json
+
+        meta_path = md_path.parent / f"{md_path.stem}_meta.json"
+        if not meta_path.exists():
+            return {}
+        try:
+            return json.loads(meta_path.read_text(encoding="utf-8"))
+        except Exception as e:
+            logger.warning(f"MolegApiSource: failed to load metadata: {meta_path}, error={e}")
+            return {}

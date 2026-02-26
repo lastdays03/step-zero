@@ -86,7 +86,7 @@ export function TimelinePhaseCard({
     updatingStepId,
     updatingActionId,
 }: TimelinePhaseCardProps) {
-    const [expanded, setExpanded] = useState(group.state === "COMPLETED");
+    const [expanded, setExpanded] = useState(false);
     const config = STATE_CONFIG[group.state];
 
     // FUTURE: step 목록 포함
