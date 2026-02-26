@@ -1,6 +1,6 @@
 # 실행 순서 가이드 - 로드맵 품질 개선 + 법률 데이터 수집
 
-> Last Updated: 2026-02-26 (세션 4 — ActionKitFile 자동 생성, Wave 2 수집 완료 확인)
+> Last Updated: 2026-02-26 (세션 5 — Wave 1~3 전체 완료, 품질 달성)
 > 이 문서는 두 트랙의 최적 병렬 실행 순서를 정리한 빠른 참조 문서이다.
 
 ---
@@ -25,18 +25,16 @@
 | 국가법령정보센터 OC | **설정 완료** | `.env.local` (`LAW_API_OC=lastdays03`) |
 | law.go.kr API 테스트 | **성공** | 식품위생법 검색 → 6법령 수집 완료 |
 
-### DB 데이터 현황 (세션 4 업데이트)
+### DB 데이터 현황 (세션 5 업데이트)
 
 | 항목 | 수치 |
 |---|---|
-| 로드맵 | 7건 (휴게음식점 6, 일반음식점 1) |
-| 벡터 총 수 | **371건** (기존 329 + Wave 1 법률 42) |
-| 고유 문서 수 | **53건** (기존 47 + 큐레이션 법률 6) |
+| 로드맵 | 11건 (휴게음식점 4, 일반음식점 1, + Wave 1~3 6업종 각 1건) |
+| 벡터 총 수 | **1,207건** (기존 329 + Wave 1~3 법률 878) |
 | Alembic head | `ea3b65f32267` (품질 메타 컬럼 추가) |
-| ActionKitItem | **52건** (기존 시드 46 + Wave 1 보강 6) |
-| ActionKitFile | **52건** (기존 시드 46 + Wave 1 보강 **6건 신규**) |
-| 지원 업종 | 휴게음식점, 일반음식점 + **식품제조가공업, 통신판매업** (Wave 1) |
-| Wave 2 수집 | 미용업(공중위생관리법×3) + 일반소매업(유통산업발전법×3) — 큐레이션/적재 대기 |
+| ActionKitItem | **65건** (기존 시드 46 + Wave 1~3 보강 19) |
+| ActionKitFile | **65건** (기존 시드 46 + Wave 1~3 보강 19) |
+| 지원 업종 | 휴게음식점, 일반음식점 + **6개 신규 업종** (Wave 1~3) |
 
 ### DB 스키마 - `roadmap_step_details` 컬럼 (업데이트됨)
 
@@ -54,10 +52,11 @@ source_count(int), has_fallback(bool), mapping_source(str)  ← P0-2에서 추�
 |---|---|---|
 | 법률 원본 (PDF) | `uploads/actionkit/laws/chapter-1~6/` | 21건 |
 | 킷 원본 (PDF/HWP/PPTX) | `uploads/actionkit/kits/{legal,tax,hr,grant}/` | 25건 |
-| Wave 1 수집 법률 | `.temp/rag/식품제조가공업/`, `.temp/rag/통신판매업/` | **12건** (6 md + 6 meta.json) |
-| Wave 1 큐레이션 | `.temp/rag/*/\*_curated.md` | **6건** |
-| Wave 2 수집 법률 | `.temp/rag/미용업/`, `.temp/rag/일반소매업/` | **12건** (6 md + 6 meta.json) |
-| Wave 1 ActionKitFile | `uploads/actionkit/laws/chapter-7/`, `chapter-8/` | **6건** (.md) |
+| Wave 1 법률 | `.temp/rag/식품제조가공업/`, `.temp/rag/통신판매업/` | 12건 (6 md + 6 meta.json) |
+| Wave 2 법률 | `.temp/rag/미용업/`, `.temp/rag/일반소매업/` | 12건 (6 md + 6 meta.json) |
+| Wave 3 법률 | `.temp/rag/학원업/`, `.temp/rag/숙박업/` | 14건 (7 md + 7 meta.json) |
+| 전체 큐레이션 | `.temp/rag/*/\*_curated.md` | **19건** |
+| ActionKitFile | `uploads/actionkit/laws/chapter-7~12/` | **19건** (.md) |
 
 ### 주요 코드 경로 (업데이트됨)
 
@@ -141,17 +140,19 @@ scripts/
 | **B-P2-4: ActionKitItem 보강** | **2026-02-26** | seed_rag_vectors.py에 `_ensure_actionkit_items()` 추가, Wave 1 업종 +6건 (총 52건) |
 | **ActionKitFile 자동 생성** | **2026-02-26** | `_ensure_actionkit_items()`에 파일 복사 + ActionKitFile 레코드 생성 추가. 기존 Item 파일 보강 (멱등) |
 | **B-P3-1: Wave 2 수집** | **2026-02-26** | 미용업(공중위생관리법×3) + 일반소매업(유통산업발전법×3) — 총 6법령 수집 완료 |
+| **law_api_client 파싱 버그 수정** | **2026-02-26** | `_to_str()` 헬퍼로 str/list/dict/None 안전 변환 |
+| **source_url enrichment** | **2026-02-26** | `_personalized_to_steps_payload()`에서 ActionKit 파일 URL 자동 할당 |
+| **CATEGORY_TO_PHASE 확장** | **2026-02-26** | chapters 7-12 → "영업 인허가" 매핑 추가 |
+| **seed_rag_vectors dedup 수정** | **2026-02-26** | name+category_id 기반 중복 체크 (같은 법령 다른 업종 허용) |
+| **Wave 2 큐레이션+적재** | **2026-02-26** | 미용업+일반소매업 6건 큐레이션, 벡터+Item+File 생성 |
+| **Wave 3 수집+큐레이션+적재** | **2026-02-26** | 학원업+숙박업 7건 큐레이션, 벡터+Item+File 생성 |
+| **품질 테스트 통과** | **2026-02-26** | 6업종 모두 ACTIONKIT_RAG, fallback_rate=0, precision@3=1.0 |
 
 ### 다음 착수 대상
 
 | 태스크 | 트랙 | 내용 | 명령어/비고 |
 |---|---|---|---|
-| **law_api_client 파싱 버그 수정** | B-BE | `_build_article_content()`에서 list 타입 item_text.strip() 에러 | Wave 3 수집 차단 중 |
-| Wave 2 큐레이션 | B-BE | 미용업/일반소매업 법률 핵심 조문 추출 | _curated.md 생성 |
-| Wave 2 벡터 적재 + ActionKitItem + File | B-BE | 큐레이션 → 벡터 + Item + File 자동 생성 | `python -m scripts.seed_rag_vectors --curated` |
-| Wave 3 수집 | B-BE | 학원업 + 숙박업 법률 수집 | `python -m scripts.fetch_laws --wave 3` (버그 수정 후) |
-| Wave 3 큐레이션 + 적재 | B-BE | Wave 2와 동일 파이프라인 | _curated.md → --curated |
-| 서버 재시작 후 매칭 재테스트 | A+B | 통신판매업 ActionKitMatcher 재검증 | 서버 캐시 초기화 후 확인 |
+| 숙박업 시행령/시행규칙 수집 보완 | B-BE | 관광진흥법 시행령/시행규칙 미수집 | `fetch_laws --law "관광진흥법" --hierarchy 시행령 시행규칙` |
 
 ### 구간 4 (Wave 2/3과 병렬 가능)
 
@@ -165,12 +166,14 @@ scripts/
 
 | 이슈 | 심각도 | 비고 |
 |---|---|---|
-| ~~ActionKitItem 누락으로 매칭 0건~~ | **해결됨** | `_ensure_actionkit_items()` 추가, `--sync-actionkit` 옵션으로 기존 보강 가능 |
-| ~~ActionKitFile 미생성으로 다운로드 불가~~ | **해결됨** | `_ensure_actionkit_items()`에서 ActionKitFile 자동 생성, 기존 Item 파일 보강 |
-| **law_api_client.py 파싱 버그** | **높음** | `_build_article_content()`에서 list 타입 item_text.strip() → AttributeError. Wave 3 수집 차단 |
-| 통신판매업 로드맵: mapping_source=None | 중간 | ActionKitItem은 DB에 있으나 매칭이 RAG fallback으로 동작. 서버 캐시 문제 가능성 |
+| ~~ActionKitItem 누락으로 매칭 0건~~ | **해결됨** | `_ensure_actionkit_items()` 추가 |
+| ~~ActionKitFile 미생성으로 다운로드 불가~~ | **해결됨** | ActionKitFile 자동 생성 |
+| ~~law_api_client.py 파싱 버그~~ | **해결됨** | `_to_str()` 헬퍼 추가 |
+| ~~통신판매업 mapping_source=None~~ | **해결됨** | source_url enrichment + 서버 재생성 |
+| ~~seed_rag_vectors 이름 중복 건너뜀~~ | **해결됨** | name+category_id 기반 dedup |
 | `alembic upgrade head` 미실행 | 중간 | Docker DB 실행 후 적용 필요 |
-| 행정규칙 수집 미완료 | 낮음 | 식품제조가공업/통신판매업 행정규칙 검색 결과 없음. 키워드 조정 필요 |
+| 숙박업 관광진흥법 시행령/시행규칙 미수집 | 낮음 | 법률만 수집됨, 하위 법령 추가 필요 |
+| 행정규칙 수집 미완료 | 낮음 | 키워드 조정 필요 |
 
 ---
 

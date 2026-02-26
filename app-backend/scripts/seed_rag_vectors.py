@@ -358,13 +358,18 @@ async def _ensure_actionkit_items(
     created_count = 0
 
     async with async_session() as session:
-        # 기존 아이템 이름 로드 (중복 체크용)
+        # 기존 아이템 이름+카테고리 로드 (중복 체크용)
         existing_result = await session.execute(
             select(ActionKitItem.id, ActionKitItem.name, ActionKitItem.category_id)
         )
         existing_rows = existing_result.fetchall()
-        existing_names: set[str] = {row[1] for row in existing_rows}
-        name_to_item_id: dict[str, int] = {row[1]: row[0] for row in existing_rows}
+        # (name, category_id) 튜플로 중복 체크 (같은 법령이 다른 업종에 존재 가능)
+        existing_name_cat: set[tuple[str, int]] = {
+            (row[1], row[2]) for row in existing_rows
+        }
+        name_cat_to_item_id: dict[tuple[str, int], int] = {
+            (row[1], row[2]): row[0] for row in existing_rows
+        }
 
         # 기존 파일 레코드 로드 (item_id → 존재 여부)
         file_result = await session.execute(
@@ -423,9 +428,10 @@ async def _ensure_actionkit_items(
             for sort_idx, fpath in enumerate(sorted(files), start=1):
                 law_name = _detect_law_name(fpath.name)
 
-                if law_name in existing_names:
+                dedup_key = (law_name, category.id)
+                if dedup_key in existing_name_cat:
                     # 기존 Item에 파일이 없으면 보강
-                    item_id = name_to_item_id.get(law_name)
+                    item_id = name_cat_to_item_id.get(dedup_key)
                     if item_id and item_id not in items_with_files:
                         object_key, size_bytes, checksum = _copy_file_to_storage(
                             fpath, item_id=item_id, chapter_slug=chapter_slug,
@@ -493,8 +499,8 @@ async def _ensure_actionkit_items(
                     is_current=True,
                 ))
 
-                existing_names.add(law_name)
-                name_to_item_id[law_name] = item.id
+                existing_name_cat.add(dedup_key)
+                name_cat_to_item_id[dedup_key] = item.id
                 items_with_files.add(item.id)
                 created_count += 1
                 logger.info(

@@ -229,30 +229,49 @@ def _parse_articles_from_response(law_data: dict[str, Any]) -> list[LawArticle]:
     return articles
 
 
+def _to_str(value: Any) -> str:
+    """API 응답 값을 문자열로 안전하게 변환한다.
+
+    국가법령정보 API는 동일 필드에 str, list, dict 등 다양한 타입을
+    반환할 수 있으므로, list인 경우 공백으로 합치고 dict인 경우 값만
+    추출하여 문자열로 변환한다.
+    """
+    if isinstance(value, str):
+        return value.strip()
+    if isinstance(value, list):
+        return " ".join(_to_str(v) for v in value if v).strip()
+    if isinstance(value, dict):
+        parts = [_to_str(v) for v in value.values() if v]
+        return " ".join(parts).strip()
+    if value is None:
+        return ""
+    return str(value).strip()
+
+
 def _build_article_content(unit: dict[str, Any]) -> str:
     """조문단위 dict에서 조문내용 + 항 + 호를 합쳐 본문 텍스트를 만든다."""
     lines: list[str] = []
 
-    main = unit.get("조문내용", "")
+    main = _to_str(unit.get("조문내용", ""))
     if main:
-        lines.append(main.strip())
+        lines.append(main)
 
     # 항 (paragraphs)
     paragraphs = unit.get("항", [])
     if isinstance(paragraphs, dict):
         paragraphs = [paragraphs]
     for para in paragraphs:
-        para_text = para.get("항내용", "")
+        para_text = _to_str(para.get("항내용", ""))
         if para_text:
-            lines.append(para_text.strip())
+            lines.append(para_text)
         # 호 (items)
         items = para.get("호", [])
         if isinstance(items, dict):
             items = [items]
         for item in items:
-            item_text = item.get("호내용", "")
+            item_text = _to_str(item.get("호내용", ""))
             if item_text:
-                lines.append(f"  {item_text.strip()}")
+                lines.append(f"  {item_text}")
 
     return "\n".join(lines)
 

@@ -44,6 +44,13 @@ CATEGORY_TO_PHASE: dict[str, str] = {
     "4": "영업 준수사항",
     "5": "위반 대응",
     "6": "행정처분 구제",
+    # Business-specific law chapters (domain=laws, slug="7".."12")
+    "7": "영업 인허가",   # 식품제조가공업
+    "8": "영업 인허가",   # 통신판매업
+    "9": "영업 인허가",   # 미용업
+    "10": "영업 인허가",  # 일반소매업
+    "11": "영업 인허가",  # 학원업
+    "12": "영업 인허가",  # 숙박업
     # ACTION_KIT_DATA category slugs (domain=kits)
     "legal": "법률 준비",
     "tax": "세무 설정",

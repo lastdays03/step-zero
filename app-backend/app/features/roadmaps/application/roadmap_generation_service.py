@@ -184,7 +184,9 @@ class RoadmapGenerationService:
                 await self.job_repo.set_progress(job, stage="PERSISTING", progress=80)
 
                 # Convert personalized details to step payload format
-                steps_payload = self._personalized_to_steps_payload(personalized)
+                steps_payload = self._personalized_to_steps_payload(
+                    personalized, matched_items=matched_items,
+                )
                 generation_mode = "ACTIONKIT_RAG"
                 title = f"{payload.business_type} 창업 로드맵"
 
@@ -257,6 +259,7 @@ class RoadmapGenerationService:
     @staticmethod
     def _personalized_to_steps_payload(
         personalized: list[PersonalizedStepDetail],
+        matched_items: list[MatchedActionKit] | None = None,
     ) -> list[dict]:
         """Convert PersonalizedStepDetail list to the dict format expected by
         ``RoadmapRepository.create_steps_with_details()``.
@@ -267,15 +270,34 @@ class RoadmapGenerationService:
           legal_basis (list[dict] with title, snippet, source_url, ...),
           documents (list[dict] with name, type, source_url, ...)
         """
+        # Build item_id -> file_url map for source_url enrichment
+        item_file_urls: dict[int, str] = {}
+        if matched_items:
+            for m in matched_items:
+                if m.item.id is not None and m.files:
+                    # Use the first current file's object_key as source_url
+                    for f in m.files:
+                        item_file_urls[m.item.id] = (
+                            f"/api/v1/actionkits/files/{f.object_key}"
+                        )
+                        break
+
         results: list[dict] = []
         for detail in personalized:
             # Build legal_basis entries compatible with LegalBasisItem / repository
             legal_basis_items: list[dict] = []
             for lb in detail.legal_basis:
+                # Enrich source_url from ActionKit file if not provided by LLM
+                source_url = lb.get("source_url")
+                if not source_url:
+                    item_id = lb.get("actionkit_item_id")
+                    if item_id and item_id in item_file_urls:
+                        source_url = item_file_urls[item_id]
+
                 legal_basis_items.append({
                     "title": lb.get("title", ""),
                     "snippet": lb.get("snippet", ""),
-                    "source_url": lb.get("source_url"),
+                    "source_url": source_url,
                     "actionkit_item_id": lb.get("actionkit_item_id"),
                     "mapping_source": detail.mapping_source,
                 })
@@ -283,11 +305,21 @@ class RoadmapGenerationService:
             # Build document entries compatible with DocumentItem / repository
             document_items: list[dict] = []
             for doc in detail.documents:
+                file_url = doc.get("file_url") or ""
+                # Enrich file_url to full API path if it's an object_key
+                if file_url and not file_url.startswith("/"):
+                    file_url = f"/api/v1/actionkits/files/{file_url}"
+                # Fallback: derive from actionkit_item_id
+                if not file_url:
+                    item_id = doc.get("actionkit_item_id")
+                    if item_id and item_id in item_file_urls:
+                        file_url = item_file_urls[item_id]
+
                 document_items.append({
                     "name": doc.get("name", "서류"),
                     "type": doc.get("type", "FORM"),
-                    "file_url": doc.get("file_url"),
-                    "source_url": doc.get("file_url"),
+                    "file_url": file_url or None,
+                    "source_url": file_url or None,
                     "actionkit_item_id": doc.get("actionkit_item_id"),
                     "actionkit_file_id": doc.get("actionkit_file_id"),
                     "mapping_source": detail.mapping_source,

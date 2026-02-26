@@ -361,10 +361,18 @@ class LLMPersonalizer:
                 for h in m.highlights:
                     checklist.append(h.content)
 
-                for law in m.related_laws:
+                if m.related_laws:
+                    for law in m.related_laws:
+                        legal_basis.append({
+                            "title": law.law_name,
+                            "snippet": law.law_summary or "",
+                            "actionkit_item_id": m.item.id,
+                        })
+                else:
+                    # No related_laws: use item name as legal basis
                     legal_basis.append({
-                        "title": law.law_name,
-                        "snippet": law.law_summary or "",
+                        "title": m.item.name,
+                        "snippet": m.item.summary or "",
                         "actionkit_item_id": m.item.id,
                     })
 
