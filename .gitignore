@@ -112,3 +112,6 @@ pgdata/
 # MCP
 # ---------------
 .mcp.json
+
+# User Backup
+backup_joo_final/
