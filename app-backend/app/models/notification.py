@@ -9,6 +9,8 @@ class NotificationBase(SQLModel):
     type: str  # 'like', 'comment', 'reply'
     link: Optional[str] = None
     is_read: bool = Field(default=False)
+    is_deleted: bool = Field(default=False)
+    resource_id: Optional[int] = Field(default=None, index=True)
 
 class Notification(NotificationBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)

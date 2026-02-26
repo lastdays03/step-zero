@@ -16,3 +16,4 @@ class Announcement(SQLModel, table=True):
     created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
     published_at: Optional[datetime] = Field(default=None)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+    published_at: Optional[datetime] = Field(default=None)

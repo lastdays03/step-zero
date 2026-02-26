@@ -129,3 +129,6 @@ package-lock.json
 # MCP
 # ---------------
 .mcp.json
+
+# User Backup
+backup_joo_final/
