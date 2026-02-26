@@ -1,0 +1,67 @@
+
+> stepzero-web@0.1.0 lint
+> eslint . --ext .ts,.tsx,.js,.jsx
+
+
+C:\Users\User\Desktop\260210최종프로젝트관련자료\test\step-zero\app-frontend\src\features\actionkit\components\ActionKitDetailModal.tsx
+   14:5   warning  'FileText' is defined but never used      @typescript-eslint/no-unused-vars
+   91:36  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  241:31  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  250:43  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  250:68  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  322:75  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\Desktop\260210최종프로젝트관련자료\test\step-zero\app-frontend\src\features\actionkit\components\ActionKitLibraryView.tsx
+  124:75   warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  128:77   warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  132:71   warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+  148:36   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  166:41   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  172:38   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  193:47   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  193:110  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  231:49   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  257:39   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  287:34   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  572:129  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  574:102  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  606:47   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  608:55   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  608:92   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  613:55   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  614:117  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  713:82   error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\Desktop\260210최종프로젝트관련자료\test\step-zero\app-frontend\src\features\actionkit\components\LawGuideView.tsx
+  20:31  warning  'ActionKitItem' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\User\Desktop\260210최종프로젝트관련자료\test\step-zero\app-frontend\src\features\growth-club\components\CreatePostForm.tsx
+  227:33  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\User\Desktop\260210최종프로젝트관련자료\test\step-zero\app-frontend\src\features\growth-club\components\PostCard.tsx
+  152:29  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\User\Desktop\260210최종프로젝트관련자료\test\step-zero\app-frontend\src\features\ops\actionkit\components\actionkit-edit-modal.tsx
+   43:52  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  292:70  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  337:67  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  376:74  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\Users\User\Desktop\260210최종프로젝트관련자료\test\step-zero\app-frontend\src\features\ops\actionkit\components\stats-dashboard.tsx
+    5:42   warning  'Users' is defined but never used                                @typescript-eslint/no-unused-vars
+    5:49   warning  'Calendar' is defined but never used                             @typescript-eslint/no-unused-vars
+   18:12   error    Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  189:91   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  189:98   error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  189:164  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  189:169  error    `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+
+C:\Users\User\Desktop\260210최종프로젝트관련자료\test\step-zero\app-frontend\src\features\ops\actionkit\view.tsx
+   41:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   45:58  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  109:48  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  152:44  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  153:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 44 problems (35 errors, 9 warnings)
+

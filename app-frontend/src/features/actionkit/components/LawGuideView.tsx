@@ -17,8 +17,9 @@ import {
     Eye,
     EyeOff
 } from 'lucide-react';
-import { LawItem, RelatedLaw } from '../types';
+import { LawItem, RelatedLaw, ActionKitItem } from '../types';
 import { useActionKit } from '../hooks/useActionKit';
+import { LawDetailPopup } from './LawDetailPopup';
 
 type LawItemWithChapter = LawItem & { chapterTitle: string };
 
@@ -35,6 +36,7 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
 
     // Manage completed/read status (in-memory for demo, would be localStorage/DB in real app)
     const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
+    const [selectedLaw, setSelectedLaw] = useState<LawItem | null>(null);
 
     const toggleItemCompletion = (e: React.MouseEvent, itemName: string) => {
         e.stopPropagation();
@@ -58,7 +60,6 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
         return Object.values(kitsData).flatMap(cat => cat.items)
             .filter(kit => kit.relatedLaws?.some(rl => {
                 const name = isRelatedLawObject(rl) ? rl.name : rl;
-                // Match if the law name is part of the kit's related law or vice versa
                 return name.includes(lawName) || lawName.includes(name);
             }))
             .slice(0, 3);
@@ -164,6 +165,7 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
                             key={`${item.name}-${index}`}
                             className={`group transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between ${isCompleted ? 'bg-slate-50/50 border-emerald-500/30' : 'hover:border-[#36a4f2]'
                                 }`}
+                            onClick={() => setSelectedLaw(item)}
                         >
                             <CardContent className="p-6">
                                 <div className="flex justify-between items-start mb-4">
@@ -275,6 +277,17 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
                     )
                 }
             </div >
+
+            {/* Law Detail Popup */}
+            {selectedLaw && (
+                <LawDetailPopup
+                    item={selectedLaw}
+                    relatedKits={getRelatedKits(selectedLaw.name)}
+                    onClose={() => setSelectedLaw(null)}
+                    onNavigateToKit={onNavigateToKit}
+                    onDownload={handleDownload}
+                />
+            )}
 
             {/* AI Call to Action */}
             < div className="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl" >

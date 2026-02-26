@@ -16,6 +16,7 @@ export const apiClient = axios.create({
 // --- Silent Refresh Infrastructure ---
 
 let isRefreshing = false;
+let suppressAuthEvent = false;
 let failedQueue: {
     resolve: (token: string) => void;
     reject: (error: unknown) => void;
@@ -39,7 +40,12 @@ function clearAuthState() {
     localStorage.removeItem("current_team_id");
     localStorage.removeItem(ROADMAP_JOB_STORAGE_KEY);
     window.dispatchEvent(new Event(ROADMAP_POLLING_CLEARED_EVENT));
-    window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
+    // Skip dispatching the auth event when called from a failed refresh to
+    // prevent an infinite loop: clearAuthState → auth event → loadData → 401
+    // → refresh → clearAuthState → …
+    if (!suppressAuthEvent) {
+        window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
+    }
 }
 
 // --- Interceptors ---
@@ -125,9 +131,12 @@ apiClient.interceptors.response.use(
             originalRequest.headers.Authorization = `Bearer ${access_token}`;
             return apiClient(originalRequest);
         } catch (refreshError) {
-            // Refresh failed — clear everything and log out
+            // Refresh failed — clear everything and log out.
+            // Suppress the auth event to avoid an infinite retry loop.
             processQueue(refreshError, null);
+            suppressAuthEvent = true;
             clearAuthState();
+            suppressAuthEvent = false;
             return Promise.reject(refreshError);
         } finally {
             isRefreshing = false;

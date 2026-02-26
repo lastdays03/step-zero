@@ -1,7 +1,7 @@
 
 from sqlmodel import SQLModel, Field, Relationship
 from typing import Optional, TYPE_CHECKING
-from datetime import datetime
+from datetime import datetime, timezone
 
 if TYPE_CHECKING:
     from app.models.profile import UserProfile
@@ -20,8 +20,8 @@ class User(UserBase, table=True):
     suspended_until: Optional[datetime] = Field(default=None, index=True)
     audit_log_reason: Optional[str] = Field(default=None)
     last_login_at: Optional[datetime] = Field(default=None, index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     profile: Optional["UserProfile"] = Relationship(
         back_populates="user", sa_relationship_kwargs={"uselist": False}

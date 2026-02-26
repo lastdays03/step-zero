@@ -83,6 +83,8 @@ class ActionKitService:
 
         related_laws = await self.repository.list_related_laws(item_ids=item_ids)
         files = await self.repository.list_current_files(item_ids=item_ids)
+        highlights = await self.repository.list_item_highlights(item_ids=item_ids)
+        checklists = await self.repository.list_checklists(item_ids=item_ids)
 
         related_map: dict[int, list[dict]] = defaultdict(list)
         for law in related_laws:
@@ -92,6 +94,19 @@ class ActionKitService:
                     "summary": law.law_summary,
                 }
             )
+
+        highlights_map: dict[int, list[dict]] = defaultdict(list)
+        for hl in highlights:
+            highlights_map[hl.item_id].append(
+                {
+                    "id": hl.id,
+                    "content": hl.content,
+                }
+            )
+
+        checklists_map: dict[int, list[str]] = defaultdict(list)
+        for cl in checklists:
+            checklists_map[cl.item_id].append(cl.content)
 
         file_map = {file.item_id: file for file in files}
 
@@ -103,12 +118,15 @@ class ActionKitService:
             path = self._to_public_path(current_file.object_key if current_file else None)
             items_by_category[item.category_id].append(
                 {
+                    "id": item.id,
                     "tag": item.tag,
                     "name": item.name,
                     "summary": item.summary,
                     "type": item.file_type or "PDF",
                     "path": path,
                     "relatedLaws": related_map.get(item.id) or None,
+                    "highlights": highlights_map.get(item.id) or None,
+                    "complianceChecklist": checklists_map.get(item.id) or None,
                     "dday": item.dday,
                 }
             )
