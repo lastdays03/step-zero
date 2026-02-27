@@ -78,7 +78,7 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                 return;
             }
             if (status === 503) {
-                if (detail === 'Authentication backend unavailable' || data?.detail === 'Authentication backend unavailable') {
+                if (data?.detail === 'Authentication backend unavailable') {
                     alert('로그인 서버가 데이터베이스에 연결되지 않았습니다. 백엔드/DB 상태를 먼저 확인해주세요.');
                     return;
                 }

@@ -192,8 +192,9 @@ export const NotificationBell = () => {
             }
         });
 
-        if (currentGroup) {
-            result.push((currentGroup.notifications.length > 1 ? currentGroup : currentGroup.notifications[0]) as GroupedItem);
+        if (currentGroup !== null) {
+            const g = currentGroup as NotificationGroup;
+            result.push((g.notifications.length > 1 ? g : g.notifications[0]) as GroupedItem);
         }
 
         const final = [...result, ...others].sort((a, b) =>

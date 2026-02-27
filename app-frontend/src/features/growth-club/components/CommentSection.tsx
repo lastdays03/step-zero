@@ -1,13 +1,13 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Comment } from '../types';
 import { useAuth } from '@/providers/AuthProvider';
 import { growthClubApi } from '../api';
-import { Reply, CornerDownRight } from 'lucide-react';
-import { useTimeAgo } from '../hooks';
-
+import { CornerDownRight, AlertCircle } from 'lucide-react';
 import { resolveUploadUrl } from '../utils/upload-url';
+import { useTimeAgo } from '../hooks/useTimeAgo';
 
 interface CommentSectionProps {
     postId: number;
@@ -22,6 +22,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
     const [newComment, setNewComment] = useState('');
     const [replyTo, setReplyTo] = useState<number | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [reportCommentId, setReportCommentId] = useState<number | null>(null);
 
     // 댓글 계층 구조 형성 (부모/자식 분리)
     const rootComments = initialComments.filter(c => !c.parent_id);
@@ -45,8 +46,10 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
             if (!parentId) setNewComment('');
             setReplyTo(null);
             onCommentAdded();
-        } catch {
-            alert('댓글 작성에 실패했습니다.');
+        } catch (error: unknown) {
+            const axiosErr = error as { response?: { data?: { detail?: string } } };
+            const message = axiosErr.response?.data?.detail || '댓글 작성에 실패했습니다.';
+            alert(message);
         } finally {
             setIsSubmitting(false);
         }
@@ -66,50 +69,62 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
         }
     };
 
-    const CommentItem = ({
-        comment,
-        isReply = false,
-        isLoggedIn,
-        user,
-        replyTo,
-        setReplyTo,
-        handleDelete,
-        handleSubmit,
-        isSubmitting,
-        replies
-    }: {
-        comment: Comment,
-        isReply?: boolean,
-        isLoggedIn: boolean,
-        user: { id: number | string; nickname?: string; is_superuser?: boolean } | null,
-        replyTo: number | null,
-        setReplyTo: (id: number | null) => void,
-        handleDelete: (id: number) => void,
-        handleSubmit: (e: React.FormEvent<HTMLFormElement>, parentId?: number) => void,
-        isSubmitting: boolean,
-        replies: Comment[]
-    }) => {
+    const handleReport = (commentId: number) => {
+        setReportCommentId(commentId);
+    };
+
+    const submitReport = async (reason: string) => {
+        if (!reportCommentId) return;
+
+        const commentId = reportCommentId;
+        setReportCommentId(null);
+
+        try {
+            const res = await growthClubApi.reportComment(commentId, reason);
+            if (res.is_blinded) {
+                alert('댓글이 신고 누적으로 인해 블라인드 처리되었습니다.');
+            } else {
+                alert('신고가 접수되었습니다.');
+            }
+            onCommentAdded(); // Refresh list if blinded
+        } catch (error: unknown) {
+            const axiosErr = error as { response?: { data?: { detail?: string } } };
+            const message = axiosErr.response?.data?.detail || '신고 처리에 실패했습니다.';
+            alert(message);
+        }
+    };
+
+    const CommentItem = ({ comment, isReply = false }: { comment: Comment, isReply?: boolean }) => {
         const timeAgo = useTimeAgo(comment.created_at);
+        const [imgError, setImgError] = useState(false);
+        const hasProfileImg = comment.author?.profile_img && comment.author.profile_img !== 'default.png' && !imgError;
 
         return (
             <div className={`group ${isReply ? 'ml-8 mt-3' : 'mt-6 border-b border-zinc-50 dark:border-zinc-800 pb-4'}`}>
                 <div className="flex items-start gap-3">
                     {isReply && <CornerDownRight className="text-zinc-300 mt-1" size={16} />}
+
+                    {/* 프로필 이미지 추가 */}
+                    <div className="w-7 h-7 rounded-full overflow-hidden bg-zinc-100 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-zinc-500 border border-zinc-100 dark:border-zinc-800 mt-0.5">
+                        {hasProfileImg ? (
+                            <Image
+                                src={resolveUploadUrl(comment.author!.profile_img!)}
+                                alt={comment.author!.username}
+                                width={28}
+                                height={28}
+                                className="w-full h-full object-cover"
+                                onError={() => setImgError(true)}
+                                unoptimized
+                            />
+                        ) : (
+                            comment.author?.username?.[0] || '?'
+                        )}
+                    </div>
+
                     <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2 flex-1">
-                                {comment.author?.profile_img && comment.author.profile_img !== 'default.png' ? (
-                                    <img
-                                        src={resolveUploadUrl(comment.author.profile_img)}
-                                        alt={comment.author.username}
-                                        className="w-5 h-5 rounded-full object-cover shrink-0"
-                                    />
-                                ) : (
-                                    <div className="w-5 h-5 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-[10px] shrink-0">
-                                        {comment.author?.username?.[0] || '?'}
-                                    </div>
-                                )}
-                                <span className="text-[13px] font-bold text-zinc-900 dark:text-white truncate">
+                            <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-zinc-900 dark:text-white">
                                     {comment.author?.username || '알 수 없음'}
                                 </span>
                                 <span className="text-[10px] text-zinc-400">
@@ -131,6 +146,16 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
                                         className="text-[10px] text-red-400 hover:text-red-500 font-medium opacity-0 group-hover:opacity-100 transition-opacity"
                                     >
                                         삭제
+                                    </button>
+                                )}
+                                {isLoggedIn && user && Number(user.id) !== comment.author?.id && (
+                                    <button
+                                        onClick={() => handleReport(comment.id)}
+                                        className="text-[10px] text-zinc-400 hover:text-red-500 font-medium opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5"
+                                        title="댓글 신고"
+                                    >
+                                        <AlertCircle size={10} />
+                                        신고
                                     </button>
                                 )}
                             </div>
@@ -172,26 +197,13 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
 
                         {/* 이 댓글에 대한 답글들 */}
                         {replies.filter(r => r.parent_id === comment.id).map(reply => (
-                            <CommentItem
-                                key={reply.id}
-                                comment={reply}
-                                isReply
-                                isLoggedIn={isLoggedIn}
-                                user={user}
-                                replyTo={replyTo}
-                                setReplyTo={setReplyTo}
-                                handleDelete={handleDelete}
-                                handleSubmit={handleSubmit}
-                                isSubmitting={isSubmitting}
-                                replies={replies}
-                            />
+                            <CommentItem key={reply.id} comment={reply} isReply />
                         ))}
                     </div>
                 </div>
             </div>
         );
     };
-
 
     return (
         <div className="mt-8 pt-8 border-t border-zinc-100 dark:border-zinc-800">
@@ -228,26 +240,36 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
             <div className="space-y-2">
                 {rootComments.length > 0 ? (
                     rootComments.map(comment => (
-                        <CommentItem
-                            key={comment.id}
-                            comment={comment}
-                            isLoggedIn={isLoggedIn}
-                            user={user}
-                            replyTo={replyTo}
-                            setReplyTo={setReplyTo}
-                            handleDelete={handleDelete}
-                            handleSubmit={handleSubmit}
-                            isSubmitting={isSubmitting}
-                            replies={replies}
-                        />
+                        <CommentItem key={comment.id} comment={comment} />
                     ))
                 ) : (
-
                     <div className="py-10 text-center">
                         <p className="text-sm text-zinc-400">첫 번째 댓글의 주인공이 되어보세요!</p>
                     </div>
                 )}
             </div>
+
+            {reportCommentId !== null && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="bg-white dark:bg-zinc-900 rounded-xl max-w-sm w-full p-6 shadow-xl border border-zinc-200 dark:border-zinc-800">
+                        <h3 className="text-lg font-bold mb-4 text-zinc-900 dark:text-white">신고 사유 선택</h3>
+                        <div className="space-y-2">
+                            <button onClick={() => submitReport('폭언과 욕설')} className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300">
+                                폭언과 욕설
+                            </button>
+                            <button onClick={() => submitReport('광고')} className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300">
+                                광고
+                            </button>
+                            <button onClick={() => submitReport('기타')} className="w-full text-left p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors text-zinc-700 dark:text-zinc-300">
+                                기타 불건전한 내용
+                            </button>
+                        </div>
+                        <button onClick={() => setReportCommentId(null)} className="mt-4 w-full p-3 font-semibold text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
+                            취소
+                        </button>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

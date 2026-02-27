@@ -1,5 +1,6 @@
 from app.models.actionkit import (
     ActionKitCategory,
+    ActionKitChecklist,
     ActionKitFile,
     ActionKitItem,
     ActionKitItemHighlight,
@@ -7,14 +8,19 @@ from app.models.actionkit import (
 )
 from app.models.admin_audit_log import AdminAuditLog
 from app.models.announcement import Announcement
+from app.models.audit_log import AuditLog
 from app.models.growth_club import (
     GrowthClubAttachmentRead,
     GrowthClubComment,
     GrowthClubCommentRead,
+    GrowthClubCommentReport,
     GrowthClubPostAttachment,
     GrowthClubPost,
     GrowthClubPostLike,
     GrowthClubPostRead,
+    GrowthClubPostReport,
+    GrowthClubPostTagLink,
+    GrowthClubTag,
 )
 from app.models.roadmap import (
     Roadmap,
@@ -31,20 +37,26 @@ from app.models.notification import Notification, NotificationRead, Notification
 
 __all__ = [
     "ActionKitCategory",
+    "ActionKitChecklist",
     "ActionKitFile",
     "ActionKitItem",
     "ActionKitItemHighlight",
     "ActionKitRelatedLaw",
     "AdminAuditLog",
     "Announcement",
+    "AuditLog",
     "AuthenticatedUser",
     "GrowthClubAttachmentRead",
     "GrowthClubComment",
     "GrowthClubCommentRead",
+    "GrowthClubCommentReport",
     "GrowthClubPostAttachment",
     "GrowthClubPost",
     "GrowthClubPostLike",
     "GrowthClubPostRead",
+    "GrowthClubPostReport",
+    "GrowthClubPostTagLink",
+    "GrowthClubTag",
     "Roadmap",
     "RoadmapGenerationJob",
     "RoadmapStep",

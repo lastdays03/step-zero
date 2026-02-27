@@ -9,6 +9,7 @@ from app.features.ops.application.announcements import (
     AnnouncementItem,
     AnnouncementList,
     AnnouncementStatus,
+    AnnouncementStatusUpdate,
     AnnouncementUpdate,
     create_announcement,
     list_announcements,
@@ -118,6 +119,7 @@ async def update_ops_announcement_status(
     session: AsyncSession = Depends(get_session),
     admin_user: AuthenticatedUser = Depends(deps.get_current_user),
 ) -> AnnouncementItem:
+    status = payload.status
     row = await update_announcement_status(
         session,
         announcement_id=announcement_id,
@@ -141,5 +143,26 @@ async def update_ops_announcement_status(
         reason=payload.audit_log_reason,
         meta={"after": {"status": row.status}},
     )
+    
+    # Broadcast notification to all active users if published
+    if status == "published":
+        from sqlmodel import select
+        from app.models.user import User
+        from app.models.notification import Notification
+        
+        users_result = await session.execute(select(User).where(User.is_active == True))
+        active_users = users_result.scalars().all()
+        
+        notifications_to_create = []
+        for u in active_users:
+            notifications_to_create.append(Notification(
+                user_id=u.id,
+                content=f"[공지] {row.title}",
+                type="announcement",
+                link=f"/announcements/{row.id}",
+                resource_id=row.id
+            ))
+        session.add_all(notifications_to_create)
+
     await session.commit()
     return AnnouncementItem.model_validate(row, from_attributes=True)

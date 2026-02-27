@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
     
     # CORS (환경변수에서는 쉼표로 구분된 문자열로 받음)
-    BACKEND_CORS_ORIGINS_STR: str = "http://localhost:3000"
+    BACKEND_CORS_ORIGINS_STR: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
 
     @property
     def BACKEND_CORS_ORIGINS(self) -> List[str]:

@@ -38,6 +38,10 @@ class AnnouncementUpdate(BaseModel):
     content: str | None = None
 
 
+class AnnouncementStatusUpdate(BaseModel):
+    status: AnnouncementStatus
+
+
 async def list_announcements(session: AsyncSession) -> AnnouncementList:
     rows = (
         await session.execute(

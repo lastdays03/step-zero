@@ -1,7 +1,7 @@
 # Dev Status
 
 ## Last Updated
-- Date: 2026-02-21
+- Date: 2026-02-26
 - Branch: `develop`
 
 ## Sprint Focus
@@ -60,3 +60,5 @@
 - 2026-02-21: `docs/planning/` 레거시/참조 문서 9개를 `docs/planning/completed/`로 이동해 실행 문서 범위를 현재 플랜 중심으로 정리
 - 2026-02-21: `/ops` 홈 카드에 `공지 관리`/`운영 감사로그`를 추가하고 `/ops/announcements`, `/ops/audit-logs` 라우트를 신설
 - 2026-02-21: `/ops*` 가드에서 비로그인 시 `/login`으로 이동하던 흐름을 제거하고 `/dashboard` 리다이렉트로 통일해 재발 이슈 대응
+- 2026-02-26: 인증 토큰 갱신 시 무한 루프 이슈 해결 및 대시보드 강제 401 호출 가드 적용
+- 2026-02-26: Action Kit 운영 관리 화면 리팩토링 및 `any` 타입 제거로 코드 안정성 확보

@@ -8,6 +8,7 @@ from app.models.actionkit import (
     ActionKitItem,
     ActionKitItemHighlight,
     ActionKitRelatedLaw,
+    ActionKitChecklist,
 )
 
 
@@ -58,6 +59,17 @@ class ActionKitRepository:
             select(ActionKitItemHighlight)
             .where(ActionKitItemHighlight.item_id.in_(item_ids))
             .order_by(ActionKitItemHighlight.sort_order.asc(), ActionKitItemHighlight.id.asc())
+        )
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def list_checklists(self, *, item_ids: list[int]) -> list[ActionKitChecklist]:
+        if not item_ids:
+            return []
+        stmt = (
+            select(ActionKitChecklist)
+            .where(ActionKitChecklist.item_id.in_(item_ids))
+            .order_by(ActionKitChecklist.sort_order.asc(), ActionKitChecklist.id.asc())
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())

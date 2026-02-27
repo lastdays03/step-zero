@@ -1,0 +1,247 @@
+2026-02-23 07:06:43,681 - app.main - INFO - ActionKit storage mounted at: /app/uploads/actionkit
+2026-02-23 07:06:46,875 - app.main - INFO - Starting up StepZero Backend...
+2026-02-23 07:06:59,533 - app.main - INFO - Request: GET /api/v1/ops/actionkit/categories
+2026-02-23 07:06:59,571 - app.main - INFO - Response: GET /api/v1/ops/actionkit/categories Status: 401 Elapsed: 0.0381s
+2026-02-23 07:07:00,724 - app.main - INFO - Request: GET /api/v1/dashboard
+2026-02-23 07:07:00,747 - app.main - INFO - Response: GET /api/v1/dashboard Status: 200 Elapsed: 0.0229s
+2026-02-23 07:07:00,748 - app.main - INFO - Request: GET /api/v1/dashboard
+2026-02-23 07:07:00,748 - app.main - INFO - Response: GET /api/v1/dashboard Status: 200 Elapsed: 0.0004s
+2026-02-23 07:07:00,782 - app.main - INFO - Request: GET /api/v1/dashboard
+2026-02-23 07:07:00,783 - app.main - INFO - Response: GET /api/v1/dashboard Status: 200 Elapsed: 0.0006s
+2026-02-23 07:07:00,784 - app.main - INFO - Request: GET /api/v1/dashboard
+2026-02-23 07:07:00,785 - app.main - INFO - Response: GET /api/v1/dashboard Status: 200 Elapsed: 0.0004s
+2026-02-23 07:07:07,862 - app.main - INFO - Request: OPTIONS /api/v1/auth/login/google
+2026-02-23 07:07:07,863 - app.main - INFO - Response: OPTIONS /api/v1/auth/login/google Status: 200 Elapsed: 0.0003s
+2026-02-23 07:07:07,864 - app.main - INFO - Request: POST /api/v1/auth/login/google
+2026-02-23 07:07:08,068 - app.main - INFO - Response: POST /api/v1/auth/login/google Status: 200 Elapsed: 0.2033s
+2026-02-23 07:07:08,078 - app.main - INFO - Request: GET /api/v1/dashboard
+2026-02-23 07:07:08,088 - app.main - INFO - Response: GET /api/v1/dashboard Status: 200 Elapsed: 0.0100s
+2026-02-23 07:07:08,090 - app.main - INFO - Request: GET /api/v1/dashboard
+2026-02-23 07:07:08,095 - app.main - INFO - Response: GET /api/v1/dashboard Status: 200 Elapsed: 0.0054s
+2026-02-23 07:07:08,111 - app.main - INFO - Request: GET /api/v1/roadmaps/latest/detail
+2026-02-23 07:07:08,146 - app.main - INFO - Response: GET /api/v1/roadmaps/latest/detail Status: 200 Elapsed: 0.0353s
+2026-02-23 07:07:08,160 - app.main - INFO - Request: GET /api/v1/dashboard
+2026-02-23 07:07:08,165 - app.main - INFO - Response: GET /api/v1/dashboard Status: 200 Elapsed: 0.0044s
+2026-02-23 07:07:08,166 - app.main - INFO - Request: GET /api/v1/dashboard
+2026-02-23 07:07:08,171 - app.main - INFO - Response: GET /api/v1/dashboard Status: 200 Elapsed: 0.0043s
+2026-02-23 07:07:08,250 - app.main - INFO - Request: GET /api/v1/roadmaps/latest/detail
+2026-02-23 07:07:08,255 - app.main - INFO - Response: GET /api/v1/roadmaps/latest/detail Status: 200 Elapsed: 0.0051s
+2026-02-23 07:07:08,732 - app.main - INFO - Request: GET /api/v1/dashboard
+2026-02-23 07:07:08,736 - app.main - INFO - Response: GET /api/v1/dashboard Status: 200 Elapsed: 0.0038s
+2026-02-23 07:07:08,753 - app.main - INFO - Request: GET /api/v1/roadmaps/latest/detail
+2026-02-23 07:07:08,758 - app.main - INFO - Response: GET /api/v1/roadmaps/latest/detail Status: 200 Elapsed: 0.0050s
+2026-02-23 07:07:10,974 - app.main - INFO - Request: GET /api/v1/dashboard
+2026-02-23 07:07:10,978 - app.main - INFO - Response: GET /api/v1/dashboard Status: 200 Elapsed: 0.0039s
+2026-02-23 07:07:11,042 - app.main - INFO - Request: GET /api/v1/ops/actionkit/categories
+2026-02-23 07:07:11,046 - app.main - INFO - Response: GET /api/v1/ops/actionkit/categories Status: 200 Elapsed: 0.0040s
+2026-02-23 07:07:11,047 - app.main - INFO - Request: GET /api/v1/ops/actionkit/categories
+2026-02-23 07:07:11,048 - app.main - INFO - Response: GET /api/v1/ops/actionkit/categories Status: 200 Elapsed: 0.0017s
+2026-02-23 07:07:11,050 - app.main - INFO - Request: GET /api/v1/ops/actionkit/categories/7/items
+2026-02-23 07:07:11,079 - app.main - INFO - Response: GET /api/v1/ops/actionkit/categories/7/items Status: 200 Elapsed: 0.0288s
+2026-02-23 07:07:11,088 - app.main - INFO - Request: GET /api/v1/roadmaps/latest/detail
+2026-02-23 07:07:11,092 - app.main - INFO - Response: GET /api/v1/roadmaps/latest/detail Status: 200 Elapsed: 0.0046s
+2026-02-23 07:07:35,652 - app.main - INFO - Request: OPTIONS /api/v1/ops/actionkit/items
+2026-02-23 07:07:35,652 - app.main - INFO - Response: OPTIONS /api/v1/ops/actionkit/items Status: 200 Elapsed: 0.0004s
+2026-02-23 07:07:35,654 - app.main - INFO - Request: POST /api/v1/ops/actionkit/items
+2026-02-23 07:07:35,672 - app.main - ERROR - Unhandled error: (sqlalchemy.dialects.postgresql.asyncpg.Error) <class 'asyncpg.exceptions.DataError'>: invalid input for query argument $12: datetime.datetime(2026, 2, 23, 7, 7, 35,... (can't subtract offset-naive and offset-aware datetimes)
+[SQL: INSERT INTO actionkit_items (domain, category_id, name, summary, tag, ext, size_label, file_type, dday, sort_order, is_active, created_at, updated_at) VALUES ($1::VARCHAR, $2::INTEGER, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR, $7::VARCHAR, $8::VARCHAR, $9::VARCHAR, $10::INTEGER, $11::BOOLEAN, $12::TIMESTAMP WITHOUT TIME ZONE, $13::TIMESTAMP WITHOUT TIME ZONE) RETURNING actionkit_items.id]
+[parameters: ('kits', 7, 'Dev Sesac', 'dev test', None, None, None, None, None, 0, True, datetime.datetime(2026, 2, 23, 7, 7, 35, 666403, tzinfo=datetime.timezone.utc), datetime.datetime(2026, 2, 23, 7, 7, 35, 666412, tzinfo=datetime.timezone.utc))]
+(Background on this error at: https://sqlalche.me/e/20/dbapi)
+Traceback (most recent call last):
+  File "asyncpg/protocol/prepared_stmt.pyx", line 175, in asyncpg.protocol.protocol.PreparedStatementState._encode_bind_msg
+  File "asyncpg/protocol/codecs/base.pyx", line 251, in asyncpg.protocol.protocol.Codec.encode
+  File "asyncpg/protocol/codecs/base.pyx", line 153, in asyncpg.protocol.protocol.Codec.encode_scalar
+  File "asyncpg/pgproto/codecs/datetime.pyx", line 152, in asyncpg.pgproto.pgproto.timestamp_encode
+TypeError: can't subtract offset-naive and offset-aware datetimes
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 550, in _prepare_and_execute
+    self._rows = deque(await prepared_stmt.fetch(*parameters))
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/prepared_stmt.py", line 177, in fetch
+    data = await self.__bind_execute(args, 0, timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/prepared_stmt.py", line 268, in __bind_execute
+    data, status, _ = await self.__do_execute(
+                      ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/asyncpg/prepared_stmt.py", line 257, in __do_execute
+    return await executor(protocol)
+           ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "asyncpg/protocol/protocol.pyx", line 184, in bind_execute
+  File "asyncpg/protocol/prepared_stmt.pyx", line 204, in asyncpg.protocol.protocol.PreparedStatementState._encode_bind_msg
+asyncpg.exceptions.DataError: invalid input for query argument $12: datetime.datetime(2026, 2, 23, 7, 7, 35,... (can't subtract offset-naive and offset-aware datetimes)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 585, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 563, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 513, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 797, in _handle_exception
+    raise translated_error from error
+sqlalchemy.dialects.postgresql.asyncpg.AsyncAdapt_asyncpg_dbapi.Error: <class 'asyncpg.exceptions.DataError'>: invalid input for query argument $12: datetime.datetime(2026, 2, 23, 7, 7, 35,... (can't subtract offset-naive and offset-aware datetimes)
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+  File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+    self.gen.throw(typ, value, traceback)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/main.py", line 74, in log_request_response
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 95, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/cors.py", line 153, in simple_response
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+    await route.handle(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+    await self.app(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 119, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 105, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 424, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 312, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/api/v1/ops/actionkit.py", line 60, in create_actionkit_item
+    return await create_item(session, data)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/app/app/features/ops/application/actionkit/service.py", line 45, in create_item
+    await session.commit()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/ext/asyncio/session.py", line 1000, in commit
+    await greenlet_spawn(self.sync_session.commit)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 203, in greenlet_spawn
+    result = context.switch(value)
+             ^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2030, in commit
+    trans.commit(_to_root=True)
+  File "<string>", line 2, in commit
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1311, in commit
+    self._prepare_impl()
+  File "<string>", line 2, in _prepare_impl
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+                ^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 1286, in _prepare_impl
+    self.session.flush()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4331, in flush
+    self._flush(objects)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4466, in _flush
+    with util.safe_reraise():
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/langhelpers.py", line 224, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 4427, in _flush
+    flush_context.execute()
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 466, in execute
+    rec.execute(self)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/unitofwork.py", line 642, in execute
+    util.preloaded.orm_persistence.save_obj(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 93, in save_obj
+    _emit_insert_statements(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/orm/persistence.py", line 1233, in _emit_insert_statements
+    result = connection.execute(
+             ^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1419, in execute
+    return meth(
+           ^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 527, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1641, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1846, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1986, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2363, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1967, in _exec_single_context
+    self.dialect.do_execute(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 952, in do_execute
+    cursor.execute(statement, parameters)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 585, in execute
+    self._adapt_connection.await_(
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/util/_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 563, in _prepare_and_execute
+    self._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 513, in _handle_exception
+    self._adapt_connection._handle_exception(error)
+  File "/usr/local/lib/python3.11/site-packages/sqlalchemy/dialects/postgresql/asyncpg.py", line 797, in _handle_exception
+    raise translated_error from error
+sqlalchemy.exc.DBAPIError: (sqlalchemy.dialects.postgresql.asyncpg.Error) <class 'asyncpg.exceptions.DataError'>: invalid input for query argument $12: datetime.datetime(2026, 2, 23, 7, 7, 35,... (can't subtract offset-naive and offset-aware datetimes)
+[SQL: INSERT INTO actionkit_items (domain, category_id, name, summary, tag, ext, size_label, file_type, dday, sort_order, is_active, created_at, updated_at) VALUES ($1::VARCHAR, $2::INTEGER, $3::VARCHAR, $4::VARCHAR, $5::VARCHAR, $6::VARCHAR, $7::VARCHAR, $8::VARCHAR, $9::VARCHAR, $10::INTEGER, $11::BOOLEAN, $12::TIMESTAMP WITHOUT TIME ZONE, $13::TIMESTAMP WITHOUT TIME ZONE) RETURNING actionkit_items.id]
+[parameters: ('kits', 7, 'Dev Sesac', 'dev test', None, None, None, None, None, 0, True, datetime.datetime(2026, 2, 23, 7, 7, 35, 666403, tzinfo=datetime.timezone.utc), datetime.datetime(2026, 2, 23, 7, 7, 35, 666412, tzinfo=datetime.timezone.utc))]
+(Background on this error at: https://sqlalche.me/e/20/dbapi)
+2026-02-23 07:11:55,480 - app.main - INFO - Shutting down StepZero Backend...
+2026-02-23 07:11:56,787 - app.main - INFO - ActionKit storage mounted at: /app/uploads/actionkit
+2026-02-23 07:11:58,067 - app.main - INFO - Starting up StepZero Backend...
+2026-02-23 07:12:06,966 - app.main - INFO - Shutting down StepZero Backend...
+2026-02-23 07:12:08,839 - app.main - INFO - ActionKit storage mounted at: /app/uploads/actionkit
+2026-02-23 07:12:10,115 - app.main - INFO - Starting up StepZero Backend...
+2026-02-23 07:12:22,495 - app.main - INFO - Request: POST /api/v1/ops/actionkit/items
+2026-02-23 07:12:22,530 - app.main - INFO - Response: POST /api/v1/ops/actionkit/items Status: 401 Elapsed: 0.0352s
+2026-02-23 07:13:15,036 - app.main - INFO - Request: POST /api/v1/ops/actionkit/items
+2026-02-23 07:13:15,037 - app.main - INFO - Response: POST /api/v1/ops/actionkit/items Status: 401 Elapsed: 0.0012s
+2026-02-23 07:18:09,018 - app.main - INFO - Request: POST /api/v1/ops/actionkit/items
+2026-02-23 07:18:09,019 - app.main - INFO - Response: POST /api/v1/ops/actionkit/items Status: 401 Elapsed: 0.0012s
+2026-02-23 07:19:04,603 - app.main - INFO - Request: POST /api/v1/ops/actionkit/items
+2026-02-23 07:19:04,604 - app.main - INFO - Response: POST /api/v1/ops/actionkit/items Status: 401 Elapsed: 0.0010s
+2026-02-23 07:19:50,955 - app.main - INFO - Request: POST /api/v1/ops/actionkit/items
+2026-02-23 07:19:50,955 - app.main - INFO - Response: POST /api/v1/ops/actionkit/items Status: 401 Elapsed: 0.0006s

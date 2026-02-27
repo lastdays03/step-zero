@@ -1,9 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import TYPE_CHECKING, Optional, Any
 
-from pydantic import model_validator, field_validator
+from pydantic import model_validator
 from sqlmodel import Field, Relationship, SQLModel
-from sqlalchemy import inspect
 
 if TYPE_CHECKING:
     from app.models.user import User
@@ -14,63 +13,80 @@ class AuthorRead(SQLModel):
     full_name: Optional[str] = None
     email: Optional[str] = None
     username: Optional[str] = None
+    nickname: Optional[str] = None
+    profile_img: Optional[str] = None
+    is_public: bool = True
     neighborhood: Optional[str] = None
     industry: Optional[str] = None
-    profile_img: Optional[str] = "default.png"
+    is_suspended: bool = False
+    suspended_at: Optional[datetime] = None
 
     @model_validator(mode="before")
     @classmethod
-    def extract_profile_data(cls, data: Any) -> Any:
-        # If it's an ORM object, we want to extract profile data without losing other fields
-        if hasattr(data, "_sa_instance_state"):
-            try:
-                state = inspect(data)
-                # Ensure profile is loaded
-                if state and "profile" not in state.unloaded:
-                    profile = getattr(data, "profile", None)
-                    if profile:
-                        # Find existing values or use profile values
-                        is_public = getattr(profile, "is_public", True)
-                        
-                        # We don't return a dict here to avoid losing data.
-                        # Instead, we rely on the fact that Pydantic will call getattr(data, "username") etc.
-                        # But "username" is not an ORM column on User.
-                        # So we might need to return a dict or use a property.
-                        
-                        # Option: return a proxy-like dict or a full dict
-                        obj_dict = {k: getattr(data, k) for k in data.__class__.__table__.columns.keys()}
-                        
-                        if is_public:
-                            obj_dict["username"] = getattr(profile, "nickname", None)
-                            obj_dict["profile_img"] = getattr(profile, "profile_img", "default.png")
-                            obj_dict["neighborhood"] = getattr(profile, "region", None)
-                            obj_dict["industry"] = getattr(profile, "category", None)
-                        else:
-                            obj_dict["username"] = "익명"
-                            obj_dict["profile_img"] = "default.png"
-                            obj_dict["neighborhood"] = None
-                            obj_dict["industry"] = None
-                        
-                        # Add email if available (it should be a column)
-                        if "email" not in obj_dict:
-                            obj_dict["email"] = getattr(data, "email", None)
-                        if "full_name" not in obj_dict:
-                            obj_dict["full_name"] = getattr(data, "full_name", None)
-                            
-                        return obj_dict
-            except Exception:
-                pass
+    def from_user(cls, data: Any) -> Any:
+        # data could be a User ORM object or a dict
+        if isinstance(data, dict):
+            profile = data.get("profile")
+            if profile:
+                data["nickname"] = profile.get("nickname")
+                data["profile_img"] = profile.get("profile_img")
+                data["industry"] = profile.get("category")
+                data["neighborhood"] = profile.get("region")
+            return data
+            
+        # If it's an object (User ORM)
+        if hasattr(data, "profile") and data.profile:
+            p = data.profile
+            return {
+                "id": getattr(data, "id", None),
+                "full_name": getattr(data, "full_name", None),
+                "email": getattr(data, "email", None),
+                "username": getattr(data, "username", None),
+                "nickname": getattr(p, "nickname", None),
+                "profile_img": getattr(p, "profile_img", None),
+                "is_public": getattr(p, "is_public", True),
+                "industry": getattr(p, "category", None),
+                "neighborhood": getattr(p, "region", None),
+                "is_suspended": getattr(data, "is_suspended", False),
+                "suspended_at": getattr(data, "suspended_at", None),
+            }
         return data
 
     @model_validator(mode="after")
-    def set_username(self) -> "AuthorRead":
-        if not self.username:
+    def set_display_name(self) -> "AuthorRead":
+        # Prioritize nickname if available
+        if self.nickname:
+            self.username = self.nickname
+        elif not self.username:
             if self.full_name:
                 self.username = self.full_name
-            elif self.email is not None and isinstance(self.email, str):
-                self.username = self.email.split("@")[0]
-            else:
+            elif self.email and isinstance(self.email, str):
+                parts = self.email.split("@")
+                if parts:
+                    self.username = parts[0]
+            
+            if not self.username:
                 self.username = f"User_{self.id}"
+        
+        # Ensure profile_img has a default if None
+        if not self.profile_img:
+            self.profile_img = "default.png"
+            
+        return self
+
+    def mask_privacy(self, current_user_id: Optional[int]) -> "AuthorRead":
+        """
+        내 프로필이 비공개(is_public=False)인 경우, 타인에게는 익명으로 표시함.
+        작성자 본인에게는 항상 실제 정보가 보임.
+        """
+        if not self.is_public and self.id != current_user_id:
+            self.nickname = "익명"
+            self.username = "익명"
+            self.full_name = "익명"
+            self.email = None
+            self.profile_img = "default.png"
+            self.industry = None
+            self.neighborhood = None
         return self
 
 
@@ -81,55 +97,48 @@ class GrowthClubPostBase(SQLModel):
     neighborhood: Optional[str] = None
     industry: Optional[str] = None
 
-class GrowthClubPostLike(SQLModel, table=True):
-    post_id: int = Field(foreign_key="growthclubpost.id", primary_key=True)
-    user_id: int = Field(foreign_key="user.id", primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
-
-class GrowthClubPostReport(SQLModel, table=True):
-    post_id: int = Field(foreign_key="growthclubpost.id", primary_key=True)
-    user_id: int = Field(foreign_key="user.id", primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-
 class GrowthClubPostTagLink(SQLModel, table=True):
-    post_id: Optional[int] = Field(
-        default=None, foreign_key="growthclubpost.id", primary_key=True
-    )
-    tag_id: Optional[int] = Field(
-        default=None, foreign_key="growthclubtag.id", primary_key=True
-    )
+    post_id: int = Field(foreign_key="growthclubpost.id", primary_key=True)
+    tag_id: int = Field(foreign_key="growthclubtag.id", primary_key=True)
+
 
 class GrowthClubTag(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True, unique=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
     posts: list["GrowthClubPost"] = Relationship(
-        back_populates="tags", link_model=GrowthClubPostTagLink
+        back_populates="tags",
+        link_model=GrowthClubPostTagLink,
     )
+
+
+class GrowthClubPostLike(SQLModel, table=True):
+    post_id: int = Field(foreign_key="growthclubpost.id", primary_key=True)
+    user_id: int = Field(foreign_key="user.id", primary_key=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 class GrowthClubPost(GrowthClubPostBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     author_id: int = Field(foreign_key="user.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     report_count: int = Field(default=0)
     is_blinded: bool = Field(default=False)
-    
+
     # Relationships
     author: "User" = Relationship()
     comments: list["GrowthClubComment"] = Relationship(
-        back_populates="post", 
+        back_populates="post",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
     likes: list[GrowthClubPostLike] = Relationship(sa_relationship_kwargs={"cascade": "all, delete-orphan"})
-    reports: list["GrowthClubPostReport"] = Relationship(sa_relationship_kwargs={"cascade": "all, delete-orphan"})
     attachments: list["GrowthClubPostAttachment"] = Relationship(
         back_populates="post",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
     )
     tags: list[GrowthClubTag] = Relationship(
-        back_populates="posts", link_model=GrowthClubPostTagLink
+        back_populates="posts",
+        link_model=GrowthClubPostTagLink,
     )
 
 
@@ -141,34 +150,40 @@ class GrowthClubPostAttachment(SQLModel, table=True):
     original_filename: Optional[str] = None
     mime_type: Optional[str] = None
     size_bytes: Optional[int] = None
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     post: GrowthClubPost = Relationship(back_populates="attachments")
 
 
 class GrowthClubCommentBase(SQLModel):
     content: str
-    post_id: int = Field(foreign_key="growthclubpost.id")
-    parent_id: Optional[int] = Field(default=None, foreign_key="growthclubcomment.id")
+    post_id: int = Field(foreign_key="growthclubpost.id", ondelete="CASCADE")
+    parent_id: Optional[int] = Field(default=None, foreign_key="growthclubcomment.id", ondelete="CASCADE")
 
 class GrowthClubComment(GrowthClubCommentBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     author_id: int = Field(foreign_key="user.id")
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     report_count: int = Field(default=0)
     is_blinded: bool = Field(default=False)
     
     post: GrowthClubPost = Relationship(back_populates="comments")
     author: "User" = Relationship()
-    
-    parent: Optional["GrowthClubComment"] = Relationship(
-        back_populates="replies",
-        sa_relationship_kwargs={"remote_side": "GrowthClubComment.id"}
-    )
-    replies: list["GrowthClubComment"] = Relationship(
-        back_populates="parent",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"}
-    )
+
+
+class GrowthClubPostReport(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    post_id: int = Field(foreign_key="growthclubpost.id", index=True, ondelete="CASCADE")
+    reporter_id: int = Field(foreign_key="user.id", index=True, ondelete="CASCADE")
+    reason: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+class GrowthClubCommentReport(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    comment_id: int = Field(foreign_key="growthclubcomment.id", index=True, ondelete="CASCADE")
+    reporter_id: int = Field(foreign_key="user.id", index=True, ondelete="CASCADE")
+    reason: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
 
 class GrowthClubCommentRead(GrowthClubCommentBase):
@@ -176,6 +191,8 @@ class GrowthClubCommentRead(GrowthClubCommentBase):
     author_id: int
     created_at: datetime
     author: AuthorRead
+    report_count: int = 0
+    report_reason: Optional[str] = None
 
 
 class GrowthClubAttachmentRead(SQLModel):
@@ -195,17 +212,7 @@ class GrowthClubPostRead(GrowthClubPostBase):
     author: AuthorRead
     comments: list[GrowthClubCommentRead] = Field(default_factory=list)
     attachments: list[GrowthClubAttachmentRead] = Field(default_factory=list)
-    tags: list[str] = Field(default_factory=list)
     report_count: int
+    report_reason: Optional[str] = None
     likes_count: int = 0
     is_liked: bool = False
-    is_reported: bool = False
-
-    @field_validator("tags", mode="before")
-    @classmethod
-    def validate_tags(cls, v: Any) -> list[str]:
-        if isinstance(v, list) and len(v) > 0:
-            # If it's a list of GrowthClubTag objects, extract names
-            if hasattr(v[0], "name"):
-                return [tag.name for tag in v]
-        return v

@@ -63,7 +63,10 @@ export const ActionKitContainer = () => {
                         onNavigateToKit={handleNavigateToKit}
                     />
                 ) : (
-                    <ActionKitLibraryView onNavigateToLaw={handleNavigateToLaw} />
+                    <ActionKitLibraryView
+                        initialSearch={searchQuery}
+                        onNavigateToLaw={handleNavigateToLaw}
+                    />
                 )}
             </div>
         </div>

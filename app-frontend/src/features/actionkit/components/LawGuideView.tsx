@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { LawItem, RelatedLaw } from '../types';
 import { useActionKit } from '../hooks/useActionKit';
+import { LawDetailPopup } from './LawDetailPopup';
 
 type LawItemWithChapter = LawItem & { chapterTitle: string };
 
@@ -35,6 +36,7 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
 
     // Manage completed/read status (in-memory for demo, would be localStorage/DB in real app)
     const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
+    const [selectedLaw, setSelectedLaw] = useState<LawItem | null>(null);
 
     const toggleItemCompletion = (e: React.MouseEvent, itemName: string) => {
         e.stopPropagation();
@@ -58,7 +60,6 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
         return Object.values(kitsData).flatMap(cat => cat.items)
             .filter(kit => kit.relatedLaws?.some(rl => {
                 const name = isRelatedLawObject(rl) ? rl.name : rl;
-                // Match if the law name is part of the kit's related law or vice versa
                 return name.includes(lawName) || lawName.includes(name);
             }))
             .slice(0, 3);
@@ -164,6 +165,7 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
                             key={`${item.name}-${index}`}
                             className={`group transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between ${isCompleted ? 'bg-slate-50/50 border-emerald-500/30' : 'hover:border-[#36a4f2]'
                                 }`}
+                            onClick={() => setSelectedLaw(item)}
                         >
                             <CardContent className="p-6">
                                 <div className="flex justify-between items-start mb-4">
@@ -276,23 +278,16 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
                 }
             </div >
 
-            {/* AI Call to Action */}
-            < div className="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl" >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#36a4f2]/20 to-purple-500/20 blur-2xl" />
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <Sparkles className="w-4 h-4 text-[#36a4f2]" />
-                            <span className="text-xs font-bold uppercase tracking-widest text-[#36a4f2]">AI Assistant</span>
-                        </div>
-                        <h3 className="text-xl font-bold mb-1">법적 의무 사항이 헷갈리시나요?</h3>
-                        <p className="text-slate-400 text-sm">AI 법률 전문가에게 질문하고 즉시 해결책을 얻으세요.</p>
-                    </div>
-                    <Button className="bg-white text-slate-900 hover:bg-slate-100 rounded-full font-bold px-6">
-                        AI 상담 시작하기
-                    </Button>
-                </div>
-            </div >
+            {/* Law Detail Popup */}
+            {selectedLaw && (
+                <LawDetailPopup
+                    item={selectedLaw}
+                    relatedKits={getRelatedKits(selectedLaw.name)}
+                    onClose={() => setSelectedLaw(null)}
+                    onNavigateToKit={onNavigateToKit}
+                    onDownload={handleDownload}
+                />
+            )}
             <Disclaimer />
         </div >
     );

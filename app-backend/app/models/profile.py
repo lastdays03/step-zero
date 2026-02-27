@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional, TYPE_CHECKING
 from sqlmodel import SQLModel, Field, Column, JSON, Relationship
 
@@ -19,7 +19,7 @@ class UserProfileBase(SQLModel):
 class UserProfile(UserProfileBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     user_id: int = Field(foreign_key="user.id", unique=True, index=True)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
 
     user: Optional["User"] = Relationship(back_populates="profile")
 

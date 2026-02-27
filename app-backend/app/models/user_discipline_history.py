@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlmodel import Field, SQLModel
+
 
 
 class UserDisciplineHistory(SQLModel, table=True):
@@ -14,4 +15,4 @@ class UserDisciplineHistory(SQLModel, table=True):
     new_status: str
     reason: str
     suspended_until: Optional[datetime] = Field(default=None, index=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))

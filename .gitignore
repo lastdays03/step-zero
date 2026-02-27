@@ -100,6 +100,7 @@ pgdata/
 
 *.db
 *.sqlite3
+app-backend/tests/fixtures/actionkits/
 
 # ---------------
 # Testing & Tools
@@ -128,3 +129,6 @@ package-lock.json
 # MCP
 # ---------------
 .mcp.json
+
+# User Backup
+backup_joo_final/

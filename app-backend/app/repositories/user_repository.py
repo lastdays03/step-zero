@@ -25,6 +25,16 @@ class UserRepository:
             is_superuser=is_superuser
         )
         self.session.add(user)
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(user)
         return user
+
+    async def get_latest_discipline_reason(self, user_id: int) -> str | None:
+        from app.models.user_discipline_history import UserDisciplineHistory
+        result = await self.session.execute(
+            select(UserDisciplineHistory.reason)
+            .where(UserDisciplineHistory.user_id == user_id)
+            .order_by(UserDisciplineHistory.created_at.desc())
+            .limit(1)
+        )
+        return result.scalar_one_or_none()

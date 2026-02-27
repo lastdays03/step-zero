@@ -7,6 +7,7 @@ from google.auth.transport import requests
 from google.oauth2 import id_token
 from sqlalchemy import desc
 from sqlmodel import select
+from starlette.concurrency import run_in_threadpool
 
 from app.core import security
 from app.core.config import get_settings
@@ -56,7 +57,13 @@ class AuthService:
         return await self._build_auth_result(user)
 
     async def login_with_google(self, google_client_id: str, token: str) -> AuthResult | None:
-        idinfo = id_token.verify_oauth2_token(token, requests.Request(), google_client_id)
+        # Wrap blocking Google library call in a threadpool
+        idinfo = await run_in_threadpool(
+            id_token.verify_oauth2_token,
+            token,
+            requests.Request(),
+            google_client_id
+        )
         email = idinfo.get("email")
         if not email:
             return None
@@ -158,14 +165,24 @@ class AuthService:
 
     async def _raise_suspension_error(self, user: User) -> None:
         """정지/차단된 유저에 대해 403 에러 발생 및 사유 전달"""
-        reason = user.audit_log_reason or "운영 정책 위반으로 인해 계정이 제한되었습니다."
+        reason = user.audit_log_reason
+        try:
+            latest_reason = await self.user_repo.get_latest_discipline_reason(user.id)
+            if latest_reason:
+                reason = latest_reason
+        except Exception as e:
+            logger.warning(f"Failed to fetch latest discipline reason for user {user.id}: {e}")
+
+        if not reason:
+            reason = "운영 정책 위반으로 인해 계정이 제한되었습니다."
+
+        suspended_until_str = "영구"
+        expiry_iso = None
         if user.suspended_until:
-            # Display KST to user
             kst_tz = timezone(timedelta(hours=9))
             kst_time = user.suspended_until.replace(tzinfo=timezone.utc).astimezone(kst_tz)
             suspended_until_str = kst_time.strftime("%Y.%m.%d")
-        else:
-            suspended_until_str = "영구"
+            expiry_iso = user.suspended_until.replace(tzinfo=timezone.utc).isoformat()
 
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -173,7 +190,8 @@ class AuthService:
                 "code": "ACCOUNT_RESTRICTED",
                 "status": user.status,
                 "reason": reason,
-                "suspended_until": suspended_until_str
+                "suspended_until": suspended_until_str,
+                "expiry_iso": expiry_iso,
             }
         )
 

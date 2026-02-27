@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { useAuth } from '@/providers/AuthProvider';
-import { Bell } from 'lucide-react';
 import { NotificationBell } from '@/features/notifications/components/NotificationBell';
 
 export const Header = () => {

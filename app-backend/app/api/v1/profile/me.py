@@ -80,6 +80,13 @@ async def upload_my_profile_image(
     session: Annotated[AsyncSession, Depends(get_session)],
     file: UploadFile = File(..., description="업로드할 프로필 이미지 파일"),
 ):
-    service = ProfileService(session)
-    await service.save_profile_image(current_user.id, file)
-    return await _build_profile_read(session, service, current_user)
+    logger.info("Uploading profile image for user_id=%s, filename=%s, content_type=%s", 
+                current_user.id, file.filename, file.content_type)
+    try:
+        service = ProfileService(session)
+        await service.save_profile_image(current_user.id, file)
+        logger.info("Profile image saved successfully for user_id=%s", current_user.id)
+        return await _build_profile_read(session, service, current_user)
+    except Exception as e:
+        logger.error("Error uploading profile image for user_id=%s: %s", current_user.id, str(e), exc_info=True)
+        raise
