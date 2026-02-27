@@ -11,6 +11,13 @@ export interface AuditLogFilters {
     offset?: number;
 }
 
+interface AuditLogResponse {
+    items: AuditLog[];
+    total: number;
+    page: number;
+    size: number;
+}
+
 export const fetchAuditLogs = async (filters: AuditLogFilters = {}): Promise<AuditLog[]> => {
     const params = new URLSearchParams();
     if (filters.action) params.set("action", filters.action);
@@ -22,6 +29,6 @@ export const fetchAuditLogs = async (filters: AuditLogFilters = {}): Promise<Aud
     if (filters.offset != null) params.set("offset", String(filters.offset));
 
     const query = params.toString() ? `?${params.toString()}` : "";
-    const response = await apiClient.get<AuditLog[]>(`/ops/audit-logs${query}`);
-    return response.data;
+    const response = await apiClient.get<AuditLogResponse>(`/ops/audit-logs${query}`);
+    return response.data.items;
 };

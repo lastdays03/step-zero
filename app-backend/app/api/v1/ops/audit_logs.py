@@ -1,13 +1,11 @@
-from typing import Any, List, Optional
+from typing import Any, Optional
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 from sqlmodel import select
 from datetime import datetime
 
 from app.core.db import get_session
-from app.models.audit_log import AuditLog, AuditLogRead
-from app.models.admin_audit_log import AdminAuditLog
+from app.models.audit_log import AuditLog
 from app.models.user import User
 from app.features.ops.application.audit_logs.service import list_ops_audit_logs, list_audit_logs, AuditLogList
 
@@ -57,6 +55,17 @@ async def get_audit_logs(
         offset=effective_offset,
     )
 
+    # User 배치 조회로 actor_name 매핑 생성
+    user_ids = {item.admin_id for item in admin_result.items} | {row.user_id for row in ops_rows}
+    user_ids.discard(None)
+    if user_ids:
+        users = (await session.execute(
+            select(User.id, User.full_name, User.email).where(User.id.in_(user_ids))
+        )).all()
+        user_map = {u.id: u.full_name or u.email or "Unknown" for u in users}
+    else:
+        user_map = {}
+
     # 두 소스를 통합하여 반환
     items: list[dict[str, Any]] = []
 
@@ -64,12 +73,13 @@ async def get_audit_logs(
     for item in admin_result.items:
         items.append({
             "id": item.id,
-            "admin_id": item.admin_id,
+            "user_id": item.admin_id,
+            "actor_name": user_map.get(item.admin_id, "Unknown"),
             "action": item.action,
             "target_type": item.target_type,
-            "target_id": item.target_id,
-            "reason": item.reason,
-            "meta": item.meta,
+            "target_id": item.target_id or "",
+            "target_author": (item.meta or {}).get("target_author"),
+            "details": item.reason,
             "created_at": item.created_at.isoformat(),
         })
 
@@ -77,12 +87,13 @@ async def get_audit_logs(
     for row in ops_rows:
         items.append({
             "id": row.id or 0,
-            "admin_id": row.user_id,
+            "user_id": row.user_id,
+            "actor_name": user_map.get(row.user_id, "Unknown"),
             "action": row.action,
             "target_type": row.target_type,
             "target_id": row.target_id,
-            "reason": row.details,
-            "meta": {"target_author": row.target_author} if row.target_author else {},
+            "target_author": row.target_author,
+            "details": row.details,
             "created_at": row.created_at.isoformat() if row.created_at else None,
         })
 
