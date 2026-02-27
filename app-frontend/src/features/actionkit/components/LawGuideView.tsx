@@ -288,24 +288,6 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
                     onDownload={handleDownload}
                 />
             )}
-
-            {/* AI Call to Action */}
-            < div className="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden shadow-xl" >
-                <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#36a4f2]/20 to-purple-500/20 blur-2xl" />
-                <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
-                    <div>
-                        <div className="flex items-center gap-2 mb-2">
-                            <Sparkles className="w-4 h-4 text-[#36a4f2]" />
-                            <span className="text-xs font-bold uppercase tracking-widest text-[#36a4f2]">AI Assistant</span>
-                        </div>
-                        <h3 className="text-xl font-bold mb-1">법적 의무 사항이 헷갈리시나요?</h3>
-                        <p className="text-slate-400 text-sm">AI 법률 전문가에게 질문하고 즉시 해결책을 얻으세요.</p>
-                    </div>
-                    <Button className="bg-white text-slate-900 hover:bg-slate-100 rounded-full font-bold px-6">
-                        AI 상담 시작하기
-                    </Button>
-                </div>
-            </div >
             <Disclaimer />
         </div >
     );
