@@ -65,7 +65,9 @@ async def test_ops_audit_logs_list_with_filter(client: AsyncClient):
     item = payload["items"][0]
     assert item["action"] == "user.status.updated"
     assert item["target_type"] == "user"
-    assert "meta" in item
+    assert "actor_name" in item
+    assert "user_id" in item
+    assert "details" in item
 
 
 @pytest.mark.asyncio
@@ -97,8 +99,11 @@ async def test_ops_audit_logs_mask_sensitive_meta(client: AsyncClient):
 
     assert response.status_code == 200
     item = response.json()["items"][0]
-    assert item["meta"]["before"]["password"] == "[REDACTED]"
-    assert item["meta"]["access_token"] == "[REDACTED]"
+    # meta 필드가 응답에 포함되지 않으므로 민감 정보가 노출되지 않음
+    assert "meta" not in item
+    assert item["details"] == "sensitive check"
+    assert "password" not in str(item)
+    assert "raw-token" not in str(item)
 
 
 @pytest.mark.asyncio
