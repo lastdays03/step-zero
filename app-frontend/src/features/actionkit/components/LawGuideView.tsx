@@ -17,7 +17,7 @@ import {
     Eye,
     EyeOff
 } from 'lucide-react';
-import { LawItem, RelatedLaw, ActionKitItem } from '../types';
+import { LawItem, RelatedLaw } from '../types';
 import { useActionKit } from '../hooks/useActionKit';
 import { LawDetailPopup } from './LawDetailPopup';
 

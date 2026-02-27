@@ -121,15 +121,15 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
     useEffect(() => {
         const storedChecklists = localStorage.getItem('actionkit_checklists');
         if (storedChecklists) {
-            try { setCheckedItems(JSON.parse(storedChecklists)); } catch (e) { }
+            try { setCheckedItems(JSON.parse(storedChecklists)); } catch { /* ignore */ }
         }
         const storedBookmarks = localStorage.getItem('actionkit_bookmarks');
         if (storedBookmarks) {
-            try { setBookmarkedItems(JSON.parse(storedBookmarks)); } catch (e) { }
+            try { setBookmarkedItems(JSON.parse(storedBookmarks)); } catch { /* ignore */ }
         }
         const storedRecents = localStorage.getItem('actionkit_recents');
         if (storedRecents) {
-            try { setRecentItems(JSON.parse(storedRecents)); } catch (e) { }
+            try { setRecentItems(JSON.parse(storedRecents)); } catch { /* ignore */ }
         }
     }, []);
 
@@ -145,7 +145,7 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
 
     const toggleBookmark = (kit: ActionKitItem, e: React.MouseEvent) => {
         e.stopPropagation();
-        const identifier = (kit as any).id || kit.name;
+        const identifier = kit.id ?? kit.name;
         const newBookmarks = { ...bookmarkedItems };
         if (newBookmarks[identifier]) {
             delete newBookmarks[identifier];
@@ -163,14 +163,15 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
             const items = Object.values(bookmarkedItems);
 
             await Promise.all(items.map(async (item) => {
-                const itemId = (item as any).id;
+                const itemId = item.id;
                 let blob: Blob | null = null;
                 if (itemId) {
                     try {
                         const res = await apiClient.get(`/actionkits/items/${itemId}/download`, { responseType: 'blob' });
                         blob = new Blob([res.data]);
-                    } catch (apiErr: any) {
-                        if (apiErr.response?.status !== 404) throw apiErr;
+                    } catch (apiErr: unknown) {
+                        const err = apiErr as { response?: { status?: number } };
+                        if (err.response?.status !== 404) throw apiErr;
                     }
                 }
 
@@ -190,7 +191,7 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                 }
 
                 if (blob) {
-                    const filename = (item as any).files?.[0]?.original_filename || `${item.name}.${(item as any).ext || 'pdf'}`;
+                    const filename = item.files?.[0]?.original_filename || `${item.name}.${item.ext || 'pdf'}`;
                     zip.file(filename, blob);
                 }
             }));
@@ -228,7 +229,7 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                     (item.tag && item.tag.toLowerCase() === keyword.toLowerCase())
                 );
                 if (isMatch) {
-                    const identifier = (item as any).id || item.name;
+                    const identifier = item.id ?? item.name;
                     if (!newBookmarks[identifier]) {
                         newBookmarks[identifier] = item;
                         addedCount++;
@@ -254,7 +255,7 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
 
     const getKitProgress = (kit: ActionKitItem) => {
         if (!kit.complianceChecklist || kit.complianceChecklist.length === 0) return null;
-        const kitIdentifier = (kit as any).id || kit.name;
+        const kitIdentifier = kit.id ?? kit.name;
         const total = kit.complianceChecklist.length;
         const checked = kit.complianceChecklist.filter(item => checkedItems[`${kitIdentifier}_${item}`]).length;
         const percentage = Math.round((checked / total) * 100);
@@ -284,8 +285,9 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                     link.remove();
                     window.URL.revokeObjectURL(url);
                     success = true;
-                } catch (apiErr: any) {
-                    if (apiErr.response?.status !== 404) throw apiErr;
+                } catch (apiErr: unknown) {
+                    const err = apiErr as { response?: { status?: number } };
+                    if (err.response?.status !== 404) throw apiErr;
                 }
             }
 
@@ -569,9 +571,9 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                                             </Badge>
                                             <button
                                                 onClick={(e) => toggleBookmark(item, e)}
-                                                className={`p-1 -mr-2 rounded-full transition-colors ${bookmarkedItems[(item as any).id || item.name] ? 'text-yellow-400 hover:text-yellow-500' : 'text-slate-200 hover:text-yellow-400'}`}
+                                                className={`p-1 -mr-2 rounded-full transition-colors ${bookmarkedItems[item.id ?? item.name] ? 'text-yellow-400 hover:text-yellow-500' : 'text-slate-200 hover:text-yellow-400'}`}
                                             >
-                                                <Star className={`w-5 h-5 ${bookmarkedItems[(item as any).id || item.name] ? 'fill-current' : ''}`} />
+                                                <Star className={`w-5 h-5 ${bookmarkedItems[item.id ?? item.name] ? 'fill-current' : ''}`} />
                                             </button>
                                         </div>
                                     </div>
@@ -603,15 +605,15 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                                             </div>
                                         );
                                     })()}
-                                    {(item as any).highlights?.length > 0 && (
+                                    {item.highlights && item.highlights.length > 0 && (
                                         <div className="flex flex-wrap gap-1 mb-3">
-                                            {(item as any).highlights.slice(0, 2).map((hl: any, i: number) => (
+                                            {item.highlights.slice(0, 2).map((hl, i) => (
                                                 <span key={hl.id || i} className="text-[10px] font-medium text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-full truncate max-w-[180px]">
                                                     ⭐ {hl.content}
                                                 </span>
                                             ))}
-                                            {(item as any).highlights.length > 2 && (
-                                                <span className="text-[10px] text-slate-400 font-medium">+{(item as any).highlights.length - 2}개</span>
+                                            {item.highlights.length > 2 && (
+                                                <span className="text-[10px] text-slate-400 font-medium">+{item.highlights.length - 2}개</span>
                                             )}
                                         </div>
                                     )}
@@ -710,7 +712,7 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                     onDownload={handleDownload}
                     onNavigateToLaw={onNavigateToLaw}
                     onToggleBookmark={toggleBookmark}
-                    isBookmarked={!!bookmarkedItems[(detailItem || previewKit as any)?.id || (detailItem || previewKit)?.name]}
+                    isBookmarked={!!bookmarkedItems[(detailItem || previewKit)?.id ?? (detailItem || previewKit)?.name ?? '']}
                     checkedItems={checkedItems}
                     onToggleChecklist={toggleChecklist}
                     getKitProgress={getKitProgress}

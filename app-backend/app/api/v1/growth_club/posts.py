@@ -416,11 +416,10 @@ async def toggle_like_post(
         if db_post.author_id != current_user.id:
             like_notification = Notification(
                 user_id=db_post.author_id,
-                actor_id=current_user.id,
-                action_type="LIKE",
-                target_id=post_id,
-                target_type="POST",
-                message=f"{current_user.full_name or current_user.username}님이 당신의 게시물을 좋아합니다."
+                content=f"{current_user.full_name or current_user.email}님이 당신의 게시물을 좋아합니다.",
+                type="like",
+                link=f"/growth-club/{post_id}",
+                resource_id=post_id,
             )
             session.add(like_notification)
 

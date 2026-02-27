@@ -66,7 +66,7 @@ async def test_ops_users_status_update_records_audit_log(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_ops_growth_club_moderation_records_audit_log(client: AsyncClient):
+async def test_ops_growth_club_unblind_records_audit_log(client: AsyncClient):
     token = await _get_admin_token(client)
 
     async with db.async_session() as session:
@@ -77,30 +77,31 @@ async def test_ops_growth_club_moderation_records_audit_log(client: AsyncClient)
             category="free",
             author_id=author.id,
             created_at=datetime.now(timezone.utc),
+            is_blinded=True,
         )
         session.add(post)
         await session.commit()
         await session.refresh(post)
         post_id = post.id
 
-    response = await client.patch(
-        f"/api/v1/ops/growth-club/posts/{post_id}/moderate",
-        json={"action": "blind", "reason": "manual moderation"},
+    response = await client.post(
+        f"/api/v1/ops/growth-club/posts/{post_id}/unblind",
         headers={"Authorization": f"Bearer {token}"},
     )
     assert response.status_code == 200
     assert response.json()["status"] == "success"
 
     async with db.async_session() as session:
+        from app.models.audit_log import AuditLog
         row = (
             await session.execute(
-                select(AdminAuditLog)
-                .where(AdminAuditLog.target_type == "growth_club_post", AdminAuditLog.target_id == str(post_id))
-                .order_by(AdminAuditLog.id.desc())
+                select(AuditLog)
+                .where(AuditLog.target_type == "post", AuditLog.target_id == str(post_id))
+                .order_by(AuditLog.id.desc())
             )
         ).scalars().first()
         assert row is not None
-        assert row.action == "growth_club.post.blinded"
+        assert row.action == "growth_club.post.unblind"
 
 
 @pytest.mark.asyncio

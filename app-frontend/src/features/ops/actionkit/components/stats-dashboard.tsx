@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Download, Bookmark, TrendingUp, Users, Calendar, BarChart3, TrendingDown, Search, AlertCircle } from "lucide-react";
+import { Download, Bookmark, TrendingUp, BarChart3, TrendingDown, Search, AlertCircle } from "lucide-react";
 
 const POPULAR_DOCS = [
     { title: "근로계약서 (정규직)", downloads: 1250, saves: 430, trend: "+12%" },
@@ -14,8 +14,15 @@ const POPULAR_DOCS = [
 
 const SEARCH_KEYWORDS = ["근로계약서", "스톡옵션", "동업계약", "투자계약", "개인정보", "사직서"];
 
+interface StatsItem {
+    id: number;
+    name: string;
+    domain?: string;
+    updated_at?: string;
+}
+
 interface OpsActionKitStatsDashboardProps {
-    items: any[];
+    items: StatsItem[];
 }
 
 export function OpsActionKitStatsDashboard({ items }: OpsActionKitStatsDashboardProps) {
@@ -43,7 +50,7 @@ export function OpsActionKitStatsDashboard({ items }: OpsActionKitStatsDashboard
                             <ul className="mt-2 space-y-1">
                                 {outdatedItems.slice(0, 3).map(item => (
                                     <li key={item.id} className="text-xs font-medium text-red-700 flex items-center gap-1.5 before:content-[''] before:w-1 before:h-1 before:bg-red-400 before:rounded-full">
-                                        [{item.domain === 'laws' ? '법령' : '키트'}] {item.name} <span className="text-red-400 font-normal ml-1">({new Date(item.updated_at).toLocaleDateString()})</span>
+                                        [{item.domain === 'laws' ? '법령' : '키트'}] {item.name} <span className="text-red-400 font-normal ml-1">({new Date(item.updated_at!).toLocaleDateString()})</span>
                                     </li>
                                 ))}
                                 {outdatedItems.length > 3 && (
@@ -186,7 +193,7 @@ export function OpsActionKitStatsDashboard({ items }: OpsActionKitStatsDashboard
                                 💡 인사이트
                             </h5>
                             <p className="text-xs text-orange-700 leading-relaxed">
-                                최근 <span className="font-bold border-b border-orange-300">"주주간계약서"</span> 및 <span className="font-bold border-b border-orange-300">"투자계약"</span> 검색량이 저번달 대비 <strong>24% 급증</strong>했습니다. 관련 스타터 팩을 상단에 고정하는 것을 권장합니다.
+                                최근 <span className="font-bold border-b border-orange-300">&quot;주주간계약서&quot;</span> 및 <span className="font-bold border-b border-orange-300">&quot;투자계약&quot;</span> 검색량이 저번달 대비 <strong>24% 급증</strong>했습니다. 관련 스타터 팩을 상단에 고정하는 것을 권장합니다.
                             </p>
                         </div>
                     </CardContent>

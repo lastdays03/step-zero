@@ -24,7 +24,7 @@ export const Sidebar = () => {
     const { isLoggedIn, user, logout, canAccessOps } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
 
-    const menuItems = [
+    const menuItems: { icon: typeof LayoutDashboard; label: string; href: string; badge?: string }[] = [
         { icon: LayoutDashboard, label: '대시보드', href: '/dashboard' },
         { icon: Map, label: '나의 로드맵', href: '/roadmap' },
         { icon: Briefcase, label: '액션 키트', href: '/actionkit' },

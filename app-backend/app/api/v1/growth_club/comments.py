@@ -54,11 +54,10 @@ async def create_comment(
     if post.author_id != current_user.id:
         notification = Notification(
             user_id=post.author_id,
-            actor_id=current_user.id,
-            action_type="COMMENT",
-            target_id=post.id,
-            target_type="POST",
-            message=f"{current_user.full_name or current_user.username}님이 당신의 게시물에 댓글을 달았습니다."
+            content=f"{current_user.full_name or current_user.email}님이 당신의 게시물에 댓글을 달았습니다.",
+            type="comment",
+            link=f"/growth-club/{post.id}",
+            resource_id=post.id,
         )
         session.add(notification)
         
@@ -70,11 +69,10 @@ async def create_comment(
             if parent_comment.author_id != post.author_id:
                 reply_notification = Notification(
                     user_id=parent_comment.author_id,
-                    actor_id=current_user.id,
-                    action_type="REPLY",
-                    target_id=post.id, # Keep track of the post
-                    target_type="COMMENT",
-                    message=f"{current_user.full_name or current_user.username}님이 당신의 댓글에 답글을 달았습니다."
+                    content=f"{current_user.full_name or current_user.email}님이 당신의 댓글에 답글을 달았습니다.",
+                    type="reply",
+                    link=f"/growth-club/{post.id}",
+                    resource_id=post.id,
                 )
                 session.add(reply_notification)
                 

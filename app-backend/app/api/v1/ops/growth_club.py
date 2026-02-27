@@ -260,11 +260,9 @@ async def suspend_user(
     
     notification = Notification(
         user_id=user_id,
-        actor_id=current_user.id,
-        action_type="SUSPENSION",
-        target_id=suspend_data.target_id,
-        target_type=suspend_data.target_type,
-        message=message
+        content=message,
+        type="notice",
+        link="/growth-club",
     )
     session.add(notification)
     

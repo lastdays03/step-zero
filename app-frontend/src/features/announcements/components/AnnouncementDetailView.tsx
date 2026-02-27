@@ -2,7 +2,6 @@
 
 import React from 'react';
 import { Calendar, ChevronLeft } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { OpsAnnouncement } from '../../ops/announcements/types';
 

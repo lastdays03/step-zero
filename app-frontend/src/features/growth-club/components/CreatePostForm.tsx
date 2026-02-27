@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useRef } from 'react';
+import Image from 'next/image';
 import { Camera, Paperclip, Send, X, FileText } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { growthClubApi } from '../api';
@@ -27,7 +28,7 @@ const getExt = (name: string) => {
 };
 
 export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => {
-    const { user } = useAuth();
+    useAuth();
     const [title, setTitle] = useState('');
     const [content, setContent] = useState('');
     const [category, setCategory] = useState('free');
@@ -232,7 +233,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
                     <div className="flex flex-wrap gap-3 py-2">
                         {imagePreviews.map((preview, index) => (
                             <div key={`img-${index}`} className="relative group w-24 h-24">
-                                <img src={preview} alt="Preview" className="w-full h-full object-cover rounded-lg border border-zinc-100 dark:border-zinc-800" />
+                                <Image src={preview} alt="Preview" width={96} height={96} className="w-full h-full object-cover rounded-lg border border-zinc-100 dark:border-zinc-800" unoptimized />
                                 <button
                                     type="button"
                                     onClick={() => removeImage(index)}

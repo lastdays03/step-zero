@@ -32,7 +32,7 @@ export function OpsActionKitView() {
   const { canRender } = useOpsAccessGuard();
 
   const [loading, setLoading] = useState(true);
-  const [categories, setCategories] = useState<{ id: number; title: string; domain: string }[]>([]);
+  const [categories, setCategories] = useState<{ id: number; title: string; domain: string; slug: string; sort_order: number; is_active: boolean }[]>([]);
   const [items, setItems] = useState<OpsActionKitItem[]>([]);
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [editingItem, setEditingItem] = useState<OpsActionKitItem | null>(null);
@@ -48,7 +48,7 @@ export function OpsActionKitView() {
   const [activeDomain, setActiveDomain] = useState<"kits" | "laws" | "stats">("kits");
 
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<{ id: number; title: string; domain: string } | null>(null);
+  const [editingCategory, setEditingCategory] = useState<{ id: number; title: string; domain: string; slug: string; sort_order: number; is_active: boolean } | null>(null);
 
   const filteredCategories = categories.filter(cat => cat.domain === activeDomain);
 
@@ -110,7 +110,7 @@ export function OpsActionKitView() {
     if (!canRender) return;
 
     fetchCategories()
-      .then((data: { id: number; title: string; domain: string }[]) => {
+      .then((data: { id: number; title: string; domain: string; slug: string; sort_order: number; is_active: boolean }[]) => {
         setCategories(data);
         const kitsCategories = data.filter((c) => c.domain === "kits");
         if (kitsCategories.length > 0) {
@@ -153,7 +153,7 @@ export function OpsActionKitView() {
 
   const handleCategorySaved = () => {
     fetchCategories()
-      .then((data: { id: number; title: string; domain: string }[]) => {
+      .then((data: { id: number; title: string; domain: string; slug: string; sort_order: number; is_active: boolean }[]) => {
         setCategories(data);
         const domainCats = data.filter((c) => c.domain === activeDomain);
         if (domainCats.length > 0 && !domainCats.find((c) => c.id === activeCategory)) {

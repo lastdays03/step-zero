@@ -15,7 +15,7 @@ import {
 import {
   ShieldAlert, CheckCircle2, RotateCcw, MessageSquare,
   Ban, ShieldCheck, Trash2, Search, RefreshCw, X,
-  Eye, FileText, ChevronDown, AlertTriangle, Users,
+  Eye, FileText, ChevronDown, Users,
 } from "lucide-react";
 
 // ─── 미리보기 모달 ────────────────────────────────────────────────────────────
@@ -110,9 +110,7 @@ function PreviewModal({
 
 // ─── 정지 사유 입력 모달 ──────────────────────────────────────────────────────
 function SuspensionModal({
-  userId,
   username,
-  targetType,
   onClose,
   onConfirm,
 }: {
@@ -670,7 +668,7 @@ export function OpsGrowthClubView() {
                               onChange={() => {
                                 setSelectedPostIds((prev) => {
                                   const next = new Set(prev);
-                                  next.has(post.id) ? next.delete(post.id) : next.add(post.id);
+                                  if (next.has(post.id)) next.delete(post.id); else next.add(post.id);
                                   return next;
                                 });
                               }}
@@ -816,7 +814,7 @@ export function OpsGrowthClubView() {
                               onChange={() => {
                                 setSelectedCommentIds((prev) => {
                                   const next = new Set(prev);
-                                  next.has(comment.id) ? next.delete(comment.id) : next.add(comment.id);
+                                  if (next.has(comment.id)) next.delete(comment.id); else next.add(comment.id);
                                   return next;
                                 });
                               }}
@@ -845,11 +843,11 @@ export function OpsGrowthClubView() {
                           </td>
                           <td className="px-6 py-5">
                             <div className="flex flex-col items-center gap-1.5">
-                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ring-1 ${comment.report_count >= 10
+                              <span className={`text-[10px] font-black px-2 py-0.5 rounded-full ring-1 ${(comment.report_count ?? 0) >= 10
                                 ? "bg-red-200 text-red-800 ring-red-300"
                                 : "bg-red-100 text-red-700 ring-red-200"
                                 }`}>
-                                {comment.report_count}회
+                                {comment.report_count ?? 0}회
                               </span>
                               {comment.report_reason && (
                                 <span className="text-[10px] text-slate-400 font-medium">{comment.report_reason}</span>

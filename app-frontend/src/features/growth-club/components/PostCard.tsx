@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Post } from '../types';
 import { MessageSquare, ThumbsUp, Trash2, AlertCircle, Paperclip } from 'lucide-react';
 
@@ -29,11 +30,12 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
     const [liked, setLiked] = useState(post.is_liked);
     const [likesCount, setLikesCount] = useState(post.likes_count);
     const [isLiking, setIsLiking] = useState(false);
+    const [profileImgError, setProfileImgError] = useState(false);
     const attachments = post.attachments ?? [];
     const imageAttachments = attachments.filter((it) => it.kind === "image");
     const fileAttachments = attachments.filter((it) => it.kind === "file");
 
-    const isAuthor = user && String(user.id) === String(post.author_id);
+    const isAuthor = user && String(user.id) === String(post.author?.id);
 
     const handleDelete = async () => {
         if (!window.confirm('정말 이 게시글을 삭제하시겠습니까?')) return;
@@ -66,9 +68,10 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
             } else if (onReportSuccess) {
                 onReportSuccess();
             }
-        } catch (error: any) {
+        } catch (error: unknown) {
             console.error('Failed to report post:', error);
-            const message = error.response?.data?.detail || '게시글 신고에 실패했습니다.';
+            const axiosErr = error as { response?: { data?: { detail?: string } } };
+            const message = axiosErr.response?.data?.detail || '게시글 신고에 실패했습니다.';
             alert(message);
         }
     };
@@ -107,16 +110,15 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
             <div className="flex justify-between items-start mb-4">
                 <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full overflow-hidden bg-blue-100 flex items-center justify-center text-blue-600 font-bold border border-zinc-100 dark:border-zinc-800">
-                        {post.author.profile_img && post.author.profile_img !== 'default.png' ? (
-                            <img
+                        {post.author.profile_img && post.author.profile_img !== 'default.png' && !profileImgError ? (
+                            <Image
                                 src={resolveUploadUrl(post.author.profile_img)}
                                 alt={post.author.username}
+                                width={40}
+                                height={40}
                                 className="w-full h-full object-cover"
-                                onError={(e) => {
-                                    // Fallback if image fails to load
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                    (e.target as HTMLImageElement).parentElement!.innerText = post.author.username[0] || '?';
-                                }}
+                                onError={() => setProfileImgError(true)}
+                                unoptimized
                             />
                         ) : (
                             post.author.username[0] || '?'
@@ -158,11 +160,14 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
             {imageAttachments.length > 0 && (
                 <div className="mb-4 grid grid-cols-1 gap-2 sm:grid-cols-2">
                     {imageAttachments.map((attachment) => (
-                        <div key={attachment.id} className="rounded-lg overflow-hidden border border-zinc-100 dark:border-zinc-800">
-                            <img
+                        <div key={attachment.id} className="relative rounded-lg overflow-hidden border border-zinc-100 dark:border-zinc-800" style={{ minHeight: 200 }}>
+                            <Image
                                 src={resolveUploadUrl(attachment.object_key)}
                                 alt={attachment.original_filename || "Post content"}
-                                className="w-full object-cover max-h-96"
+                                fill
+                                className="object-cover"
+                                sizes="(max-width: 640px) 100vw, 50vw"
+                                unoptimized
                             />
                         </div>
                     ))}

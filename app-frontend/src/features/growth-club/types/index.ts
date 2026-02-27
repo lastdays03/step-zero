@@ -4,10 +4,14 @@ export interface Author {
     id: number;
     username: string;
     nickname?: string;
+    email?: string;
     profile_img?: string;
     profile_image?: string;
     neighborhood?: string;
     industry?: string;
+    is_public?: boolean;
+    is_suspended?: boolean;
+    suspended_at?: string;
 }
 
 export interface Comment {

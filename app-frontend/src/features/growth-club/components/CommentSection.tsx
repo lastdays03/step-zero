@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Comment } from '../types';
 import { useAuth } from '@/providers/AuthProvider';
 import { growthClubApi } from '../api';
@@ -45,8 +46,9 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
             if (!parentId) setNewComment('');
             setReplyTo(null);
             onCommentAdded();
-        } catch (error: any) {
-            const message = error.response?.data?.detail || '댓글 작성에 실패했습니다.';
+        } catch (error: unknown) {
+            const axiosErr = error as { response?: { data?: { detail?: string } } };
+            const message = axiosErr.response?.data?.detail || '댓글 작성에 실패했습니다.';
             alert(message);
         } finally {
             setIsSubmitting(false);
@@ -85,14 +87,17 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
                 alert('신고가 접수되었습니다.');
             }
             onCommentAdded(); // Refresh list if blinded
-        } catch (error: any) {
-            const message = error.response?.data?.detail || '신고 처리에 실패했습니다.';
+        } catch (error: unknown) {
+            const axiosErr = error as { response?: { data?: { detail?: string } } };
+            const message = axiosErr.response?.data?.detail || '신고 처리에 실패했습니다.';
             alert(message);
         }
     };
 
     const CommentItem = ({ comment, isReply = false }: { comment: Comment, isReply?: boolean }) => {
         const timeAgo = useTimeAgo(comment.created_at);
+        const [imgError, setImgError] = useState(false);
+        const hasProfileImg = comment.author?.profile_img && comment.author.profile_img !== 'default.png' && !imgError;
 
         return (
             <div className={`group ${isReply ? 'ml-8 mt-3' : 'mt-6 border-b border-zinc-50 dark:border-zinc-800 pb-4'}`}>
@@ -101,15 +106,15 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
 
                     {/* 프로필 이미지 추가 */}
                     <div className="w-7 h-7 rounded-full overflow-hidden bg-zinc-100 flex-shrink-0 flex items-center justify-center text-[10px] font-bold text-zinc-500 border border-zinc-100 dark:border-zinc-800 mt-0.5">
-                        {comment.author?.profile_img && comment.author?.profile_img !== 'default.png' ? (
-                            <img
-                                src={resolveUploadUrl(comment.author.profile_img)}
-                                alt={comment.author.username}
+                        {hasProfileImg ? (
+                            <Image
+                                src={resolveUploadUrl(comment.author!.profile_img!)}
+                                alt={comment.author!.username}
+                                width={28}
+                                height={28}
                                 className="w-full h-full object-cover"
-                                onError={(e) => {
-                                    (e.target as HTMLImageElement).style.display = 'none';
-                                    (e.target as HTMLImageElement).parentElement!.innerText = (comment.author?.username?.[0] || '?');
-                                }}
+                                onError={() => setImgError(true)}
+                                unoptimized
                             />
                         ) : (
                             comment.author?.username?.[0] || '?'

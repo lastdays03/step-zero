@@ -228,7 +228,7 @@ export function OpsAuditLogsView() {
 
   useEffect(() => {
     if (canRender) void loadLogs();
-  }, [canRender]);
+  }, [canRender, loadLogs]);
 
   // ── 클라이언트 사이드 필터 (실시간 검색) ──────────────────────────────────
   const filteredLogs = useMemo(() => {

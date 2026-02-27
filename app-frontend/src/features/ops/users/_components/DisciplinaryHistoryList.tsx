@@ -19,7 +19,7 @@ export function DisciplinaryHistoryList({ userId }: DisciplinaryHistoryListProps
             try {
                 const data = await fetchUserHistory(userId);
                 setHistories(data);
-            } catch (err) {
+            } catch {
                 setError("기록을 불러오는 데 실패했습니다.");
             } finally {
                 setIsLoading(false);

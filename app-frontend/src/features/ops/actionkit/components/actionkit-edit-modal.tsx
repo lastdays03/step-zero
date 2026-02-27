@@ -27,6 +27,25 @@ interface ActionKitEditItem {
     is_active?: boolean;
     sort_order?: number;
     files?: ActionKitFileRecord[];
+    related_laws?: RelatedLawRecord[];
+    highlights?: HighlightRecord[];
+    checklists?: ChecklistRecord[];
+}
+
+interface RelatedLawRecord {
+    id: number;
+    law_name: string;
+    law_summary?: string;
+}
+
+interface HighlightRecord {
+    id: number;
+    content: string;
+}
+
+interface ChecklistRecord {
+    id: number;
+    content: string;
 }
 
 interface ActionKitEditModalProps {
@@ -40,7 +59,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [uploadSuccess, setUploadSuccess] = useState(false);
-    const [currentItem, setCurrentItem] = useState<any>(item);
+    const [currentItem, setCurrentItem] = useState<ActionKitEditItem>(item);
 
     const [formData, setFormData] = useState({
         domain: "kits",
@@ -229,7 +248,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                             </div>
 
                             {/* Version History */}
-                            {currentItem.files?.length > 0 && (
+                            {currentItem.files && currentItem.files.length > 0 && (
                                 <div className="mt-3">
                                     <div className="flex items-center gap-1.5 mb-2">
                                         <Clock className="w-3.5 h-3.5 text-slate-400" />
@@ -289,7 +308,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                                 <Scale className="w-3.5 h-3.5" /> 관련 법령
                             </Label>
                             <div className="space-y-1.5 mt-2">
-                                {currentItem.related_laws?.map((law: any) => (
+                                {currentItem.related_laws?.map((law) => (
                                     <div key={law.id} className="flex items-center justify-between p-2.5 rounded-lg border border-slate-100 bg-white text-xs">
                                         <div className="min-w-0 flex-1">
                                             <p className="font-semibold text-slate-700 truncate">{law.law_name}</p>
@@ -334,7 +353,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                                 <Highlighter className="w-3.5 h-3.5" /> 핵심 포인트 (하이라이트)
                             </Label>
                             <div className="space-y-1.5 mt-2">
-                                {currentItem.highlights?.map((hl: any) => (
+                                {currentItem.highlights?.map((hl) => (
                                     <div key={hl.id} className="flex items-center justify-between p-2.5 rounded-lg border border-amber-100 bg-amber-50/50 text-xs">
                                         <p className="font-medium text-slate-700 flex-1 min-w-0 truncate">{hl.content}</p>
                                         <button type="button" onClick={async () => {
@@ -373,7 +392,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                                 <h3 className="text-sm font-bold text-slate-700">체크리스트</h3>
                             </div>
                             <div className="space-y-1.5">
-                                {(currentItem.checklists || []).map((cl: any) => (
+                                {(currentItem.checklists || []).map((cl) => (
                                     <div key={cl.id} className="flex items-center justify-between bg-teal-50 rounded-lg px-3 py-2 text-sm text-teal-700">
                                         <div className="flex items-center gap-2 min-w-0">
                                             <CheckSquare className="w-3.5 h-3.5 flex-shrink-0" />

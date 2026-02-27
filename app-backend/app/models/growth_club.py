@@ -97,6 +97,22 @@ class GrowthClubPostBase(SQLModel):
     neighborhood: Optional[str] = None
     industry: Optional[str] = None
 
+class GrowthClubPostTagLink(SQLModel, table=True):
+    post_id: int = Field(foreign_key="growthclubpost.id", primary_key=True)
+    tag_id: int = Field(foreign_key="growthclubtag.id", primary_key=True)
+
+
+class GrowthClubTag(SQLModel, table=True):
+    id: Optional[int] = Field(default=None, primary_key=True)
+    name: str = Field(index=True, unique=True)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+
+    posts: list["GrowthClubPost"] = Relationship(
+        back_populates="tags",
+        link_model=GrowthClubPostTagLink,
+    )
+
+
 class GrowthClubPostLike(SQLModel, table=True):
     post_id: int = Field(foreign_key="growthclubpost.id", primary_key=True)
     user_id: int = Field(foreign_key="user.id", primary_key=True)
@@ -108,17 +124,21 @@ class GrowthClubPost(GrowthClubPostBase, table=True):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
     report_count: int = Field(default=0)
     is_blinded: bool = Field(default=False)
-    
+
     # Relationships
     author: "User" = Relationship()
     comments: list["GrowthClubComment"] = Relationship(
-        back_populates="post", 
+        back_populates="post",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
     likes: list[GrowthClubPostLike] = Relationship(sa_relationship_kwargs={"cascade": "all, delete-orphan"})
     attachments: list["GrowthClubPostAttachment"] = Relationship(
         back_populates="post",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
+    )
+    tags: list[GrowthClubTag] = Relationship(
+        back_populates="posts",
+        link_model=GrowthClubPostTagLink,
     )
 
 

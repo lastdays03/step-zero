@@ -11,7 +11,6 @@ import {
     Sparkles,
     Gavel,
     Star,
-    FileText,
     ArrowRight,
     ShieldCheck,
     BookOpen,
@@ -88,7 +87,7 @@ export const ActionKitDetailModal = ({
     getKitProgress,
 }: ActionKitDetailModalProps) => {
     const guide = getUsageGuide(item);
-    const kitIdentifier = (item as any).id || item.name;
+    const kitIdentifier = String(item.id ?? item.name);
     const progress = getKitProgress(item);
 
     return (
@@ -238,7 +237,7 @@ export const ActionKitDetailModal = ({
                     )}
 
                     {/* Section 4 : Highlights */}
-                    {(item as any).highlights?.length > 0 && (
+                    {item.highlights && item.highlights.length > 0 && (
                         <div className="space-y-3">
                             <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
                                 <div className="w-6 h-6 rounded-lg bg-amber-50 flex items-center justify-center">
@@ -247,7 +246,7 @@ export const ActionKitDetailModal = ({
                                 핵심 포인트
                             </h3>
                             <div className="space-y-2">
-                                {(item as any).highlights.map((hl: any, i: number) => (
+                                {item.highlights.map((hl, i) => (
                                     <div key={hl.id || i} className="flex items-start gap-2.5 p-3 rounded-xl bg-amber-50 border border-amber-100">
                                         <span className="text-amber-500 font-bold text-sm mt-0.5">⭐</span>
                                         <span className="text-sm text-slate-700 leading-relaxed">{hl.content}</span>
@@ -319,7 +318,7 @@ export const ActionKitDetailModal = ({
                         <Button
                             className="bg-[#36a4f2] hover:bg-[#258bd1] gap-2 rounded-full px-6 shadow-lg shadow-[#36a4f2]/20"
                             onClick={() => {
-                                onDownload(item.path, item.name, (item as any).id);
+                                onDownload(item.path, item.name, item.id);
                             }}
                         >
                             <Download className="w-4 h-4" />

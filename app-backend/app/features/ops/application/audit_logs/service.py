@@ -7,6 +7,7 @@ from sqlmodel import select
 from sqlalchemy import func
 
 from app.models.admin_audit_log import AdminAuditLog
+from app.models.audit_log import AuditLog
 from .constants import ALLOWED_AUDIT_ACTIONS, ALLOWED_AUDIT_TARGET_TYPES
 
 
@@ -157,3 +158,65 @@ async def list_audit_logs(
         for row in rows
     ]
     return AuditLogList(items=items, total=total, page=page, size=size)
+
+
+async def list_ops_audit_logs(
+    session: AsyncSession,
+    *,
+    action: str | None = None,
+    target_type: str | None = None,
+    keyword: str | None = None,
+    date_from: datetime | None = None,
+    date_to: datetime | None = None,
+    limit: int = 100,
+    offset: int = 0,
+) -> list[AuditLog]:
+    """AuditLog 테이블에서 운영 감사로그를 조회합니다."""
+    normalized_from = _normalize_to_utc(date_from)
+    normalized_to = _normalize_to_utc(date_to)
+
+    stmt = select(AuditLog)
+    filters = []
+    if action:
+        filters.append(AuditLog.action == action)
+    if target_type:
+        filters.append(AuditLog.target_type == target_type)
+    if normalized_from:
+        filters.append(AuditLog.created_at >= normalized_from)
+    if normalized_to:
+        filters.append(AuditLog.created_at <= normalized_to)
+    if keyword:
+        filters.append(
+            AuditLog.details.ilike(f"%{keyword}%")
+            | AuditLog.target_author.ilike(f"%{keyword}%")
+        )
+    if filters:
+        stmt = stmt.where(*filters)
+    stmt = stmt.order_by(AuditLog.created_at.desc()).offset(offset).limit(limit)
+    rows = (await session.execute(stmt)).scalars().all()
+    return list(rows)
+
+
+async def save_audit_log(
+    session: AsyncSession,
+    *,
+    user_id: int,
+    action: str,
+    target_type: str,
+    target_id: str | None = None,
+    target_author: str | None = None,
+    details: str | None = None,
+) -> AuditLog:
+    """Save an operational audit log entry (AuditLog table)."""
+    row = AuditLog(
+        user_id=user_id,
+        action=action,
+        target_type=target_type,
+        target_id=target_id or "",
+        target_author=target_author,
+        details=details,
+    )
+    session.add(row)
+    await session.flush()
+    await session.refresh(row)
+    return row

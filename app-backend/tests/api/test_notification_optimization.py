@@ -68,9 +68,8 @@ async def test_notification_individual_deletion(client: AsyncClient):
         # 4. 삭제 호출
         await delete_notification(notification_id=notif.id, current_user=admin, session=session)
         
-        # 삭제 후 확인
-        # Note: If delete_notification calls commit, the session might be done.
-        # But we are in an async with session, so it should be fine.
+        # 삭제 후 확인 (soft-delete이므로 is_deleted=True 확인)
         async with db.async_session() as session2:
             deleted = await session2.get(Notification, notif.id)
-            assert deleted is None
+            assert deleted is not None
+            assert deleted.is_deleted is True
