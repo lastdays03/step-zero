@@ -12,7 +12,6 @@ import {
     Download,
     CheckCircle2,
     Info,
-    Sparkles,
     FolderOpen,
     Eye,
     EyeOff
