@@ -344,13 +344,13 @@ export default function ProfilePage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-bold text-slate-600">요리 철학</label>
+                                <label className="text-sm font-bold text-slate-600">비전(Vision)</label>
                                 <div className="relative">
                                     <textarea
                                         name="philosophy"
                                         value={formData.philosophy ?? ""}
                                         onChange={handleInputChange}
-                                        placeholder="사장님만의 요리 철학을 입력해 주세요"
+                                        placeholder="사장님만의 비전을 입력해 주세요"
                                         rows={3}
                                         className="w-full rounded-lg border border-slate-200 px-4 py-3 pl-10 text-sm transition-all focus:border-blue-500 focus:ring-4 focus:ring-blue-50/50 outline-none resize-none"
                                     ></textarea>
