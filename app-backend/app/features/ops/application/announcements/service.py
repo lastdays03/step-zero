@@ -131,8 +131,9 @@ async def update_announcement_status(
             Notification(
                 user_id=uid,
                 content=f"[공지] {row.title}",
-                type="notice",
-                link=f"/announcements/{row.id}"
+                type="announcement",
+                link=f"/announcements/{row.id}",
+                resource_id=row.id,
             )
             for uid in user_ids
         ]
