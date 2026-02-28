@@ -47,7 +47,7 @@ async def test_announcement_notification_trigger(client: AsyncClient):
         
         assert len(notifications) >= 1
         assert notifications[0].content == f"[공지] 테스트 공지"
-        assert notifications[0].type == "notice"
+        assert notifications[0].type == "announcement"
 
 @pytest.mark.asyncio
 async def test_duplicate_publication_no_duplicate_notifications(client: AsyncClient):
