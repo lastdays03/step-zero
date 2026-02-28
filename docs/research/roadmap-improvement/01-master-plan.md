@@ -1,9 +1,9 @@
-# Step Zero 로드맵 기능 개선 기획서 v2.0
+# Step Zero 로드맵 기능 개선 마스터 플랜
 
 > 작성일: 2026-02-28
+> 문서 유형: 통합 마스터 플랜 (roadmap-improvement-plan-v2.md + product-roadmap-execution-plan.md 통합)
 > 작성: 8인 전문가 팀 통합 기획 (UX 전략가, 기술 설계자, 성장 전략가, 리스크 분석가, 코드베이스 분석가, 제품 기획자, 마케팅 전략가, 데이터 전략가)
-> 기반 문서: brainstorm-result.md, ai-coach-benchmark-analysis.md, roadmap-improvement-plan.md, competitive-benchmark-analysis.md, benchmark-application-report.md, roadmap.md (6종)
-> 관련 설계 문서: ai-coach-technical-design.md, product-roadmap-execution-plan.md
+> 참고 문서: brainstorm-result.md, ai-coach-benchmark-analysis.md, roadmap-improvement-plan.md, competitive-benchmark-analysis.md, benchmark-application-report.md, roadmap.md, ai-coach-technical-design.md, technical-validation-ai-coach-mvp.md, marketing-strategy.md (9종)
 
 ---
 
@@ -35,10 +35,10 @@ Step Zero는 ActionKit 법률 DB 기반의 **팩트-지능 분리 아키텍처**
 
 ## 1. 기능 우선순위 매트릭스 (Impact vs Effort)
 
-### 1.1 2×2 매트릭스 배치
+### 1.1 2x2 매트릭스 배치
 
 ```
-        LOW EFFORT ←————————————→ HIGH EFFORT
+        LOW EFFORT <————————————> HIGH EFFORT
         ★☆☆☆☆                    ★★★★★
 
 HIGH  ┌────────────────────────┬──────────────────────────┐
@@ -46,8 +46,8 @@ HIGH  ┌───────────────────────�
       │                        │                          │
 IMPACT│ • Endowed Progress     │ • AI 코치 대화 MVP        │
       │ • 다음 3-5 액션 집중   │ • 프로액티브 리스크 알림   │
-★★★★★│ • 주간 이메일          │ • 카카오톡 알림톡          │
-      │ • 첫 5분 경험 최적화   │ • 법령 변경 자동 알림      │
+      │ • 주간 이메일          │ • 카카오톡 알림톡          │
+★★★★★│ • 첫 5분 경험 최적화   │ • 법령 변경 자동 알림      │
       │ • 준비도 스코어        │ • 마이크로 가이드          │
       │ • 마일스톤 축하        │ • 정부지원사업 매칭        │
       │ • .ics 캘린더          │ • 로드맵 부분 재생성       │
@@ -139,7 +139,7 @@ IMPACT│ • 주간 스트릭          │ • 팀 협업 기능            │
 
 - Forest App 패턴: 업종별 진행률 메타포 (카페: 🏗️설계도 → ☕오픈 준비 → 🎊그랜드오픈)
 - 8개 우선 업종 먼저 구현, 그 외 default 메타포
-- ⚠️ 조건부 적합: A/B 테스트 후 확대 여부 결정 권장
+- 조건부 적합: A/B 테스트 후 확대 여부 결정 권장
 
 ### 2.6 "첫 5분 경험" 최적화 (P1 / ★★☆☆☆ / 1주)
 
@@ -153,7 +153,7 @@ IMPACT│ • 주간 스트릭          │ • 팀 협업 기능            │
 
 ## 3. AI 코치 대화 MVP 기술 설계
 
-> 상세 문서: `docs/research/ai-coach-technical-design.md`
+> 상세 문서: `ai-coach-technical-design.md`
 
 ### 3.1 시스템 프롬프트 컨텍스트 빌더 (Jasper IQ 패턴)
 
@@ -206,7 +206,7 @@ data: {"type": "done"}\n\n
 
 ### 3.3 대화 이력 DB 스키마 (신규)
 
-기존 RAG(curai) 도메인과 **완전 분리** (브레인스토밍 합의 — 로드맵 컨텍스트 주입 구조가 curai와 다름):
+기존 RAG(curai) 도메인과 **완전 분리** (브레인스토밍 합의 -- 로드맵 컨텍스트 주입 구조가 curai와 다름):
 
 ```python
 class RoadmapChatThread(SQLModel, table=True):
@@ -231,9 +231,9 @@ class RoadmapChatMessage(SQLModel, table=True):
 
 | # | 패턴 | 구현 | 근거 |
 |---|------|------|------|
-| 1 | **Harvey AI**: 팩트-지능 분리 | LAYER 1 불변 팩트 섹션 — ActionKit 데이터만 사용 | Harvey AI 0.2% 환각률 달성 |
+| 1 | **Harvey AI**: 팩트-지능 분리 | LAYER 1 불변 팩트 섹션 -- ActionKit 데이터만 사용 | Harvey AI 0.2% 환각률 달성 |
 | 2 | **Perplexity**: 출처 강제 인용 | `[출처 N]` 형식 인용 규칙 + 스트리밍 후 출처 파싱 | Perplexity 답변 정확도 85%+ |
-| 3 | **Ada Health**: 범위 외 질문 거부 | SemanticRouter 확장 — 세금/소송/의료/투자 등 즉시 거부 | Ada Health FDA 인증 통과 |
+| 3 | **Ada Health**: 범위 외 질문 거부 | SemanticRouter 확장 -- 세금/소송/의료/투자 등 즉시 거부 | Ada Health FDA 인증 통과 |
 | 4 | **면책 고정 문구** | FE에서 고정 렌더링 (BE 응답에 미포함, 스트리밍 속도 무영향) | AI 기본법(2026.01) 라벨링 의무 |
 
 ### 3.5 기존 코드 재활용 분석 (80% 이상)
@@ -253,7 +253,7 @@ class RoadmapChatMessage(SQLModel, table=True):
 
 ### 3.6 프론트엔드 채팅 UI
 
-**"AI에게 물어보기" 버튼 위치**: `TimelineStepItem.tsx`의 ACTIVE 상태 — 체크리스트 목록 바로 아래, "단계 완료" 버튼 위
+**"AI에게 물어보기" 버튼 위치**: `TimelineStepItem.tsx`의 ACTIVE 상태 -- 체크리스트 목록 바로 아래, "단계 완료" 버튼 위
 
 **UI 패턴**: 슬라이드아웃 패널 (우측 400px 고정, 모바일 풀스크린)
 - 기존 `GlobalChatbot`/`ChatPanel` 재활용으로 UI 일관성 유지
@@ -303,7 +303,7 @@ class RoadmapChatMessage(SQLModel, table=True):
 |---------|--------|------|
 | **행정사 비교** | "행정사 1회 대행 = 20-100만원 // Step Zero Pro 1년 = 47.9만원" | 비즈넵 "세무사 대비 80% 저렴" 전략으로 100만+ 사용자 |
 | **보험 비유** | "2024년 폐업 100만 건 / 5년 생존율 33.8% → 창업 실패 방지 보험 월 39,900원" | 한국 자영업 위기 심리 |
-| **비용 총계** | "창업 준비 10.2개월 × 19,900원 = 약 20만원 = 행정사 1회 비용" | 일회성 비용 인식 전환 |
+| **비용 총계** | "창업 준비 10.2개월 x 19,900원 = 약 20만원 = 행정사 1회 비용" | 일회성 비용 인식 전환 |
 
 ### 4.4 구독 피로 극복 전략
 
@@ -462,7 +462,7 @@ class RoadmapChatMessage(SQLModel, table=True):
 
 ### 7.3 수익화 연계
 
-- Free 사용자: "⚠️ 관련 법률이 변경되었습니다. Pro 업그레이드 시 상세 확인 가능" → **가장 강력한 페이월 포인트**
+- Free 사용자: "관련 법률이 변경되었습니다. Pro 업그레이드 시 상세 확인 가능" → **가장 강력한 페이월 포인트**
 - 구독 갱신 시: "지난 1년간 귀하의 업종 관련 법령 X건 변경 → Step Zero가 모두 알림 발송" → 가치 체감
 
 ---
@@ -582,7 +582,7 @@ signup → roadmap_created → first_step_entered → action_toggled (x3)
 
 ### 9.2 업종별 벤치마크 인사이트
 
-**최소 데이터 볼륨**: 업종별 N≥30이면 통계적 유의미
+**최소 데이터 볼륨**: 업종별 N>=30이면 통계적 유의미
 
 **인사이트 예시**:
 1. "카페 창업자의 87%가 이 단계에서 어려움을 느꼈습니다"
@@ -591,7 +591,7 @@ signup → roadmap_created → first_step_entered → action_toggled (x3)
 4. "서울 강남구 카페 창업자 평균 72일, 현재 43일째 (상위 31%)"
 5. "위생교육 수료까지 평균 14일, 소방교육까지 평균 7일"
 
-**초기 전략**: 데이터 축적 전 정적 벤치마크 → N≥30 달성 후 동적 벤치마크로 전환
+**초기 전략**: 데이터 축적 전 정적 벤치마크 → N>=30 달성 후 동적 벤치마크로 전환
 
 ### 9.3 A/B 테스트 프레임워크
 
@@ -613,7 +613,7 @@ signup → roadmap_created → first_step_entered → action_toggled (x3)
 | 정책 수립용 통계 | Q4~ | 중기부, 지자체 | 연 500만-1,000만원 |
 | 가맹점 지원 데이터 | Q4~ | 프랜차이즈 본사 | 연 300만-500만원 |
 
-**비식별화 기준**: k-익명성 적용, 업종 N≥30 임계값, 개인정보보호법 준수
+**비식별화 기준**: k-익명성 적용, 업종 N>=30 임계값, 개인정보보호법 준수
 
 ---
 
@@ -621,7 +621,7 @@ signup → roadmap_created → first_step_entered → action_toggled (x3)
 
 ### 10.1 법적 리스크 (최고 우선)
 
-#### 변호사법 제109조 — "법률 사무" vs "정보 안내" 경계
+#### 변호사법 제109조 -- "법률 사무" vs "정보 안내" 경계
 
 - **안전**: "식품위생법 제41조에 따르면 위생교육이 필요합니다"
 - **위험**: "귀하의 경우 위생교육 면제 대상에 해당합니다"
@@ -632,7 +632,7 @@ signup → roadmap_created → first_step_entered → action_toggled (x3)
 2. "귀하의 경우"를 포함하는 응답 패턴 시스템 필터링
 3. 복잡한 케이스는 AI가 판단 중단 → 행정사/법무사 연결 강제
 
-#### AI 기본법(2026.01 시행) — 라벨링 의무
+#### AI 기본법(2026.01 시행) -- 라벨링 의무
 
 모든 AI 코치 응답에 "이 답변은 AI가 생성했습니다" 표시 **법적 의무**. 현재 기획의 "하단 고정 면책 문구"가 AI 기본법 라벨링 요건을 충족하는지 **법무 검토 필수**.
 
@@ -678,9 +678,7 @@ IT 업종은 상위 3위 창업 업종. IT 창업자가 fallback을 받으면 �
 
 ## 11. Phase별 실행 계획 (Sprint 레벨)
 
-> 상세 문서: `docs/research/product-roadmap-execution-plan.md`
-
-### Phase 1: Quick Win (Week 1-3) — "즉각적 가치 전달"
+### Phase 1: Quick Win (Week 1-3) -- "즉각적 가치 전달"
 
 > **목표**: 비용 제로로 초기 사용자 완료율 20-55% 향상 + 첫 5분 경험 혁신
 > **리소스**: FE 집중 (BE 변경 없음)
@@ -690,18 +688,29 @@ IT 업종은 상위 3위 창업 업종. IT 창업자가 fallback을 받으면 �
 
 | 작업 | 파일 | 공수 | 담당 |
 |------|------|------|------|
-| **Endowed Progress UI** | `RoadmapExecutionView.tsx`, `RoadmapSidebar.tsx` | 3일 | FE |
-| **다음 3-5 액션 집중 표시** | `TimelineStepItem.tsx` | 2일 | FE |
+| **Endowed Progress UI** -- 로드맵 생성 직후 "18단계 중 3단계 이미 완료(17%)" 표시 | `RoadmapExecutionView.tsx`, `RoadmapSidebar.tsx` | 3일 | FE |
+| **다음 3-5 액션 집중 표시** -- 전체 목록 대신 현재 단계 + 다음 2개만 우선 표시 | `TimelineStepItem.tsx` | 2일 | FE |
+
+**Sprint 1-A 완료 기준:**
+- [ ] 로드맵 생성 시 "이미 17% 완료" 배지 표시
+- [ ] 다음 3단계 외 나머지는 접혀있는 상태로 기본값 변경
 
 #### Sprint 1-B (Week 2-3, 10일)
 
 | 작업 | 파일 | 공수 | 담당 |
 |------|------|------|------|
-| **준비도 5단계 스코어** | `RoadmapSidebar.tsx`, `DashboardView.tsx` | 5일 | FE |
-| **마일스톤 축하 모먼트** | `TimelinePhaseCard.tsx` | 3일 | FE |
-| **첫 5분 경험 최적화** | `RoadmapChatIntake.tsx` | 2일 | FE |
+| **준비도 5단계 스코어** -- 🌱→📋→📝→✅→🚀 등급 시스템 | `RoadmapSidebar.tsx`, `DashboardView.tsx` | 5일 | FE |
+| **마일스톤 축하 모먼트** -- Phase 완료 시 인사이트 카드 + 컨페티 | `TimelinePhaseCard.tsx` | 3일 | FE |
+| **첫 5분 경험 최적화** -- RoadmapChatIntake에 즉시 정규화 확인 표시 | `RoadmapChatIntake.tsx` | 2일 | FE |
 
-### Phase 2: 핵심 차별화 (Week 4-8) — "ChatGPT 이탈 차단"
+**Sprint 1-B 완료 기준:**
+- [ ] 5단계 등급 표시 + 전환 조건 검증 통과
+- [ ] Phase 완료 시 축하 애니메이션 + 인사이트 카드 렌더링
+- [ ] 업종 입력 후 "서울 강남구 카페로 설정합니다" 확인 표시
+
+---
+
+### Phase 2: 핵심 차별화 (Week 4-8) -- "ChatGPT 이탈 차단"
 
 > **목표**: AI 코치 대화 + 재방문 엔진 → WAU/MAU 35%
 > **MDP**: AI 코치 대화 MVP + 주간 이메일
@@ -720,36 +729,62 @@ AI 코치 BE (Week 4-5) ──→ AI 코치 FE (Week 6) ────────
 
 #### Sprint 2-A (Week 4-5)
 
-| 작업 | 공수 | 담당 |
-|------|------|------|
-| **AI 코치 대화 BE MVP** — SSE 엔드포인트 + DB 모델 + 컨텍스트 빌더 + 4가지 안전장치 | 10일 | BE + AI |
-| **알림 인프라 공통 구축** — cron job + 알림 템플릿 | 5일 | BE |
-| **.ics 캘린더 내보내기** | 3일 | BE |
+| 작업 | 파일 | 공수 | 담당 |
+|------|------|------|------|
+| **AI 코치 대화 BE MVP** -- SSE 엔드포인트 + DB 모델 + 컨텍스트 빌더 + 4가지 안전장치 | `backend/domain/roadmap/`, 신규 `coach_chat` 도메인 | 10일 | BE + AI |
+| -- chat_thread, chat_message 테이블 생성 (curai와 분리) | `alembic/versions/` | (포함) | BE |
+| -- 시스템 프롬프트 컨텍스트 빌더 (ActionKit 데이터 직렬화) | `llm_personalizer.py` 확장 | (포함) | AI |
+| -- 4가지 안전장치 구현 | 시스템 프롬프트 | (포함) | AI |
+| **알림 인프라 공통 구축** -- cron job + 알림 템플릿 | `backend/domain/notification/` | 5일 | BE |
+| **.ics 캘린더 내보내기** -- `GET /api/v1/roadmaps/{id}/export/ics` | `backend/api/v1/routers/` | 3일 | BE |
 
 #### Sprint 2-B (Week 5-6)
 
-| 작업 | 공수 | 담당 |
-|------|------|------|
-| **주간 이메일 서머리** — 매주 월요일 발송 | 5일 | BE |
-| **AI 코치 대화 FE** — 스트리밍 채팅 UI | 5일 | FE |
-| **로드맵 부분 재생성** | 5일 | BE |
+| 작업 | 파일 | 공수 | 담당 |
+|------|------|------|------|
+| **주간 이메일 서머리** -- 매주 월요일 발송 | cron + 이메일 템플릿 | 5일 | BE |
+| **AI 코치 대화 FE** -- 스트리밍 채팅 UI | `TimelineStepItem.tsx`, 신규 `CoachChat.tsx` | 5일 | FE |
+| **로드맵 부분 재생성** -- `POST /api/v1/roadmaps/{id}/steps/{step_id}/regenerate` | `backend/domain/roadmap/service.py` | 5일 | BE |
 
 #### Sprint 2-C (Week 7-8)
 
-| 작업 | 공수 | 담당 |
-|------|------|------|
-| **프로액티브 리스크 알림** — "3일째 정체" + "마감 D-4" | 5일 | BE |
-| **카카오톡 알림톡** — 비즈 채널 + API | 5일 | BE |
-| **주간 활동 스트릭** — DB + UI | 5일 | FE + BE |
+| 작업 | 파일 | 공수 | 담당 |
+|------|------|------|------|
+| **프로액티브 리스크 알림** -- "3일째 정체" + "마감 D-4" | 알림 인프라 위 | 5일 | BE |
+| **카카오톡 알림톡** -- 비즈 채널 + API | 외부 API 연동 | 5일 | BE |
+| **주간 활동 스트릭** -- DB + UI | `user_streak` 테이블, FE 뱃지 | 5일 | FE + BE |
 
-### Phase 3: 성장 엔진 (Week 9-16) — "경쟁사 불가능한 해자"
+---
+
+### Phase 3: 성장 엔진 (Week 9-16) -- "경쟁사 불가능한 해자"
 
 > **목표**: 법령 변경 알림 + 마이크로 가이드 + 정부지원사업 매칭
+> **리소스**: 전 포지션 + 데이터 엔지니어
 > **MDP**: 법령 변경 자동 알림 (해자의 핵심)
 
-#### Sprint 3-A (Week 9-10) — 마이크로 가이드
-#### Sprint 3-B (Week 11-12) — 법령 변경 알림 (핵심 해자)
-#### Sprint 3-C (Week 13-16) — 정부지원사업 매칭 + QA
+#### Sprint 3-A (Week 9-10) -- 마이크로 가이드
+
+| 작업 | 공수 | 담당 |
+|------|------|------|
+| **스텝별 마이크로 가이드** -- 각 체크리스트 액션에 "방법 보기" 3-5줄 가이드 + 관련 링크 | 3주 | FE + BE + AI |
+| 가이드 콘텐츠 생성 -- ActionKit 기반 업종별 가이드 AI 자동 생성 + 검수 | (포함) | AI + 콘텐츠 |
+
+#### Sprint 3-B (Week 11-12) -- 법령 변경 알림 (핵심 해자)
+
+| 작업 | 공수 | 담당 |
+|------|------|------|
+| **ActionKit 업데이트 → 영향 로드맵 역추적** -- `metadata_json.actionkit_item_id` 기반 | 2주 | BE |
+| -- ActionKit 변경 감지 훅 + `RoadmapStepAction` 역추적 쿼리 | | BE |
+| -- "관련 법률이 변경되었습니다" 알림 + 부분 재생성 제안 | | BE + FE |
+| **사업체 성장 시각화** -- 진행률 타임라인 + Forest App 스타일 성장 메타포 | 1주 | FE |
+
+#### Sprint 3-C (Week 13-16) -- 정부지원사업 매칭 + QA
+
+| 작업 | 공수 | 담당 |
+|------|------|------|
+| **정부지원사업 AI 매칭** -- K-Startup API 연동 + 업종/지역/예산 기반 자동 필터 | 3주 | BE + AI |
+| -- 적격 여부 무료 확인 + 신청서 가이드 Pro 기능으로 편입 | (포함) | FE |
+| Phase 3 QA + 부하 테스트 + 배포 | 1주 | 전체 |
 
 ### 종합 타임라인
 
@@ -775,25 +810,147 @@ Go/No-Go ────────────────────▲──�
 
 ---
 
-## 12. Phase 전환 Go/No-Go 기준
+## 12. 기능 간 의존성 그래프
+
+```
+독립 실행 가능 (Phase 1 동시 시작)
+│
+├─[Week 1]─ Endowed Progress UI
+├─[Week 1]─ 다음 3-5 액션 집중 표시
+├─[Week 2]─ 준비도 스코어
+├─[Week 2]─ 마일스톤 축하 모먼트
+└─[Week 3]─ 첫 5분 경험 최적화
+
+알림 인프라 (Phase 2 선행 조건)
+│
+└─[Week 4]─ ── 알림 인프라 공통 구축
+             │
+             ├──→ [Week 5] 주간 이메일 서머리
+             ├──→ [Week 7] 카카오톡 알림톡
+             ├──→ [Week 7] 프로액티브 리스크 알림
+             └──→ [Week 8] 주간 스트릭
+
+AI 코치 BE (Phase 2 핵심 경로)
+│
+└─[Week 4-5]─ AI 코치 대화 BE MVP (chat_thread/message 테이블)
+              │
+              ├──→ [Week 6] AI 코치 대화 FE
+              └──→ [Week 11-12] 법령 변경 알림 (ActionKit 역추적)
+
+독립 병렬 (Phase 2)
+│
+├─[Week 5]─ .ics 캘린더 내보내기 (알림 인프라 불필요)
+└─[Week 6]─ 로드맵 부분 재생성 (AI 코치와 독립)
+
+데이터 축적 선행 필요 (Phase 3)
+│
+├─[3개월+ 사용자 데이터] ──→ 동적 벤치마크 인사이트
+├─[K-Startup API 검증] ────→ 정부지원사업 매칭
+└─[ActionKit 훅 구축] ─────→ 법령 변경 자동 알림
+
+절대 NOT-DO (의존성 없음, 구현 금지)
+│
+├─ 일간 스트릭
+├─ 개인 순위 리더보드
+├─ RPG 게이미피케이션
+├─ 팀 협업 (6개월 내)
+└─ 네이티브 모바일 앱
+```
+
+---
+
+## 13. MVP 범위 정의 (각 Phase의 MDP)
+
+### Phase 1 MDP (Minimum Delightful Product)
+
+**반드시 포함:**
+- Endowed Progress ("이미 17% 완료")
+- 다음 3단계 집중 표시 (전체 목록 기본값 접기)
+- 준비도 5단계 스코어 (🌱→🚀)
+
+**있으면 좋지만 필수 아님:**
+- 마일스톤 축하 모먼트 (Phase 1 후반 추가)
+- 첫 5분 경험 최적화 (RoadmapChatIntake 개선)
+
+**포함 안 함:**
+- 벤치마크 데이터 (초기에는 정적 숫자라도 의미 없음)
+- 성능 캐싱 (Phase 2 이후)
+
+**Phase 1 성공 기준:**
+- 로드맵 생성 직후 이탈률 20% 감소 (측정 시작)
+- 첫 번째 단계 진입율 35% → 55% 향상
+
+---
+
+### Phase 2 MDP (Minimum Delightful Product)
+
+**반드시 포함:**
+- AI 코치 대화 MVP (4가지 안전장치 필수 포함)
+- 주간 이메일 서머리
+
+**있으면 좋지만 필수 아님:**
+- 카카오톡 알림톡 (이메일로 먼저 검증)
+- 로드맵 부분 재생성
+- .ics 캘린더 내보내기
+
+**포함 안 함:**
+- 팀 협업 기능
+- 동적 벤치마크 (데이터 미축적)
+
+**Phase 2 성공 기준:**
+- AI 코치 대화 사용률 >= 40%
+- 주간 재방문율(WAU/MAU) >= 35%
+- MRR >= 500만원
+
+---
+
+### Phase 3 MDP (Minimum Delightful Product)
+
+**반드시 포함:**
+- 법령 변경 자동 알림 (해자의 핵심)
+
+**있으면 좋지만 필수 아님:**
+- 마이크로 가이드
+- 정부지원사업 매칭
+
+**포함 안 함:**
+- 팀 협업 기능 (6개월 내 구현 금지)
+- 네이티브 앱 (PWA로 충분)
+
+**Phase 3 성공 기준:**
+- MRR >= 2,000만원
+- WAU/MAU >= 50%
+- 법령 변경 알림 수신 후 재방문율 >= 70%
+- NPS >= 55
+
+---
+
+## 14. Phase 전환 Go/No-Go 기준
 
 ### Phase 1 → Phase 2
 
-| 지표 | Go 기준 | No-Go 액션 |
-|------|---------|-----------|
-| 첫 단계 진입율 | ≥ 40% (24시간 내) | UX 인터뷰 5건 → 개선 Sprint |
-| 초기 이탈률 | 생성 직후 < 60% | P2 착수 2주 연기 |
-| UX 민원 | 0건 | CS 모니터링 |
+| 지표 | Go 기준 | 현실적 측정 방법 | No-Go 액션 |
+|------|---------|----------------|-----------|
+| Endowed Progress 적용률 | 배포 후 100% (기술 완료) | 배포 확인 | — |
+| 준비도 스코어 표시 | 배포 후 100% | 배포 확인 | — |
+| 첫 단계 진입율 | >= 40% (24시간 내) | 이벤트 트래킹 | UX 인터뷰 5건 → 개선 Sprint |
+| 초기 이탈률 | 생성 직후 < 60% | 이벤트 트래킹 | P2 착수 2주 연기 |
+| UX 민원 | 0건 | CS 모니터링 | — |
+
+> **No-Go 시나리오**: 첫 단계 진입율이 40% 미달이면 → UX 인터뷰 5건 진행 후 개선 Sprint 추가. Phase 2 착수 2주 연기.
 
 ### Phase 2 → Phase 3
 
 | 지표 | Go 기준 | No-Go 액션 |
 |------|---------|-----------|
-| AI 코치 사용률 | ≥ 40% | AI 코치 UX 개선 Sprint |
-| AI 법률 정확도 | ≥ 95% | 안전장치 강화 후 재측정 |
-| WAU/MAU | ≥ 35% | 리텐션 강화 Sprint |
-| MRR | ≥ 300만원 | 수익화 퍼널 점검 |
+| AI 코치 사용률 | >= 40% | AI 코치 UX 개선 Sprint |
+| AI 법률 정확도 | >= 95% | 안전장치 강화 후 재측정 |
+| WAU/MAU | >= 35% | 리텐션 강화 Sprint |
+| MRR | >= 300만원 | 수익화 퍼널 점검 |
+| 주간 이메일 오픈율 | >= 30% | 제목/내용 A/B 테스트 |
 | **AI 법률 오류 민원** | **0건** | **즉시 AI 코치 중단** |
+
+> **중요 리스크**: AI 코치에서 잘못된 법률 정보 1건만 발생해도 서비스 신뢰도가 붕괴될 수 있다. Phase 2 중 AI 법률 정확도 모니터링은 **매일** 수행한다.
 
 ### Phase 3 Kill Switch
 
@@ -805,7 +962,7 @@ Go/No-Go ────────────────────▲──�
 
 ---
 
-## 13. 리소스 배분 계획
+## 15. 리소스 배분 계획
 
 ### Phase별 리소스 배분
 
@@ -814,6 +971,32 @@ Go/No-Go ────────────────────▲──�
 | **Phase 1** | Week 1-3 | **80%** | 10% | 10% | UI 변경 집중 |
 | **Phase 2** | Week 4-8 | 35% | **40%** | **25%** | AI 코치 + 알림 |
 | **Phase 3** | Week 9-16 | 20% | **40%** | **40%** | 법령 감지 + AI 매칭 |
+
+### 상세 역할 분담
+
+#### 프론트엔드 (FE)
+
+| Phase | 핵심 작업 | 주요 파일 |
+|-------|---------|---------|
+| Phase 1 | Endowed Progress, 집중 표시, 준비도 스코어, 마일스톤 축하, 첫 5분 최적화 | `RoadmapExecutionView.tsx`, `RoadmapSidebar.tsx`, `TimelineStepItem.tsx`, `TimelinePhaseCard.tsx`, `RoadmapChatIntake.tsx` |
+| Phase 2 | AI 코치 채팅 UI (SSE 스트리밍), 스트릭 뱃지, .ics 다운로드 버튼 | 신규 `CoachChat.tsx`, `TimelineStepItem.tsx` 확장 |
+| Phase 3 | 마이크로 가이드 UI, 법령 변경 알림 배너, 성장 시각화, 정부지원사업 매칭 뷰 | 신규 컴포넌트 다수 |
+
+#### 백엔드 (BE)
+
+| Phase | 핵심 작업 | 주요 파일 |
+|-------|---------|---------|
+| Phase 1 | (없음 -- FE만으로 구현) | -- |
+| Phase 2 | AI 코치 SSE 엔드포인트, 알림 인프라(cron), 이메일 발송, 카카오톡 API, 로드맵 부분 재생성, user_streak 테이블 | `backend/domain/roadmap/`, 신규 `backend/domain/coach/`, `backend/domain/notification/` 확장 |
+| Phase 3 | ActionKit 변경 감지 훅, 법령 역추적 쿼리, K-Startup API 연동, 정부지원사업 매칭 로직 | `backend/domain/actionkit/`, `backend/domain/roadmap/service.py` |
+
+#### AI·ML
+
+| Phase | 핵심 작업 |
+|-------|---------|
+| Phase 1 | 마일스톤 축하 AI 격려 메시지 프롬프트 설계 |
+| Phase 2 | AI 코치 시스템 프롬프트 설계 (ActionKit 컨텍스트 직렬화, 4가지 안전장치), 답변 품질 평가 파이프라인 |
+| Phase 3 | 마이크로 가이드 자동 생성 프롬프트, 법령 변경 평이한 언어 해설 생성, 정부지원사업 적격 판별 AI |
 
 ### 병렬 작업 구간
 
@@ -827,7 +1010,7 @@ Go/No-Go ────────────────────▲──�
 
 ---
 
-## 14. KPI 대시보드
+## 16. KPI 대시보드
 
 ### 제품 지표
 
@@ -850,7 +1033,7 @@ Go/No-Go ────────────────────▲──�
 | 월간 이탈률 | — | < 8% | < 6% | < 5% |
 | LTV | — | 12만원 | 18만원 | 24만원 |
 
-**MRR 계산**: Free 5,000명 × 5% = 250명 × 평균 20,000원 = 500만원 (Starter 70% 가정)
+**MRR 계산**: Free 5,000명 x 5% = 250명 x 평균 20,000원 = 500만원 (Starter 70% 가정)
 
 ### 품질 지표
 
@@ -864,7 +1047,7 @@ Go/No-Go ────────────────────▲──�
 
 ---
 
-## 15. 절대 하지 말아야 할 것 (Must-Not-Do)
+## 17. 절대 하지 말아야 할 것 (Must-Not-Do)
 
 | 금지 항목 | 금지 이유 | 대안 |
 |---------|---------|------|
@@ -880,35 +1063,35 @@ Go/No-Go ────────────────────▲──�
 
 ---
 
-## 16. 미해결 쟁점 및 후속 조치
+## 18. 미해결 쟁점 및 후속 조치
 
 ### 긴급도: 최고
 
 | 쟁점 | 설명 | 예상 비용/일정 |
 |------|------|-------------|
 | 변호사법 제109조 법률 자문 | AI 코치 출시 전 법적 검토 필수 | 50-150만원, 출시 4-6주 전 착수 |
-| AI 기본법 라벨링 방식 확정 | 면책 문구 ≠ 라벨링 요건 | 법무 검토 포함 |
+| AI 기본법 라벨링 방식 확정 | 면책 문구 =/= 라벨링 요건 | 법무 검토 포함 |
 
 ### 긴급도: 높음
 
 | 쟁점 | 설명 |
 |------|------|
-| Free Tier 법적 근거 제한 수 | 3개 vs 5개 — A/B 테스트 필요 |
+| Free Tier 법적 근거 제한 수 | 3개 vs 5개 -- A/B 테스트 필요 |
 | ActionKit 8개 업종 목록 확정 | IT/이커머스 fallback 비율 측정 필요 |
 | 병렬 실행 범위 결정 | LLM 판단 vs 수동 매핑 |
-| 카카오톡 알림 분류 | 알림톡(정보성) vs 친구톡(마케팅성) — KISA 지침 준수 |
+| 카카오톡 알림 분류 | 알림톡(정보성) vs 친구톡(마케팅성) -- KISA 지침 준수 |
 | 일회성 가격 옵션 도입 여부 | "창업 완료까지 99,000원" 병행 여부 |
 
 ---
 
-## 17. 비즈니스 성장 마일스톤
+## 19. 비즈니스 성장 마일스톤
 
-| 분기 | 핵심 기능 | Free 사용자 | 유료 전환율 | MRR |
-|------|---------|-----------|-----------|-----|
-| **Q1** | Phase 1 Quick Win + AI 코치 착수 | 1,000명 | 측정 시작 | — |
-| **Q2** | AI 코치 배포 + 알림 시스템 | 5,000명 | 5% | 500만원 |
-| **Q3** | 법령 변경 알림 + 마이크로 가이드 | 10,000명 | 7% | 1,500만원 |
-| **Q4** | 정부지원사업 매칭 + 데이터 인사이트 | 15,000명 | 8% | 2,000만원 |
+| 분기 | 기간 | 핵심 기능 | Free 사용자 | 유료 전환율 | MRR |
+|------|------|---------|-----------|-----------|-----|
+| **Q1** | Month 1-2 | Phase 1 Quick Win + AI 코치 착수 | 1,000명 | 측정 시작 | — |
+| **Q2** | Month 3-4 | AI 코치 배포 + 알림 시스템 | 5,000명 | 5% | 500만원 |
+| **Q3** | Month 5-6 | 법령 변경 알림 + 마이크로 가이드 | 10,000명 | 7% | 1,500만원 |
+| **Q4** | Month 7-9 | 정부지원사업 매칭 + 데이터 인사이트 | 15,000명 | 8% | 2,000만원 |
 
 ---
 
@@ -931,7 +1114,7 @@ Go/No-Go ────────────────────▲──�
 
 ### B. 코드베이스 분석 참고사항
 
-> ⚠️ **코드 재활용률 분석 주의**: 두 차례의 독립적 코드베이스 분석에서 상반된 결론이 도출되었습니다.
+> **코드 재활용률 분석 주의**: 두 차례의 독립적 코드베이스 분석에서 상반된 결론이 도출되었습니다.
 > - **분석 A** (보수적): 실제 재활용 가능률 20-25%, AI 코치 MVP 개발 4-6주 소요 예상. 80% 재활용은 "과장"으로 판단.
 > - **분석 B** (낙관적): 재활용 가능률 78%, 2-3주 개발 현실적. ChatService/RagService 85%, DB 세션 95%, 인증 100% 재활용 가능.
 >
@@ -939,20 +1122,20 @@ Go/No-Go ────────────────────▲──�
 
 ### C. 관련 설계 문서
 
-1. `docs/research/ai-coach-technical-design.md` — AI 코치 MVP 기술 아키텍처 상세 설계
-2. `docs/research/product-roadmap-execution-plan.md` — Sprint 레벨 실행 계획 상세
-3. `docs/research/technical-validation-ai-coach-mvp.md` — AI 코치 MVP 기술적 실현 가능성 검증 (코드베이스 분석)
-4. `docs/research/marketing-strategy.md` — 한국 시장 특화 마케팅·GTM 전략 상세
-5. `docs/research/brainstorm-result.md` — 5사이클 브레인스토밍 원본
-6. `docs/research/ai-coach-benchmark-analysis.md` — AI 코치 제품 벤치마크
-7. `docs/research/competitive-benchmark-analysis.md` — 글로벌 경쟁사 분석
-8. `docs/research/benchmark-application-report.md` — 30+ 서비스 벤치마크 적용
-9. `docs/research/roadmap-improvement-plan.md` — 초기 개선 기획서 (v1)
-10. `docs/research/roadmap.md` — 현재 로드맵 기능 기술 분석
+1. `ai-coach-technical-design.md` -- AI 코치 MVP 기술 아키텍처 상세 설계
+2. `technical-validation-ai-coach-mvp.md` -- AI 코치 MVP 기술적 실현 가능성 검증 (코드베이스 분석)
+3. `marketing-strategy.md` -- 한국 시장 특화 마케팅·GTM 전략 상세
+4. `brainstorm-result.md` -- 5사이클 브레인스토밍 원본
+5. `ai-coach-benchmark-analysis.md` -- AI 코치 제품 벤치마크
+6. `competitive-benchmark-analysis.md` -- 글로벌 경쟁사 분석
+7. `benchmark-application-report.md` -- 30+ 서비스 벤치마크 적용
+8. `roadmap-improvement-plan.md` -- 초기 개선 기획서 (v1)
+9. `roadmap.md` -- 현재 로드맵 기능 기술 분석
 
 ---
 
-*본 문서는 6개 연구 문서를 기반으로 8인 전문가 팀(UX 전략가, 기술 설계자, 성장 전략가, 리스크 분석가, 코드베이스 분석가, 제품 기획자, 마케팅 전략가, 데이터 전략가)이 병렬 분석한 결과를 통합한 최종 기획서입니다.*
+*본 문서는 9개 연구 문서를 기반으로 8인 전문가 팀(UX 전략가, 기술 설계자, 성장 전략가, 리스크 분석가, 코드베이스 분석가, 제품 기획자, 마케팅 전략가, 데이터 전략가)이 병렬 분석한 결과를 통합한 최종 마스터 플랜입니다.*
 
 *작성 방식: Claude Code Agent Team (8인 전문가 에이전트 협업)*
 *작성일: 2026-02-28*
+*문서 통합일: 2026-02-28*
