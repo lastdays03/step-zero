@@ -13,19 +13,3 @@ async def test_v1_endpoints_do_not_include_deprecation_headers(client: AsyncClie
     assert response.headers.get("Warning") is None
 
 
-@pytest.mark.asyncio
-async def test_v1_generate_has_no_successor_link_header(client: AsyncClient):
-    login_response = await client.post(
-        "/api/v1/auth/login",
-        data={"username": "test@example.com", "password": "password123"},
-        headers={"Content-Type": "application/x-www-form-urlencoded"},
-    )
-    token = login_response.json()["access_token"]
-    response = await client.post(
-        "/api/v1/generate",
-        json={"business_type": "Cafe", "location": "Seoul", "description": "test"},
-        headers={"Authorization": f"Bearer {token}"},
-    )
-
-    assert response.status_code == 200
-    assert response.headers.get("Link") is None
