@@ -1,10 +1,3 @@
-
-export interface RoadmapNodeData {
-    id: string;
-    title: string;
-    children: RoadmapNodeData[];
-}
-
 export interface RoadmapSummary {
     roadmap_id: string;
     title: string;
