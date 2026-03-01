@@ -33,7 +33,9 @@ async def list_roadmaps(
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     repo = RoadmapRepository(session)
-    roadmaps, total = await repo.list_for_team(current_team.id, offset=offset, limit=limit)
+    roadmaps, total = await repo.list_for_team(
+        current_team.id, offset=offset, limit=limit
+    )
 
     items: list[RoadmapSummaryItem] = []
     for roadmap in roadmaps:

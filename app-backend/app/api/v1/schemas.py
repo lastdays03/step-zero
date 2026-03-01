@@ -78,6 +78,7 @@ class RoadmapCreateRequest(BaseModel):
     location: str
     description: str = ""
     startup_type: str | None = None
+    startup_method: str | None = None
     open_timeline: str | None = None
     budget_range: str | None = None
     additional_notes: str = ""
@@ -147,6 +148,7 @@ class RoadmapJobCreateRequest(BaseModel):
     location: str
     description: str = ""
     startup_type: str | None = None
+    startup_method: str | None = None
     open_timeline: str | None = None
     budget_range: str | None = None
     additional_notes: str = ""

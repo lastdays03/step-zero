@@ -32,8 +32,9 @@ pytestmark = [
 
 def _load_env_vars() -> dict[str, str]:
     """tests/conftest.py의 sqlite 덮어쓰기를 우회하여 .env + .env.local에서 직접 읽기."""
-    from dotenv import dotenv_values
     from pathlib import Path
+
+    from dotenv import dotenv_values
 
     backend_root = Path(__file__).resolve().parents[2]
     env_vars: dict[str, str] = {}
@@ -47,10 +48,10 @@ def _load_env_vars() -> dict[str, str]:
 @pytest.fixture(scope="session")
 def rag_service():
     """pytest-asyncio 호환 RagService (psycopg2 드라이버 사용)."""
-    from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-    from langchain_core.prompts import ChatPromptTemplate
     from langchain_core.output_parsers import StrOutputParser
+    from langchain_core.prompts import ChatPromptTemplate
     from langchain_core.runnables import RunnablePassthrough
+    from langchain_openai import ChatOpenAI, OpenAIEmbeddings
     from langchain_postgres import PGVector
 
     env = _load_env_vars()
@@ -82,7 +83,9 @@ def rag_service():
                 self.retriever = vector_store.as_retriever(search_kwargs={"k": 3})
                 self.llm = ChatOpenAI(
                     model=env.get("OPENAI_CHAT_MODEL", "gpt-4o-mini"),
-                    api_key=api_key, timeout=20, max_retries=2,
+                    api_key=api_key,
+                    timeout=20,
+                    max_retries=2,
                 )
                 self.prompt = ChatPromptTemplate.from_template("""
                 You are an AI assistant for startup founders in Korea.
@@ -99,12 +102,18 @@ def rag_service():
                     return "\n\n".join(doc.page_content for doc in docs)
 
                 self.chain = (
-                    {"context": self.retriever | format_docs, "question": RunnablePassthrough()}
-                    | self.prompt | self.llm | StrOutputParser()
+                    {
+                        "context": self.retriever | format_docs,
+                        "question": RunnablePassthrough(),
+                    }
+                    | self.prompt
+                    | self.llm
+                    | StrOutputParser()
                 )
 
             async def query(self, question: str) -> str:
                 from fastapi.concurrency import run_in_threadpool
+
                 return await run_in_threadpool(self.chain.invoke, question)
 
         return _TestRagService()
@@ -187,7 +196,11 @@ AI 답변: {case['rag_answer']}
             try:
                 result = json.loads(response.content.strip())
             except json.JSONDecodeError:
-                result = {"score": 0, "reasoning": "parse error", "hallucinated_facts": []}
+                result = {
+                    "score": 0,
+                    "reasoning": "parse error",
+                    "hallucinated_facts": [],
+                }
 
             score = result.get("score", 0)
             scores.append(score / 3.0)
@@ -250,10 +263,10 @@ class TestStatuteCitation:
     """법령 인용의 정확성 검증."""
 
     CITATION_PATTERNS = [
-        re.compile(r"제\d+조"),          # 제37조
-        re.compile(r"[가-힣]+법"),        # 식품위생법
-        re.compile(r"시행규칙"),          # 시행규칙
-        re.compile(r"시행령"),            # 시행령
+        re.compile(r"제\d+조"),  # 제37조
+        re.compile(r"[가-힣]+법"),  # 식품위생법
+        re.compile(r"시행규칙"),  # 시행규칙
+        re.compile(r"시행령"),  # 시행령
     ]
 
     def test_citation_rate(self, full_evaluated_cases: list[dict]) -> None:
@@ -271,9 +284,7 @@ class TestStatuteCitation:
             if has_citation:
                 cited += 1
             else:
-                print(
-                    f"  Missing citation: [{case['id']}] {case['question'][:50]}"
-                )
+                print(f"  Missing citation: [{case['id']}] {case['question'][:50]}")
 
         rate = cited / len(citation_cases)
         print(f"\n  Citation rate: {rate:.2%} ({cited}/{len(citation_cases)})")
@@ -351,23 +362,29 @@ class TestOutOfScopeRefusal:
 
             if has_refusal:
                 refusal_count += 1
-            details.append({
-                "id": case["id"],
-                "question": question[:50],
-                "refused": has_refusal,
-            })
+            details.append(
+                {
+                    "id": case["id"],
+                    "question": question[:50],
+                    "refused": has_refusal,
+                }
+            )
 
         loop.close()
-        refusal_rate = refusal_count / len(out_of_scope_cases) if out_of_scope_cases else 0
-        print(f"\n  Refusal rate: {refusal_rate:.2%} ({refusal_count}/{len(out_of_scope_cases)})")
+        refusal_rate = (
+            refusal_count / len(out_of_scope_cases) if out_of_scope_cases else 0
+        )
+        print(
+            f"\n  Refusal rate: {refusal_rate:.2%} ({refusal_count}/{len(out_of_scope_cases)})"
+        )
         for d in details:
             status = "REFUSED" if d["refused"] else "NOT REFUSED"
             print(f"    [{d['id']}] {d['question']} [{status}]")
 
         # 범위 밖 질문에 대한 적절 거부는 환각 방지의 핵심
-        assert refusal_rate >= 0.30, (
-            f"Refusal rate {refusal_rate:.2%} too low (threshold: 30%)"
-        )
+        assert (
+            refusal_rate >= 0.30
+        ), f"Refusal rate {refusal_rate:.2%} too low (threshold: 30%)"
 
 
 # ─── 4. 응답 시간 테스트 ──────────────────────────────────────────
@@ -422,9 +439,7 @@ class TestGenerateReport:
             try:
                 with open(result_file, encoding="utf-8") as f:
                     data = json.load(f)
-                report_parts.append(
-                    {"source": result_file.stem, "data": data}
-                )
+                report_parts.append({"source": result_file.stem, "data": data})
             except Exception:
                 pass
 

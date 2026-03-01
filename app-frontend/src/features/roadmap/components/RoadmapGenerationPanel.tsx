@@ -123,6 +123,7 @@ export const RoadmapGenerationPanel = ({
                 location: normalizedLocation,
                 description: input.description.trim(),
                 startup_type: input.startup_type.trim(),
+                startup_method: input.startup_method.trim(),
                 open_timeline: input.open_timeline.trim(),
                 budget_range: input.budget_range.trim(),
                 additional_notes: input.description.trim(),
@@ -131,7 +132,7 @@ export const RoadmapGenerationPanel = ({
             },
             summary:
                 `업종 '${normalizedBusiness}', 지역 '${normalizedLocation}', `
-                + `형태 '${input.startup_type}', 오픈 '${input.open_timeline}', 예산 '${input.budget_range}'`,
+                + `형태 '${input.startup_type}', 방식 '${input.startup_method}', 오픈 '${input.open_timeline}', 예산 '${input.budget_range}'`,
         };
     };
 

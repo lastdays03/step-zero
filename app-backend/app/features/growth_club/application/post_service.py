@@ -11,7 +11,11 @@ from sqlmodel import select
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
-from app.models.growth_club import GrowthClubPost, GrowthClubPostAttachment, GrowthClubTag
+from app.models.growth_club import (
+    GrowthClubPost,
+    GrowthClubPostAttachment,
+    GrowthClubTag,
+)
 from app.models.profile import UserProfile
 from app.models.user import AuthenticatedUser
 
@@ -50,7 +54,9 @@ def _remove_saved_files(object_keys: list[str]) -> None:
             if target.exists():
                 target.unlink()
         except OSError as e:
-            logger.error(f"Failed to remove saved file: object_key={object_key}, path={target}, error={e}")
+            logger.error(
+                f"Failed to remove saved file: object_key={object_key}, path={target}, error={e}"
+            )
 
 
 class GrowthClubPostService:
@@ -102,7 +108,9 @@ class GrowthClubPostService:
                     )
                 )
 
-            profile_stmt = select(UserProfile).where(UserProfile.user_id == current_user.id)
+            profile_stmt = select(UserProfile).where(
+                UserProfile.user_id == current_user.id
+            )
             profile_result = await self.session.execute(profile_stmt)
             profile = profile_result.scalar_one_or_none()
             neighborhood = _as_non_empty(profile.region if profile else None, "미지정")
@@ -117,7 +125,7 @@ class GrowthClubPostService:
                 industry=industry,
             )
             db_post.attachments = attachment_rows
-            
+
             # 태그 처리
             if tags:
                 tag_rows = []
@@ -125,7 +133,9 @@ class GrowthClubPostService:
                     tag_name = tag_name.strip()
                     if not tag_name:
                         continue
-                    tag_stmt = select(GrowthClubTag).where(GrowthClubTag.name == tag_name)
+                    tag_stmt = select(GrowthClubTag).where(
+                        GrowthClubTag.name == tag_name
+                    )
                     tag_result = await self.session.execute(tag_stmt)
                     tag_obj = tag_result.scalar_one_or_none()
                     if not tag_obj:
@@ -144,7 +154,9 @@ class GrowthClubPostService:
             _remove_saved_files(saved_object_keys)
             raise
 
-    async def delete_post(self, *, post_id: int, current_user: AuthenticatedUser) -> None:
+    async def delete_post(
+        self, *, post_id: int, current_user: AuthenticatedUser
+    ) -> None:
         query = (
             select(GrowthClubPost)
             .where(GrowthClubPost.id == post_id)
@@ -156,7 +168,9 @@ class GrowthClubPostService:
             raise HTTPException(status_code=404, detail="Post not found")
 
         if db_post.author_id != current_user.id and not current_user.is_superuser:
-            raise HTTPException(status_code=403, detail="Not authorized to delete this post")
+            raise HTTPException(
+                status_code=403, detail="Not authorized to delete this post"
+            )
 
         attachment_keys = [attachment.object_key for attachment in db_post.attachments]
         await self.session.delete(db_post)
@@ -164,4 +178,6 @@ class GrowthClubPostService:
         try:
             _remove_saved_files(attachment_keys)
         except Exception as e:
-            logger.error(f"Failed to remove attachment files after post delete: post_id={post_id}, error={e}")
+            logger.error(
+                f"Failed to remove attachment files after post delete: post_id={post_id}, error={e}"
+            )

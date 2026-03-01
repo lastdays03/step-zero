@@ -1,8 +1,19 @@
 import pathlib
 from typing import Literal, Optional
-from pydantic import BaseModel, Field
 
-from fastapi import APIRouter, Depends, File, Form, HTTPException, Path, Query, UploadFile, status, Body
+from fastapi import (
+    APIRouter,
+    Body,
+    Depends,
+    File,
+    Form,
+    HTTPException,
+    Path,
+    Query,
+    UploadFile,
+    status,
+)
+from pydantic import BaseModel, Field
 from sqlalchemy import and_, exists, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -19,14 +30,16 @@ from app.models.growth_club import (
     GrowthClubPostRead,
     GrowthClubPostReport,
 )
-from app.models.user import AuthenticatedUser, User
 from app.models.notification import Notification
+from app.models.user import AuthenticatedUser, User
 
 router = APIRouter()
 settings = get_settings()
 
+
 class ReportRequest(BaseModel):
     reason: str = Field(..., description="신고 사유")
+
 
 IMAGE_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 FILE_EXTENSIONS = {
@@ -85,7 +98,11 @@ async def _validate_and_read_uploads(
         data = await upload.read()
         size_bytes = len(data)
         if size_bytes > max_bytes:
-            max_mb = settings.GROWTH_CLUB_MAX_IMAGE_MB if kind == "image" else settings.GROWTH_CLUB_MAX_FILE_MB
+            max_mb = (
+                settings.GROWTH_CLUB_MAX_IMAGE_MB
+                if kind == "image"
+                else settings.GROWTH_CLUB_MAX_FILE_MB
+            )
             raise HTTPException(
                 status_code=413,
                 detail=f"{label} 한 개의 최대 크기는 {max_mb}MB 입니다.",
@@ -94,7 +111,9 @@ async def _validate_and_read_uploads(
         if kind == "image":
             content_type = (upload.content_type or "").lower()
             if content_type and not content_type.startswith("image/"):
-                raise HTTPException(status_code=400, detail="이미지 MIME 타입이 올바르지 않습니다.")
+                raise HTTPException(
+                    status_code=400, detail="이미지 MIME 타입이 올바르지 않습니다."
+                )
 
         total_bytes += size_bytes
         if total_bytes > max_total_bytes:
@@ -116,12 +135,13 @@ async def _validate_and_read_uploads(
 )
 async def list_posts(
     category: str = Query(default="all", description="카테고리 필터 (`all`이면 전체)"),
-    search_type: str = Query(default="all", description="검색 기준 (all, title, content)"),
+    search_type: str = Query(
+        default="all", description="검색 기준 (all, title, content)"
+    ),
     search: Optional[str] = Query(default=None, description="검색어"),
     current_user: Optional[AuthenticatedUser] = Depends(get_optional_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
-
     """게시글 목록 조회 (검색 및 카테고리 필터링 포함)"""
     likes_count_subquery = (
         select(func.count())
@@ -133,17 +153,14 @@ async def list_posts(
 
     is_liked_subquery = None
     if current_user:
-        is_liked_subquery = (
-            exists(
-                select(1).where(
-                    and_(
-                        GrowthClubPostLike.post_id == GrowthClubPost.id,
-                        GrowthClubPostLike.user_id == current_user.id,
-                    )
+        is_liked_subquery = exists(
+            select(1).where(
+                and_(
+                    GrowthClubPostLike.post_id == GrowthClubPost.id,
+                    GrowthClubPostLike.user_id == current_user.id,
                 )
             )
-            .correlate(GrowthClubPost)
-        )
+        ).correlate(GrowthClubPost)
 
     if is_liked_subquery is not None:
         query = (
@@ -155,7 +172,9 @@ async def list_posts(
             .where(GrowthClubPost.is_blinded.is_(False))
             .options(
                 selectinload(GrowthClubPost.author).selectinload(User.profile),
-                selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author).selectinload(User.profile),
+                selectinload(GrowthClubPost.comments)
+                .selectinload(GrowthClubComment.author)
+                .selectinload(User.profile),
                 selectinload(GrowthClubPost.attachments),
             )
         )
@@ -168,7 +187,9 @@ async def list_posts(
             .where(GrowthClubPost.is_blinded.is_(False))
             .options(
                 selectinload(GrowthClubPost.author).selectinload(User.profile),
-                selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author).selectinload(User.profile),
+                selectinload(GrowthClubPost.comments)
+                .selectinload(GrowthClubComment.author)
+                .selectinload(User.profile),
                 selectinload(GrowthClubPost.attachments),
             )
         )
@@ -187,10 +208,12 @@ async def list_posts(
             )
 
     if category == "hot":
-        query = query.order_by(likes_count_subquery.desc(), GrowthClubPost.created_at.desc())
+        query = query.order_by(
+            likes_count_subquery.desc(), GrowthClubPost.created_at.desc()
+        )
     else:
         query = query.order_by(GrowthClubPost.created_at.desc())
-        
+
     result = await session.execute(query)
 
     # 가공하여 반환
@@ -203,20 +226,23 @@ async def list_posts(
         post_read = GrowthClubPostRead.model_validate(post)
         post_read.likes_count = int(likes_count or 0)
         post_read.is_liked = is_liked
-        
+
         # Filter blinded comments and apply privacy masking
         user_id = current_user.id if current_user else None
         post_read.author.mask_privacy(user_id)
-        
+
         # Only show non-blinded comments
-        post_read.comments = [c for c in post_read.comments if not getattr(c, 'is_blinded', False)]
-        
+        post_read.comments = [
+            c for c in post_read.comments if not getattr(c, "is_blinded", False)
+        ]
+
         for comment in post_read.comments:
             comment.author.mask_privacy(user_id)
-            
+
         read_posts.append(post_read)
 
     return read_posts
+
 
 @router.post(
     "",
@@ -232,11 +258,13 @@ async def create_post(
     images: list[UploadFile] = File(default=[], description="첨부 이미지 목록"),
     files: list[UploadFile] = File(default=[], description="첨부 문서 파일 목록"),
     current_user: AuthenticatedUser = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     """새 게시글 작성"""
     if current_user.is_suspended:
-        raise HTTPException(status_code=403, detail="이용이 정지된 사용자입니다. 접근이 제한됩니다.")
+        raise HTTPException(
+            status_code=403, detail="이용이 정지된 사용자입니다. 접근이 제한됩니다."
+        )
     image_uploads = [u for u in images if u is not None]
     file_uploads = [u for u in files if u is not None]
     prepared_images, total_bytes = await _validate_and_read_uploads(
@@ -260,7 +288,6 @@ async def create_post(
         prepared_files=prepared_files,
     )
 
-
     # Refresh with relationships to satisfy response model.
     # 새로 생성된 글이므로 likes는 항상 0건 — selectinload 불필요
     query = (
@@ -268,7 +295,9 @@ async def create_post(
         .where(GrowthClubPost.id == post_id)
         .options(
             selectinload(GrowthClubPost.author).selectinload(User.profile),
-            selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author).selectinload(User.profile),
+            selectinload(GrowthClubPost.comments)
+            .selectinload(GrowthClubComment.author)
+            .selectinload(User.profile),
             selectinload(GrowthClubPost.attachments),
         )
     )
@@ -281,6 +310,7 @@ async def create_post(
     post_read.is_liked = False
     return post_read
 
+
 @router.delete(
     "/{post_id}",
     summary="게시글 삭제",
@@ -290,7 +320,7 @@ async def create_post(
 async def delete_post(
     post_id: int = Path(description="삭제할 게시글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     """게시글 삭제 (작성자 본인만 가능)"""
     from app.core.logging import get_logger
@@ -305,9 +335,12 @@ async def delete_post(
         if exc.status_code == 404:
             logger.warning(f"Delete attempt for non-existent post: {post_id}")
         elif exc.status_code == 403:
-            logger.warning(f"Unauthorized delete attempt: post_id={post_id}, user_id={current_user.id}")
+            logger.warning(
+                f"Unauthorized delete attempt: post_id={post_id}, user_id={current_user.id}"
+            )
         raise
     return {"status": "success", "message": "Post deleted successfully"}
+
 
 @router.post(
     "/{post_id}/report",
@@ -319,22 +352,26 @@ async def report_post(
     report_data: ReportRequest,
     post_id: int = Path(description="신고할 게시글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     """게시글 신고 (1회 이상 신고 시 자동 블라인드)"""
     if current_user.is_suspended:
-        raise HTTPException(status_code=403, detail="이용이 정지된 사용자입니다. 접근이 제한됩니다.")
+        raise HTTPException(
+            status_code=403, detail="이용이 정지된 사용자입니다. 접근이 제한됩니다."
+        )
     db_post = await session.get(GrowthClubPost, post_id)
     if not db_post:
         raise HTTPException(status_code=404, detail="Post not found")
 
     if db_post.author_id == current_user.id:
-        raise HTTPException(status_code=400, detail="자신의 게시물은 신고할 수 없습니다.")
+        raise HTTPException(
+            status_code=400, detail="자신의 게시물은 신고할 수 없습니다."
+        )
 
     # 기존 신고 여부 확인
     existing_report_query = select(GrowthClubPostReport).where(
         GrowthClubPostReport.post_id == post_id,
-        GrowthClubPostReport.reporter_id == current_user.id
+        GrowthClubPostReport.reporter_id == current_user.id,
     )
     existing_report_result = await session.execute(existing_report_query)
     if existing_report_result.scalar_one_or_none():
@@ -342,9 +379,7 @@ async def report_post(
 
     # 신고 기록 생성
     new_report = GrowthClubPostReport(
-        post_id=post_id,
-        reporter_id=current_user.id,
-        reason=report_data.reason
+        post_id=post_id, reporter_id=current_user.id, reason=report_data.reason
     )
     session.add(new_report)
 
@@ -355,10 +390,11 @@ async def report_post(
     if db_post.report_count >= 1:
         db_post.is_blinded = True
         message = "게시글이 누적 신고로 인해 블라인드 처리되었습니다."
-        
+
         # 블라인드 처리 시 감사 로그 기록
         author = await session.get(User, db_post.author_id)
         from app.features.ops.application.audit_logs.service import save_audit_log
+
         await save_audit_log(
             session=session,
             user_id=current_user.id,
@@ -366,7 +402,7 @@ async def report_post(
             target_type="post",
             target_id=str(post_id),
             target_author=author.email if author else None,
-            details=f"게시글 '{db_post.title[:20]}...' 누적 신고로 블라인드 처리 (자동)"
+            details=f"게시글 '{db_post.title[:20]}...' 누적 신고로 블라인드 처리 (자동)",
         )
     else:
         message = "게시글이 신고되었습니다."
@@ -378,7 +414,7 @@ async def report_post(
         "status": "success",
         "message": message,
         "report_count": db_post.report_count,
-        "is_blinded": db_post.is_blinded
+        "is_blinded": db_post.is_blinded,
     }
 
 
@@ -391,7 +427,7 @@ async def report_post(
 async def toggle_like_post(
     post_id: int = Path(description="좋아요를 토글할 게시글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     """게시글 좋아요 토글"""
     db_post = await session.get(GrowthClubPost, post_id)
@@ -400,7 +436,7 @@ async def toggle_like_post(
 
     query = select(GrowthClubPostLike).where(
         GrowthClubPostLike.post_id == post_id,
-        GrowthClubPostLike.user_id == current_user.id
+        GrowthClubPostLike.user_id == current_user.id,
     )
     result = await session.execute(query)
     like = result.scalar_one_or_none()
@@ -426,12 +462,12 @@ async def toggle_like_post(
     await session.commit()
 
     # 최신 좋아요 수 조회
-    count_query = select(func.count()).select_from(GrowthClubPostLike).where(GrowthClubPostLike.post_id == post_id)
+    count_query = (
+        select(func.count())
+        .select_from(GrowthClubPostLike)
+        .where(GrowthClubPostLike.post_id == post_id)
+    )
     count_result = await session.execute(count_query)
     likes_count = count_result.scalar() or 0
-    
-    return {
-        "status": "success",
-        "liked": liked,
-        "likes_count": likes_count
-    }
+
+    return {"status": "success", "liked": liked, "likes_count": likes_count}

@@ -2,307 +2,262 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
+## Project Overview
+
+**StepZero** - AI 기반 스타트업 창업자 액셀러레이팅 플랫폼. 사용자 입력으로 개인화 로드맵을 생성하고, RAG 기반 법률/창업 상담을 제공.
+
 ## Monorepo Structure
 
-This is a **monorepo** containing both backend (FastAPI) and frontend (Next.js) applications:
+```
+step-zero/
+├── app-backend/       # FastAPI backend (Python 3.11, port 8000)
+├── app-frontend/      # Next.js 16 frontend (React 18, port 3000)
+├── docs/              # 기획/설계/컨텍스트 문서
+├── scripts/           # 루트 유틸리티 스크립트
+├── docker-compose.dev.yml   # 개발 환경 (5 services)
+├── docker-compose.prod.yml  # 프로덕션 환경
+├── AGENTS.md          # AI 에이전트 프로젝트 규칙
+└── CLAUDE.md          # 이 파일
+```
 
-- `backend/` - Python FastAPI backend with PostgreSQL
-- `frontend/` - Next.js 15 frontend with TypeScript and Tailwind CSS
+## Quick Commands
 
-## Backend Development
-
-### Prerequisites
-
-- Python 3.12.3 (exact version, see `backend/pyproject.toml`)
-- Docker & Docker Compose
-
-### Setup
+### Backend (`cd app-backend`)
 
 ```bash
-cd backend
-uv venv
-source .venv/bin/activate
-uv pip install -e .
-uv pip install -e .[dev]  # Install dev dependencies (black, isort, mypy, ruff)
+make setup            # 개발환경 초기화 (Python 3.11 venv + deps + .env)
+make run              # uvicorn app.main:app --reload --port 8000
+make worker           # ARQ 비동기 워커 (로드맵 생성용)
+make test             # pytest -q
+make migrate-up       # alembic upgrade head
+make migrate-revision m="description"  # 새 마이그레이션 생성
+make migrate-verify   # 모델 ↔ DB 스키마 diff 검증
+make rag-bootstrap    # RAG 벡터 시드 적재
 ```
 
-### Running the Backend
+### Frontend (`cd app-frontend`)
 
 ```bash
-# Development server (note: module is backend.main not app.main)
-cd backend
-uvicorn backend.main:app --reload --port 28080
-
-# Docker Compose (production-like environment)
-cd backend
-docker-compose up
+npm install           # 의존성 설치
+npm run dev           # next dev --webpack (localhost:3000)
+npm run build         # 프로덕션 빌드
+npm run lint          # ESLint
+npm test              # Jest
+npm run types:sync    # OpenAPI → TypeScript 타입 자동 생성
 ```
 
-### Code Quality
+### Code Quality (Backend)
 
 ```bash
-cd backend
-black .                           # Format code
-isort . --profile black          # Sort imports
-ruff check --fix .               # Lint with auto-fix
-mypy .                           # Type checking
-pre-commit run --all-files       # Run all pre-commit hooks
+cd app-backend
+black .               # 코드 포맷
+isort . --profile black  # import 정렬
+flake8 .              # 린트
+mypy .                # 타입 체크
 ```
 
-### Backend Architecture
-
-**Framework:** FastAPI with async/await pattern using SQLModel + SQLAlchemy
-
-**Database Layer:**
-
-- **Read/Write Separation**: Separate database connections for read and write operations
-- Event loop-based caching of engines and sessionmakers in `backend/db/orm.py`
-- Session factories:
-  - `get_write_session()` / `get_write_session_dependency()` for write operations
-  - `get_read_session()` / `get_read_session_dependency()` for read operations
-- PostgreSQL with asyncpg driver, SSL required for connections
-
-**Domain-Driven Design:**
-
-- Business logic organized in `backend/domain/{entity}/` directories
-- Each domain contains: `model.py` (SQLModel), `service.py` (business logic), `repository.py` (data access)
-- Domains: `user`, `auth`, `artist`, `artwork`, `admin`, `curai`, `exhibition`, `message`, `notification`, `subscription`, `shared`
-
-**API Structure:**
-
-- Versioned endpoints under `/api/v1/` prefix
-- Routers in `backend/api/v1/routers/`: `auth.py`, `artist.py`, `artwork.py`, `admin.py`, `curai.py`, `exhibition.py`, `message.py`, `notification.py`, `health.py`
-- DTOs in `backend/dtos/` for request/response validation
-- Main app creation in `backend/main.py` via `create_application()`
-
-**Configuration:**
-
-- Settings in `backend/core/config.py` using Pydantic BaseSettings
-- Environment variables required: database credentials (read/write), JWT config
-- CORS configured for local development and production domains (qwarty.net)
-
-**Deployment:**
-
-- Docker image: `206404754787.dkr.ecr.ap-northeast-2.amazonaws.com/qwarty-backend:latest`
-- Deployed to AWS ECS cluster `qwarty-backend-cluster`
-- Auto-deployment on push to `main` branch via GitHub Actions
-
-## Frontend Development
-
-### Prerequisites
-
-- Node.js 20+
-- pnpm package manager
-
-### Setup
+### Docker Compose (전체 스택)
 
 ```bash
-cd frontend
-pnpm install
+docker compose -f docker-compose.dev.yml up -d --build     # 전체 실행
+docker compose -f docker-compose.dev.yml up -d app-db app-redis  # DB+Redis만
+docker compose -f docker-compose.dev.yml logs -f app-backend app-worker  # 로그
 ```
 
-### Running the Frontend
+### Quality Gates (변경 완료 전 반드시 실행)
 
 ```bash
-cd frontend
-pnpm dev          # Development server with Turbopack (http://localhost:3000)
-pnpm build        # Production build with Turbopack
-pnpm start        # Start production server
-pnpm lint         # Run ESLint
+cd app-backend && .venv/bin/pytest -q          # 백엔드 변경 시
+cd app-frontend && npm run lint                # 프론트엔드 변경 시
+cd app-backend && ./scripts/check_migrations.sh  # 마이그레이션 변경 시
 ```
 
-### Frontend Architecture
+## Git Workflow
 
-**Framework:** Next.js 15 (App Router) with React 19, TypeScript, Tailwind CSS 4
+- **`develop`**: 기본 브랜치 (개발 통합)
+- **`main`**: 프로덕션 (직접 push 금지, `develop`에서만 PR 머지)
+- **`feature/*`**: 기능 브랜치 → `develop`으로 PR
+- 브랜치 명명: `feature/<issue-number>-<short-slug>`
+- 커밋: Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `perf:`, `ci:`, `build:`, `revert:`)
+- PR 제목/설명: 한국어
+- 루트에서 `npm install` 1회 실행 → Husky + commitlint 훅 활성화
 
-**Project Structure:**
+## Backend Architecture
 
-- `src/app/` - Next.js App Router pages and API routes
-  - Route groups: `/login`, `/sign-up`, `/artists`, `/artist`, `/account`, `/admin`, `/agent`, `/explore`, `/messages`, `/search`
-  - API routes: `/api/upload` (S3 file upload)
-- `src/components/` - Reusable React components organized by feature
-- `src/lib/` - Core utilities and configurations
-  - `api.ts` - API client for backend communication
-  - `serverAuth.ts` - Server-side authentication utilities
-  - `s3Upload.ts` - AWS S3 upload utilities with compression
-  - `emailAuth.ts` - Email authentication utilities
-  - `firebase.ts` - Firebase configuration
-  - `theme.ts` - MUI theme configuration
-- `src/hooks/` - Custom React hooks
-- `src/providers/` - React context providers
-- `src/utils/` - Utility functions
-- `src/types/` - TypeScript type definitions
-- `src/const/` - Application constants
-- `src/interfaces/` - TypeScript interfaces
-- `src/locales/` - Internationalization (i18n) with next-intl
+**Framework:** FastAPI + SQLModel/SQLAlchemy + asyncpg (async)
 
-**Key Technologies:**
+### Feature-Based Structure
 
-- **Styling:** Tailwind CSS 4, MUI Material (components), Emotion (CSS-in-JS)
-- **State Management:** React hooks and context providers
-- **Authentication:** JWT tokens with server-side validation
-- **File Upload:** AWS S3 with client-side compression
-- **Internationalization:** next-intl for i18n support
-- **UI Components:** MUI Material, Lucide React icons
+비즈니스 로직은 `app-backend/app/features/{feature}/`에 위치. 각 feature는 `domain/`(모델)과 `application/`(서비스) 레이어로 분리.
 
-**Configuration:**
+| Feature | 역할 |
+|---------|------|
+| `auth` | 이메일/Google OAuth 로그인, JWT 토큰, 팀 자동 생성 |
+| `profile` | 사용자 프로필 CRUD |
+| `dashboard` | 대시보드 통계 |
+| `roadmaps` | 핵심 - AI 로드맵 생성/관리 (비동기 파이프라인) |
+| `rag` | RAG + 시맨틱 라우팅 기반 법률/일반 AI 채팅 |
+| `actionkit` | 법률 행정 키트 (파일 + 체크리스트) |
+| `growth_club` | 커뮤니티 게시판 |
+| `ops` | 관리자 콘솔 (superuser only) |
 
-- `next.config.ts` - Next.js config with remote image patterns (AWS S3), Turbopack enabled
-- `tailwind.config.ts` - Tailwind CSS 4 configuration
-- `eslint.config.mjs` - ESLint configuration with TypeScript support
-- Environment variables required: API endpoint, Firebase config, AWS credentials, Kakao OAuth
+### Shared Layers
 
-## Development Workflow
+- `app/repositories/` - 공유 데이터 접근 (user, team, roadmap, actionkit)
+- `app/models/` - SQLModel ORM 모델
+- `app/services/` - 공통 서비스 (vector_store, law_etl, actionkit_etl)
+- `app/api/v1/{feature}/` - HTTP 라우터 (`/api/v1` prefix)
+- `app/api/problem.py` - RFC 7807 에러 응답 (`application/problem+json`)
 
-### Environment Files
+### Key Subsystems
 
-Backend and frontend both require `.env` files:
+**로드맵 생성 파이프라인 (비동기):**
+1. `POST /api/v1/roadmaps/jobs` → Job 생성 (status: QUEUED)
+2. Redis/ARQ로 `app-worker` 서비스에 enqueue
+3. `RoadmapGenerationService` → ActionKitMatcher + LLMPersonalizer
+4. 프론트엔드가 `GET /api/v1/roadmaps/jobs/{id}` 폴링
 
-- `backend/.env` - Database credentials (read/write), JWT config
-- `frontend/.env` - API endpoint, Firebase, AWS S3, Kakao OAuth credentials
+**RAG 시스템:**
+- `RagService` - PGVector + OpenAI 임베딩 검색
+- `ChatService` - 법률 쿼리 → RAG, 일반 쿼리 → LLM 직접 (SemanticRouter로 분류)
+- 벡터 스토어: pgvector `law_vectors` 컬렉션
 
-### Git Workflow
+**인증:**
+- JWT Bearer 토큰 (access + refresh)
+- 프론트엔드: localStorage 저장, Axios 인터셉터로 silent refresh
+- 팀 컨텍스트: `X-Team-Id` 헤더
+- 관리자: `is_superuser=True`, `require_platform_admin` 의존성
 
-- Main branch: `main` (protected, auto-deploys backend to AWS ECS)
-- Create feature branches for development
-- Backend deployment triggers automatically on push to `main` via `.github/workflows/deploy-real.yaml`
-  - Builds Docker image and pushes to ECR: `206404754787.dkr.ecr.ap-northeast-2.amazonaws.com/qwarty-backend:latest`
-  - Deploys to ECS service: `prod-apne2-qwarty-backend-svc` in cluster `qwarty-backend-cluster`
-  - Task definition: `backend/prod-apne2-qwarty-backend-task-def.json`
+### Multi-Tenancy
 
-### Key Design Patterns
+모든 비즈니스 데이터는 `Team` (UUID) 스코프. 가입 시 개인 팀 자동 생성. `TeamMember` 테이블로 역할 관리 (`owner`, `admin`, `member`).
 
-**Backend:**
+### Database
 
-- Domain-Driven Design with clear separation of concerns
-- Repository pattern for data access
-- DTO pattern for API contracts
-- Dependency injection via FastAPI's `Depends()`
-- Async/await throughout with proper session management
+- PostgreSQL 16 + pgvector
+- 단일 세션 (`get_session()`) - Read/Write 분리 없음
+- Alembic 마이그레이션 (`app-backend/alembic/versions/` 8개 파일)
+- 테스트: SQLite in-memory (`sqlite+aiosqlite`)
 
-**Frontend:**
+### ARQ Worker
 
-- Server-side rendering (SSR) with App Router
-- Client/Server component separation
-- Server actions for API calls
-- Image optimization with S3 upload
-- Responsive design with Tailwind CSSs
-
-### Important Notes
-
-- **Backend module path:** Use `backend.main:app` not `app.main:app` when running uvicorn
-- **Database sessions:** Always use appropriate read/write session factory from `backend/db/orm.py`
-  - Use `get_write_session_dependency()` for FastAPI endpoints that modify data
-  - Use `get_read_session_dependency()` for FastAPI endpoints that only read data
-- **Frontend API calls:** Centralized in `src/lib/api.ts`
-- **Image uploads:** S3 upload uses presigned POST URLs for direct client-side upload
-  - Flow: Client → Backend (`POST /api/v1/upload/presigned-url`) → Backend generates presigned POST → Client uploads directly to S3
-  - Backend: `backend/utils/s3.py` - `generate_presigned_post()` creates presigned POST with fields and conditions (max 50MB)
-  - Frontend: `src/lib/s3Upload.ts` - Handles compression (browser-image-compression), presigned URL request, and S3 upload
-  - Images are compressed client-side to WebP format before upload (optional, depending on function used)
-  - Supports thumbnail generation: uploads both original and compressed thumbnail in parallel
-- **Authentication:** JWT-based, server-side validation in `src/lib/serverAuth.ts`
-- **Pre-commit hooks:** Backend uses black, isort, ruff, and other checks via `.pre-commit-config.yaml`
-
-## Testing & Performance Monitoring
-
-### Browser Testing with Chrome DevTools MCP
-
-**IMPORTANT:** Always use **chrome-devtools MCP** for frontend browser testing and performance measurement. Do NOT manually start the dev server with `pnpm dev` for testing.
-
-**Available MCP Tools:**
-
-- `mcp__chrome-devtools__navigate_page` - Navigate to URL
-- `mcp__chrome-devtools__take_snapshot` - Take page snapshot (structure)
-- `mcp__chrome-devtools__take_screenshot` - Take screenshot
-- `mcp__chrome-devtools__click` - Click elements
-- `mcp__chrome-devtools__fill` - Fill form inputs
-- `mcp__chrome-devtools__list_console_messages` - Check console errors
-- `mcp__chrome-devtools__list_network_requests` - Monitor API calls
-- `mcp__chrome-devtools__performance_start_trace` - Start performance recording
-- `mcp__chrome-devtools__performance_stop_trace` - Stop and analyze performance
-
-### Performance Testing Workflow
-
-**Step 1: Start Dev Server in Background**
-If chrome-devtools MCP is alreay running, kill it first.
-using chrome-devtools MCP, start dev server in background
-
-**Step 2: Run Browser Tests with chrome-devtools MCP**
-
-```typescript
-// Example test flow:
-1. Navigate to page: mcp__chrome-devtools__navigate_page({ url: "http://localhost:3000/ko" })
-2. Take snapshot: mcp__chrome-devtools__take_snapshot({ verbose: false })
-3. Check console: mcp__chrome-devtools__list_console_messages()
-4. Start performance trace: mcp__chrome-devtools__performance_start_trace({ reload: true, autoStop: true })
-5. Analyze results: Review LCP, FCP, TTI, CLS metrics
-6. Take screenshot: mcp__chrome-devtools__take_screenshot({ fullPage: true })
+로드맵 비동기 생성 전용. 별도 Docker 서비스 `app-worker`로 실행:
+```bash
+cd app-backend && make worker
 ```
 
-**Step 3: Measure Core Web Vitals**
+## Frontend Architecture
 
-- **LCP (Largest Contentful Paint):** Target <2000ms
-- **FCP (First Contentful Paint):** Target <1000ms
-- **CLS (Cumulative Layout Shift):** Target <0.1
-- **TTI (Time to Interactive):** Target <2500ms
-- **TBT (Total Blocking Time):** Target <300ms
+**Framework:** Next.js 16 (App Router) + React 18 + TypeScript + Tailwind CSS 3.3
 
-### Test Documentation
+### UI Stack
 
-**Test Plans and Reports:**
+- **컴포넌트:** Radix UI + shadcn/ui 패턴 (`src/components/ui/`)
+- **스타일링:** Tailwind CSS 3.3
+- **아이콘:** Lucide React
+- **DnD:** @hello-pangea/dnd (로드맵 단계 재정렬)
+- **HTTP:** Axios (`src/lib/api-client.ts`) + 토큰 인터셉터
+- **인증:** AuthProvider (`src/providers/`) + `useSyncExternalStore` (탭 간 동기화)
+- **OAuth:** Google (@react-oauth/google)
 
-- `frontend/tests/browser/` - Browser test documentation
-- `frontend/tests/browser/test-reports/` - Test execution reports
-- `frontend/docs/performance-baseline.md` - Performance baseline metrics
-- `frontend/docs/PERFORMANCE-DASHBOARD.md` - Performance dashboard
+### Feature Structure
 
-**Test Coverage:**
+`app-frontend/src/features/{feature}/`로 모듈화. 각 feature는 `index.ts`로만 export. 크로스 feature 내부 경로 import 금지. 공유 타입은 `features/shared/contracts/index.ts`.
 
-- Home page tests (8 tests)
-- Artists page tests (10 tests)
-- SearchBar component tests (20 tests)
-- Total: 38 automated test cases
+### Route Groups (`src/app/`)
 
-### Lighthouse CI (Automated Performance Regression Testing)
+- `(dashboard)/` - 대시보드, 로드맵, 액션킷, 커뮤니티, 프로필, 관리자, 공지, 설정
+- `/login` - 로그인 페이지
 
-**Configuration:** `.lighthouserc.js` in frontend directory
-**GitHub Actions:** `.github/workflows/lighthouse-ci.yaml`
-
-**Manual Lighthouse CI Run:**
+### API Type Generation
 
 ```bash
-cd frontend
-pnpm build
-npx lhci autorun
+npm run types:sync  # 백엔드 OpenAPI → src/lib/api-types.ts 자동 생성
 ```
+`api-types.ts`는 자동 생성 파일. 수동 편집 금지.
 
-### Example: Testing Home Page
+## Docker Compose Services
+
+| 서비스 | 이미지/역할 | 포트 |
+|--------|------------|------|
+| `app-db` | pgvector/pgvector:pg16 | 5432 |
+| `app-redis` | redis:alpine | 6379 |
+| `app-backend` | FastAPI API 서버 | 8000 |
+| `app-worker` | ARQ 비동기 워커 | - |
+| `app-frontend` | Next.js | 3000 |
+
+## Testing
+
+### Backend (Pytest)
 
 ```bash
-# 1. Ensure backend is running
-cd backend
-uvicorn backend.main:app --reload --port 28080
+cd app-backend && make test
+```
+- `pytest-asyncio` (asyncio_mode = "auto")
+- 테스트 DB: SQLite (`sqlite+aiosqlite`)
+- `tests/conftest.py`에서 테스트 유저/팀 시드
+- 디렉토리: `tests/api/`, `tests/integration/`, `tests/services/`
+- 마커: `@pytest.mark.requires_openai` - OPENAI_API_KEY 필요 테스트
 
-# 2. Start frontend dev server
-cd frontend
-pnpm dev
+### Frontend (Jest)
 
-# 3. Use chrome-devtools MCP tools to:
-# - Navigate to http://localhost:3000/ko
-# - Take snapshot to verify structure
-# - Check console messages (expect 0 errors)
-# - Start performance trace with reload
-# - Review Core Web Vitals
-# - Take screenshots for documentation
-# - Compare with baseline (frontend/docs/performance-baseline.md)
+```bash
+cd app-frontend && npm test
+```
+- `@testing-library/react` + `jest-environment-jsdom`
+- 테스트: `src/features/{feature}/__tests__/`
+
+## Environment Files
+
+| 파일 | 용도 |
+|------|------|
+| `app-backend/.env` | 공유 기본값 (비밀키 금지) |
+| `app-backend/.env.local` | 로컬 비밀값 (Git 제외) |
+| `app-backend/.env.docker.local` | Docker Compose override |
+| `app-frontend/.env` | `NEXT_PUBLIC_*` 기본값 |
+| `app-frontend/.env.local` | 로컬 비밀값 |
+
+우선순위: `.env` → `.env.local` → `.env.docker.local` (후자가 덮어씀)
+
+## Data Seeding
+
+```bash
+# ActionKit 마이그레이션 + 시드
+cd app-backend && ACTIONKIT_BOOTSTRAP_MODE=docker ./scripts/bootstrap_actionkit.sh
+
+# RAG 벡터 시드
+cd app-backend && RAG_BOOTSTRAP_MODE=docker ./scripts/bootstrap_rag.sh
 ```
 
-## AI Agent System (Curai)
+## Context Continuity
 
-**Framework:** Pydantic AI with streaming SSE responses
+세션 시작 시 반드시 읽을 파일 (순서대로):
+1. `docs/context/dev-status.md` - 현재 개발 상태/다음 액션
+2. `docs/context/decisions.md` - 확정된 기술 결정
+3. `docs/context/handoff.md` - 세션 핸드오프 요약
+4. `docs/context/ops-rules.md` - 운영 규칙
 
-**Architecture:**
+사용자가 `핸드오프`/`마무리`/`종료` 요청 시: `docs/context/handoff.md` 업데이트 후 커밋 대기.
 
-- Thread-based conversations with message history persistence
-- Agentic search using pre-defined DB tools
+## Browser Testing (Chrome DevTools MCP)
+
+프론트엔드 브라우저 테스트/성능 측정 시 **chrome-devtools MCP** 사용:
+
+```
+1. mcp__chrome-devtools__navigate_page({ url: "http://localhost:3000" })
+2. mcp__chrome-devtools__take_snapshot({ verbose: false })
+3. mcp__chrome-devtools__list_console_messages()
+4. mcp__chrome-devtools__performance_start_trace({ reload: true, autoStop: true })
+5. mcp__chrome-devtools__take_screenshot({ fullPage: true })
+```
+
+Core Web Vitals 목표: LCP <2000ms, FCP <1000ms, CLS <0.1, TTI <2500ms, TBT <300ms
+
+## Important Notes
+
+- **모듈 경로:** `app.main:app` (uvicorn 실행 시)
+- **API 포트:** 백엔드 8000, 프론트엔드 3000
+- **DB 세션:** `get_session()` 단일 팩토리 사용 (Read/Write 분리 없음)
+- **파일 저장:** 로컬 파일시스템 (`STORAGE_LOCAL_ROOT` 환경변수), S3 아님
+- **`app-worker` 필수:** 로드맵 비동기 생성은 워커 서비스 실행 필요
+- **임시 파일:** `.temp/artifacts/`에 저장, 커밋 금지

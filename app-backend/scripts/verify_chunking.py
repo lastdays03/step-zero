@@ -11,8 +11,9 @@ Usage:
 
 from __future__ import annotations
 
-import pdfplumber
 from pathlib import Path
+
+import pdfplumber
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 # 청킹 파라미터 (VectorStoreService와 동일)
@@ -100,7 +101,10 @@ def verify():
 
         for i, chunk in enumerate(chunks):
             # 청크 경계 품질 지표
-            starts_mid_sentence = not chunk[0].isupper() and chunk[0] not in "가나다라마바사아자차카타파하[#-•·"
+            starts_mid_sentence = (
+                not chunk[0].isupper()
+                and chunk[0] not in "가나다라마바사아자차카타파하[#-•·"
+            )
             ends_mid_word = chunk[-1] not in ".!?\n다요함됨음임)】"
 
             quality_flags = []
@@ -110,15 +114,19 @@ def verify():
                 quality_flags.append("MID-END")
 
             flags_str = f" ⚠️ {', '.join(quality_flags)}" if quality_flags else ""
-            print(f"  chunk[{i}]: {len(chunk):>4} chars | "
-                  f"시작: {chunk[:30].replace(chr(10), '↵')!r} | "
-                  f"끝: ...{chunk[-30:].replace(chr(10), '↵')!r}{flags_str}")
+            print(
+                f"  chunk[{i}]: {len(chunk):>4} chars | "
+                f"시작: {chunk[:30].replace(chr(10), '↵')!r} | "
+                f"끝: ...{chunk[-30:].replace(chr(10), '↵')!r}{flags_str}"
+            )
 
             if quality_flags:
                 issues.append((title[:30], i, quality_flags))
 
     print("\n" + "=" * 70)
-    print(f"요약: {total_docs}개 문서 → {total_chunks}개 청크 (평균 {total_chunks/max(total_docs,1):.1f})")
+    print(
+        f"요약: {total_docs}개 문서 → {total_chunks}개 청크 (평균 {total_chunks/max(total_docs,1):.1f})"
+    )
     if issues:
         print(f"\n⚠️ 경계 이슈 {len(issues)}건:")
         for title, idx, flags in issues:

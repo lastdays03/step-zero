@@ -88,12 +88,22 @@ def save_latest_run(
     if tier2_result and not tier2_result.get("skipped"):
         metrics["hit_rate_at_3"] = tier2_result.get("hit_rate", 0.0)
         metrics["faithfulness"] = tier2_result.get("faithfulness", {}).get("avg", 0.0)
-        metrics["answer_relevancy"] = tier2_result.get("answer_relevancy", {}).get("avg", 0.0)
-        metrics["answer_correctness"] = tier2_result.get("answer_correctness", {}).get("avg", 0.0)
+        metrics["answer_relevancy"] = tier2_result.get("answer_relevancy", {}).get(
+            "avg", 0.0
+        )
+        metrics["answer_correctness"] = tier2_result.get("answer_correctness", {}).get(
+            "avg", 0.0
+        )
     if tier4_result and not tier4_result.get("skipped"):
-        metrics["roadmap_actionkit_mapping_rate"] = tier4_result.get("actionkit_mapping_rate", 0.0)
-        metrics["roadmap_legal_basis_accuracy"] = tier4_result.get("legal_basis_accuracy", 0.0)
-        metrics["roadmap_personalization_score"] = tier4_result.get("personalization_score", 0.0)
+        metrics["roadmap_actionkit_mapping_rate"] = tier4_result.get(
+            "actionkit_mapping_rate", 0.0
+        )
+        metrics["roadmap_legal_basis_accuracy"] = tier4_result.get(
+            "legal_basis_accuracy", 0.0
+        )
+        metrics["roadmap_personalization_score"] = tier4_result.get(
+            "personalization_score", 0.0
+        )
 
     run_data = {
         "created_at": datetime.now().isoformat(),
@@ -181,9 +191,10 @@ async def run_tier2(dataset: list[dict]) -> dict:
     print("TIER 2: LLM 기반 메트릭 평가")
     print("=" * 60)
 
-    from app.features.rag.application.rag_service import RagService
     from langchain_openai import ChatOpenAI
+
     from app.core.config import get_settings
+    from app.features.rag.application.rag_service import RagService
 
     settings = get_settings()
     service = RagService()
@@ -266,7 +277,9 @@ async def run_tier2(dataset: list[dict]) -> dict:
             score = max(0, min(3, int(float(resp.content.strip()))))
         except ValueError:
             score = 0
-        correctness_scores.append({"id": case["id"], "score": score, "normalized": score / 3.0})
+        correctness_scores.append(
+            {"id": case["id"], "score": score, "normalized": score / 3.0}
+        )
 
     avg_correct = (
         sum(s["normalized"] for s in correctness_scores) / len(correctness_scores)
@@ -307,13 +320,15 @@ async def run_tier2(dataset: list[dict]) -> dict:
     # 개별 케이스 상세 저장
     cases_output = []
     for case in evaluated:
-        cases_output.append({
-            "id": case["id"],
-            "question": case["question"],
-            "ground_truth": case["ground_truth"],
-            "rag_answer": case["rag_answer"],
-            "retrieved_context_count": len(case["retrieved_contexts"]),
-        })
+        cases_output.append(
+            {
+                "id": case["id"],
+                "question": case["question"],
+                "ground_truth": case["ground_truth"],
+                "rag_answer": case["rag_answer"],
+                "retrieved_context_count": len(case["retrieved_contexts"]),
+            }
+        )
     save_results("tier2_cases", cases_output)
 
     return result
@@ -356,11 +371,17 @@ def _build_mock_steps_for_scenario(scenario: dict) -> list[dict]:
     doc_per_phase = max(0, min_documents // max(len(phases), 1))
 
     # Determine mapping_source based on expected_mapping_rate
-    mapping_source = "actionkit_direct" if expected_mapping_rate >= 0.5 else "llm_generated"
+    mapping_source = (
+        "actionkit_direct" if expected_mapping_rate >= 0.5 else "llm_generated"
+    )
 
     # Build personalized checklist depth based on experience_level
     checklist_items = (
-        [f"{business_type} 영업신고 서류 확인", "위생교육 이수 여부 확인", "보건증 발급 신청"]
+        [
+            f"{business_type} 영업신고 서류 확인",
+            "위생교육 이수 여부 확인",
+            "보건증 발급 신청",
+        ]
         if experience_level == "BEGINNER"
         else [f"{business_type} 핵심 서류 준비", "필수 요건 확인"]
     )
@@ -375,37 +396,63 @@ def _build_mock_steps_for_scenario(scenario: dict) -> list[dict]:
     for idx, phase in enumerate(phases):
         legal_basis: list[dict] = []
         for i in range(legal_per_phase):
-            legal_basis.append({
-                "title": f"관련 법령 {idx * legal_per_phase + i + 1}",
-                "snippet": f"{business_type} {phase} 관련 법령 요약",
-                "actionkit_item_id": item_id_counter if mapping_source == "actionkit_direct" else None,
-                "mapping_source": mapping_source,
-            })
+            legal_basis.append(
+                {
+                    "title": f"관련 법령 {idx * legal_per_phase + i + 1}",
+                    "snippet": f"{business_type} {phase} 관련 법령 요약",
+                    "actionkit_item_id": (
+                        item_id_counter
+                        if mapping_source == "actionkit_direct"
+                        else None
+                    ),
+                    "mapping_source": mapping_source,
+                }
+            )
             item_id_counter += 1
 
         documents: list[dict] = []
         for i in range(doc_per_phase):
-            documents.append({
-                "name": f"서류 {idx * doc_per_phase + i + 1}",
-                "file_url": f"actionkit/forms/{business_type}_{idx}_{i}.pdf" if mapping_source == "actionkit_direct" else None,
-                "actionkit_item_id": item_id_counter if mapping_source == "actionkit_direct" else None,
-                "actionkit_file_id": item_id_counter * 10 if mapping_source == "actionkit_direct" else None,
-                "mapping_source": mapping_source,
-            })
+            documents.append(
+                {
+                    "name": f"서류 {idx * doc_per_phase + i + 1}",
+                    "file_url": (
+                        f"actionkit/forms/{business_type}_{idx}_{i}.pdf"
+                        if mapping_source == "actionkit_direct"
+                        else None
+                    ),
+                    "actionkit_item_id": (
+                        item_id_counter
+                        if mapping_source == "actionkit_direct"
+                        else None
+                    ),
+                    "actionkit_file_id": (
+                        item_id_counter * 10
+                        if mapping_source == "actionkit_direct"
+                        else None
+                    ),
+                    "mapping_source": mapping_source,
+                }
+            )
             item_id_counter += 1
 
-        steps.append({
-            "phase": phase,
-            "title": f"{phase} 단계 진행",
-            "objective": f"{business_type} {phase} 절차를 완료합니다.",
-            "estimated_days": 7 if experience_level == "EXPERIENCED" else 14,
-            "checklist": checklist_items[:],
-            "legal_basis": legal_basis,
-            "documents": documents,
-            "risk_notes": [f"{phase} 단계 지연 위험"],
-            "mapping_source": mapping_source,
-            "actionkit_items": [item_id_counter - 1] if mapping_source == "actionkit_direct" else [],
-        })
+        steps.append(
+            {
+                "phase": phase,
+                "title": f"{phase} 단계 진행",
+                "objective": f"{business_type} {phase} 절차를 완료합니다.",
+                "estimated_days": 7 if experience_level == "EXPERIENCED" else 14,
+                "checklist": checklist_items[:],
+                "legal_basis": legal_basis,
+                "documents": documents,
+                "risk_notes": [f"{phase} 단계 지연 위험"],
+                "mapping_source": mapping_source,
+                "actionkit_items": (
+                    [item_id_counter - 1]
+                    if mapping_source == "actionkit_direct"
+                    else []
+                ),
+            }
+        )
 
     return steps
 
@@ -428,7 +475,11 @@ async def run_tier4(mock_mode: bool = True) -> dict:
         print(f"  SKIP: {ROADMAP_GOLDEN_DATASET_PATH} 없음")
         return {"skipped": True}
 
-    from scripts.eval.roadmap_evaluator import RoadmapEvaluator, PersonalizationEvalResult, summarize_eval_result
+    from scripts.eval.roadmap_evaluator import (
+        PersonalizationEvalResult,
+        RoadmapEvaluator,
+        summarize_eval_result,
+    )
 
     dataset = _load_roadmap_golden_dataset()
     print(f"  Loaded {len(dataset)} roadmap scenarios")
@@ -471,7 +522,9 @@ async def run_tier4(mock_mode: bool = True) -> dict:
         eval_results.append(result_dict)
 
         for key in aggregated:
-            val = result_dict.get(key, result.overall_score() if key == "overall_score" else 0.0)
+            val = result_dict.get(
+                key, result.overall_score() if key == "overall_score" else 0.0
+            )
             aggregated[key].append(float(val))
 
     # ── 개인화 비교 평가 ────────────────────────────────────────────
@@ -496,7 +549,9 @@ async def run_tier4(mock_mode: bool = True) -> dict:
                     payload_a=scenario.get("payload", {}),
                     payload_b=pair_scenario.get("payload", {}),
                 )
-                print(f"    Pair {scenario['id']} vs {cmp_id}: {p_result.analysis[:80]}")
+                print(
+                    f"    Pair {scenario['id']} vs {cmp_id}: {p_result.analysis[:80]}"
+                )
                 p_dict = p_result.to_dict()
                 p_dict["scenario_ids"] = [scenario["id"], cmp_id]
                 personalization_results.append(p_dict)
@@ -573,7 +628,9 @@ async def run_tier4(mock_mode: bool = True) -> dict:
 def _compare_roadmap_with_baseline(current: dict) -> None:
     """로드맵 평가 결과를 roadmap_baseline.json과 비교하여 회귀 감지."""
     if not ROADMAP_BASELINE_PATH.exists():
-        print(f"  INFO: {ROADMAP_BASELINE_PATH.name} 없음 — 첫 실행이면 --update-baseline으로 저장하세요.")
+        print(
+            f"  INFO: {ROADMAP_BASELINE_PATH.name} 없음 — 첫 실행이면 --update-baseline으로 저장하세요."
+        )
         return
 
     with open(ROADMAP_BASELINE_PATH, encoding="utf-8") as f:
@@ -605,7 +662,9 @@ def _compare_roadmap_with_baseline(current: dict) -> None:
         )
 
     if regressions:
-        print(f"\n  WARNING: {len(regressions)} roadmap metric(s) regressed: {regressions}")
+        print(
+            f"\n  WARNING: {len(regressions)} roadmap metric(s) regressed: {regressions}"
+        )
     else:
         print(f"\n  All roadmap metrics within acceptable range.")
 
@@ -651,7 +710,9 @@ def detect_regression() -> list[str]:
 
     regressions: list[str] = []
 
-    print(f"\n  ─── Regression Check (vs baseline {baseline.get('git_commit', '?')}) ───")
+    print(
+        f"\n  ─── Regression Check (vs baseline {baseline.get('git_commit', '?')}) ───"
+    )
 
     for metric, margin in REGRESSION_MARGINS.items():
         b_val = baseline_metrics.get(metric)
@@ -710,8 +771,12 @@ def generate_report() -> None:
         t2 = all_results["tier2_metrics"]
         print(f"\n  [Tier 2] Metrics:")
         print(f"    Faithfulness:       {t2.get('faithfulness', {}).get('avg', 'N/A')}")
-        print(f"    Answer Relevancy:   {t2.get('answer_relevancy', {}).get('avg', 'N/A')}")
-        print(f"    Answer Correctness: {t2.get('answer_correctness', {}).get('avg', 'N/A')}")
+        print(
+            f"    Answer Relevancy:   {t2.get('answer_relevancy', {}).get('avg', 'N/A')}"
+        )
+        print(
+            f"    Answer Correctness: {t2.get('answer_correctness', {}).get('avg', 'N/A')}"
+        )
         print(f"    Hit Rate@3:         {t2.get('hit_rate', 'N/A')}")
 
     if ROADMAP_EVAL_RESULTS_PATH.exists():
@@ -719,12 +784,24 @@ def generate_report() -> None:
             with open(ROADMAP_EVAL_RESULTS_PATH, encoding="utf-8") as fp:
                 t4 = json.load(fp)
             if not t4.get("skipped"):
-                print(f"\n  [Tier 4] Roadmap Quality Metrics ({t4.get('total_scenarios', 0)} scenarios):")
-                print(f"    ActionKit Mapping Rate:   {t4.get('actionkit_mapping_rate', 'N/A')}")
-                print(f"    Legal Basis Accuracy:     {t4.get('legal_basis_accuracy', 'N/A')}")
-                print(f"    Document Validity:        {t4.get('document_validity', 'N/A')}")
-                print(f"    Generation Success Rate:  {t4.get('generation_success_rate', 'N/A')}")
-                print(f"    Personalization Score:    {t4.get('personalization_score', 'N/A')}")
+                print(
+                    f"\n  [Tier 4] Roadmap Quality Metrics ({t4.get('total_scenarios', 0)} scenarios):"
+                )
+                print(
+                    f"    ActionKit Mapping Rate:   {t4.get('actionkit_mapping_rate', 'N/A')}"
+                )
+                print(
+                    f"    Legal Basis Accuracy:     {t4.get('legal_basis_accuracy', 'N/A')}"
+                )
+                print(
+                    f"    Document Validity:        {t4.get('document_validity', 'N/A')}"
+                )
+                print(
+                    f"    Generation Success Rate:  {t4.get('generation_success_rate', 'N/A')}"
+                )
+                print(
+                    f"    Personalization Score:    {t4.get('personalization_score', 'N/A')}"
+                )
                 print(f"    Overall Score:            {t4.get('overall_score', 'N/A')}")
         except Exception:
             pass
@@ -761,7 +838,7 @@ def generate_report() -> None:
 
         elif metric.startswith("roadmap_") and t4_data and not t4_data.get("skipped"):
             # roadmap_actionkit_mapping_rate -> actionkit_mapping_rate in t4_data
-            t4_key = metric[len("roadmap_"):]
+            t4_key = metric[len("roadmap_") :]
             value = t4_data.get(t4_key)
 
         elif "tier2_metrics" in all_results:
@@ -833,7 +910,9 @@ def main() -> None:
             with open(ROADMAP_EVAL_RESULTS_PATH, encoding="utf-8") as f:
                 t4_data = json.load(f)
             if not t4_data.get("skipped"):
-                t4_data["description"] = f"Baseline updated at {datetime.now().isoformat()}"
+                t4_data["description"] = (
+                    f"Baseline updated at {datetime.now().isoformat()}"
+                )
                 with open(ROADMAP_BASELINE_PATH, "w", encoding="utf-8") as f:
                     json.dump(t4_data, f, ensure_ascii=False, indent=2)
                 print(f"  Roadmap baseline updated: {ROADMAP_BASELINE_PATH}")

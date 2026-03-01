@@ -47,9 +47,7 @@ def backup() -> int:
     # 컬렉션 UUID 조회
     with engine.connect() as conn:
         row = conn.execute(
-            text(
-                "SELECT uuid FROM langchain_pg_collection WHERE name = :name"
-            ),
+            text("SELECT uuid FROM langchain_pg_collection WHERE name = :name"),
             {"name": "law_vectors"},
         ).fetchone()
 
@@ -62,14 +60,12 @@ def backup() -> int:
 
         # 임베딩 데이터 조회 (벡터 제외, 메타데이터만)
         rows = conn.execute(
-            text(
-                """
+            text("""
                 SELECT id, document, cmetadata
                 FROM langchain_pg_embedding
                 WHERE collection_id = :cid
                 ORDER BY id
-                """
-            ),
+                """),
             {"cid": collection_id},
         ).fetchall()
 
@@ -79,11 +75,15 @@ def backup() -> int:
 
     records = []
     for r in rows:
-        records.append({
-            "id": str(r[0]),
-            "document": r[1],
-            "cmetadata": r[2] if isinstance(r[2], dict) else json.loads(r[2]) if r[2] else {},
-        })
+        records.append(
+            {
+                "id": str(r[0]),
+                "document": r[1],
+                "cmetadata": (
+                    r[2] if isinstance(r[2], dict) else json.loads(r[2]) if r[2] else {}
+                ),
+            }
+        )
 
     backup_payload = {
         "collection_name": "law_vectors",

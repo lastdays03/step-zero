@@ -8,6 +8,7 @@ export interface RoadmapIntakePayload {
     location: string;
     description: string;
     startup_type: string;
+    startup_method: string;
     open_timeline: string;
     budget_range: string;
     additional_notes: string;

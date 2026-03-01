@@ -11,7 +11,6 @@ import pytest
 from app.features.rag.application.rag_service import format_docs_with_metadata
 from app.features.rag.application.semantic_router import SemanticRouter
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------

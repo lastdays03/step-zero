@@ -1,13 +1,12 @@
 from datetime import datetime
 from typing import Literal
 
-from pydantic import BaseModel
 import sqlalchemy as sa
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.models.announcement import Announcement
-
 
 AnnouncementStatus = Literal["draft", "published", "archived"]
 
@@ -44,11 +43,21 @@ class AnnouncementStatusUpdate(BaseModel):
 
 async def list_announcements(session: AsyncSession) -> AnnouncementList:
     rows = (
-        await session.execute(
-            select(Announcement).order_by(Announcement.created_at.desc(), Announcement.id.desc())
+        (
+            await session.execute(
+                select(Announcement).order_by(
+                    Announcement.created_at.desc(), Announcement.id.desc()
+                )
+            )
         )
-    ).scalars().all()
-    return AnnouncementList(items=[AnnouncementItem.model_validate(row, from_attributes=True) for row in rows])
+        .scalars()
+        .all()
+    )
+    return AnnouncementList(
+        items=[
+            AnnouncementItem.model_validate(row, from_attributes=True) for row in rows
+        ]
+    )
 
 
 async def create_announcement(
@@ -79,7 +88,11 @@ async def update_announcement(
     content: str | None,
     actor_id: int,
 ) -> Announcement | None:
-    row = (await session.execute(select(Announcement).where(Announcement.id == announcement_id))).scalar_one_or_none()
+    row = (
+        await session.execute(
+            select(Announcement).where(Announcement.id == announcement_id)
+        )
+    ).scalar_one_or_none()
     if not row:
         return None
 
@@ -102,7 +115,11 @@ async def update_announcement_status(
     status: AnnouncementStatus,
     actor_id: int,
 ) -> Announcement | None:
-    row = (await session.execute(select(Announcement).where(Announcement.id == announcement_id))).scalar_one_or_none()
+    row = (
+        await session.execute(
+            select(Announcement).where(Announcement.id == announcement_id)
+        )
+    ).scalar_one_or_none()
     if not row:
         return None
 
@@ -145,9 +162,8 @@ async def update_announcement_status(
         from app.models.notification import Notification
 
         # Delete all notifications linked to this announcement
-        delete_query = (
-            sa.delete(Notification)
-            .where(Notification.link == f"/announcements/{row.id}")
+        delete_query = sa.delete(Notification).where(
+            Notification.link == f"/announcements/{row.id}"
         )
         await session.execute(delete_query)
         await session.flush()

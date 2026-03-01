@@ -27,14 +27,18 @@ class RoadmapProgressService:
 
         steps = await self.roadmap_repo.list_steps(step.roadmap_id)
         ordered_steps = sorted(steps, key=lambda s: s.step_order)
-        target_idx = next((idx for idx, item in enumerate(ordered_steps) if item.id == step.id), None)
+        target_idx = next(
+            (idx for idx, item in enumerate(ordered_steps) if item.id == step.id), None
+        )
         if target_idx is None:
             raise InvalidRoadmapStepStatusError("Roadmap step sequence not found")
 
         previous_steps = ordered_steps[:target_idx]
         if normalized_status in {"IN_PROGRESS", "COMPLETED"}:
             if any(prev.status != "COMPLETED" for prev in previous_steps):
-                raise InvalidRoadmapStepStatusError("Previous steps must be completed first")
+                raise InvalidRoadmapStepStatusError(
+                    "Previous steps must be completed first"
+                )
 
         was_completed = step.status == "COMPLETED"
 
@@ -56,7 +60,8 @@ class RoadmapProgressService:
 
         if normalized_status == "COMPLETED":
             active_step_exists = any(
-                item.id != step.id and item.status == "IN_PROGRESS" for item in ordered_steps
+                item.id != step.id and item.status == "IN_PROGRESS"
+                for item in ordered_steps
             )
             if not active_step_exists:
                 for next_step in ordered_steps[target_idx + 1 :]:
@@ -84,7 +89,9 @@ class RoadmapProgressService:
         if normalized_status not in ALLOWED_STEP_STATUSES:
             raise InvalidRoadmapStepStatusError("Unsupported status")
 
-        step = await self.roadmap_repo.get_step_for_team(step_id=step_id, team_id=team_id)
+        step = await self.roadmap_repo.get_step_for_team(
+            step_id=step_id, team_id=team_id
+        )
         if not step:
             raise InvalidRoadmapStepStatusError("Roadmap step not found")
 
@@ -105,7 +112,9 @@ class RoadmapProgressService:
         action_id: int,
         completed: bool,
     ) -> RoadmapStepAction:
-        step = await self.roadmap_repo.get_step_for_team(step_id=step_id, team_id=team_id)
+        step = await self.roadmap_repo.get_step_for_team(
+            step_id=step_id, team_id=team_id
+        )
         if not step:
             raise InvalidRoadmapStepStatusError("Roadmap step not found")
 
@@ -122,7 +131,8 @@ class RoadmapProgressService:
         action.metadata_json = metadata
 
         checklist_actions = [
-            item for item in await self.roadmap_repo.list_step_actions([step_id])
+            item
+            for item in await self.roadmap_repo.list_step_actions([step_id])
             if item.action_type in {"CHECKLIST", "DOCUMENT"}
         ]
         if checklist_actions:

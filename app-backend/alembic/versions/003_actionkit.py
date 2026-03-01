@@ -4,9 +4,11 @@ Revision ID: 003_actionkit
 Revises: 002_roadmap
 Create Date: 2026-02-25
 """
-from alembic import op
+
 import sqlalchemy as sa
 import sqlmodel.sql.sqltypes
+
+from alembic import op
 
 revision = "003_actionkit"
 down_revision = "002_roadmap"
@@ -23,15 +25,23 @@ def upgrade() -> None:
         sa.Column("slug", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("title", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("sort_order", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
+        sa.Column(
+            "is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")
+        ),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_actionkit_categories_domain", "actionkit_categories", ["domain"])
+    op.create_index(
+        "ix_actionkit_categories_domain", "actionkit_categories", ["domain"]
+    )
     op.create_index("ix_actionkit_categories_slug", "actionkit_categories", ["slug"])
-    op.create_index("ix_actionkit_categories_sort_order", "actionkit_categories", ["sort_order"])
-    op.create_index("ix_actionkit_categories_is_active", "actionkit_categories", ["is_active"])
+    op.create_index(
+        "ix_actionkit_categories_sort_order", "actionkit_categories", ["sort_order"]
+    )
+    op.create_index(
+        "ix_actionkit_categories_is_active", "actionkit_categories", ["is_active"]
+    )
 
     # -- actionkit_items --
     op.create_table(
@@ -47,14 +57,18 @@ def upgrade() -> None:
         sa.Column("file_type", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("dday", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("sort_order", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")),
+        sa.Column(
+            "is_active", sa.Boolean(), nullable=False, server_default=sa.text("true")
+        ),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("updated_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(["category_id"], ["actionkit_categories.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
     op.create_index("ix_actionkit_items_domain", "actionkit_items", ["domain"])
-    op.create_index("ix_actionkit_items_category_id", "actionkit_items", ["category_id"])
+    op.create_index(
+        "ix_actionkit_items_category_id", "actionkit_items", ["category_id"]
+    )
     op.create_index("ix_actionkit_items_sort_order", "actionkit_items", ["sort_order"])
     op.create_index("ix_actionkit_items_is_active", "actionkit_items", ["is_active"])
 
@@ -69,8 +83,14 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["item_id"], ["actionkit_items.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_actionkit_item_highlights_item_id", "actionkit_item_highlights", ["item_id"])
-    op.create_index("ix_actionkit_item_highlights_sort_order", "actionkit_item_highlights", ["sort_order"])
+    op.create_index(
+        "ix_actionkit_item_highlights_item_id", "actionkit_item_highlights", ["item_id"]
+    )
+    op.create_index(
+        "ix_actionkit_item_highlights_sort_order",
+        "actionkit_item_highlights",
+        ["sort_order"],
+    )
 
     # -- actionkit_related_laws --
     op.create_table(
@@ -84,8 +104,12 @@ def upgrade() -> None:
         sa.ForeignKeyConstraint(["item_id"], ["actionkit_items.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_actionkit_related_laws_item_id", "actionkit_related_laws", ["item_id"])
-    op.create_index("ix_actionkit_related_laws_sort_order", "actionkit_related_laws", ["sort_order"])
+    op.create_index(
+        "ix_actionkit_related_laws_item_id", "actionkit_related_laws", ["item_id"]
+    )
+    op.create_index(
+        "ix_actionkit_related_laws_sort_order", "actionkit_related_laws", ["sort_order"]
+    )
 
     # -- actionkit_files --
     op.create_table(
@@ -94,11 +118,15 @@ def upgrade() -> None:
         sa.Column("item_id", sa.Integer(), nullable=False),
         sa.Column("version", sa.Integer(), nullable=False, server_default="1"),
         sa.Column("object_key", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("original_filename", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column(
+            "original_filename", sqlmodel.sql.sqltypes.AutoString(), nullable=True
+        ),
         sa.Column("mime_type", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("size_bytes", sa.Integer(), nullable=True),
         sa.Column("checksum", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-        sa.Column("is_current", sa.Boolean(), nullable=False, server_default=sa.text("true")),
+        sa.Column(
+            "is_current", sa.Boolean(), nullable=False, server_default=sa.text("true")
+        ),
         sa.Column("uploaded_at", sa.DateTime(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(["item_id"], ["actionkit_items.id"]),

@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import type { RoadmapDetailStep, StepItemState, MappingSource } from "./roadmap-utils";
 import { TOGGLE_ACTION_TYPES, ACTION_TYPE_LABEL } from "./roadmap-utils";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
+
 const MAPPING_SOURCE_CONFIG: Record<MappingSource, { label: string; className: string; icon: typeof BookOpen }> = {
     actionkit_direct: {
         label: "법령 기반",
@@ -240,21 +242,43 @@ export function TimelineStepItem({
                                                                     {item.description}
                                                                 </p>
                                                             ) : null}
-                                                            {item.source_url ? (
-                                                                <a
-                                                                    href={item.source_url}
-                                                                    target="_blank"
-                                                                    rel="noreferrer"
-                                                                    className="inline-flex items-center gap-1 mt-1 text-xs text-[#36a4f2] hover:underline"
-                                                                >
-                                                                    근거/원문 보기
-                                                                    <ExternalLink className="w-3 h-3" />
-                                                                </a>
-                                                            ) : item.action_type === "LEGAL_BASIS" ? (
-                                                                <span className="inline-flex items-center gap-1 mt-1 text-xs text-slate-400">
-                                                                    상세 법령 정보 준비 중
-                                                                </span>
-                                                            ) : null}
+                                                            {(() => {
+                                                                const actionkitItemId = item.metadata_json?.actionkit_item_id as number | undefined;
+
+                                                                if (item.source_url) {
+                                                                    const href = item.source_url.startsWith("/") ? `${API_URL}${item.source_url}` : item.source_url;
+                                                                    return (
+                                                                        <a href={href} target="_blank" rel="noreferrer"
+                                                                           className="inline-flex items-center gap-1 mt-1 text-xs text-[#36a4f2] hover:underline">
+                                                                            근거/원문 보기 <ExternalLink className="w-3 h-3" />
+                                                                        </a>
+                                                                    );
+                                                                }
+                                                                if (actionkitItemId) {
+                                                                    return (
+                                                                        <a href={`${API_URL}/api/v1/actionkits/items/${actionkitItemId}/download`}
+                                                                           target="_blank" rel="noreferrer"
+                                                                           className="inline-flex items-center gap-1 mt-1 text-xs text-[#36a4f2]/70 hover:text-[#36a4f2] hover:underline">
+                                                                            원문 보기 <ExternalLink className="w-3 h-3" />
+                                                                        </a>
+                                                                    );
+                                                                }
+                                                                if (item.action_type === "LEGAL_BASIS") {
+                                                                    return (
+                                                                        <span className="inline-flex items-center gap-1 mt-1 text-xs text-slate-400">
+                                                                            상세 법령 정보 준비 중
+                                                                        </span>
+                                                                    );
+                                                                }
+                                                                if (item.action_type === "DOCUMENT") {
+                                                                    return (
+                                                                        <span className="inline-flex items-center gap-1 mt-1 text-xs text-slate-400">
+                                                                            서류 정보 준비 중
+                                                                        </span>
+                                                                    );
+                                                                }
+                                                                return null;
+                                                            })()}
                                                         </div>
                                                     </div>
                                                 </li>

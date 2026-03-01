@@ -1,14 +1,25 @@
 from logging.config import fileConfig
 
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, pool
 from sqlalchemy.engine import make_url
-from sqlalchemy import pool
-
-from alembic import context
 from sqlmodel import SQLModel
 
+from alembic import context
 from app.core.config import get_settings
-from app.models import profile, roadmap, team, user, growth_club, actionkit, notification, user_discipline_history, admin_audit_log, audit_log, announcement, refresh_token  # noqa: F401
+from app.models import (  # noqa: F401
+    actionkit,
+    admin_audit_log,
+    announcement,
+    audit_log,
+    growth_club,
+    notification,
+    profile,
+    refresh_token,
+    roadmap,
+    team,
+    user,
+    user_discipline_history,
+)
 
 config = context.config
 settings = get_settings()
@@ -20,9 +31,13 @@ def _to_alembic_sync_url(database_url: str) -> str:
     backend = url.get_backend_name()
     driver = url.get_driver_name()
     if backend == "postgresql" and driver in {"asyncpg", "psycopg"}:
-        return url.set(drivername="postgresql+psycopg2").render_as_string(hide_password=False)
+        return url.set(drivername="postgresql+psycopg2").render_as_string(
+            hide_password=False
+        )
     if backend == "sqlite" and driver in {"aiosqlite"}:
-        return url.set(drivername="sqlite+pysqlite").render_as_string(hide_password=False)
+        return url.set(drivername="sqlite+pysqlite").render_as_string(
+            hide_password=False
+        )
     return url.render_as_string(hide_password=False)
 
 

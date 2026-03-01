@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends
 from typing import Dict
+
+from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.v1.actionkit.schemas import LawChapter, ActionKitCategory
+from app.api.v1.actionkit.schemas import ActionKitCategory, LawChapter
 from app.core.db import get_session
 from app.features.actionkit.application import ActionKitService
 from app.repositories.actionkit_repository import ActionKitRepository
@@ -26,6 +27,7 @@ async def list_laws(
 ):
     """List all law chapters."""
     return await _service(session).list_laws()
+
 
 @router.get(
     "/kits",

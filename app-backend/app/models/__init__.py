@@ -14,14 +14,16 @@ from app.models.growth_club import (
     GrowthClubComment,
     GrowthClubCommentRead,
     GrowthClubCommentReport,
-    GrowthClubPostAttachment,
     GrowthClubPost,
+    GrowthClubPostAttachment,
     GrowthClubPostLike,
     GrowthClubPostRead,
     GrowthClubPostReport,
     GrowthClubPostTagLink,
     GrowthClubTag,
 )
+from app.models.notification import Notification, NotificationBase, NotificationRead
+from app.models.profile import UserProfile, UserProfileRead, UserProfileUpdate
 from app.models.roadmap import (
     Roadmap,
     RoadmapGenerationJob,
@@ -32,8 +34,6 @@ from app.models.roadmap import (
 from app.models.team import Team, TeamMember
 from app.models.user import AuthenticatedUser, TokenWithUser, User, UserRead
 from app.models.user_discipline_history import UserDisciplineHistory
-from app.models.profile import UserProfile, UserProfileRead, UserProfileUpdate
-from app.models.notification import Notification, NotificationRead, NotificationBase
 
 __all__ = [
     "ActionKitCategory",

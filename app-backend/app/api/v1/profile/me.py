@@ -7,9 +7,9 @@ from sqlmodel import select
 
 from app.api import deps
 from app.core.db import get_session
+from app.features.profile.application.service import ProfileService
 from app.models.profile import UserProfileRead, UserProfileUpdate
 from app.models.user import AuthenticatedUser, User
-from app.features.profile.application.service import ProfileService
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -80,13 +80,22 @@ async def upload_my_profile_image(
     session: Annotated[AsyncSession, Depends(get_session)],
     file: UploadFile = File(..., description="업로드할 프로필 이미지 파일"),
 ):
-    logger.info("Uploading profile image for user_id=%s, filename=%s, content_type=%s", 
-                current_user.id, file.filename, file.content_type)
+    logger.info(
+        "Uploading profile image for user_id=%s, filename=%s, content_type=%s",
+        current_user.id,
+        file.filename,
+        file.content_type,
+    )
     try:
         service = ProfileService(session)
         await service.save_profile_image(current_user.id, file)
         logger.info("Profile image saved successfully for user_id=%s", current_user.id)
         return await _build_profile_read(session, service, current_user)
     except Exception as e:
-        logger.error("Error uploading profile image for user_id=%s: %s", current_user.id, str(e), exc_info=True)
+        logger.error(
+            "Error uploading profile image for user_id=%s: %s",
+            current_user.id,
+            str(e),
+            exc_info=True,
+        )
         raise

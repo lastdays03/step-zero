@@ -1,6 +1,6 @@
-
 from typing import Annotated
 from uuid import UUID
+
 from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -9,15 +9,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.core.db import get_session
+from app.core.security import settings
 from app.models.team import Team, TeamMember
 from app.models.user import AuthenticatedUser, User
-from app.core.security import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 optional_oauth2_scheme = OAuth2PasswordBearer(
     tokenUrl="/api/v1/auth/login",
     auto_error=False,
 )
+
 
 async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
@@ -30,14 +31,18 @@ async def get_current_user(
     )
 
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         subject = payload.get("sub")
         if subject is None:
             from app.core.logging import get_logger
+
             get_logger("app.api.deps").warning("Token sub is missing")
             raise credentials_exception
     except JWTError as e:
         from app.core.logging import get_logger
+
         get_logger("app.api.deps").warning(f"JWT validation failed: {str(e)}")
         raise credentials_exception
 
@@ -53,7 +58,9 @@ async def get_current_user(
     if not user:
         raise credentials_exception
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user")
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user"
+        )
 
     return AuthenticatedUser(
         id=user.id,
@@ -86,7 +93,9 @@ async def get_current_team(
         membership_result = await session.execute(membership_stmt)
         team = membership_result.scalar_one_or_none()
         if not team:
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Team access denied")
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="Team access denied"
+            )
         return team
 
     membership_stmt = (
@@ -113,7 +122,9 @@ async def get_optional_current_user(
         return None
 
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         subject = payload.get("sub")
         if subject is None:
             return None
@@ -153,7 +164,9 @@ async def get_current_user_or_guest(
         return None  # Genuine guest (no token at all)
 
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        payload = jwt.decode(
+            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+        )
         subject = payload.get("sub")
         if subject is None:
             return None

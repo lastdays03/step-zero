@@ -67,7 +67,9 @@ WAVE_CONFIG: dict[int, dict[str, list[dict[str, list[str] | str]]]] = {
 def get_wave_targets(wave: int) -> dict[str, list[dict]]:
     """특정 Wave의 수집 대상을 반환한다."""
     if wave not in WAVE_CONFIG:
-        raise ValueError(f"존재하지 않는 Wave: {wave}. 가능한 값: {list(WAVE_CONFIG.keys())}")
+        raise ValueError(
+            f"존재하지 않는 Wave: {wave}. 가능한 값: {list(WAVE_CONFIG.keys())}"
+        )
     return WAVE_CONFIG[wave]
 
 

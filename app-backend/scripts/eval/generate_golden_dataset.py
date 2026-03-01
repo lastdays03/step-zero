@@ -17,9 +17,8 @@ import asyncio
 import json
 from pathlib import Path
 
-from langchain_openai import ChatOpenAI
+from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_postgres import PGVector
-from langchain_openai import OpenAIEmbeddings
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
@@ -63,7 +62,9 @@ async def generate_from_documents(count: int, output_path: str) -> None:
         return
 
     # 벡터 DB에서 문서 가져오기
-    sync_db_url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
+    sync_db_url = settings.DATABASE_URL.replace(
+        "postgresql+asyncpg://", "postgresql://"
+    )
     embeddings = OpenAIEmbeddings(
         model=settings.OPENAI_EMBED_MODEL,
         api_key=settings.OPENAI_API_KEY,

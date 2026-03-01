@@ -59,12 +59,16 @@ async def test_update_roadmap_step_status_and_auto_advance(client: AsyncClient):
     )
     assert detail_response.status_code == 200
     detail_data = detail_response.json()
-    second_step = next(step for step in detail_data["steps"] if step["id"] == second_step_id)
+    second_step = next(
+        step for step in detail_data["steps"] if step["id"] == second_step_id
+    )
     assert second_step["status"] == "IN_PROGRESS"
 
 
 @pytest.mark.asyncio
-async def test_update_roadmap_step_status_blocks_out_of_order_completion(client: AsyncClient):
+async def test_update_roadmap_step_status_blocks_out_of_order_completion(
+    client: AsyncClient,
+):
     headers = await _login_headers(client)
     create_response = await client.post(
         "/api/v1/roadmaps",
@@ -102,7 +106,9 @@ async def test_get_latest_roadmap_detail(client: AsyncClient):
     )
     assert create_response.status_code == 200
 
-    latest_response = await client.get("/api/v1/roadmaps/latest/detail", headers=headers)
+    latest_response = await client.get(
+        "/api/v1/roadmaps/latest/detail", headers=headers
+    )
     assert latest_response.status_code == 200
     data = latest_response.json()
     assert "roadmap_id" in data
@@ -149,7 +155,9 @@ async def test_update_roadmap_step_action_completion(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_action_completion_auto_completes_step_and_advances_next(client: AsyncClient):
+async def test_action_completion_auto_completes_step_and_advances_next(
+    client: AsyncClient,
+):
     headers = await _login_headers(client)
     create_response = await client.post(
         "/api/v1/roadmaps",
@@ -187,12 +195,16 @@ async def test_action_completion_auto_completes_step_and_advances_next(client: A
         await session.commit()
 
         actions = (
-            await session.execute(
-                select(RoadmapStepAction)
-                .where(RoadmapStepAction.roadmap_step_id == first_step_id)
-                .order_by(RoadmapStepAction.id.asc())
+            (
+                await session.execute(
+                    select(RoadmapStepAction)
+                    .where(RoadmapStepAction.roadmap_step_id == first_step_id)
+                    .order_by(RoadmapStepAction.id.asc())
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
         action_ids = [action.id for action in actions]
 
     for action_id in action_ids:
@@ -267,8 +279,12 @@ async def test_action_completion_requires_document_actions_too(client: AsyncClie
     )
     assert detail_after_checklist.status_code == 200
     steps_after_checklist = detail_after_checklist.json()["steps"]
-    first_step_after_checklist = next(item for item in steps_after_checklist if item["id"] == first_step_id)
-    second_step_after_checklist = next(item for item in steps_after_checklist if item["id"] == second_step_id)
+    first_step_after_checklist = next(
+        item for item in steps_after_checklist if item["id"] == first_step_id
+    )
+    second_step_after_checklist = next(
+        item for item in steps_after_checklist if item["id"] == second_step_id
+    )
     assert first_step_after_checklist["status"] != "COMPLETED"
     assert second_step_after_checklist["status"] != "IN_PROGRESS"
 
@@ -285,7 +301,11 @@ async def test_action_completion_requires_document_actions_too(client: AsyncClie
     )
     assert detail_after_document.status_code == 200
     steps_after_document = detail_after_document.json()["steps"]
-    first_step_after_document = next(item for item in steps_after_document if item["id"] == first_step_id)
-    second_step_after_document = next(item for item in steps_after_document if item["id"] == second_step_id)
+    first_step_after_document = next(
+        item for item in steps_after_document if item["id"] == first_step_id
+    )
+    second_step_after_document = next(
+        item for item in steps_after_document if item["id"] == second_step_id
+    )
     assert first_step_after_document["status"] == "COMPLETED"
     assert second_step_after_document["status"] == "IN_PROGRESS"

@@ -10,6 +10,7 @@ import {
     Loader2,
     MapPin,
     Paperclip,
+    Repeat2,
     Sparkles,
     Wallet,
 } from "lucide-react";
@@ -20,6 +21,7 @@ export interface RoadmapIntakePayload {
     location: string;
     description: string;
     startup_type: string;
+    startup_method: string;
     open_timeline: string;
     budget_range: string;
     additional_notes: string;
@@ -47,6 +49,7 @@ type FieldKey =
     | "business_type"
     | "location"
     | "startup_type"
+    | "startup_method"
     | "open_timeline"
     | "budget_range"
     | "description";
@@ -55,6 +58,7 @@ export interface RoadmapRawInput {
     business_type: string;
     location: string;
     startup_type: string;
+    startup_method: string;
     open_timeline: string;
     budget_range: string;
     description: string;
@@ -69,6 +73,7 @@ const QUESTIONS: Array<{ key: FieldKey; prompt: string; required: boolean; label
     { key: "business_type", prompt: "어떤 업종으로 창업을 준비하시나요?", required: true, label: "업종" },
     { key: "location", prompt: "어느 지역에서 시작하시나요?", required: true, label: "지역" },
     { key: "startup_type", prompt: "창업 형태는 무엇인가요? (개인사업자/법인/미정)", required: true, label: "형태" },
+    { key: "startup_method", prompt: "창업 방식은 무엇인가요? (신규 창업/양수양도/프랜차이즈)", required: true, label: "방식" },
     { key: "open_timeline", prompt: "오픈 목표 시점은 언제인가요? (예: 3개월 내)", required: true, label: "오픈" },
     { key: "budget_range", prompt: "초기 예산 범위는 어느 정도인가요?", required: true, label: "예산" },
     { key: "description", prompt: "추가로 고려 중인 조건이나 설명이 있나요? (선택)", required: false, label: "추가 설명" },
@@ -79,6 +84,7 @@ const PANEL_ROWS: Array<{ key: FieldKey; label: string; icon: React.ReactNode }>
     { key: "business_type", label: "업종", icon: <Briefcase className="h-3 w-3" /> },
     { key: "location", label: "지역", icon: <MapPin className="h-3 w-3" /> },
     { key: "startup_type", label: "형태", icon: <Database className="h-3 w-3" /> },
+    { key: "startup_method", label: "방식", icon: <Repeat2 className="h-3 w-3" /> },
     { key: "open_timeline", label: "오픈", icon: <CalendarClock className="h-3 w-3" /> },
     { key: "budget_range", label: "예산", icon: <Wallet className="h-3 w-3" /> },
 ];
@@ -99,6 +105,7 @@ export const RoadmapChatIntake = ({
         business_type: "",
         location: "",
         startup_type: "",
+        startup_method: "",
         open_timeline: "",
         budget_range: "",
         description: "",
@@ -157,6 +164,7 @@ export const RoadmapChatIntake = ({
             business_type: (answers.business_type || (current?.key === "business_type" ? input : "")).trim(),
             location: (answers.location || (current?.key === "location" ? input : "")).trim(),
             startup_type: (answers.startup_type || (current?.key === "startup_type" ? input : "")).trim(),
+            startup_method: (answers.startup_method || (current?.key === "startup_method" ? input : "")).trim(),
             open_timeline: (answers.open_timeline || (current?.key === "open_timeline" ? input : "")).trim(),
             budget_range: (answers.budget_range || (current?.key === "budget_range" ? input : "")).trim(),
             description: (answers.description || (current?.key === "description" ? input : "")).trim(),
@@ -165,10 +173,11 @@ export const RoadmapChatIntake = ({
             !rawInput.business_type
             || !rawInput.location
             || !rawInput.startup_type
+            || !rawInput.startup_method
             || !rawInput.open_timeline
             || !rawInput.budget_range
         ) {
-            setError("업종, 지역, 창업 형태, 오픈 시점, 예산은 필수입니다.");
+            setError("업종, 지역, 창업 형태, 창업 방식, 오픈 시점, 예산은 필수입니다.");
             return;
         }
         setValidating(true);

@@ -2,12 +2,18 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.api.v1.schemas import ChatRequest, ChatResponse, RagQueryRequest, RagQueryResponse
-from app.features.rag.application.deps import get_chat_service, get_rag_service
+from app.api.v1.schemas import (
+    ChatRequest,
+    ChatResponse,
+    RagQueryRequest,
+    RagQueryResponse,
+)
 from app.features.rag.application.chat_service import ChatService
+from app.features.rag.application.deps import get_chat_service, get_rag_service
 from app.features.rag.application.rag_service import RagService
 
 router = APIRouter()
+
 
 @router.post(
     "/query",

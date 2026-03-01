@@ -37,7 +37,6 @@ from pathlib import Path
 
 from app.core.logging import get_logger
 from app.services.law_api_client import LawApiClient, LawApiError, LawFullText
-
 from scripts.fetch_laws_config import (
     WAVE_CONFIG,
     get_wave_targets,
@@ -135,9 +134,15 @@ def _save_law(
 
     # Metadata JSON
     meta = _build_metadata(law, biz_types, hierarchy)
-    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    meta_path.write_text(
+        json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8"
+    )
 
-    logger.info("  -> 저장 완료: %s (%d조)", md_path.relative_to(_BACKEND_ROOT), len(law.articles))
+    logger.info(
+        "  -> 저장 완료: %s (%d조)",
+        md_path.relative_to(_BACKEND_ROOT),
+        len(law.articles),
+    )
     return True
 
 
@@ -161,7 +166,12 @@ async def _fetch_and_save_law(
     result = {"query": query, "biz_type": biz_type, "status": "unknown", "laws": []}
 
     if dry_run:
-        logger.info("[DRY-RUN] 검색: query='%s', hierarchy=%s, 업종=%s", query, hierarchy_filters, biz_type)
+        logger.info(
+            "[DRY-RUN] 검색: query='%s', hierarchy=%s, 업종=%s",
+            query,
+            hierarchy_filters,
+            biz_type,
+        )
         result["status"] = "dry_run"
         return result
 
@@ -194,7 +204,9 @@ async def _fetch_and_save_law(
         if not matched_hierarchy:
             continue
 
-        logger.info("  본문 조회: %s (MST=%s, type=%s)", sr.law_name, sr.law_mst, sr.law_type)
+        logger.info(
+            "  본문 조회: %s (MST=%s, type=%s)", sr.law_name, sr.law_mst, sr.law_type
+        )
         try:
             full_text = await client.get_law_full_text(str(sr.law_mst))
         except LawApiError as e:
@@ -217,7 +229,9 @@ async def _fetch_and_save_law(
     return result
 
 
-async def fetch_wave(wave: int, force: bool = False, dry_run: bool = False) -> list[dict]:
+async def fetch_wave(
+    wave: int, force: bool = False, dry_run: bool = False
+) -> list[dict]:
     """Wave 단위로 법률을 수집한다."""
     targets = get_wave_targets(wave)
     all_results = []
@@ -226,7 +240,9 @@ async def fetch_wave(wave: int, force: bool = False, dry_run: bool = False) -> l
         for biz_type, queries in targets.items():
             logger.info("=== 업종: %s ===", biz_type)
             for q in queries:
-                logger.info("  검색: query='%s', hierarchy=%s", q["query"], q["hierarchy"])
+                logger.info(
+                    "  검색: query='%s', hierarchy=%s", q["query"], q["hierarchy"]
+                )
                 result = await _fetch_and_save_law(
                     client,
                     q["query"],
@@ -255,7 +271,11 @@ async def fetch_single_law(law_name: str, force: bool = False) -> list[dict]:
 
     async with LawApiClient() as client:
         result = await _fetch_and_save_law(
-            client, law_name, hierarchy, biz_type, force=force,
+            client,
+            law_name,
+            hierarchy,
+            biz_type,
+            force=force,
         )
     return [result]
 
@@ -324,12 +344,16 @@ def parse_args() -> argparse.Namespace:
         description="국가법령정보센터 API를 통한 업종별 법률 수집 CLI."
     )
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--wave", type=int, choices=[1, 2, 3], help="수집할 Wave 번호 (1-3)")
+    group.add_argument(
+        "--wave", type=int, choices=[1, 2, 3], help="수집할 Wave 번호 (1-3)"
+    )
     group.add_argument("--law", type=str, help="단일 법률명으로 검색하여 수집")
     group.add_argument("--list", action="store_true", help="수집 대상 목록 출력")
     group.add_argument("--status", action="store_true", help="수집 현황 출력")
 
-    parser.add_argument("--dry-run", action="store_true", help="시뮬레이션 (실제 API 호출 없음)")
+    parser.add_argument(
+        "--dry-run", action="store_true", help="시뮬레이션 (실제 API 호출 없음)"
+    )
     parser.add_argument("--force", action="store_true", help="기존 파일 덮어쓰기")
     return parser.parse_args()
 
@@ -346,7 +370,12 @@ async def run() -> int:
         return 0
 
     if args.wave:
-        logger.info("Wave %d 수집 시작 (dry_run=%s, force=%s)", args.wave, args.dry_run, args.force)
+        logger.info(
+            "Wave %d 수집 시작 (dry_run=%s, force=%s)",
+            args.wave,
+            args.dry_run,
+            args.force,
+        )
         results = await fetch_wave(args.wave, force=args.force, dry_run=args.dry_run)
         _print_results(results)
         return 0

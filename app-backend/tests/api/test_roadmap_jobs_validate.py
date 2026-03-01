@@ -50,7 +50,9 @@ async def _login_headers(client: AsyncClient) -> dict[str, str]:
 
 @_skip_no_openai
 @pytest.mark.asyncio
-async def test_validate_input_success(client: AsyncClient, monkeypatch: pytest.MonkeyPatch):
+async def test_validate_input_success(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+):
     mock_service = _MockRagService(
         '{"valid": true, "normalized_business_type": "휴게음식점", '
         '"normalized_location": "서울특별시 강남구", "reason": null, "confidence": 0.95}'
@@ -78,7 +80,9 @@ async def test_validate_input_success(client: AsyncClient, monkeypatch: pytest.M
 
 @_skip_no_openai
 @pytest.mark.asyncio
-async def test_validate_input_invalid(client: AsyncClient, monkeypatch: pytest.MonkeyPatch):
+async def test_validate_input_invalid(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+):
     mock_service = _MockRagService(
         '{"valid": false, "normalized_business_type": null, '
         '"normalized_location": null, "reason": "지역 정보가 모호합니다.", "confidence": 0.4}'
@@ -105,7 +109,9 @@ async def test_validate_input_invalid(client: AsyncClient, monkeypatch: pytest.M
 
 @_skip_no_openai
 @pytest.mark.asyncio
-async def test_create_job_blocks_invalid_input(client: AsyncClient, monkeypatch: pytest.MonkeyPatch):
+async def test_create_job_blocks_invalid_input(
+    client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+):
     mock_service = _MockRagService(
         '{"valid": false, "normalized_business_type": null, '
         '"normalized_location": null, "reason": "입력값이 불명확합니다.", "confidence": 0.3}'

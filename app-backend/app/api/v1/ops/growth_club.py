@@ -1,18 +1,26 @@
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, Path
-from sqlmodel import select
+from pydantic import BaseModel
+from sqlalchemy import delete, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-from sqlalchemy import func, desc, delete
+from sqlmodel import select
 
-from app.core.db import get_session
-from app.models.growth_club import GrowthClubPost, GrowthClubPostRead, GrowthClubComment, GrowthClubCommentRead, GrowthClubPostReport, GrowthClubCommentReport
-from app.features.ops.application.growth_club import get_queue_summary
-from app.features.ops.application.audit_logs.service import save_audit_log
 from app.api.deps import get_current_user
-from pydantic import BaseModel
-from app.models.user import AuthenticatedUser, User
+from app.core.db import get_session
+from app.features.ops.application.audit_logs.service import save_audit_log
+from app.features.ops.application.growth_club import get_queue_summary
+from app.models.growth_club import (
+    GrowthClubComment,
+    GrowthClubCommentRead,
+    GrowthClubCommentReport,
+    GrowthClubPost,
+    GrowthClubPostRead,
+    GrowthClubPostReport,
+)
 from app.models.notification import Notification
+from app.models.user import AuthenticatedUser, User
 
 router = APIRouter(prefix="/growth-club")
 
@@ -33,16 +41,16 @@ async def get_growth_club_queue_summary() -> dict[str, int]:
     description="운영자에 의해 또는 자동 신고로 블라인드 처리된 게시글 목록을 조회합니다.",
     response_model=List[GrowthClubPostRead],
 )
-async def list_blinded_posts(
-    session: AsyncSession = Depends(get_session)
-):
+async def list_blinded_posts(session: AsyncSession = Depends(get_session)):
     from app.models.growth_club import GrowthClubPostReport
-    
+
     query = (
         select(
             GrowthClubPost,
             func.count(GrowthClubPostReport.id).label("report_count_val"),
-            func.mode().within_group(GrowthClubPostReport.reason).label("most_common_reason")
+            func.mode()
+            .within_group(GrowthClubPostReport.reason)
+            .label("most_common_reason"),
         )
         .outerjoin(GrowthClubPostReport)
         .where(GrowthClubPost.is_blinded == True)
@@ -51,11 +59,13 @@ async def list_blinded_posts(
         .options(
             selectinload(GrowthClubPost.author).selectinload(User.profile),
             selectinload(GrowthClubPost.attachments),
-            selectinload(GrowthClubPost.comments).selectinload(GrowthClubComment.author).selectinload(User.profile),
+            selectinload(GrowthClubPost.comments)
+            .selectinload(GrowthClubComment.author)
+            .selectinload(User.profile),
         )
     )
     result = await session.execute(query)
-    
+
     read_posts = []
     for post, report_count, report_reason in result.all():
         post_read = GrowthClubPostRead.model_validate(post)
@@ -65,7 +75,7 @@ async def list_blinded_posts(
         post_read.likes_count = 0
         post_read.is_liked = False
         read_posts.append(post_read)
-    
+
     return read_posts
 
 
@@ -77,35 +87,40 @@ async def list_blinded_posts(
 async def unblind_post(
     post_id: int = Path(..., description="블라인드 해제할 게시글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     post = await session.get(GrowthClubPost, post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
-    
+
     post.is_blinded = False
     post.report_count = 0  # 블라인드 해제 시 신고 횟수도 초기화
-    
+
     # 신고 기록 삭제
-    await session.execute(delete(GrowthClubPostReport).where(GrowthClubPostReport.post_id == post_id))
-    
+    await session.execute(
+        delete(GrowthClubPostReport).where(GrowthClubPostReport.post_id == post_id)
+    )
+
     # 작성자 정보 조회
     author = await session.get(User, post.author_id)
     target_author = author.email if author else None
 
     # 기존 블라인드 감사 로그가 있는지 확인하고, 있으면 업데이트
-    from app.models.audit_log import AuditLog
     from datetime import datetime
 
+    from app.models.audit_log import AuditLog
+
     old_log_query = await session.execute(
-        select(AuditLog).where(
+        select(AuditLog)
+        .where(
             AuditLog.target_type == "post",
             AuditLog.target_id == str(post_id),
-            AuditLog.action == "growth_club.post.blind"
-        ).order_by(desc(AuditLog.created_at))
+            AuditLog.action == "growth_club.post.blind",
+        )
+        .order_by(desc(AuditLog.created_at))
     )
     old_log = old_log_query.scalars().first()
-    
+
     if old_log:
         old_log.action = "growth_club.post.unblind"
         old_log.user_id = current_user.id
@@ -120,12 +135,12 @@ async def unblind_post(
             target_type="post",
             target_id=str(post_id),
             target_author=target_author,
-            details=f"게시글 '{post.title[:20]}...' 블라인드 해제"
+            details=f"게시글 '{post.title[:20]}...' 블라인드 해제",
         )
-    
+
     session.add(post)
     await session.commit()
-    
+
     return {"status": "success", "message": "Post unblinded successfully"}
 
 
@@ -135,16 +150,16 @@ async def unblind_post(
     description="신고로 인해 블라인드 처리된 댓글 목록을 조회합니다.",
     response_model=List[GrowthClubCommentRead],
 )
-async def list_blinded_comments(
-    session: AsyncSession = Depends(get_session)
-):
+async def list_blinded_comments(session: AsyncSession = Depends(get_session)):
     from app.models.growth_club import GrowthClubCommentReport
-    
+
     query = (
         select(
             GrowthClubComment,
             func.count(GrowthClubCommentReport.id).label("report_count_val"),
-            func.mode().within_group(GrowthClubCommentReport.reason).label("most_common_reason")
+            func.mode()
+            .within_group(GrowthClubCommentReport.reason)
+            .label("most_common_reason"),
         )
         .outerjoin(GrowthClubCommentReport)
         .where(GrowthClubComment.is_blinded == True)
@@ -155,14 +170,14 @@ async def list_blinded_comments(
         )
     )
     result = await session.execute(query)
-    
+
     read_comments = []
     for comment, report_count, report_reason in result.all():
         comment_read = GrowthClubCommentRead.model_validate(comment)
         comment_read.report_count = report_count
         comment_read.report_reason = report_reason
         read_comments.append(comment_read)
-    
+
     return read_comments
 
 
@@ -174,32 +189,39 @@ async def list_blinded_comments(
 async def unblind_comment(
     comment_id: int = Path(..., description="블라인드 해제할 댓글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     comment = await session.get(GrowthClubComment, comment_id)
     if not comment:
         raise HTTPException(status_code=404, detail="Comment not found")
-    
+
     comment.is_blinded = False
     comment.report_count = 0
-    
+
     # 신고 기록 삭제
-    await session.execute(delete(GrowthClubCommentReport).where(GrowthClubCommentReport.comment_id == comment_id))
-    
+    await session.execute(
+        delete(GrowthClubCommentReport).where(
+            GrowthClubCommentReport.comment_id == comment_id
+        )
+    )
+
     # 작성자 정보 조회
     author = await session.get(User, comment.author_id)
     target_author = author.email if author else None
 
     # 기존 블라인드 감사 로그가 있는지 확인하고, 있으면 업데이트
-    from app.models.audit_log import AuditLog
     from datetime import datetime
 
+    from app.models.audit_log import AuditLog
+
     old_log_query = await session.execute(
-        select(AuditLog).where(
+        select(AuditLog)
+        .where(
             AuditLog.target_type == "comment",
             AuditLog.target_id == str(comment_id),
-            AuditLog.action == "growth_club.comment.blind"
-        ).order_by(desc(AuditLog.created_at))
+            AuditLog.action == "growth_club.comment.blind",
+        )
+        .order_by(desc(AuditLog.created_at))
     )
     old_log = old_log_query.scalars().first()
 
@@ -217,12 +239,12 @@ async def unblind_comment(
             target_type="comment",
             target_id=str(comment_id),
             target_author=target_author,
-            details=f"댓글 '{comment.content[:20]}...' 블라인드 해제"
+            details=f"댓글 '{comment.content[:20]}...' 블라인드 해제",
         )
-    
+
     session.add(comment)
     await session.commit()
-    
+
     return {"status": "success", "message": "Comment unblinded successfully"}
 
 
@@ -241,23 +263,24 @@ async def suspend_user(
     suspend_data: SuspendRequest,
     user_id: int = Path(..., description="정지할 사용자 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     user = await session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-        
+
     from datetime import datetime, timezone
+
     now_utc = datetime.now(timezone.utc)
     user.is_suspended = True
     user.suspended_at = now_utc.replace(tzinfo=None)  # DB는 naive UTC로 저장
     user.suspension_reason = suspend_data.reason
     session.add(user)
-    
+
     # 알림 생성
     target_label = "게시글" if suspend_data.target_type == "POST" else "댓글"
     message = f"사용자의 {target_label}이 부적절함에 따라 관리자에 의해 그로스 클럽의 이용이 불가합니다. 사유: {suspend_data.reason}"
-    
+
     notification = Notification(
         user_id=user_id,
         content=message,
@@ -265,9 +288,10 @@ async def suspend_user(
         link="/growth-club",
     )
     session.add(notification)
-    
+
     # 감사 로그 기록
     from app.features.ops.application.audit_logs.service import save_audit_log
+
     await save_audit_log(
         session=session,
         user_id=current_user.id,
@@ -275,13 +299,18 @@ async def suspend_user(
         target_type="user",
         target_id=str(user_id),
         target_author=user.email,
-        details=f"사용자 '{user.email}' 이용 정지 처리 (사유: {suspend_data.reason})"
+        details=f"사용자 '{user.email}' 이용 정지 처리 (사유: {suspend_data.reason})",
     )
-    
+
     await session.commit()
     # Z suffix를 붙여 프론트엔드가 UTC로 올바르게 파싱하도록 함
     suspended_at_iso = now_utc.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
-    return {"status": "success", "message": "User suspended successfully", "suspended_at": suspended_at_iso}
+    return {
+        "status": "success",
+        "message": "User suspended successfully",
+        "suspended_at": suspended_at_iso,
+    }
+
 
 @router.post(
     "/users/{user_id}/unsuspend",
@@ -291,18 +320,19 @@ async def suspend_user(
 async def unsuspend_user(
     user_id: int = Path(..., description="정지 해제할 사용자 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     user = await session.get(User, user_id)
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-        
+
     user.is_suspended = False
     user.suspended_at = None
     session.add(user)
-    
+
     # 감사 로그 기록
     from app.features.ops.application.audit_logs.service import save_audit_log
+
     await save_audit_log(
         session=session,
         user_id=current_user.id,
@@ -310,9 +340,9 @@ async def unsuspend_user(
         target_type="user",
         target_id=str(user_id),
         target_author=user.email,
-        details=f"사용자 '{user.email}' 이용 정지 해제"
+        details=f"사용자 '{user.email}' 이용 정지 해제",
     )
-    
+
     await session.commit()
     return {"status": "success", "message": "User unsuspended successfully"}
 
@@ -325,13 +355,15 @@ async def unsuspend_user(
 async def delete_blinded_post(
     post_id: int = Path(..., description="삭제할 게시글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     post = await session.get(GrowthClubPost, post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
     if not post.is_blinded:
-        raise HTTPException(status_code=400, detail="블라인드 처리된 게시글만 삭제할 수 있습니다.")
+        raise HTTPException(
+            status_code=400, detail="블라인드 처리된 게시글만 삭제할 수 있습니다."
+        )
 
     # 작성자 정보
     author = await session.get(User, post.author_id)
@@ -344,7 +376,7 @@ async def delete_blinded_post(
         target_type="post",
         target_id=str(post_id),
         target_author=author.email if author else None,
-        details=f"게시글 '{post.title[:20]}...' 운영자에 의해 영구 삭제"
+        details=f"게시글 '{post.title[:20]}...' 운영자에 의해 영구 삭제",
     )
 
     await session.delete(post)
@@ -360,13 +392,15 @@ async def delete_blinded_post(
 async def delete_blinded_comment(
     comment_id: int = Path(..., description="삭제할 댓글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     comment = await session.get(GrowthClubComment, comment_id)
     if not comment:
         raise HTTPException(status_code=404, detail="Comment not found")
     if not comment.is_blinded:
-        raise HTTPException(status_code=400, detail="블라인드 처리된 댓글만 삭제할 수 있습니다.")
+        raise HTTPException(
+            status_code=400, detail="블라인드 처리된 댓글만 삭제할 수 있습니다."
+        )
 
     # 작성자 정보
     author = await session.get(User, comment.author_id)
@@ -379,7 +413,7 @@ async def delete_blinded_comment(
         target_type="comment",
         target_id=str(comment_id),
         target_author=author.email if author else None,
-        details=f"댓글 '{comment.content[:20]}...' 운영자에 의해 영구 삭제"
+        details=f"댓글 '{comment.content[:20]}...' 운영자에 의해 영구 삭제",
     )
 
     await session.delete(comment)

@@ -1,2 +1,1 @@
 """Seed source package."""
-

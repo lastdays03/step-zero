@@ -16,7 +16,11 @@ from app.features.ops.application.announcements import (
     update_announcement,
     update_announcement_status,
 )
-from app.features.ops.application.audit_logs import AuditAction, AuditTargetType, record_admin_audit_log
+from app.features.ops.application.audit_logs import (
+    AuditAction,
+    AuditTargetType,
+    record_admin_audit_log,
+)
 from app.models.user import AuthenticatedUser
 
 router = APIRouter(prefix="/announcements")

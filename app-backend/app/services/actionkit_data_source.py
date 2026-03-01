@@ -89,7 +89,7 @@ def _strip_path_prefix(path_str: str) -> str:
     """seed 경로에서 'actionkits/files/' 접두사를 제거한다."""
     normalized = path_str.strip().lstrip("/")
     if normalized.startswith("actionkits/files/"):
-        return normalized[len("actionkits/files/"):]
+        return normalized[len("actionkits/files/") :]
     return normalized
 
 
@@ -105,9 +105,18 @@ class ActionKitDataSource(LawDataSource):
         settings = get_settings()
         self.storage_root = storage_root or settings.ACTIONKIT_STORAGE_PATH
 
-    def _find_file(self, domain: str, category_slug: str, item_index: int, filename: str) -> Path | None:
+    def _find_file(
+        self, domain: str, category_slug: str, item_index: int, filename: str
+    ) -> Path | None:
         """uploads/actionkit/ 아래에서 파일을 찾는다."""
-        expected = self.storage_root / domain / category_slug / str(item_index) / "v1" / filename
+        expected = (
+            self.storage_root
+            / domain
+            / category_slug
+            / str(item_index)
+            / "v1"
+            / filename
+        )
         if expected.exists():
             return expected
         return None
@@ -143,7 +152,9 @@ class ActionKitDataSource(LawDataSource):
         # content_body 조합
         content_body = _build_seed_content(item, include_parsed=parsed_text)
         if not content_body.strip():
-            logger.warning("빈 content_body: domain=%s, name=%s", domain, item.get("name"))
+            logger.warning(
+                "빈 content_body: domain=%s, name=%s", domain, item.get("name")
+            )
             return None
 
         category = f"actionkit/{domain}/{category_slug}"
@@ -205,6 +216,8 @@ class ActionKitDataSource(LawDataSource):
             "ActionKit 데이터 로드 완료: total=%d, full_parse=%d, metadata_only=%d",
             len(results),
             sum(1 for r in results if r.metadata.get("parse_status") == "full"),
-            sum(1 for r in results if r.metadata.get("parse_status") == "metadata_only"),
+            sum(
+                1 for r in results if r.metadata.get("parse_status") == "metadata_only"
+            ),
         )
         return results

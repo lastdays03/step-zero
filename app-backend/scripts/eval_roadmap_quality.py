@@ -70,7 +70,9 @@ class RoadmapSnapshot:
 async def load_all_roadmaps(session: AsyncSession) -> list[RoadmapSnapshot]:
     """Load all non-deleted roadmaps with steps, details, and actions."""
     # 1. Load roadmaps
-    stmt = select(Roadmap).where(Roadmap.deleted_at.is_(None)).order_by(Roadmap.created_at)
+    stmt = (
+        select(Roadmap).where(Roadmap.deleted_at.is_(None)).order_by(Roadmap.created_at)
+    )
     result = await session.execute(stmt)
     roadmaps: list[Roadmap] = list(result.scalars().all())
 
@@ -159,7 +161,14 @@ def compute_fallback_rate(snapshot: RoadmapSnapshot) -> dict[str, Any]:
                 # Check if phase is a legal phase (chapters 1-6)
                 detail = snapshot.details.get(step_id)
                 phase = detail.phase if detail else ""
-                legal_phases = {"입지 검토", "영업 인허가", "안전·소방", "영업 준수사항", "위반 대응", "행정처분 구제"}
+                legal_phases = {
+                    "입지 검토",
+                    "영업 인허가",
+                    "안전·소방",
+                    "영업 준수사항",
+                    "위반 대응",
+                    "행정처분 구제",
+                }
                 if phase in legal_phases:
                     legal_fallback += 1
                 else:
@@ -239,7 +248,9 @@ def compute_avg_actions_per_step(snapshot: RoadmapSnapshot) -> dict[str, Any]:
     return {
         "total_steps": total_steps,
         "total_actions": total_actions,
-        "avg_actions_per_step": round(total_actions / total_steps, 2) if total_steps > 0 else 0.0,
+        "avg_actions_per_step": (
+            round(total_actions / total_steps, 2) if total_steps > 0 else 0.0
+        ),
         "by_action_type": by_type,
     }
 
@@ -381,19 +392,46 @@ def print_report(report: dict[str, Any]) -> None:
     print("\n  ─── 업종별 요약 ───", file=sys.stderr)
     for bt, data in report["by_business_type"].items():
         print(f"\n  [{bt}] (count={data['count']})", file=sys.stderr)
-        print(f"    fallback_rate:            {data['fallback_rate']:.4f}", file=sys.stderr)
-        print(f"    source_url_coverage:      {data['source_url_coverage']:.4f}", file=sys.stderr)
-        print(f"    generation_mode:          {data['generation_mode']}", file=sys.stderr)
-        print(f"    avg_actions_per_step:     {data['avg_actions_per_step']:.2f}", file=sys.stderr)
-        print(f"    retrieval_precision@3:    {data['retrieval_precision_at_3']:.4f}", file=sys.stderr)
+        print(
+            f"    fallback_rate:            {data['fallback_rate']:.4f}",
+            file=sys.stderr,
+        )
+        print(
+            f"    source_url_coverage:      {data['source_url_coverage']:.4f}",
+            file=sys.stderr,
+        )
+        print(
+            f"    generation_mode:          {data['generation_mode']}", file=sys.stderr
+        )
+        print(
+            f"    avg_actions_per_step:     {data['avg_actions_per_step']:.2f}",
+            file=sys.stderr,
+        )
+        print(
+            f"    retrieval_precision@3:    {data['retrieval_precision_at_3']:.4f}",
+            file=sys.stderr,
+        )
 
     overall = report["overall"]
     print("\n  ─── 전체 요약 ───", file=sys.stderr)
-    print(f"    fallback_rate:            {overall['fallback_rate']:.4f}", file=sys.stderr)
-    print(f"    source_url_coverage:      {overall['source_url_coverage']:.4f}", file=sys.stderr)
-    print(f"    generation_mode:          {overall['generation_mode']}", file=sys.stderr)
-    print(f"    avg_actions_per_step:     {overall['avg_actions_per_step']:.2f}", file=sys.stderr)
-    print(f"    retrieval_precision@3:    {overall['retrieval_precision_at_3']:.4f}", file=sys.stderr)
+    print(
+        f"    fallback_rate:            {overall['fallback_rate']:.4f}", file=sys.stderr
+    )
+    print(
+        f"    source_url_coverage:      {overall['source_url_coverage']:.4f}",
+        file=sys.stderr,
+    )
+    print(
+        f"    generation_mode:          {overall['generation_mode']}", file=sys.stderr
+    )
+    print(
+        f"    avg_actions_per_step:     {overall['avg_actions_per_step']:.2f}",
+        file=sys.stderr,
+    )
+    print(
+        f"    retrieval_precision@3:    {overall['retrieval_precision_at_3']:.4f}",
+        file=sys.stderr,
+    )
     print("=" * 60, file=sys.stderr)
 
 
