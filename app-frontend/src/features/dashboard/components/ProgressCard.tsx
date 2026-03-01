@@ -11,9 +11,12 @@ interface ProgressCardProps {
     phase: DashboardData['current_phase'];
     daysLeft: number;
     nextTitle: string | null;
+    endowedProgress?: number | null;
+    readinessLabel?: string | null;
 }
 
-export const ProgressCard = ({ phase, daysLeft, nextTitle }: ProgressCardProps) => {
+export const ProgressCard = ({ phase, daysLeft, nextTitle, endowedProgress, readinessLabel }: ProgressCardProps) => {
+    const displayProgress = endowedProgress ?? phase.progress;
     return (
         <Card className="bg-white rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group h-full transition-all hover:shadow-md">
             <div className="absolute -right-6 -top-6 w-32 h-32 bg-primary/5 rounded-full blur-3xl transition-all duration-500 group-hover:bg-primary/10"></div>
@@ -46,19 +49,29 @@ export const ProgressCard = ({ phase, daysLeft, nextTitle }: ProgressCardProps) 
                                 fill="none"
                                 stroke="currentColor"
                                 strokeWidth="8"
-                                strokeDasharray={`${phase.progress * 2.827}, 282.7`}
+                                strokeDasharray={`${displayProgress * 2.827}, 282.7`}
                                 strokeLinecap="round"
                                 className="text-primary drop-shadow-[0_0_8px_rgba(37,123,244,0.3)] transition-all duration-1000 ease-out"
                             />
                         </svg>
                         <div className="absolute flex flex-col items-center">
                             <span className="text-xl font-black text-slate-900 leading-none">
-                                {phase.progress}%
+                                {displayProgress}%
                             </span>
-                            <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">완료</span>
+                            <span className="text-[9px] font-bold text-slate-400 mt-1 uppercase tracking-tighter">
+                                {endowedProgress != null ? "준비 단계 포함" : "완료"}
+                            </span>
                         </div>
                     </div>
                 </div>
+
+                {readinessLabel && (
+                    <div className="relative z-10 mb-4">
+                        <span className="inline-flex items-center rounded-full bg-[#36a4f2]/10 px-3 py-1 text-xs font-semibold text-[#36a4f2]">
+                            {readinessLabel}
+                        </span>
+                    </div>
+                )}
 
                 <div className="flex items-center space-x-3 text-sm text-slate-500 font-medium relative z-10 mb-8">
                     <div className="flex items-center space-x-1.5">

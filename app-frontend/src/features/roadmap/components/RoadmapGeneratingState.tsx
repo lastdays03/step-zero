@@ -1,4 +1,6 @@
+import { useEffect, useState } from "react";
 import { Loader2, Sparkles } from "lucide-react";
+import { STAGE_MESSAGES, GENERATING_INSIGHTS } from "./roadmap-constants";
 
 interface RoadmapGeneratingStateProps {
     onCancel: () => void;
@@ -15,6 +17,22 @@ export const RoadmapGeneratingState = ({
     progress = 0,
     errorMessage,
 }: RoadmapGeneratingStateProps) => {
+    const [insightIndex, setInsightIndex] = useState(0);
+    const [visible, setVisible] = useState(true);
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setVisible(false);
+            setTimeout(() => {
+                setInsightIndex((prev) => (prev + 1) % GENERATING_INSIGHTS.length);
+                setVisible(true);
+            }, 500);
+        }, 5000);
+        return () => clearInterval(interval);
+    }, []);
+
+    const stageMessage = STAGE_MESSAGES[stage] ?? STAGE_MESSAGES["DETAIL_GENERATING"];
+
     return (
         <section className="relative overflow-hidden rounded-3xl border border-blue-100 bg-white px-4 py-12 sm:px-6">
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.12),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(99,102,241,0.12),transparent_45%)]" />
@@ -24,7 +42,7 @@ export const RoadmapGeneratingState = ({
                 </div>
                 <h2 className="mt-5 text-2xl font-extrabold text-slate-900">로드맵 생성 중입니다</h2>
                 <p className="mt-3 text-sm text-slate-600 sm:text-base">
-                    업종/지역 규제를 분석해 단계별 상세 로드맵을 구성하고 있습니다.
+                    {stageMessage}
                     <br />
                     다른 화면으로 이동해도 생성은 계속 진행됩니다.
                 </p>
@@ -37,20 +55,20 @@ export const RoadmapGeneratingState = ({
 
                 <div className="mt-6 w-full rounded-2xl border border-slate-200 bg-slate-50 p-4 text-left">
                     <p className="text-xs font-semibold text-slate-500">현재 작업</p>
-                    <ul className="mt-2 space-y-2 text-sm text-slate-700">
-                        <li className="flex items-center gap-2">
-                            <Sparkles className="h-4 w-4 text-blue-500" />
-                            상위 로드맵 단계 생성
-                        </li>
-                        <li className="flex items-center gap-2">
-                            <Sparkles className="h-4 w-4 text-blue-500" />
-                            단계별 상세 계획 병렬 생성
-                        </li>
-                        <li className="flex items-center gap-2">
-                            <Sparkles className="h-4 w-4 text-blue-500" />
-                            결과 저장 및 화면 반영
-                        </li>
-                    </ul>
+                    <div className="mt-2 flex items-center gap-2 text-sm text-slate-700">
+                        <Sparkles className="h-4 w-4 text-blue-500 flex-shrink-0" />
+                        <span>{stageMessage}</span>
+                    </div>
+                </div>
+
+                <div className="mt-4 w-full rounded-xl border border-amber-100 bg-amber-50/60 p-3 text-left">
+                    <p
+                        className={`text-sm text-amber-800 transition-opacity duration-500 ${
+                            visible ? "opacity-100" : "opacity-0"
+                        }`}
+                    >
+                        {GENERATING_INSIGHTS[insightIndex]}
+                    </p>
                 </div>
 
                 {errorMessage ? (

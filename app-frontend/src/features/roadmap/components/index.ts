@@ -9,3 +9,6 @@ export { RoadmapSidebar } from "./RoadmapSidebar";
 export { RoadmapSwitcher } from "./RoadmapSwitcher";
 export { RoadmapDeleteDialog } from "./RoadmapDeleteDialog";
 export { RoadmapRenameDialog } from "./RoadmapRenameDialog";
+export { MilestoneCelebration } from "./MilestoneCelebration";
+export { computeEndowedProgress, computeReadinessLevel } from "./roadmap-utils";
+export { ReadinessTracker } from "./ReadinessTracker";

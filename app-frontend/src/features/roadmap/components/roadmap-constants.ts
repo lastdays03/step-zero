@@ -1,3 +1,5 @@
+import type { ReadinessInfo } from "./roadmap-utils";
+
 /* ─── Suggestion Chips ─── */
 
 /** EmptyHero page recommendation keywords */
@@ -32,3 +34,59 @@ export function mapJobFailureMessage(errorCode?: string | null, errorMessage?: s
             return "로드맵 생성에 실패했습니다. 잠시 후 다시 시도해 주세요.";
     }
 }
+
+/* ─── Endowed Progress ─── */
+
+export const ENDOWED_STEPS = 3;
+export const ENDOWED_LABELS = ["비즈니스 정보 수집", "업종별 규제 분석", "맞춤 로드맵 설계"];
+
+/* ─── Readiness Levels ─── */
+
+export const READINESS_LEVELS: ReadinessInfo[] = [
+    { level: 1, emoji: "🌱", label: "아이디어", description: "창업 아이디어를 구체화하는 단계" },
+    { level: 2, emoji: "📋", label: "준비 착수", description: "필요한 절차를 파악하고 있는 단계" },
+    { level: 3, emoji: "📝", label: "서류 준비 중", description: "서류와 인허가를 준비하는 단계" },
+    { level: 4, emoji: "✅", label: "인허가 완료", description: "주요 인허가가 완료된 단계" },
+    { level: 5, emoji: "🚀", label: "창업 준비 완료", description: "사업 시작을 위한 모든 준비가 끝난 단계" },
+];
+
+/* ─── Milestone Insights ─── */
+
+export const MILESTONE_INSIGHTS: Record<string, string[]> = {
+    default: [
+        "이 단계를 완료한 창업자의 87%가 1주 내 다음 단계도 완료했습니다.",
+        "지금까지의 진행 속도라면, 목표보다 빠르게 준비를 마칠 수 있습니다.",
+        "창업 준비의 가장 어려운 부분은 '시작'입니다. 이미 해내고 있습니다!",
+        "같은 업종 창업자 평균보다 빠른 속도로 진행 중입니다.",
+        "다음 단계는 보통 2-3일이면 충분합니다. 이 기세를 이어가세요!",
+    ],
+};
+
+/* ─── Intake Confirmation Messages ─── */
+
+export const INTAKE_CONFIRMATION_MESSAGES: Record<string, (value: string) => string> = {
+    business_type: (v) => `업종을 '${v}'(으)로 설정합니다.`,
+    location: (v) => `지역을 '${v}'(으)로 설정합니다.`,
+    startup_type: (v) => `창업 형태를 '${v}'(으)로 설정합니다.`,
+    startup_method: (v) => `창업 방식을 '${v}'(으)로 설정합니다.`,
+    open_timeline: (v) => `오픈 목표를 '${v}'(으)로 설정합니다.`,
+    budget_range: (v) => `초기 예산을 '${v}'(으)로 설정합니다.`,
+};
+
+/* ─── Stage Messages ─── */
+
+export const STAGE_MESSAGES: Record<string, string> = {
+    QUEUED: "로드맵 생성을 준비하고 있습니다...",
+    OUTLINE_GENERATING: "업종별 규제를 분석하여 전체 단계를 구성 중입니다...",
+    DETAIL_GENERATING: "각 단계별 상세 체크리스트와 필요 서류를 매칭 중입니다...",
+    SAVING: "생성된 로드맵을 저장하고 있습니다...",
+};
+
+/* ─── Generating Insights ─── */
+
+export const GENERATING_INSIGHTS = [
+    "💡 카페 창업 시 가장 먼저 확인할 것: 해당 지역의 영업 가능 용도",
+    "💡 개인사업자 등록은 보통 1-2일이면 완료됩니다",
+    "💡 위생교육은 사전 이수가 필요하며, 온라인으로도 가능합니다",
+    "💡 인테리어 공사 전 소방시설 완비증명을 받아야 합니다",
+];
