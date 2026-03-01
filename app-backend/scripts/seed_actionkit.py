@@ -2,6 +2,8 @@
 from __future__ import annotations
 
 import asyncio
+import hashlib
+import mimetypes
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -10,12 +12,12 @@ from sqlmodel import select
 
 from app.core.config import get_settings
 from app.core.db import async_session
-import hashlib
-import mimetypes
+
 
 def detect_mime_type(filename: str, fallback: str | None = None) -> str:
     guessed, _ = mimetypes.guess_type(filename)
     return guessed or fallback or "application/octet-stream"
+
 
 def file_checksum(path: Path) -> str:
     sha = hashlib.sha256()
@@ -23,6 +25,8 @@ def file_checksum(path: Path) -> str:
         for chunk in iter(lambda: f.read(1024 * 1024), b""):
             sha.update(chunk)
     return sha.hexdigest()
+
+
 from app.models.actionkit import (
     ActionKitCategory,
     ActionKitFile,
@@ -33,7 +37,9 @@ from app.models.actionkit import (
 from scripts.seeds.actionkit_seed_source import ACTION_KIT_DATA, LAW_DATA
 
 
-def _to_object_key(*, domain: str, category_slug: str, item_id: int, filename: str) -> str:
+def _to_object_key(
+    *, domain: str, category_slug: str, item_id: int, filename: str
+) -> str:
     return f"{domain}/{category_slug}/{item_id}/v1/{filename}"
 
 
@@ -88,7 +94,9 @@ async def seed() -> None:
             law_categories[slug] = category
 
         kit_categories: dict[str, ActionKitCategory] = {}
-        kit_entries = [(slug, cat) for slug, cat in ACTION_KIT_DATA.items() if slug != "all"]
+        kit_entries = [
+            (slug, cat) for slug, cat in ACTION_KIT_DATA.items() if slug != "all"
+        ]
         for sort_order, (slug, category_data) in enumerate(kit_entries, start=1):
             category = ActionKitCategory(
                 domain="kits",
@@ -113,7 +121,8 @@ async def seed() -> None:
                     summary=law_item["summary"],
                     ext=law_item.get("ext"),
                     size_label=law_item.get("size"),
-                    file_type=(law_item.get("ext") or "").replace(".", "").upper() or "PDF",
+                    file_type=(law_item.get("ext") or "").replace(".", "").upper()
+                    or "PDF",
                     sort_order=item_sort_order,
                     is_active=True,
                     created_at=now,
@@ -122,7 +131,9 @@ async def seed() -> None:
                 session.add(item)
                 await session.flush()
 
-                for h_idx, highlight in enumerate(law_item.get("highlights", []), start=1):
+                for h_idx, highlight in enumerate(
+                    law_item.get("highlights", []), start=1
+                ):
                     session.add(
                         ActionKitItemHighlight(
                             item_id=item.id,
@@ -136,7 +147,10 @@ async def seed() -> None:
                     backend_root=backend_root,
                     original_path=law_item.get("path", ""),
                 )
-                filename = Path(_strip_prefix(law_item.get("path", ""))).name or f"law-{item.id}.pdf"
+                filename = (
+                    Path(_strip_prefix(law_item.get("path", ""))).name
+                    or f"law-{item.id}.pdf"
+                )
                 object_key = _to_object_key(
                     domain="laws",
                     category_slug=f"chapter-{chapter_slug}",
@@ -147,7 +161,9 @@ async def seed() -> None:
                 target_path.parent.mkdir(parents=True, exist_ok=True)
                 if source_path and source_path.exists() and not target_path.exists():
                     shutil.copy2(source_path, target_path)
-                size_bytes = target_path.stat().st_size if target_path.exists() else None
+                size_bytes = (
+                    target_path.stat().st_size if target_path.exists() else None
+                )
                 checksum = file_checksum(target_path) if target_path.exists() else None
                 mime_type = detect_mime_type(filename)
 
@@ -185,7 +201,9 @@ async def seed() -> None:
                 session.add(item)
                 await session.flush()
 
-                for r_idx, related in enumerate(kit_item.get("relatedLaws", []), start=1):
+                for r_idx, related in enumerate(
+                    kit_item.get("relatedLaws", []), start=1
+                ):
                     if isinstance(related, str):
                         law_name = related
                         law_summary = None
@@ -206,7 +224,10 @@ async def seed() -> None:
                     backend_root=backend_root,
                     original_path=kit_item.get("path", ""),
                 )
-                filename = Path(_strip_prefix(kit_item.get("path", ""))).name or f"kit-{item.id}.pdf"
+                filename = (
+                    Path(_strip_prefix(kit_item.get("path", ""))).name
+                    or f"kit-{item.id}.pdf"
+                )
                 object_key = _to_object_key(
                     domain="kits",
                     category_slug=category_slug,
@@ -217,7 +238,9 @@ async def seed() -> None:
                 target_path.parent.mkdir(parents=True, exist_ok=True)
                 if source_path and source_path.exists() and not target_path.exists():
                     shutil.copy2(source_path, target_path)
-                size_bytes = target_path.stat().st_size if target_path.exists() else None
+                size_bytes = (
+                    target_path.stat().st_size if target_path.exists() else None
+                )
                 checksum = file_checksum(target_path) if target_path.exists() else None
                 mime_type = detect_mime_type(filename)
 

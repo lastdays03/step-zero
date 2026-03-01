@@ -21,7 +21,9 @@ async def test_v1_create_roadmap(client: AsyncClient):
         "description": "A cozy space for developers",
     }
 
-    create_response = await client.post("/api/v1/roadmaps", json=payload, headers=headers)
+    create_response = await client.post(
+        "/api/v1/roadmaps", json=payload, headers=headers
+    )
     assert create_response.status_code == 200
     data = create_response.json()
     assert "roadmap_id" in data

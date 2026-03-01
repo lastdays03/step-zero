@@ -13,7 +13,6 @@ import pytest
 
 from app.features.rag.application.chat_service import LEGAL_KEYWORDS, classify_query
 
-
 # ─── 1. Query 라우팅 정확성 ────────────────────────────────────────
 
 
@@ -40,18 +39,18 @@ class TestQueryRouting:
     )
     def test_query_classification(self, query: str, expected: str) -> None:
         result = classify_query(query)
-        assert result == expected, (
-            f"Query: '{query}' → got '{result}', expected '{expected}'"
-        )
+        assert (
+            result == expected
+        ), f"Query: '{query}' → got '{result}', expected '{expected}'"
 
     def test_all_legal_keywords_trigger_legal_route(self) -> None:
         """모든 LEGAL_KEYWORDS가 legal 분류를 트리거하는지 확인."""
         for keyword in LEGAL_KEYWORDS:
             query = f"{keyword}에 대해 알려주세요"
             result = classify_query(query)
-            assert result == "legal", (
-                f"Keyword '{keyword}' in query did not trigger legal route"
-            )
+            assert (
+                result == "legal"
+            ), f"Keyword '{keyword}' in query did not trigger legal route"
 
     @pytest.mark.parametrize(
         "query",
@@ -107,9 +106,9 @@ class TestGoldenDatasetRouting:
 
         # 현재는 경고만 출력 (키워드 기반이라 100% 불가능)
         # 향후 LLM 기반 라우팅으로 전환 시 임계값 상향
-        assert accuracy >= 0.70, (
-            f"Routing accuracy {accuracy:.2%} below 70% threshold.\n{report}"
-        )
+        assert (
+            accuracy >= 0.70
+        ), f"Routing accuracy {accuracy:.2%} below 70% threshold.\n{report}"
 
 
 # ─── 3. 서비스 기본 동작 검증 ──────────────────────────────────────
@@ -135,9 +134,10 @@ class TestServiceBasicBehavior:
         test_inputs = ["", "테스트", "법", "hello", "123", "법률 질문입니다"]
         for query in test_inputs:
             result = classify_query(query)
-            assert result in ("legal", "general"), (
-                f"Invalid classification result: '{result}' for query '{query}'"
-            )
+            assert result in (
+                "legal",
+                "general",
+            ), f"Invalid classification result: '{result}' for query '{query}'"
 
 
 # ─── 4. 골든 데이터셋 무결성 검증 ──────────────────────────────────
@@ -147,19 +147,21 @@ class TestGoldenDatasetIntegrity:
     """골든 데이터셋 자체의 품질 검증."""
 
     def test_dataset_not_empty(self, golden_dataset: list[dict]) -> None:
-        assert len(golden_dataset) >= 10, (
-            f"Golden dataset too small: {len(golden_dataset)} cases (minimum 10)"
-        )
+        assert (
+            len(golden_dataset) >= 10
+        ), f"Golden dataset too small: {len(golden_dataset)} cases (minimum 10)"
 
     def test_required_fields_present(self, golden_dataset: list[dict]) -> None:
         required_fields = {
-            "id", "question", "ground_truth", "expected_source", "category",
+            "id",
+            "question",
+            "ground_truth",
+            "expected_source",
+            "category",
         }
         for case in golden_dataset:
             missing = required_fields - set(case.keys())
-            assert not missing, (
-                f"Case {case.get('id', '?')}: missing fields {missing}"
-            )
+            assert not missing, f"Case {case.get('id', '?')}: missing fields {missing}"
 
     def test_unique_ids(self, golden_dataset: list[dict]) -> None:
         ids = [c["id"] for c in golden_dataset]
@@ -183,9 +185,9 @@ class TestGoldenDatasetIntegrity:
 
     def test_has_out_of_scope_cases(self, out_of_scope_cases: list[dict]) -> None:
         """OOS 케이스가 충분한지 확인 (oos-001~005)."""
-        assert len(out_of_scope_cases) >= 5, (
-            f"Need at least 5 out_of_scope cases, got {len(out_of_scope_cases)}"
-        )
+        assert (
+            len(out_of_scope_cases) >= 5
+        ), f"Need at least 5 out_of_scope cases, got {len(out_of_scope_cases)}"
 
 
 # ─── 5. general_cases fixture 라우팅 테스트 ────────────────────────
@@ -222,7 +224,9 @@ class TestGeneralCasesRouting:
             for m in misclassified:
                 print(f"    {m}")
 
-    def test_general_cases_have_no_law_reference(self, general_cases: list[dict]) -> None:
+    def test_general_cases_have_no_law_reference(
+        self, general_cases: list[dict]
+    ) -> None:
         """일반 케이스에는 법령 참조가 없어야 함."""
         for case in general_cases:
             assert case.get("expected_law_reference") is None, (
@@ -237,7 +241,9 @@ class TestGeneralCasesRouting:
 class TestRoutingEdgeCases:
     """골든 데이터셋의 routing_edge_cases fixture를 사용한 경계 케이스 테스트."""
 
-    def test_routing_edge_cases_classification(self, routing_edge_cases: list[dict]) -> None:
+    def test_routing_edge_cases_classification(
+        self, routing_edge_cases: list[dict]
+    ) -> None:
         """라우팅 경계 케이스의 분류 결과를 기록하고 정확도 확인."""
         correct = 0
         total = len(routing_edge_cases)
@@ -249,19 +255,23 @@ class TestRoutingEdgeCases:
             is_correct = actual == expected
             if is_correct:
                 correct += 1
-            details.append({
-                "id": case["id"],
-                "question": case["question"][:50],
-                "expected": expected,
-                "actual": actual,
-                "correct": is_correct,
-            })
+            details.append(
+                {
+                    "id": case["id"],
+                    "question": case["question"][:50],
+                    "expected": expected,
+                    "actual": actual,
+                    "correct": is_correct,
+                }
+            )
 
         accuracy = correct / total if total > 0 else 0
         print(f"\n  Routing edge cases accuracy: {accuracy:.2%} ({correct}/{total})")
         for d in details:
             status = "OK" if d["correct"] else "MISS"
-            print(f"    [{d['id']}] {d['question']} → {d['actual']} (expected: {d['expected']}) [{status}]")
+            print(
+                f"    [{d['id']}] {d['question']} → {d['actual']} (expected: {d['expected']}) [{status}]"
+            )
 
     def test_edge_cases_are_legal_source(self, routing_edge_cases: list[dict]) -> None:
         """라우팅 경계 케이스가 모두 legal_rag 소스인지 확인."""

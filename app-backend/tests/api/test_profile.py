@@ -30,7 +30,9 @@ async def test_profile_me_get_and_update(client: AsyncClient):
         "philosophy": "좋은 커피와 경험",
         "experiences": ["바리스타 3년"],
     }
-    update_response = await client.put("/api/v1/profile/me", json=update_payload, headers=headers)
+    update_response = await client.put(
+        "/api/v1/profile/me", json=update_payload, headers=headers
+    )
     assert update_response.status_code == 200
     updated = update_response.json()
     assert updated["full_name"] == "Updated Test User"
@@ -38,4 +40,3 @@ async def test_profile_me_get_and_update(client: AsyncClient):
     assert updated["region"] == "서울 마포구"
     assert updated["philosophy"] == "좋은 커피와 경험"
     assert updated["experiences"] == ["바리스타 3년"]
-

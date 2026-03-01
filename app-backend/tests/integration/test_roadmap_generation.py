@@ -15,8 +15,8 @@ from uuid import UUID, uuid4
 import pytest
 
 from app.features.roadmaps.application.actionkit_matcher import (
-    ActionKitMatcher,
     CATEGORY_TO_PHASE,
+    ActionKitMatcher,
     MatchedActionKit,
 )
 from app.features.roadmaps.application.llm_personalizer import (
@@ -35,7 +35,6 @@ from app.models.actionkit import (
     ActionKitItemHighlight,
     ActionKitRelatedLaw,
 )
-
 
 # ------------------------------------------------------------------ #
 #  Helpers: build mock ActionKit data
@@ -59,7 +58,9 @@ def _make_item(
     return item
 
 
-def _make_highlight(item_id: int, content: str, highlight_id: int = 1) -> ActionKitItemHighlight:
+def _make_highlight(
+    item_id: int, content: str, highlight_id: int = 1
+) -> ActionKitItemHighlight:
     h = ActionKitItemHighlight(item_id=item_id, content=content, sort_order=1)
     h.id = highlight_id
     return h
@@ -140,30 +141,32 @@ def _mock_llm_response(phases: list[str]) -> str:
     """Build a mock LLM JSON response matching the expected format."""
     result = []
     for i, phase in enumerate(phases):
-        result.append({
-            "phase": phase,
-            "title": f"{phase} 단계",
-            "objective": f"{phase} 절차를 완료합니다.",
-            "estimated_days": 5 + i,
-            "checklist": [f"체크 항목 {i+1}-1", f"체크 항목 {i+1}-2"],
-            "legal_basis": [
-                {
-                    "title": f"관련법 {i+1}",
-                    "snippet": f"법률 요약 {i+1}",
-                    "actionkit_item_id": i + 1,
-                }
-            ],
-            "documents": [
-                {
-                    "name": f"서류 {i+1}",
-                    "file_url": f"laws/chapter-1/{i+1}/v1/test.pdf",
-                    "actionkit_item_id": i + 1,
-                    "actionkit_file_id": i + 1,
-                }
-            ],
-            "risk_notes": [f"위험 {i+1}"],
-            "actionkit_items": [i + 1],
-        })
+        result.append(
+            {
+                "phase": phase,
+                "title": f"{phase} 단계",
+                "objective": f"{phase} 절차를 완료합니다.",
+                "estimated_days": 5 + i,
+                "checklist": [f"체크 항목 {i+1}-1", f"체크 항목 {i+1}-2"],
+                "legal_basis": [
+                    {
+                        "title": f"관련법 {i+1}",
+                        "snippet": f"법률 요약 {i+1}",
+                        "actionkit_item_id": i + 1,
+                    }
+                ],
+                "documents": [
+                    {
+                        "name": f"서류 {i+1}",
+                        "file_url": f"laws/chapter-1/{i+1}/v1/test.pdf",
+                        "actionkit_item_id": i + 1,
+                        "actionkit_file_id": i + 1,
+                    }
+                ],
+                "risk_notes": [f"위험 {i+1}"],
+                "actionkit_items": [i + 1],
+            }
+        )
     return json.dumps(result, ensure_ascii=False)
 
 
@@ -193,7 +196,11 @@ async def test_cafe_seoul_actionkit_mapping_success():
                 estimated_days=5,
                 checklist=["체크 항목 1", "체크 항목 2"],
                 legal_basis=[
-                    {"title": "식품위생법", "snippet": "영업신고", "actionkit_item_id": 1}
+                    {
+                        "title": "식품위생법",
+                        "snippet": "영업신고",
+                        "actionkit_item_id": 1,
+                    }
                 ],
                 documents=[
                     {
@@ -297,7 +304,9 @@ async def test_general_restaurant_gyeonggi_mapping_success():
         "description": "",
     }
 
-    with patch.object(RoadmapGenerationService, "__init__", lambda self, *a, **kw: None):
+    with patch.object(
+        RoadmapGenerationService, "__init__", lambda self, *a, **kw: None
+    ):
         service = RoadmapGenerationService.__new__(RoadmapGenerationService)
         service.session = mock_session
         service.actionkit_matcher = mock_matcher
@@ -359,24 +368,32 @@ async def test_zero_matches_fallback():
 
     # Mock the RAG service for fallback path
     mock_rag = MagicMock()
-    master_json = json.dumps({
-        "title": "IT 스타트업 창업 로드맵",
-        "summary": "SW 개발 사업",
-        "phases": ["사업 등록", "사무실 확보", "인력 채용"],
-    })
-    detail_json = json.dumps({
-        "phase": "사업 등록",
-        "title": "사업자등록",
-        "objective": "사업자등록증 발급",
-        "checklist": ["사업자등록 신청"],
-        "legal_basis": [{"title": "부가가치세법", "snippet": "사업자등록"}],
-        "documents": [],
-        "estimated_days": 3,
-        "risk_notes": ["서류 누락 주의"],
-    })
-    mock_rag.query = AsyncMock(side_effect=[master_json, detail_json, detail_json, detail_json])
+    master_json = json.dumps(
+        {
+            "title": "IT 스타트업 창업 로드맵",
+            "summary": "SW 개발 사업",
+            "phases": ["사업 등록", "사무실 확보", "인력 채용"],
+        }
+    )
+    detail_json = json.dumps(
+        {
+            "phase": "사업 등록",
+            "title": "사업자등록",
+            "objective": "사업자등록증 발급",
+            "checklist": ["사업자등록 신청"],
+            "legal_basis": [{"title": "부가가치세법", "snippet": "사업자등록"}],
+            "documents": [],
+            "estimated_days": 3,
+            "risk_notes": ["서류 누락 주의"],
+        }
+    )
+    mock_rag.query = AsyncMock(
+        side_effect=[master_json, detail_json, detail_json, detail_json]
+    )
 
-    with patch.object(RoadmapGenerationService, "__init__", lambda self, *a, **kw: None):
+    with patch.object(
+        RoadmapGenerationService, "__init__", lambda self, *a, **kw: None
+    ):
         service = RoadmapGenerationService.__new__(RoadmapGenerationService)
         service.session = mock_session
         service.actionkit_matcher = mock_matcher
@@ -431,7 +448,9 @@ async def test_small_match_count_uses_actionkit_rag():
                 objective=f"IT 스타트업 {phase}",
                 estimated_days=5,
                 checklist=["확인 항목"],
-                legal_basis=[{"title": "관련법", "snippet": "요약", "actionkit_item_id": 1}],
+                legal_basis=[
+                    {"title": "관련법", "snippet": "요약", "actionkit_item_id": 1}
+                ],
                 documents=[],
                 risk_notes=["위험 요소"],
                 actionkit_items=[1],
@@ -452,7 +471,9 @@ async def test_small_match_count_uses_actionkit_rag():
         "description": "소프트웨어 개발",
     }
 
-    with patch.object(RoadmapGenerationService, "__init__", lambda self, *a, **kw: None):
+    with patch.object(
+        RoadmapGenerationService, "__init__", lambda self, *a, **kw: None
+    ):
         service = RoadmapGenerationService.__new__(RoadmapGenerationService)
         service.session = mock_session
         service.actionkit_matcher = mock_matcher
@@ -505,7 +526,13 @@ async def test_beauty_salon_busan_partial_mapping():
                 objective=f"미용실 {phase}",
                 estimated_days=4,
                 checklist=["확인 항목"],
-                legal_basis=[{"title": "공중위생관리법", "snippet": "미용업 신고", "actionkit_item_id": 1}],
+                legal_basis=[
+                    {
+                        "title": "공중위생관리법",
+                        "snippet": "미용업 신고",
+                        "actionkit_item_id": 1,
+                    }
+                ],
                 documents=[],
                 risk_notes=["위생 기준 미달 시 보완 명령"],
                 actionkit_items=[1],
@@ -526,7 +553,9 @@ async def test_beauty_salon_busan_partial_mapping():
         "description": "헤어살롱 창업",
     }
 
-    with patch.object(RoadmapGenerationService, "__init__", lambda self, *a, **kw: None):
+    with patch.object(
+        RoadmapGenerationService, "__init__", lambda self, *a, **kw: None
+    ):
         service = RoadmapGenerationService.__new__(RoadmapGenerationService)
         service.session = mock_session
         service.actionkit_matcher = mock_matcher
@@ -580,7 +609,9 @@ async def test_empty_input_validation_failure():
     mock_matcher = MagicMock(spec=ActionKitMatcher)
     mock_personalizer = MagicMock(spec=LLMPersonalizer)
 
-    with patch.object(RoadmapGenerationService, "__init__", lambda self, *a, **kw: None):
+    with patch.object(
+        RoadmapGenerationService, "__init__", lambda self, *a, **kw: None
+    ):
         service = RoadmapGenerationService.__new__(RoadmapGenerationService)
         service.session = mock_session
         service.actionkit_matcher = mock_matcher
@@ -599,7 +630,11 @@ async def test_empty_input_validation_failure():
     # Should have been marked as failed
     service.job_repo.mark_failed.assert_called_once()
     fail_call = service.job_repo.mark_failed.call_args
-    assert fail_call[1].get("code") == "GENERATION_FAILED" or fail_call[0][1] if len(fail_call[0]) > 1 else True
+    assert (
+        fail_call[1].get("code") == "GENERATION_FAILED" or fail_call[0][1]
+        if len(fail_call[0]) > 1
+        else True
+    )
 
     # Matcher and personalizer should NOT be called
     mock_matcher.match.assert_not_called()

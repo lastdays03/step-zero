@@ -1,5 +1,7 @@
-from typing import List, Optional, Dict, Union
+from typing import Dict, List, Optional, Union
+
 from pydantic import BaseModel
+
 
 class LawItem(BaseModel):
     name: str
@@ -9,17 +11,21 @@ class LawItem(BaseModel):
     path: str
     highlights: Optional[List[str]] = None
 
+
 class LawChapter(BaseModel):
     title: str
     items: List[LawItem]
+
 
 class RelatedLaw(BaseModel):
     name: str
     summary: Optional[str] = None
 
+
 class Highlight(BaseModel):
     id: int
     content: str
+
 
 class ActionKitItem(BaseModel):
     id: Optional[int] = None
@@ -32,6 +38,7 @@ class ActionKitItem(BaseModel):
     highlights: Optional[List[Highlight]] = None
     complianceChecklist: Optional[List[str]] = None
     dday: Optional[str] = None
+
 
 class ActionKitCategory(BaseModel):
     title: str

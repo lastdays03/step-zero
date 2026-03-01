@@ -1,4 +1,3 @@
-
 import os
 from pathlib import Path
 from typing import AsyncGenerator
@@ -12,8 +11,8 @@ from sqlmodel import SQLModel, select
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./tests/test.db")
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 
-from app.main import app
 from app.core import db, security
+from app.main import app
 from app.models.team import Team, TeamMember
 from app.models.user import User
 
@@ -34,9 +33,11 @@ test_async_session = sessionmaker(
 db.engine = test_engine
 db.async_session = test_async_session
 
+
 @pytest.fixture(scope="session")
 def anyio_backend():
     return "asyncio"
+
 
 @pytest.fixture(scope="session", autouse=True)
 async def seed_test_user() -> AsyncGenerator[None, None]:
@@ -47,7 +48,9 @@ async def seed_test_user() -> AsyncGenerator[None, None]:
         await conn.run_sync(SQLModel.metadata.create_all)
 
     async with db.async_session() as session:
-        result = await session.execute(select(User).where(User.email == "test@example.com"))
+        result = await session.execute(
+            select(User).where(User.email == "test@example.com")
+        )
         user = result.scalar_one_or_none()
         if not user:
             user = User(
@@ -70,9 +73,7 @@ async def seed_test_user() -> AsyncGenerator[None, None]:
             team = Team(name="Test Team", created_by=user.id, updated_by=user.id)
             session.add(team)
             await session.flush()
-            session.add(
-                TeamMember(team_id=team.id, user_id=user.id, role="owner")
-            )
+            session.add(TeamMember(team_id=team.id, user_id=user.id, role="owner"))
             await session.commit()
         else:
             await session.commit()
@@ -82,7 +83,10 @@ async def seed_test_user() -> AsyncGenerator[None, None]:
     if TEST_DB_PATH.exists():
         TEST_DB_PATH.unlink()
 
+
 @pytest.fixture(scope="module")
 async def client() -> AsyncGenerator[AsyncClient, None]:
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://test"
+    ) as c:
         yield c

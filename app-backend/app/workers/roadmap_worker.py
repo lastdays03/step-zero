@@ -5,7 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.db import async_session
-from app.features.roadmaps.application.roadmap_generation_service import RoadmapGenerationService
+from app.features.roadmaps.application.roadmap_generation_service import (
+    RoadmapGenerationService,
+)
 
 
 async def process_roadmap_job(ctx: dict, job_id: str) -> None:

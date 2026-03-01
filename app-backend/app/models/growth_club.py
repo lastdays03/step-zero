@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from typing import TYPE_CHECKING, Optional, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 from pydantic import model_validator
 from sqlmodel import Field, Relationship, SQLModel
@@ -33,7 +33,7 @@ class AuthorRead(SQLModel):
                 data["industry"] = profile.get("category")
                 data["neighborhood"] = profile.get("region")
             return data
-            
+
         # If it's an object (User ORM)
         if hasattr(data, "profile") and data.profile:
             p = data.profile
@@ -64,14 +64,14 @@ class AuthorRead(SQLModel):
                 parts = self.email.split("@")
                 if parts:
                     self.username = parts[0]
-            
+
             if not self.username:
                 self.username = f"User_{self.id}"
-        
+
         # Ensure profile_img has a default if None
         if not self.profile_img:
             self.profile_img = "default.png"
-            
+
         return self
 
     def mask_privacy(self, current_user_id: Optional[int]) -> "AuthorRead":
@@ -97,6 +97,7 @@ class GrowthClubPostBase(SQLModel):
     neighborhood: Optional[str] = None
     industry: Optional[str] = None
 
+
 class GrowthClubPostTagLink(SQLModel, table=True):
     post_id: int = Field(foreign_key="growthclubpost.id", primary_key=True)
     tag_id: int = Field(foreign_key="growthclubtag.id", primary_key=True)
@@ -105,7 +106,9 @@ class GrowthClubPostTagLink(SQLModel, table=True):
 class GrowthClubTag(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     name: str = Field(index=True, unique=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
 
     posts: list["GrowthClubPost"] = Relationship(
         back_populates="tags",
@@ -116,22 +119,28 @@ class GrowthClubTag(SQLModel, table=True):
 class GrowthClubPostLike(SQLModel, table=True):
     post_id: int = Field(foreign_key="growthclubpost.id", primary_key=True)
     user_id: int = Field(foreign_key="user.id", primary_key=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
+
 
 class GrowthClubPost(GrowthClubPostBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     author_id: int = Field(foreign_key="user.id")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
     report_count: int = Field(default=0)
     is_blinded: bool = Field(default=False)
 
     # Relationships
     author: "User" = Relationship()
     comments: list["GrowthClubComment"] = Relationship(
-        back_populates="post",
+        back_populates="post", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
+    )
+    likes: list[GrowthClubPostLike] = Relationship(
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
-    likes: list[GrowthClubPostLike] = Relationship(sa_relationship_kwargs={"cascade": "all, delete-orphan"})
     attachments: list["GrowthClubPostAttachment"] = Relationship(
         back_populates="post",
         sa_relationship_kwargs={"cascade": "all, delete-orphan"},
@@ -150,7 +159,9 @@ class GrowthClubPostAttachment(SQLModel, table=True):
     original_filename: Optional[str] = None
     mime_type: Optional[str] = None
     size_bytes: Optional[int] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
 
     post: GrowthClubPost = Relationship(back_populates="attachments")
 
@@ -158,32 +169,46 @@ class GrowthClubPostAttachment(SQLModel, table=True):
 class GrowthClubCommentBase(SQLModel):
     content: str
     post_id: int = Field(foreign_key="growthclubpost.id", ondelete="CASCADE")
-    parent_id: Optional[int] = Field(default=None, foreign_key="growthclubcomment.id", ondelete="CASCADE")
+    parent_id: Optional[int] = Field(
+        default=None, foreign_key="growthclubcomment.id", ondelete="CASCADE"
+    )
+
 
 class GrowthClubComment(GrowthClubCommentBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     author_id: int = Field(foreign_key="user.id")
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
     report_count: int = Field(default=0)
     is_blinded: bool = Field(default=False)
-    
+
     post: GrowthClubPost = Relationship(back_populates="comments")
     author: "User" = Relationship()
 
 
 class GrowthClubPostReport(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    post_id: int = Field(foreign_key="growthclubpost.id", index=True, ondelete="CASCADE")
+    post_id: int = Field(
+        foreign_key="growthclubpost.id", index=True, ondelete="CASCADE"
+    )
     reporter_id: int = Field(foreign_key="user.id", index=True, ondelete="CASCADE")
     reason: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
+
 
 class GrowthClubCommentReport(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    comment_id: int = Field(foreign_key="growthclubcomment.id", index=True, ondelete="CASCADE")
+    comment_id: int = Field(
+        foreign_key="growthclubcomment.id", index=True, ondelete="CASCADE"
+    )
     reporter_id: int = Field(foreign_key="user.id", index=True, ondelete="CASCADE")
     reason: str
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
 
 
 class GrowthClubCommentRead(GrowthClubCommentBase):

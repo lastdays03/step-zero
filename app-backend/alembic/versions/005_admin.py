@@ -4,9 +4,11 @@ Revision ID: 005_admin
 Revises: 004_growth_club
 Create Date: 2026-02-25
 """
-from alembic import op
+
 import sqlalchemy as sa
 import sqlmodel.sql.sqltypes
+
+from alembic import op
 
 revision = "005_admin"
 down_revision = "004_growth_club"
@@ -31,8 +33,12 @@ def upgrade() -> None:
     )
     op.create_index("ix_admin_audit_logs_admin_id", "admin_audit_logs", ["admin_id"])
     op.create_index("ix_admin_audit_logs_action", "admin_audit_logs", ["action"])
-    op.create_index("ix_admin_audit_logs_target_type", "admin_audit_logs", ["target_type"])
-    op.create_index("ix_admin_audit_logs_created_at", "admin_audit_logs", ["created_at"])
+    op.create_index(
+        "ix_admin_audit_logs_target_type", "admin_audit_logs", ["target_type"]
+    )
+    op.create_index(
+        "ix_admin_audit_logs_created_at", "admin_audit_logs", ["created_at"]
+    )
     # composite indexes for common query patterns
     op.create_index(
         "ix_admin_audit_logs_action_target_type_created_at",
@@ -51,7 +57,12 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("title", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("content", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("status", sqlmodel.sql.sqltypes.AutoString(), nullable=False, server_default="draft"),
+        sa.Column(
+            "status",
+            sqlmodel.sql.sqltypes.AutoString(),
+            nullable=False,
+            server_default="draft",
+        ),
         sa.Column("created_by", sa.Integer(), nullable=False),
         sa.Column("updated_by", sa.Integer(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),

@@ -2,6 +2,7 @@ import logging
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+
 from fastapi import HTTPException, status
 from google.auth.transport import requests
 from google.oauth2 import id_token
@@ -17,7 +18,6 @@ from app.models.user_discipline_history import UserDisciplineHistory
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.team_repository import TeamRepository
 from app.repositories.user_repository import UserRepository
-
 
 logger = logging.getLogger(__name__)
 
@@ -56,13 +56,12 @@ class AuthService:
 
         return await self._build_auth_result(user)
 
-    async def login_with_google(self, google_client_id: str, token: str) -> AuthResult | None:
+    async def login_with_google(
+        self, google_client_id: str, token: str
+    ) -> AuthResult | None:
         # Wrap blocking Google library call in a threadpool
         idinfo = await run_in_threadpool(
-            id_token.verify_oauth2_token,
-            token,
-            requests.Request(),
-            google_client_id
+            id_token.verify_oauth2_token, token, requests.Request(), google_client_id
         )
         email = idinfo.get("email")
         if not email:
@@ -121,6 +120,7 @@ class AuthService:
         # If get_by_hash returns None (revoked=True excluded), check if it was revoked
         if stored is None:
             from sqlmodel import select
+
             from app.models.refresh_token import RefreshToken
 
             result = await self.refresh_token_repo.session.execute(
@@ -145,7 +145,9 @@ class AuthService:
         # Normalize suspended_until to naive UTC for comparison
         suspended_until = user.suspended_until
         if suspended_until and suspended_until.tzinfo is not None:
-            suspended_until = suspended_until.astimezone(timezone.utc).replace(tzinfo=None)
+            suspended_until = suspended_until.astimezone(timezone.utc).replace(
+                tzinfo=None
+            )
 
         # Check for suspension recovery: if suspended_until has expired, restore
         if user.status.startswith("suspended") and suspended_until:
@@ -171,7 +173,9 @@ class AuthService:
             if latest_reason:
                 reason = latest_reason
         except Exception as e:
-            logger.warning(f"Failed to fetch latest discipline reason for user {user.id}: {e}")
+            logger.warning(
+                f"Failed to fetch latest discipline reason for user {user.id}: {e}"
+            )
 
         if not reason:
             reason = "운영 정책 위반으로 인해 계정이 제한되었습니다."
@@ -180,7 +184,9 @@ class AuthService:
         expiry_iso = None
         if user.suspended_until:
             kst_tz = timezone(timedelta(hours=9))
-            kst_time = user.suspended_until.replace(tzinfo=timezone.utc).astimezone(kst_tz)
+            kst_time = user.suspended_until.replace(tzinfo=timezone.utc).astimezone(
+                kst_tz
+            )
             suspended_until_str = kst_time.strftime("%Y.%m.%d")
             expiry_iso = user.suspended_until.replace(tzinfo=timezone.utc).isoformat()
 
@@ -192,7 +198,7 @@ class AuthService:
                 "reason": reason,
                 "suspended_until": suspended_until_str,
                 "expiry_iso": expiry_iso,
-            }
+            },
         )
 
     async def _build_auth_result(self, user: User) -> AuthResult:
@@ -205,7 +211,9 @@ class AuthService:
 
         teams = await self.team_repo.list_for_user(user.id)
         if not teams:
-            default_team = await self.team_repo.create_default_team_for_user(user.id, user.email)
+            default_team = await self.team_repo.create_default_team_for_user(
+                user.id, user.email
+            )
             teams = [default_team]
         current_team = teams[0]
 

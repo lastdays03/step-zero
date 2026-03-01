@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Path, Body
+from fastapi import APIRouter, Body, Depends, HTTPException, Path
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -8,7 +8,12 @@ from sqlmodel import select
 
 from app.api.deps import get_current_user
 from app.core.db import get_session
-from app.models.growth_club import GrowthClubComment, GrowthClubCommentRead, GrowthClubPost, GrowthClubCommentReport
+from app.models.growth_club import (
+    GrowthClubComment,
+    GrowthClubCommentRead,
+    GrowthClubCommentReport,
+    GrowthClubPost,
+)
 from app.models.notification import Notification
 from app.models.user import AuthenticatedUser, User
 
@@ -19,6 +24,7 @@ class CommentCreate(BaseModel):
     content: str
     post_id: int
     parent_id: Optional[int] = None
+
 
 class ReportRequest(BaseModel):
     reason: str = Field(..., description="신고 사유")
@@ -34,10 +40,12 @@ class ReportRequest(BaseModel):
 async def create_comment(
     comment_in: CommentCreate,
     current_user: AuthenticatedUser = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     if current_user.is_suspended:
-        raise HTTPException(status_code=403, detail="이용이 정지된 사용자입니다. 접근이 제한됩니다.")
+        raise HTTPException(
+            status_code=403, detail="이용이 정지된 사용자입니다. 접근이 제한됩니다."
+        )
     post = await session.get(GrowthClubPost, comment_in.post_id)
     if not post:
         raise HTTPException(status_code=404, detail="Post not found")
@@ -46,10 +54,10 @@ async def create_comment(
         content=comment_in.content,
         post_id=comment_in.post_id,
         parent_id=comment_in.parent_id,
-        author_id=current_user.id
+        author_id=current_user.id,
     )
     session.add(comment)
-    
+
     # Notify post author if not the same user
     if post.author_id != current_user.id:
         notification = Notification(
@@ -60,7 +68,7 @@ async def create_comment(
             resource_id=post.id,
         )
         session.add(notification)
-        
+
     # Notify parent comment author if it's a reply
     if comment_in.parent_id:
         parent_comment = await session.get(GrowthClubComment, comment_in.parent_id)
@@ -75,7 +83,7 @@ async def create_comment(
                     resource_id=post.id,
                 )
                 session.add(reply_notification)
-                
+
     await session.flush()
     comment_id = comment.id
     await session.commit()
@@ -102,7 +110,7 @@ async def create_comment(
 async def delete_comment(
     comment_id: int = Path(description="삭제할 댓글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     comment = await session.get(GrowthClubComment, comment_id)
     if not comment:
@@ -126,7 +134,7 @@ async def report_comment(
     report_data: ReportRequest,
     comment_id: int = Path(description="신고할 댓글 ID"),
     current_user: AuthenticatedUser = Depends(get_current_user),
-    session: AsyncSession = Depends(get_session)
+    session: AsyncSession = Depends(get_session),
 ):
     """댓글 신고 (1회 이상 신고 시 자동 블라인드)"""
     comment = await session.get(GrowthClubComment, comment_id)
@@ -139,7 +147,7 @@ async def report_comment(
     # 기존 신고 여부 확인
     existing_report_query = select(GrowthClubCommentReport).where(
         GrowthClubCommentReport.comment_id == comment_id,
-        GrowthClubCommentReport.reporter_id == current_user.id
+        GrowthClubCommentReport.reporter_id == current_user.id,
     )
     existing_report_result = await session.execute(existing_report_query)
     if existing_report_result.scalar_one_or_none():
@@ -147,9 +155,7 @@ async def report_comment(
 
     # 신고 기록 생성
     new_report = GrowthClubCommentReport(
-        comment_id=comment_id,
-        reporter_id=current_user.id,
-        reason=report_data.reason
+        comment_id=comment_id, reporter_id=current_user.id, reason=report_data.reason
     )
     session.add(new_report)
 
@@ -160,10 +166,11 @@ async def report_comment(
     if comment.report_count >= 1:
         comment.is_blinded = True
         message = "댓글이 누적 신고로 인해 블라인드 처리되었습니다."
-        
+
         # 블라인드 처리 시 감사 로그 기록
         author = await session.get(User, comment.author_id)
         from app.features.ops.application.audit_logs.service import save_audit_log
+
         await save_audit_log(
             session=session,
             user_id=current_user.id,
@@ -171,7 +178,7 @@ async def report_comment(
             target_type="comment",
             target_id=str(comment_id),
             target_author=author.email if author else None,
-            details=f"댓글 '{comment.content[:20]}...' 누적 신고로 블라인드 처리 (자동)"
+            details=f"댓글 '{comment.content[:20]}...' 누적 신고로 블라인드 처리 (자동)",
         )
     else:
         message = "댓글이 신고되었습니다."
@@ -183,5 +190,5 @@ async def report_comment(
         "status": "success",
         "message": message,
         "report_count": comment.report_count,
-        "is_blinded": comment.is_blinded
+        "is_blinded": comment.is_blinded,
     }

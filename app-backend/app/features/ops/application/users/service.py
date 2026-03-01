@@ -9,9 +9,7 @@ from app.models.user_discipline_history import UserDisciplineHistory
 from .schemas import DisciplineHistoryRead, OpsUserRead
 
 
-def _apply_status_update(
-    user: User, status: str, duration_days: int | None
-) -> None:
+def _apply_status_update(user: User, status: str, duration_days: int | None) -> None:
     """Helper to apply status and suspension logic to a user model."""
     user.status = status
     if status.startswith("suspended"):
@@ -73,8 +71,7 @@ async def get_user_discipline_history(
     result = await session.execute(statement)
     histories = result.scalars().all()
     return [
-        DisciplineHistoryRead.model_validate(h, from_attributes=True)
-        for h in histories
+        DisciplineHistoryRead.model_validate(h, from_attributes=True) for h in histories
     ]
 
 

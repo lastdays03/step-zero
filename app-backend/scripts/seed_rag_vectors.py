@@ -90,7 +90,12 @@ def parse_args() -> argparse.Namespace:
     )
 
     backend_root_for_backup = Path(__file__).resolve().parents[1]
-    default_backup = backend_root_for_backup / ".temp" / "backups" / "law_vectors_20260224_153755.json"
+    default_backup = (
+        backend_root_for_backup
+        / ".temp"
+        / "backups"
+        / "law_vectors_20260224_153755.json"
+    )
     parser.add_argument(
         "--restore-backup",
         action="store_true",
@@ -157,7 +162,9 @@ def _delete_collection(db_url: str, collection_name: str) -> int:
         return deleted
 
 
-async def _ingest_laws(source_dir: Path, limit: int, vector_store: VectorStoreService) -> int:
+async def _ingest_laws(
+    source_dir: Path, limit: int, vector_store: VectorStoreService
+) -> int:
     """Step 1: LocalFileSource → LawETLProcessor → VectorStore."""
     from app.services.law_etl import LawETLProcessor
     from app.services.law_fetcher import LocalFileSource
@@ -186,7 +193,9 @@ async def _ingest_laws(source_dir: Path, limit: int, vector_store: VectorStoreSe
     return len(processed)
 
 
-async def _restore_from_backup(backup_file: Path, vector_store: VectorStoreService) -> int:
+async def _restore_from_backup(
+    backup_file: Path, vector_store: VectorStoreService
+) -> int:
     """백업 JSON 파일로부터 법률 벡터를 복원하여 law_vectors 컬렉션에 추가한다.
 
     기존 벡터(ActionKit 314건 등)는 삭제하지 않고, 백업의 3건만 청킹 후 추가한다.
@@ -196,7 +205,8 @@ async def _restore_from_backup(backup_file: Path, vector_store: VectorStoreServi
     """
     if not backup_file.exists():
         logger.warning(
-            "--restore-backup: 백업 파일을 찾을 수 없습니다. 건너뜀. (경로: %s)", backup_file
+            "--restore-backup: 백업 파일을 찾을 수 없습니다. 건너뜀. (경로: %s)",
+            backup_file,
         )
         return 0
 
@@ -216,8 +226,8 @@ async def _restore_from_backup(backup_file: Path, vector_store: VectorStoreServi
     )
 
     # RecursiveCharacterTextSplitter로 청킹 적용
-    from langchain_text_splitters import RecursiveCharacterTextSplitter
     from langchain_core.documents import Document
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
 
     splitter = RecursiveCharacterTextSplitter(
         chunk_size=600,
@@ -256,7 +266,8 @@ async def _restore_from_backup(backup_file: Path, vector_store: VectorStoreServi
     )
     pg_vector.add_documents(chunked_docs)
     logger.info(
-        "--restore-backup: 복원 완료. %d 청크를 law_vectors에 추가했습니다.", len(chunked_docs)
+        "--restore-backup: 복원 완료. %d 청크를 law_vectors에 추가했습니다.",
+        len(chunked_docs),
     )
     return len(records)
 
@@ -395,7 +406,8 @@ async def _ensure_actionkit_items(
             mapping = _BUSINESS_TYPE_TO_CHAPTER.get(business_type)
             if not mapping:
                 logger.warning(
-                    "[ActionKit] 업종 '%s'의 챕터 매핑이 없습니다. 건너뜀.", business_type
+                    "[ActionKit] 업종 '%s'의 챕터 매핑이 없습니다. 건너뜀.",
+                    business_type,
                 )
                 continue
 
@@ -434,27 +446,30 @@ async def _ensure_actionkit_items(
                     item_id = name_cat_to_item_id.get(dedup_key)
                     if item_id and item_id not in items_with_files:
                         object_key, size_bytes, checksum = _copy_file_to_storage(
-                            fpath, item_id=item_id, chapter_slug=chapter_slug,
-                        )
-                        session.add(ActionKitFile(
+                            fpath,
                             item_id=item_id,
-                            version=1,
-                            object_key=object_key,
-                            original_filename=fpath.name,
-                            mime_type="text/markdown",
-                            size_bytes=size_bytes,
-                            checksum=checksum,
-                            is_current=True,
-                        ))
+                            chapter_slug=chapter_slug,
+                        )
+                        session.add(
+                            ActionKitFile(
+                                item_id=item_id,
+                                version=1,
+                                object_key=object_key,
+                                original_filename=fpath.name,
+                                mime_type="text/markdown",
+                                size_bytes=size_bytes,
+                                checksum=checksum,
+                                is_current=True,
+                            )
+                        )
                         items_with_files.add(item_id)
                         logger.info(
                             "[ActionKit] 기존 아이템 파일 보강: id=%d, name=%s",
-                            item_id, law_name,
+                            item_id,
+                            law_name,
                         )
                     else:
-                        logger.info(
-                            "[ActionKit] 이미 존재, 건너뜀: %s", law_name
-                        )
+                        logger.info("[ActionKit] 이미 존재, 건너뜀: %s", law_name)
                     continue
 
                 content = fpath.read_text(encoding="utf-8")
@@ -486,18 +501,22 @@ async def _ensure_actionkit_items(
 
                 # 파일 복사 + ActionKitFile 레코드 생성
                 object_key, size_bytes, checksum = _copy_file_to_storage(
-                    fpath, item_id=item.id, chapter_slug=chapter_slug,
-                )
-                session.add(ActionKitFile(
+                    fpath,
                     item_id=item.id,
-                    version=1,
-                    object_key=object_key,
-                    original_filename=fpath.name,
-                    mime_type="text/markdown",
-                    size_bytes=size_bytes,
-                    checksum=checksum,
-                    is_current=True,
-                ))
+                    chapter_slug=chapter_slug,
+                )
+                session.add(
+                    ActionKitFile(
+                        item_id=item.id,
+                        version=1,
+                        object_key=object_key,
+                        original_filename=fpath.name,
+                        mime_type="text/markdown",
+                        size_bytes=size_bytes,
+                        checksum=checksum,
+                        is_current=True,
+                    )
+                )
 
                 existing_name_cat.add(dedup_key)
                 name_cat_to_item_id[dedup_key] = item.id
@@ -602,7 +621,9 @@ async def _ingest_curated(curated_dir: Path, vector_store: VectorStoreService) -
         use_jsonb=True,
     )
     pg_vector.add_documents(all_docs)
-    logger.info("[Curated] 적재 완료: %d 청크 + ActionKitItem %d건", len(all_docs), created)
+    logger.info(
+        "[Curated] 적재 완료: %d 청크 + ActionKitItem %d건", len(all_docs), created
+    )
     return len(all_docs)
 
 
@@ -648,7 +669,9 @@ async def run() -> int:
 
     # --clean: 기존 컬렉션 삭제
     if args.clean:
-        sync_url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
+        sync_url = settings.DATABASE_URL.replace(
+            "postgresql+asyncpg://", "postgresql://"
+        )
         deleted = _delete_collection(sync_url, "law_vectors")
         logger.info("기존 벡터 %d건 삭제 완료", deleted)
 

@@ -32,7 +32,9 @@ class RoadmapJobRepository:
         await self.session.refresh(job)
         return job
 
-    async def get_for_team(self, *, job_id: UUID, team_id: UUID) -> RoadmapGenerationJob | None:
+    async def get_for_team(
+        self, *, job_id: UUID, team_id: UUID
+    ) -> RoadmapGenerationJob | None:
         stmt = select(RoadmapGenerationJob).where(
             RoadmapGenerationJob.id == job_id,
             RoadmapGenerationJob.team_id == team_id,
@@ -54,14 +56,18 @@ class RoadmapJobRepository:
         self.session.add(job)
         await self.session.commit()
 
-    async def set_progress(self, job: RoadmapGenerationJob, *, stage: str, progress: int) -> None:
+    async def set_progress(
+        self, job: RoadmapGenerationJob, *, stage: str, progress: int
+    ) -> None:
         job.stage = stage
         job.progress = max(0, min(progress, 100))
         job.updated_at = datetime.utcnow()
         self.session.add(job)
         await self.session.commit()
 
-    async def mark_succeeded(self, job: RoadmapGenerationJob, *, roadmap_id: UUID) -> None:
+    async def mark_succeeded(
+        self, job: RoadmapGenerationJob, *, roadmap_id: UUID
+    ) -> None:
         now = datetime.utcnow()
         job.status = "SUCCEEDED"
         job.stage = "COMPLETED"
@@ -72,7 +78,9 @@ class RoadmapJobRepository:
         self.session.add(job)
         await self.session.commit()
 
-    async def mark_failed(self, job: RoadmapGenerationJob, *, code: str, message: str) -> None:
+    async def mark_failed(
+        self, job: RoadmapGenerationJob, *, code: str, message: str
+    ) -> None:
         now = datetime.utcnow()
         job.status = "FAILED"
         job.stage = "FAILED"

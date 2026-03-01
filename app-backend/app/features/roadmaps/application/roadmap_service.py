@@ -57,5 +57,8 @@ class RoadmapService:
         return RoadmapCreationResult(
             roadmap_id=roadmap.id,
             title=title,
-            steps=[{"id": step.id, "title": step.title, "status": step.status} for step in steps],
+            steps=[
+                {"id": step.id, "title": step.title, "status": step.status}
+                for step in steps
+            ],
         )

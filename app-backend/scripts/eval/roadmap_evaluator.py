@@ -20,7 +20,6 @@ from dataclasses import dataclass, field
 from typing import Any
 from uuid import UUID
 
-
 # ─── Result dataclasses ────────────────────────────────────────────
 
 
@@ -220,10 +219,14 @@ class RoadmapEvaluator:
         )
 
         # Metric 3: document_validity
-        doc_validity, doc_details = await self._compute_document_validity(document_actions)
+        doc_validity, doc_details = await self._compute_document_validity(
+            document_actions
+        )
 
         # Metric 4: generation_success_rate
-        success_rate, success_details = self._compute_success_rate(all_actions_with_source)
+        success_rate, success_details = self._compute_success_rate(
+            all_actions_with_source
+        )
 
         # Metric 5: personalization_score
         person_score, person_details = self._compute_personalization_score(
@@ -309,8 +312,13 @@ class RoadmapEvaluator:
 
         # Analysis text
         analysis = self._build_analysis(
-            checklist_diff, phase_diff, risk_diff, days_diff,
-            overall, payload_a, payload_b
+            checklist_diff,
+            phase_diff,
+            risk_diff,
+            days_diff,
+            overall,
+            payload_a,
+            payload_b,
         )
 
         return PersonalizationEvalResult(
@@ -367,7 +375,12 @@ class RoadmapEvaluator:
         """
         total = len(legal_basis_actions)
         if total == 0:
-            return 0.0, {"total": 0, "relevant": 0, "irrelevant": [], "mode": "heuristic"}
+            return 0.0, {
+                "total": 0,
+                "relevant": 0,
+                "irrelevant": [],
+                "mode": "heuristic",
+            }
 
         # Find matching keyword hints
         hints: list[str] = []
@@ -667,10 +680,13 @@ class RoadmapEvaluator:
                                 enriched["mapping_source"] = step_mapping_source
                             result.append(enriched)
                         elif isinstance(item, str):
-                            result.append({
-                                "title": item,
-                                "mapping_source": step_mapping_source or "llm_generated",
-                            })
+                            result.append(
+                                {
+                                    "title": item,
+                                    "mapping_source": step_mapping_source
+                                    or "llm_generated",
+                                }
+                            )
         return result
 
     @staticmethod
@@ -726,7 +742,12 @@ class RoadmapEvaluator:
 
         # Highlight payload differences
         diff_fields: list[str] = []
-        for field_ in ("business_type", "startup_type", "experience_level", "budget_range"):
+        for field_ in (
+            "business_type",
+            "startup_type",
+            "experience_level",
+            "budget_range",
+        ):
             va = payload_a.get(field_, "")
             vb = payload_b.get(field_, "")
             if va != vb:
@@ -735,7 +756,9 @@ class RoadmapEvaluator:
             parts.append("입력 차이: " + ", ".join(diff_fields))
 
         if overall < 0.25:
-            parts.append("경고: 두 로드맵이 거의 동일합니다. 개인화가 충분하지 않습니다.")
+            parts.append(
+                "경고: 두 로드맵이 거의 동일합니다. 개인화가 충분하지 않습니다."
+            )
 
         return " | ".join(parts)
 

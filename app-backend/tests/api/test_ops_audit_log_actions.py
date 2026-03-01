@@ -14,7 +14,9 @@ from app.models.user import User
 
 async def _get_admin_token(client: AsyncClient) -> str:
     async with db.async_session() as session:
-        user = (await session.execute(select(User).where(User.email == "test@example.com"))).scalar_one()
+        user = (
+            await session.execute(select(User).where(User.email == "test@example.com"))
+        ).scalar_one()
         user.is_superuser = True
         user.is_active = True
         session.add(user)
@@ -55,12 +57,19 @@ async def test_ops_users_status_update_records_audit_log(client: AsyncClient):
 
     async with db.async_session() as session:
         row = (
-            await session.execute(
-                select(AdminAuditLog)
-                .where(AdminAuditLog.target_type == "user", AdminAuditLog.target_id == str(target_user_id))
-                .order_by(AdminAuditLog.id.desc())
+            (
+                await session.execute(
+                    select(AdminAuditLog)
+                    .where(
+                        AdminAuditLog.target_type == "user",
+                        AdminAuditLog.target_id == str(target_user_id),
+                    )
+                    .order_by(AdminAuditLog.id.desc())
+                )
             )
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
         assert row is not None
         assert row.action == "user.status.updated"
 
@@ -70,7 +79,9 @@ async def test_ops_growth_club_unblind_records_audit_log(client: AsyncClient):
     token = await _get_admin_token(client)
 
     async with db.async_session() as session:
-        author = (await session.execute(select(User).where(User.email == "test@example.com"))).scalar_one()
+        author = (
+            await session.execute(select(User).where(User.email == "test@example.com"))
+        ).scalar_one()
         post = GrowthClubPost(
             title="moderation target",
             content="content",
@@ -93,13 +104,21 @@ async def test_ops_growth_club_unblind_records_audit_log(client: AsyncClient):
 
     async with db.async_session() as session:
         from app.models.audit_log import AuditLog
+
         row = (
-            await session.execute(
-                select(AuditLog)
-                .where(AuditLog.target_type == "post", AuditLog.target_id == str(post_id))
-                .order_by(AuditLog.id.desc())
+            (
+                await session.execute(
+                    select(AuditLog)
+                    .where(
+                        AuditLog.target_type == "post",
+                        AuditLog.target_id == str(post_id),
+                    )
+                    .order_by(AuditLog.id.desc())
+                )
             )
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
         assert row is not None
         assert row.action == "growth_club.post.unblind"
 
@@ -109,7 +128,9 @@ async def test_ops_actionkit_status_update_records_audit_log(client: AsyncClient
     token = await _get_admin_token(client)
 
     async with db.async_session() as session:
-        category = ActionKitCategory(domain="kits", slug="ops-test", title="Ops Test", sort_order=1)
+        category = ActionKitCategory(
+            domain="kits", slug="ops-test", title="Ops Test", sort_order=1
+        )
         session.add(category)
         await session.flush()
 
@@ -136,18 +157,27 @@ async def test_ops_actionkit_status_update_records_audit_log(client: AsyncClient
 
     async with db.async_session() as session:
         row = (
-            await session.execute(
-                select(AdminAuditLog)
-                .where(AdminAuditLog.target_type == "actionkit_item", AdminAuditLog.target_id == str(item_id))
-                .order_by(AdminAuditLog.id.desc())
+            (
+                await session.execute(
+                    select(AdminAuditLog)
+                    .where(
+                        AdminAuditLog.target_type == "actionkit_item",
+                        AdminAuditLog.target_id == str(item_id),
+                    )
+                    .order_by(AdminAuditLog.id.desc())
+                )
             )
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
         assert row is not None
         assert row.action == "actionkit.item.status.updated"
 
 
 @pytest.mark.asyncio
-async def test_ops_announcement_create_and_publish_records_audit_log(client: AsyncClient):
+async def test_ops_announcement_create_and_publish_records_audit_log(
+    client: AsyncClient,
+):
     token = await _get_admin_token(client)
 
     create_response = await client.post(
@@ -168,12 +198,19 @@ async def test_ops_announcement_create_and_publish_records_audit_log(client: Asy
 
     async with db.async_session() as session:
         rows = (
-            await session.execute(
-                select(AdminAuditLog)
-                .where(AdminAuditLog.target_type == "announcement", AdminAuditLog.target_id == str(announcement_id))
-                .order_by(AdminAuditLog.id.asc())
+            (
+                await session.execute(
+                    select(AdminAuditLog)
+                    .where(
+                        AdminAuditLog.target_type == "announcement",
+                        AdminAuditLog.target_id == str(announcement_id),
+                    )
+                    .order_by(AdminAuditLog.id.asc())
+                )
             )
-        ).scalars().all()
+            .scalars()
+            .all()
+        )
 
         assert len(rows) >= 2
         assert rows[-2].action == "announcement.created"
@@ -181,7 +218,9 @@ async def test_ops_announcement_create_and_publish_records_audit_log(client: Asy
 
 
 @pytest.mark.asyncio
-async def test_ops_users_status_update_no_change_does_not_create_new_log(client: AsyncClient):
+async def test_ops_users_status_update_no_change_does_not_create_new_log(
+    client: AsyncClient,
+):
     token = await _get_admin_token(client)
 
     async with db.async_session() as session:
@@ -196,7 +235,11 @@ async def test_ops_users_status_update_no_change_does_not_create_new_log(client:
         await session.refresh(target_user)
         target_user_id = target_user.id
 
-        before_count = int((await session.execute(select(func.count()).select_from(AdminAuditLog))).scalar_one())
+        before_count = int(
+            (
+                await session.execute(select(func.count()).select_from(AdminAuditLog))
+            ).scalar_one()
+        )
 
     response = await client.patch(
         f"/api/v1/ops/users/{target_user_id}/status",
@@ -208,13 +251,19 @@ async def test_ops_users_status_update_no_change_does_not_create_new_log(client:
     assert response.json()["status"] == "active"
 
     async with db.async_session() as session:
-        after_count = int((await session.execute(select(func.count()).select_from(AdminAuditLog))).scalar_one())
+        after_count = int(
+            (
+                await session.execute(select(func.count()).select_from(AdminAuditLog))
+            ).scalar_one()
+        )
         # Audit log is still recorded even for same-status updates
         assert after_count >= before_count
 
 
 @pytest.mark.asyncio
-async def test_ops_users_status_update_rollback_when_audit_write_fails(client: AsyncClient, monkeypatch):
+async def test_ops_users_status_update_rollback_when_audit_write_fails(
+    client: AsyncClient, monkeypatch
+):
     token = await _get_admin_token(client)
 
     async with db.async_session() as session:
@@ -232,21 +281,34 @@ async def test_ops_users_status_update_rollback_when_audit_write_fails(client: A
     async def _raise_audit_error(*args, **kwargs):
         raise RuntimeError("forced audit write failure")
 
-    monkeypatch.setattr("app.api.v1.ops.users.record_admin_audit_log", _raise_audit_error)
+    monkeypatch.setattr(
+        "app.api.v1.ops.users.record_admin_audit_log", _raise_audit_error
+    )
 
     with pytest.raises(RuntimeError):
         await client.patch(
             f"/api/v1/ops/users/{target_user_id}/status",
-            json={"status": "suspended", "reason": "trigger rollback", "duration_days": 7},
+            json={
+                "status": "suspended",
+                "reason": "trigger rollback",
+                "duration_days": 7,
+            },
             headers={"Authorization": f"Bearer {token}"},
         )
 
     async with db.async_session() as session:
         row = (
-            await session.execute(
-                select(AdminAuditLog)
-                .where(AdminAuditLog.target_type == "user", AdminAuditLog.target_id == str(target_user_id))
-                .order_by(AdminAuditLog.id.desc())
+            (
+                await session.execute(
+                    select(AdminAuditLog)
+                    .where(
+                        AdminAuditLog.target_type == "user",
+                        AdminAuditLog.target_id == str(target_user_id),
+                    )
+                    .order_by(AdminAuditLog.id.desc())
+                )
             )
-        ).scalars().first()
+            .scalars()
+            .first()
+        )
         assert row is None

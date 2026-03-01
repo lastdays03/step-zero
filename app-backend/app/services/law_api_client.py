@@ -17,8 +17,10 @@ logger = get_logger(__name__)
 # Response Models
 # ---------------------------------------------------------------------------
 
+
 class LawSearchResult(BaseModel):
     """법령검색 결과 항목."""
+
     law_id: str = Field("", alias="법령ID")
     law_name: str = Field("", alias="법령명한글")
     law_mst: int = Field(0, alias="법령일련번호")
@@ -31,6 +33,7 @@ class LawSearchResult(BaseModel):
 
 class LawArticle(BaseModel):
     """조문 항목."""
+
     article_no: str = Field("", alias="조문번호")
     article_title: str = Field("", alias="조문제목")
     article_content: str = Field("", alias="조문내용")
@@ -40,6 +43,7 @@ class LawArticle(BaseModel):
 
 class LawFullText(BaseModel):
     """법령 본문 (기본정보 + 조문 목록)."""
+
     law_name: str = Field("")
     law_id: int = Field(0)
     mst: int = Field(0)
@@ -49,6 +53,7 @@ class LawFullText(BaseModel):
 
 class AdminRuleResult(BaseModel):
     """행정규칙 검색 결과 항목."""
+
     rule_name: str = Field("", alias="행정규칙명")
     rule_type: str = Field("", alias="행정규칙종류")
     rule_id: int = Field(0, alias="행정규칙일련번호")
@@ -118,9 +123,7 @@ class LawApiClient:
                     exc.response.status_code,
                     url,
                 )
-                raise LawApiError(
-                    f"HTTP {exc.response.status_code}: {url}"
-                ) from exc
+                raise LawApiError(f"HTTP {exc.response.status_code}: {url}") from exc
 
             # rate-limit delay
             await asyncio.sleep(_REQUEST_INTERVAL)
@@ -201,6 +204,7 @@ class LawApiClient:
 # Utility helpers
 # ---------------------------------------------------------------------------
 
+
 def _safe_int(value: Any) -> int:
     try:
         return int(value)
@@ -221,11 +225,13 @@ def _parse_articles_from_response(law_data: dict[str, Any]) -> list[LawArticle]:
             continue
 
         content = _build_article_content(unit)
-        articles.append(LawArticle(
-            조문번호=unit.get("조문번호", ""),
-            조문제목=unit.get("조문제목", ""),
-            조문내용=content,
-        ))
+        articles.append(
+            LawArticle(
+                조문번호=unit.get("조문번호", ""),
+                조문제목=unit.get("조문제목", ""),
+                조문내용=content,
+            )
+        )
     return articles
 
 

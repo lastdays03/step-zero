@@ -1,7 +1,7 @@
 from typing import List
 
-from langchain_openai import OpenAIEmbeddings
 from langchain_core.documents import Document
+from langchain_openai import OpenAIEmbeddings
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from app.core.config import get_settings
@@ -31,7 +31,9 @@ class VectorStoreService:
             model="text-embedding-3-small",
             api_key=settings.OPENAI_API_KEY,
         )
-        self.db_url = settings.DATABASE_URL.replace("postgresql+asyncpg://", "postgresql://")
+        self.db_url = settings.DATABASE_URL.replace(
+            "postgresql+asyncpg://", "postgresql://"
+        )
         self.collection_name = "law_vectors"
 
         # 커스텀 청킹 파라미터가 기본값과 동일하면 모듈 수준 인스턴스 재사용
@@ -51,13 +53,15 @@ class VectorStoreService:
     def _build_base_metadata(self, item: ProcessedLawData) -> dict:
         """ProcessedLawData → 공통 메타데이터 딕셔너리"""
         metadata = item.original_data.metadata.copy()
-        metadata.update({
-            "source": "law_etl",
-            "title": item.title,
-            "category": item.category,
-            "summary": item.summary,
-            "law_reference": str(item.law_reference),
-        })
+        metadata.update(
+            {
+                "source": "law_etl",
+                "title": item.title,
+                "category": item.category,
+                "summary": item.summary,
+                "law_reference": str(item.law_reference),
+            }
+        )
         return metadata
 
     async def add_documents(self, processed_data_list: List[ProcessedLawData]):

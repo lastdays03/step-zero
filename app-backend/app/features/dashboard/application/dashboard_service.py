@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
 from dataclasses import dataclass
+from datetime import datetime, timezone
 from uuid import UUID
 
 from app.repositories.roadmap_repository import RoadmapRepository
@@ -19,12 +19,21 @@ class DashboardService:
         self.roadmap_repo = roadmap_repo
 
     async def get_dashboard(
-        self, *, team_id: UUID, user_name: str, is_guest: bool, roadmap_id: UUID | None = None,
+        self,
+        *,
+        team_id: UUID,
+        user_name: str,
+        is_guest: bool,
+        roadmap_id: UUID | None = None,
     ) -> DashboardResult:
         if is_guest:
             return DashboardResult(
                 user_name="Guest",
-                current_phase={"title": "로드맵을 생성해 보세요", "progress": 0, "status": "GUEST"},
+                current_phase={
+                    "title": "로드맵을 생성해 보세요",
+                    "progress": 0,
+                    "status": "GUEST",
+                },
                 roadmap=[
                     {"title": "Step 1: 아이디어 검증", "status": "locked", "date": "-"},
                     {"title": "Step 2: 법인 설립", "status": "locked", "date": "-"},
@@ -35,13 +44,19 @@ class DashboardService:
             )
 
         if roadmap_id:
-            latest_roadmap = await self.roadmap_repo.get_by_id_for_team(roadmap_id, team_id)
+            latest_roadmap = await self.roadmap_repo.get_by_id_for_team(
+                roadmap_id, team_id
+            )
         else:
             latest_roadmap = await self.roadmap_repo.get_latest_for_team(team_id)
         if not latest_roadmap:
             return DashboardResult(
                 user_name=user_name,
-                current_phase={"title": "로드맵을 생성해 보세요", "progress": 0, "status": "READY"},
+                current_phase={
+                    "title": "로드맵을 생성해 보세요",
+                    "progress": 0,
+                    "status": "READY",
+                },
                 roadmap=[],
                 stats={"days_left": 0, "tasks_completed": 0, "total_tasks": 0},
                 growth_club={"founders_online": 12},
@@ -51,7 +66,9 @@ class DashboardService:
         total_tasks = len(steps)
         tasks_completed = len([step for step in steps if step.status == "COMPLETED"])
         progress = int((tasks_completed / total_tasks) * 100) if total_tasks else 0
-        current_step = next((step for step in steps if step.status != "COMPLETED"), None)
+        current_step = next(
+            (step for step in steps if step.status != "COMPLETED"), None
+        )
         phase_title = current_step.title if current_step else "모든 단계 완료"
 
         step_ids = [step.id for step in steps if step.id is not None]
@@ -85,7 +102,8 @@ class DashboardService:
             (
                 idx
                 for idx, phase_name in enumerate(phase_order)
-                if phase_stats[phase_name]["completed"] < phase_stats[phase_name]["total"]
+                if phase_stats[phase_name]["completed"]
+                < phase_stats[phase_name]["total"]
             ),
             None,
         )
@@ -103,13 +121,25 @@ class DashboardService:
                 date = "-"
             roadmap_items.append({"title": phase_name, "status": status, "date": date})
 
-        created_at = latest_roadmap.created_at.replace(tzinfo=timezone.utc) if latest_roadmap.created_at.tzinfo is None else latest_roadmap.created_at
+        created_at = (
+            latest_roadmap.created_at.replace(tzinfo=timezone.utc)
+            if latest_roadmap.created_at.tzinfo is None
+            else latest_roadmap.created_at
+        )
         days_left = max(0, 30 - (datetime.now(timezone.utc) - created_at).days)
 
         return DashboardResult(
             user_name=user_name,
-            current_phase={"title": phase_title, "progress": progress, "status": phase_status},
+            current_phase={
+                "title": phase_title,
+                "progress": progress,
+                "status": phase_status,
+            },
             roadmap=roadmap_items,
-            stats={"days_left": days_left, "tasks_completed": tasks_completed, "total_tasks": total_tasks},
+            stats={
+                "days_left": days_left,
+                "tasks_completed": tasks_completed,
+                "total_tasks": total_tasks,
+            },
             growth_club={"founders_online": 12},
         )

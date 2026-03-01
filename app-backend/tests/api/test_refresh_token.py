@@ -1,6 +1,8 @@
 """E2E tests for refresh token flow."""
-import pytest
+
 from datetime import datetime, timedelta, timezone
+
+import pytest
 from httpx import AsyncClient
 
 from app.core import security

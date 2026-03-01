@@ -2,12 +2,13 @@ from datetime import datetime, timezone
 from typing import Any
 
 from pydantic import BaseModel
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
-from sqlalchemy import func
 
 from app.models.admin_audit_log import AdminAuditLog
 from app.models.audit_log import AuditLog
+
 from .constants import ALLOWED_AUDIT_ACTIONS, ALLOWED_AUDIT_TARGET_TYPES
 
 
@@ -52,7 +53,9 @@ def _mask_meta_value(value: Any) -> Any:
         sanitized: dict[str, Any] = {}
         for key, nested_value in value.items():
             key_lower = key.lower()
-            if key_lower in SENSITIVE_META_KEYS or any(sensitive in key_lower for sensitive in SENSITIVE_META_KEYS):
+            if key_lower in SENSITIVE_META_KEYS or any(
+                sensitive in key_lower for sensitive in SENSITIVE_META_KEYS
+            ):
                 sanitized[key] = "[REDACTED]"
             else:
                 sanitized[key] = _mask_meta_value(nested_value)
@@ -133,12 +136,10 @@ async def list_audit_logs(
 
     offset = (page - 1) * size
     data_stmt = (
-        select(AdminAuditLog)
-        .where(*filters) if filters else select(AdminAuditLog)
+        select(AdminAuditLog).where(*filters) if filters else select(AdminAuditLog)
     )
     data_stmt = (
-        data_stmt
-        .order_by(AdminAuditLog.created_at.desc(), AdminAuditLog.id.desc())
+        data_stmt.order_by(AdminAuditLog.created_at.desc(), AdminAuditLog.id.desc())
         .offset(offset)
         .limit(size)
     )

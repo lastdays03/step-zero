@@ -1,6 +1,7 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status as http_status
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import status as http_status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
@@ -34,7 +35,9 @@ router = APIRouter(prefix="/users")
 )
 async def list_ops_users(
     search: str | None = Query(default=None, description="이메일 또는 이름 검색어"),
-    status: str | None = Query(default=None, description="계정 상태 (active, suspended 등)"),
+    status: str | None = Query(
+        default=None, description="계정 상태 (active, suspended 등)"
+    ),
     offset: int = Query(default=0, ge=0, description="조회 시작 오프셋"),
     limit: int = Query(default=50, ge=1, le=200, description="조회 개수"),
     session: AsyncSession = Depends(get_session),

@@ -2,13 +2,15 @@ from collections import defaultdict
 from pathlib import Path
 
 from fastapi import UploadFile
+
 from app.core.config import get_settings
+from app.repositories.actionkit_repository import ActionKitRepository
+
 from .file_pipeline import (
     build_object_key,
     detect_mime_type,
     save_upload_to_path,
 )
-from app.repositories.actionkit_repository import ActionKitRepository
 
 
 class ActionKitService:
@@ -32,8 +34,12 @@ class ActionKitService:
         if not categories:
             return {}
 
-        category_ids = [category.id for category in categories if category.id is not None]
-        items = await self.repository.list_items_for_categories(domain="laws", category_ids=category_ids)
+        category_ids = [
+            category.id for category in categories if category.id is not None
+        ]
+        items = await self.repository.list_items_for_categories(
+            domain="laws", category_ids=category_ids
+        )
         item_ids = [item.id for item in items if item.id is not None]
 
         highlights = await self.repository.list_item_highlights(item_ids=item_ids)
@@ -50,7 +56,9 @@ class ActionKitService:
             if item.id is None:
                 continue
             current_file = file_map.get(item.id)
-            path = self._to_public_path(current_file.object_key if current_file else None)
+            path = self._to_public_path(
+                current_file.object_key if current_file else None
+            )
             items_by_category[item.category_id].append(
                 {
                     "name": item.name,
@@ -77,8 +85,12 @@ class ActionKitService:
         if not categories:
             return {"all": {"title": "전체 액션 키트", "items": []}}
 
-        category_ids = [category.id for category in categories if category.id is not None]
-        items = await self.repository.list_items_for_categories(domain="kits", category_ids=category_ids)
+        category_ids = [
+            category.id for category in categories if category.id is not None
+        ]
+        items = await self.repository.list_items_for_categories(
+            domain="kits", category_ids=category_ids
+        )
         item_ids = [item.id for item in items if item.id is not None]
 
         related_laws = await self.repository.list_related_laws(item_ids=item_ids)
@@ -115,7 +127,9 @@ class ActionKitService:
             if item.id is None:
                 continue
             current_file = file_map.get(item.id)
-            path = self._to_public_path(current_file.object_key if current_file else None)
+            path = self._to_public_path(
+                current_file.object_key if current_file else None
+            )
             items_by_category[item.category_id].append(
                 {
                     "id": item.id,
@@ -166,7 +180,9 @@ class ActionKitService:
         item_id: int,
         upload_file: UploadFile,
     ) -> dict:
-        item_and_category = await self.repository.get_item_with_category(item_id=item_id)
+        item_and_category = await self.repository.get_item_with_category(
+            item_id=item_id
+        )
         if not item_and_category:
             raise ValueError("ActionKit item not found")
 
@@ -176,14 +192,18 @@ class ActionKitService:
         filename = upload_file.filename or f"item-{item_id}-v{next_version}.bin"
         object_key = build_object_key(
             domain=item.domain,
-            category_slug=self._resolve_category_slug(domain=item.domain, category_slug=category.slug),
+            category_slug=self._resolve_category_slug(
+                domain=item.domain, category_slug=category.slug
+            ),
             item_id=item_id,
             version=next_version,
             filename=filename,
         )
 
         destination = Path(settings.ACTIONKIT_STORAGE_PATH) / object_key
-        size_bytes, checksum = await save_upload_to_path(upload_file, destination=destination)
+        size_bytes, checksum = await save_upload_to_path(
+            upload_file, destination=destination
+        )
         mime_type = detect_mime_type(filename, fallback=upload_file.content_type)
 
         await self.repository.clear_current_file_flags(item_id=item_id)

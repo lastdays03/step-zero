@@ -12,7 +12,9 @@ from app.api.v1.schemas import (
     RoadmapJobResultResponse,
 )
 from app.core.db import get_session
-from app.features.roadmaps.application.roadmap_generation_service import RoadmapGenerationService
+from app.features.roadmaps.application.roadmap_generation_service import (
+    RoadmapGenerationService,
+)
 from app.features.roadmaps.application.worker_queue import enqueue_roadmap_job
 from app.models.team import Team
 from app.models.user import AuthenticatedUser
@@ -91,9 +93,14 @@ async def create_roadmap_job(
 
     enqueued = await enqueue_roadmap_job(job_id)
     if not enqueued and job:
-        await repo.mark_failed(job, code="QUEUE_UNAVAILABLE", message="Failed to enqueue job")
+        await repo.mark_failed(
+            job, code="QUEUE_UNAVAILABLE", message="Failed to enqueue job"
+        )
     if not job:
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Job create failed")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Job create failed",
+        )
     return RoadmapJobResponse(
         job_id=job.id,
         status=job.status,
@@ -120,7 +127,9 @@ async def get_roadmap_job(
     repo = RoadmapJobRepository(session)
     job = await repo.get_for_team(job_id=job_id, team_id=current_team.id)
     if not job:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
+        )
     return RoadmapJobResponse(
         job_id=job.id,
         status=job.status,
@@ -147,7 +156,9 @@ async def get_roadmap_job_result(
     repo = RoadmapJobRepository(session)
     job = await repo.get_for_team(job_id=job_id, team_id=current_team.id)
     if not job:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Job not found")
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
+        )
     if job.status != "SUCCEEDED":
         return RoadmapJobResultResponse(
             job_id=job.id,

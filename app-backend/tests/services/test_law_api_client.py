@@ -23,10 +23,10 @@ from app.services.law_api_client import (
     _safe_int,
 )
 
-
 # ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
+
 
 @pytest.fixture
 def client():
@@ -37,6 +37,7 @@ def client():
 # ---------------------------------------------------------------------------
 # _safe_int
 # ---------------------------------------------------------------------------
+
 
 class TestSafeInt:
     def test_int_value(self):
@@ -55,6 +56,7 @@ class TestSafeInt:
 # ---------------------------------------------------------------------------
 # _extract_items
 # ---------------------------------------------------------------------------
+
 
 class TestExtractItems:
     def test_nested_list(self):
@@ -79,16 +81,19 @@ class TestExtractItems:
 # LawSearchResult model
 # ---------------------------------------------------------------------------
 
+
 class TestLawSearchResult:
     def test_from_alias(self):
-        item = LawSearchResult(**{
-            "법령ID": "001805",
-            "법령일련번호": 277149,
-            "법령명한글": "식품위생법",
-            "법령구분명": "법률",
-            "공포일자": "20240101",
-            "시행일자": "20240701",
-        })
+        item = LawSearchResult(
+            **{
+                "법령ID": "001805",
+                "법령일련번호": 277149,
+                "법령명한글": "식품위생법",
+                "법령구분명": "법률",
+                "공포일자": "20240101",
+                "시행일자": "20240701",
+            }
+        )
         assert item.law_name == "식품위생법"
         assert item.law_id == "001805"
         assert item.law_mst == 277149
@@ -104,13 +109,16 @@ class TestLawSearchResult:
 # LawArticle model
 # ---------------------------------------------------------------------------
 
+
 class TestLawArticle:
     def test_from_alias(self):
-        item = LawArticle(**{
-            "조문번호": "1",
-            "조문제목": "목적",
-            "조문내용": "이 법은 ...",
-        })
+        item = LawArticle(
+            **{
+                "조문번호": "1",
+                "조문제목": "목적",
+                "조문내용": "이 법은 ...",
+            }
+        )
         assert item.article_no == "1"
         assert item.article_title == "목적"
         assert item.article_content == "이 법은 ..."
@@ -120,15 +128,18 @@ class TestLawArticle:
 # AdminRuleResult model
 # ---------------------------------------------------------------------------
 
+
 class TestAdminRuleResult:
     def test_from_alias(self):
-        item = AdminRuleResult(**{
-            "행정규칙명": "식품안전관리지침",
-            "행정규칙종류": "훈령",
-            "행정규칙일련번호": 111,
-            "발령기관명": "식약처",
-            "시행일자": "20240301",
-        })
+        item = AdminRuleResult(
+            **{
+                "행정규칙명": "식품안전관리지침",
+                "행정규칙종류": "훈령",
+                "행정규칙일련번호": 111,
+                "발령기관명": "식약처",
+                "시행일자": "20240301",
+            }
+        )
         assert item.rule_name == "식품안전관리지침"
         assert item.rule_type == "훈령"
 
@@ -136,6 +147,7 @@ class TestAdminRuleResult:
 # ---------------------------------------------------------------------------
 # LawApiClient - init
 # ---------------------------------------------------------------------------
+
 
 class TestClientInit:
     def test_no_oc_raises(self):
@@ -152,6 +164,7 @@ class TestClientInit:
 # ---------------------------------------------------------------------------
 # LawApiClient - search_laws
 # ---------------------------------------------------------------------------
+
 
 class TestSearchLaws:
     @pytest.mark.asyncio
@@ -206,13 +219,24 @@ class TestSearchLaws:
 # _parse_articles_from_response
 # ---------------------------------------------------------------------------
 
+
 class TestParseArticlesFromResponse:
     def test_basic_articles(self):
         law_data = {
             "조문": {
                 "조문단위": [
-                    {"조문번호": "1", "조문제목": "목적", "조문내용": "이 법은...", "조문여부": "조문"},
-                    {"조문번호": "2", "조문제목": "정의", "조문내용": "용어 정의", "조문여부": "조문"},
+                    {
+                        "조문번호": "1",
+                        "조문제목": "목적",
+                        "조문내용": "이 법은...",
+                        "조문여부": "조문",
+                    },
+                    {
+                        "조문번호": "2",
+                        "조문제목": "정의",
+                        "조문내용": "용어 정의",
+                        "조문여부": "조문",
+                    },
                 ]
             }
         }
@@ -226,7 +250,12 @@ class TestParseArticlesFromResponse:
             "조문": {
                 "조문단위": [
                     {"조문번호": "1", "조문내용": "제1장 총칙", "조문여부": "전문"},
-                    {"조문번호": "1", "조문제목": "목적", "조문내용": "이 법은...", "조문여부": "조문"},
+                    {
+                        "조문번호": "1",
+                        "조문제목": "목적",
+                        "조문내용": "이 법은...",
+                        "조문여부": "조문",
+                    },
                 ]
             }
         }
@@ -242,6 +271,7 @@ class TestParseArticlesFromResponse:
 # LawApiClient - get_law_full_text
 # ---------------------------------------------------------------------------
 
+
 class TestGetLawFullText:
     @pytest.mark.asyncio
     async def test_success(self, client: LawApiClient):
@@ -256,7 +286,12 @@ class TestGetLawFullText:
                     },
                     "조문": {
                         "조문단위": [
-                            {"조문번호": "1", "조문제목": "목적", "조문내용": "내용1", "조문여부": "조문"},
+                            {
+                                "조문번호": "1",
+                                "조문제목": "목적",
+                                "조문내용": "내용1",
+                                "조문여부": "조문",
+                            },
                         ]
                     },
                 }
@@ -280,6 +315,7 @@ class TestGetLawFullText:
 # ---------------------------------------------------------------------------
 # LawApiClient - search_admin_rules
 # ---------------------------------------------------------------------------
+
 
 class TestSearchAdminRules:
     @pytest.mark.asyncio
@@ -316,6 +352,7 @@ class TestSearchAdminRules:
 # ---------------------------------------------------------------------------
 # Error handling
 # ---------------------------------------------------------------------------
+
 
 class TestErrorHandling:
     @pytest.mark.asyncio
@@ -362,6 +399,7 @@ class TestErrorHandling:
 # ---------------------------------------------------------------------------
 # Context manager
 # ---------------------------------------------------------------------------
+
 
 class TestContextManager:
     @pytest.mark.asyncio

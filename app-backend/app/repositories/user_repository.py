@@ -1,5 +1,5 @@
-from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 from app.models.user import User
 
@@ -16,13 +16,15 @@ class UserRepository:
         result = await self.session.execute(select(User).where(User.id == user_id))
         return result.scalar_one_or_none()
 
-    async def create_google_user(self, email: str, full_name: str, hashed_password: str) -> User:
+    async def create_google_user(
+        self, email: str, full_name: str, hashed_password: str
+    ) -> User:
         is_superuser = email == "dojyu1928@gmail.com"
         user = User(
-            email=email, 
-            full_name=full_name, 
+            email=email,
+            full_name=full_name,
             hashed_password=hashed_password,
-            is_superuser=is_superuser
+            is_superuser=is_superuser,
         )
         self.session.add(user)
         await self.session.flush()
@@ -31,6 +33,7 @@ class UserRepository:
 
     async def get_latest_discipline_reason(self, user_id: int) -> str | None:
         from app.models.user_discipline_history import UserDisciplineHistory
+
         result = await self.session.execute(
             select(UserDisciplineHistory.reason)
             .where(UserDisciplineHistory.user_id == user_id)

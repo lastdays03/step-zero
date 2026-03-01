@@ -4,11 +4,11 @@ from sqlmodel import select
 
 from app.models.actionkit import (
     ActionKitCategory,
+    ActionKitChecklist,
     ActionKitFile,
     ActionKitItem,
     ActionKitItemHighlight,
     ActionKitRelatedLaw,
-    ActionKitChecklist,
 )
 
 
@@ -37,7 +37,9 @@ class ActionKitRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def list_items_for_categories(self, *, domain: str, category_ids: list[int]) -> list[ActionKitItem]:
+    async def list_items_for_categories(
+        self, *, domain: str, category_ids: list[int]
+    ) -> list[ActionKitItem]:
         if not category_ids:
             return []
         stmt = (
@@ -52,13 +54,17 @@ class ActionKitRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def list_item_highlights(self, *, item_ids: list[int]) -> list[ActionKitItemHighlight]:
+    async def list_item_highlights(
+        self, *, item_ids: list[int]
+    ) -> list[ActionKitItemHighlight]:
         if not item_ids:
             return []
         stmt = (
             select(ActionKitItemHighlight)
             .where(ActionKitItemHighlight.item_id.in_(item_ids))
-            .order_by(ActionKitItemHighlight.sort_order.asc(), ActionKitItemHighlight.id.asc())
+            .order_by(
+                ActionKitItemHighlight.sort_order.asc(), ActionKitItemHighlight.id.asc()
+            )
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
@@ -74,13 +80,17 @@ class ActionKitRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def list_related_laws(self, *, item_ids: list[int]) -> list[ActionKitRelatedLaw]:
+    async def list_related_laws(
+        self, *, item_ids: list[int]
+    ) -> list[ActionKitRelatedLaw]:
         if not item_ids:
             return []
         stmt = (
             select(ActionKitRelatedLaw)
             .where(ActionKitRelatedLaw.item_id.in_(item_ids))
-            .order_by(ActionKitRelatedLaw.sort_order.asc(), ActionKitRelatedLaw.id.asc())
+            .order_by(
+                ActionKitRelatedLaw.sort_order.asc(), ActionKitRelatedLaw.id.asc()
+            )
         )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
@@ -99,7 +109,9 @@ class ActionKitRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_item_with_category(self, *, item_id: int) -> tuple[ActionKitItem, ActionKitCategory] | None:
+    async def get_item_with_category(
+        self, *, item_id: int
+    ) -> tuple[ActionKitItem, ActionKitCategory] | None:
         stmt = (
             select(ActionKitItem, ActionKitCategory)
             .join(ActionKitCategory, ActionKitCategory.id == ActionKitItem.category_id)
@@ -112,7 +124,9 @@ class ActionKitRepository:
         return row[0], row[1]
 
     async def get_next_file_version(self, *, item_id: int) -> int:
-        stmt = select(sa.func.max(ActionKitFile.version)).where(ActionKitFile.item_id == item_id)
+        stmt = select(sa.func.max(ActionKitFile.version)).where(
+            ActionKitFile.item_id == item_id
+        )
         result = await self.session.execute(stmt)
         max_version = result.scalar_one_or_none() or 0
         return int(max_version) + 1

@@ -11,5 +11,3 @@ async def test_v1_endpoints_do_not_include_deprecation_headers(client: AsyncClie
     assert response.headers.get("Sunset") is None
     assert response.headers.get("Link") is None
     assert response.headers.get("Warning") is None
-
-

@@ -1,14 +1,16 @@
 from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select, desc
+from sqlmodel import desc, select
 
 from app.api import deps
 from app.core.db import get_session
-from app.models.announcement import Announcement
 from app.features.ops.application.announcements.service import AnnouncementItem
+from app.models.announcement import Announcement
 
 router = APIRouter()
+
 
 @router.get(
     "",
@@ -28,6 +30,7 @@ async def list_published_announcements(
     rows = result.scalars().all()
     return [AnnouncementItem.model_validate(row, from_attributes=True) for row in rows]
 
+
 @router.get(
     "/{announcement_id}",
     response_model=AnnouncementItem,
@@ -41,5 +44,5 @@ async def get_published_announcement(
     row = await session.get(Announcement, announcement_id)
     if not row or row.status != "published":
         raise HTTPException(status_code=404, detail="Announcement not found")
-    
+
     return AnnouncementItem.model_validate(row, from_attributes=True)

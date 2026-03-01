@@ -1,9 +1,9 @@
 import logging
 from typing import Any
 
-from google.auth.exceptions import GoogleAuthError
 from fastapi import APIRouter, Depends, HTTPException, Path, status
 from fastapi.security import OAuth2PasswordRequestForm
+from google.auth.exceptions import GoogleAuthError
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -46,10 +46,14 @@ def _serialize_auth_result(result: Any) -> TokenWithTeams:
 
 
 def _is_backend_unavailable_error(error: Exception) -> bool:
-    return isinstance(error, (SQLAlchemyError, ConnectionError, OSError, PermissionError))
+    return isinstance(
+        error, (SQLAlchemyError, ConnectionError, OSError, PermissionError)
+    )
 
 
-async def _login_social_mock_user(provider: str, session: AsyncSession) -> dict[str, Any]:
+async def _login_social_mock_user(
+    provider: str, session: AsyncSession
+) -> dict[str, Any]:
     user_repo = UserRepository(session)
     user = await user_repo.get_by_email(f"social_{provider}_user@example.com")
     if not user:
@@ -84,7 +88,8 @@ async def _login_social_mock_user(provider: str, session: AsyncSession) -> dict[
     await refresh_repo.create(
         user_id=user.id,
         token_hash=security.hash_refresh_token(raw_refresh),
-        expires_at=datetime.utcnow() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        expires_at=datetime.utcnow()
+        + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
     )
 
     return {
@@ -93,7 +98,10 @@ async def _login_social_mock_user(provider: str, session: AsyncSession) -> dict[
         "token_type": "bearer",
         "user": UserRead.model_validate(user).model_dump(mode="json"),
         "current_team_id": current_team.id,
-        "teams": [TeamRead(id=team.id, name=team.name).model_dump(mode="json") for team in teams],
+        "teams": [
+            TeamRead(id=team.id, name=team.name).model_dump(mode="json")
+            for team in teams
+        ],
     }
 
 
@@ -110,7 +118,9 @@ async def login_access_token(
 ) -> Any:
     service = _auth_service(session)
     try:
-        result = await service.login_with_password(form_data.username, form_data.password)
+        result = await service.login_with_password(
+            form_data.username, form_data.password
+        )
     except HTTPException:
         raise
     except Exception as error:
@@ -146,9 +156,13 @@ async def login_google(
         )
     service = _auth_service(session)
     try:
-        result = await service.login_with_google(settings.GOOGLE_CLIENT_ID, request_data.id_token)
+        result = await service.login_with_google(
+            settings.GOOGLE_CLIENT_ID, request_data.id_token
+        )
     except ValueError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token"
+        )
     except GoogleAuthError:
         if settings.ENABLE_SOCIAL_MOCK:
             return await _login_social_mock_user("google", session)
@@ -159,17 +173,28 @@ async def login_google(
     except HTTPException:
         raise
     except Exception as error:
-        logger.error(f"Google login error: {type(error).__name__}: {str(error)}", exc_info=True)
+        logger.error(
+            f"Google login error: {type(error).__name__}: {str(error)}", exc_info=True
+        )
         if _is_backend_unavailable_error(error):
-            logger.error(f"Social login failed due to backend unavailability: {str(error)}", exc_info=True)
+            logger.error(
+                f"Social login failed due to backend unavailability: {str(error)}",
+                exc_info=True,
+            )
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
                 detail="Authentication backend unavailable",
             )
-        logger.error(f"Social login failed with unexpected error: {str(error)}", exc_info=True)
-        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Login failed")
+        logger.error(
+            f"Social login failed with unexpected error: {str(error)}", exc_info=True
+        )
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Login failed"
+        )
     if not result:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token"
+        )
     return _serialize_auth_result(result)
 
 

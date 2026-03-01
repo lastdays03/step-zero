@@ -23,13 +23,17 @@ def problem_response(
     }
     if extra:
         payload.update(extra)
-    return JSONResponse(status_code=status_code, content=payload, media_type="application/problem+json")
+    return JSONResponse(
+        status_code=status_code, content=payload, media_type="application/problem+json"
+    )
 
 
-async def http_exception_to_problem(request: Request, exc: HTTPException) -> JSONResponse:
+async def http_exception_to_problem(
+    request: Request, exc: HTTPException
+) -> JSONResponse:
     title = "HTTP Error"
     extra = None
-    
+
     if isinstance(exc.detail, str):
         detail = exc.detail
     elif isinstance(exc.detail, dict):
@@ -37,17 +41,19 @@ async def http_exception_to_problem(request: Request, exc: HTTPException) -> JSO
         extra = exc.detail
     else:
         detail = "Request failed"
-        
+
     return problem_response(
         request=request,
         status_code=exc.status_code,
         title=title,
         detail=detail,
-        extra=extra
+        extra=extra,
     )
 
 
-async def validation_exception_to_problem(request: Request, exc: RequestValidationError) -> JSONResponse:
+async def validation_exception_to_problem(
+    request: Request, exc: RequestValidationError
+) -> JSONResponse:
     return problem_response(
         request=request,
         status_code=422,

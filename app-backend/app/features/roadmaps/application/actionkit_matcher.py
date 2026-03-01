@@ -45,9 +45,9 @@ CATEGORY_TO_PHASE: dict[str, str] = {
     "5": "위반 대응",
     "6": "행정처분 구제",
     # Business-specific law chapters (domain=laws, slug="7".."12")
-    "7": "영업 인허가",   # 식품제조가공업
-    "8": "영업 인허가",   # 통신판매업
-    "9": "영업 인허가",   # 미용업
+    "7": "영업 인허가",  # 식품제조가공업
+    "8": "영업 인허가",  # 통신판매업
+    "9": "영업 인허가",  # 미용업
     "10": "영업 인허가",  # 일반소매업
     "11": "영업 인허가",  # 학원업
     "12": "영업 인허가",  # 숙박업
@@ -191,9 +191,7 @@ class ActionKitMatcher:
         queries.append(f"{business_type} {location} 창업 인허가")
 
         # Business-specific keyword queries
-        keywords = BUSINESS_QUERY_TEMPLATES.get(
-            business_type, DEFAULT_QUERY_KEYWORDS
-        )
+        keywords = BUSINESS_QUERY_TEMPLATES.get(business_type, DEFAULT_QUERY_KEYWORDS)
         for kw in keywords:
             queries.append(f"{business_type} {kw}")
 
@@ -337,12 +335,9 @@ class ActionKitMatcher:
             laws_by_item.setdefault(law.item_id, []).append(law)
 
         # Load files
-        file_stmt = (
-            select(ActionKitFile)
-            .where(
-                ActionKitFile.item_id.in_(item_ids),
-                ActionKitFile.is_current.is_(True),
-            )
+        file_stmt = select(ActionKitFile).where(
+            ActionKitFile.item_id.in_(item_ids),
+            ActionKitFile.is_current.is_(True),
         )
         file_result = await session.execute(file_stmt)
         files_by_item: dict[int, list[ActionKitFile]] = {}

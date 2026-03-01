@@ -1,21 +1,27 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import model_validator
 from functools import lru_cache
-from typing import List
 from pathlib import Path
+from typing import List
+
+from pydantic import model_validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "StepZero API"
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
     ENVIRONMENT: str = "development"
-    
+
     # CORS (환경변수에서는 쉼표로 구분된 문자열로 받음)
-    BACKEND_CORS_ORIGINS_STR: str = "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+    BACKEND_CORS_ORIGINS_STR: str = (
+        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
+    )
 
     @property
     def BACKEND_CORS_ORIGINS(self) -> List[str]:
-        return [i.strip() for i in self.BACKEND_CORS_ORIGINS_STR.split(",") if i.strip()]
+        return [
+            i.strip() for i in self.BACKEND_CORS_ORIGINS_STR.split(",") if i.strip()
+        ]
 
     # Database
     DATABASE_URL: str
@@ -29,10 +35,10 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
     SQL_ECHO: bool = False
-    
+
     # OpenAI
     OPENAI_API_KEY: str | None = None
-    
+
     # Google OAuth
     GOOGLE_CLIENT_ID: str | None = None
 
@@ -71,7 +77,10 @@ class Settings(BaseSettings):
     def validate_security(self) -> "Settings":
         if not self.SECRET_KEY.strip():
             raise ValueError("SECRET_KEY must be set")
-        if self.ENVIRONMENT.lower() == "production" and self.SECRET_KEY == "CHANGE_ME_IN_PROD":
+        if (
+            self.ENVIRONMENT.lower() == "production"
+            and self.SECRET_KEY == "CHANGE_ME_IN_PROD"
+        ):
             raise ValueError("SECRET_KEY must not use a default value in production")
         self.OPENAI_API_KEY = self._normalize_optional_secret(self.OPENAI_API_KEY)
         self.GOOGLE_CLIENT_ID = self._normalize_optional_secret(self.GOOGLE_CLIENT_ID)
@@ -89,13 +98,14 @@ class Settings(BaseSettings):
     @property
     def ACTIONKIT_STORAGE_PATH(self) -> Path:
         return self.STORAGE_ROOT_PATH / "actionkit"
-    
+
     model_config = SettingsConfigDict(
         case_sensitive=True,
         env_file=(".env", ".env.local"),
-        env_file_encoding='utf-8',
-        extra="ignore"
+        env_file_encoding="utf-8",
+        extra="ignore",
     )
+
 
 @lru_cache
 def get_settings():

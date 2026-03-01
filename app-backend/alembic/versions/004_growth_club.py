@@ -4,9 +4,11 @@ Revision ID: 004_growth_club
 Revises: 003_actionkit
 Create Date: 2026-02-25
 """
-from alembic import op
+
 import sqlalchemy as sa
 import sqlmodel.sql.sqltypes
+
+from alembic import op
 
 revision = "004_growth_club"
 down_revision = "003_actionkit"
@@ -37,7 +39,9 @@ def upgrade() -> None:
         sa.Column("author_id", sa.Integer(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("report_count", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("is_blinded", sa.Boolean(), nullable=False, server_default=sa.text("false")),
+        sa.Column(
+            "is_blinded", sa.Boolean(), nullable=False, server_default=sa.text("false")
+        ),
         sa.ForeignKeyConstraint(["author_id"], ["user.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
@@ -52,7 +56,9 @@ def upgrade() -> None:
         sa.Column("author_id", sa.Integer(), nullable=False),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.Column("report_count", sa.Integer(), nullable=False, server_default="0"),
-        sa.Column("is_blinded", sa.Boolean(), nullable=False, server_default=sa.text("false")),
+        sa.Column(
+            "is_blinded", sa.Boolean(), nullable=False, server_default=sa.text("false")
+        ),
         sa.ForeignKeyConstraint(["post_id"], ["growthclubpost.id"]),
         sa.ForeignKeyConstraint(["parent_id"], ["growthclubcomment.id"]),
         sa.ForeignKeyConstraint(["author_id"], ["user.id"]),
@@ -75,17 +81,28 @@ def upgrade() -> None:
         "growthclubpostattachment",
         sa.Column("id", sa.Integer(), autoincrement=True, nullable=False),
         sa.Column("post_id", sa.Integer(), nullable=False),
-        sa.Column("kind", sqlmodel.sql.sqltypes.AutoString(), nullable=False, server_default="file"),
+        sa.Column(
+            "kind",
+            sqlmodel.sql.sqltypes.AutoString(),
+            nullable=False,
+            server_default="file",
+        ),
         sa.Column("object_key", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
-        sa.Column("original_filename", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
+        sa.Column(
+            "original_filename", sqlmodel.sql.sqltypes.AutoString(), nullable=True
+        ),
         sa.Column("mime_type", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
         sa.Column("size_bytes", sa.Integer(), nullable=True),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(["post_id"], ["growthclubpost.id"]),
         sa.PrimaryKeyConstraint("id"),
     )
-    op.create_index("ix_growthclubpostattachment_post_id", "growthclubpostattachment", ["post_id"])
-    op.create_index("ix_growthclubpostattachment_kind", "growthclubpostattachment", ["kind"])
+    op.create_index(
+        "ix_growthclubpostattachment_post_id", "growthclubpostattachment", ["post_id"]
+    )
+    op.create_index(
+        "ix_growthclubpostattachment_kind", "growthclubpostattachment", ["kind"]
+    )
 
     # -- growthclubpostreport --
     op.create_table(

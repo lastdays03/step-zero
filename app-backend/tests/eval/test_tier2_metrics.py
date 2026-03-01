@@ -41,12 +41,13 @@ def rag_service():
     pytest-asyncio (asyncio_mode=auto) 환경에서 PGVector의 sync 초기화가
     greenlet 충돌을 일으키므로, psycopg 드라이버를 명시적으로 사용한다.
     """
-    from dotenv import dotenv_values
     from pathlib import Path
-    from langchain_openai import ChatOpenAI, OpenAIEmbeddings
-    from langchain_core.prompts import ChatPromptTemplate
+
+    from dotenv import dotenv_values
     from langchain_core.output_parsers import StrOutputParser
+    from langchain_core.prompts import ChatPromptTemplate
     from langchain_core.runnables import RunnablePassthrough
+    from langchain_openai import ChatOpenAI, OpenAIEmbeddings
     from langchain_postgres import PGVector
 
     # tests/conftest.py가 DATABASE_URL을 sqlite로 덮어쓰므로
@@ -114,7 +115,10 @@ def rag_service():
                     return "\n\n".join(doc.page_content for doc in docs)
 
                 self.chain = (
-                    {"context": self.retriever | format_docs, "question": RunnablePassthrough()}
+                    {
+                        "context": self.retriever | format_docs,
+                        "question": RunnablePassthrough(),
+                    }
                     | self.prompt
                     | self.llm
                     | StrOutputParser()
@@ -122,6 +126,7 @@ def rag_service():
 
             async def query(self, question: str) -> str:
                 from fastapi.concurrency import run_in_threadpool
+
                 return await run_in_threadpool(self.chain.invoke, question)
 
         return _TestRagService()
@@ -139,9 +144,7 @@ def chat_service(rag_service):
 
 
 @pytest.fixture(scope="session")
-def evaluated_cases(
-    rag_service, legal_cases: list[dict]
-) -> list[dict[str, Any]]:
+def evaluated_cases(rag_service, legal_cases: list[dict]) -> list[dict[str, Any]]:
     """골든 데이터셋의 법률 케이스에 대해 RAG 응답을 미리 생성."""
     results = []
     loop = asyncio.new_event_loop()
@@ -178,8 +181,9 @@ def evaluated_cases(
 @pytest.fixture(scope="session")
 def llm_judge():
     """평가용 LLM (GPT-4o-mini)."""
-    from dotenv import dotenv_values
     from pathlib import Path
+
+    from dotenv import dotenv_values
     from langchain_openai import ChatOpenAI
 
     backend_root = Path(__file__).resolve().parents[2]
@@ -224,9 +228,9 @@ class TestRetrievalQuality:
         print(f"\n  Hit Rate@3: {hit_rate:.2%} ({hits}/{total})")
 
         # 베이스라인(2026-02-24): 41.18% → 회귀 감지 임계값: 30%
-        assert hit_rate >= 0.30, (
-            f"Hit Rate@3 = {hit_rate:.2%} (threshold: 30%, baseline: 41%)"
-        )
+        assert (
+            hit_rate >= 0.30
+        ), f"Hit Rate@3 = {hit_rate:.2%} (threshold: 30%, baseline: 41%)"
 
     def test_context_not_empty(self, evaluated_cases: list[dict]) -> None:
         """모든 법률 질문에 대해 최소 1개 컨텍스트가 검색되는지 확인."""
@@ -237,13 +241,11 @@ class TestRetrievalQuality:
                 print(f"  No context for: [{case['id']}] {case['question'][:50]}")
 
         empty_rate = empty_count / len(evaluated_cases) if evaluated_cases else 0
-        assert empty_rate <= 0.10, (
-            f"Too many empty retrievals: {empty_count}/{len(evaluated_cases)}"
-        )
+        assert (
+            empty_rate <= 0.10
+        ), f"Too many empty retrievals: {empty_count}/{len(evaluated_cases)}"
 
-    def test_context_relevance_keyword_check(
-        self, evaluated_cases: list[dict]
-    ) -> None:
+    def test_context_relevance_keyword_check(self, evaluated_cases: list[dict]) -> None:
         """검색된 컨텍스트에 관련 법령 키워드가 포함되는 비율."""
         relevant = 0
         total = 0
@@ -268,9 +270,7 @@ class TestRetrievalQuality:
 class TestGenerationQuality:
     """생성 답변의 품질 평가 (LLM-as-Judge)."""
 
-    def test_faithfulness_batch(
-        self, evaluated_cases: list[dict], llm_judge
-    ) -> None:
+    def test_faithfulness_batch(self, evaluated_cases: list[dict], llm_judge) -> None:
         """답변이 검색된 컨텍스트에 근거하는지 LLM으로 평가."""
         scores = []
         details = []
@@ -317,16 +317,20 @@ class TestGenerationQuality:
         results_dir = ensure_results_dir()
         with open(results_dir / "faithfulness.json", "w", encoding="utf-8") as f:
             json.dump(
-                {"avg": avg_faithfulness, "details": details, "timestamp": datetime.now().isoformat()},
+                {
+                    "avg": avg_faithfulness,
+                    "details": details,
+                    "timestamp": datetime.now().isoformat(),
+                },
                 f,
                 ensure_ascii=False,
                 indent=2,
             )
 
         # 베이스라인(2026-02-24): 0.150 → 회귀 감지 임계값: 0.05
-        assert avg_faithfulness >= 0.05, (
-            f"Avg faithfulness {avg_faithfulness:.3f} below 0.05 threshold (baseline: 0.15)"
-        )
+        assert (
+            avg_faithfulness >= 0.05
+        ), f"Avg faithfulness {avg_faithfulness:.3f} below 0.05 threshold (baseline: 0.15)"
 
     def test_answer_relevancy_batch(
         self, evaluated_cases: list[dict], llm_judge
@@ -360,13 +364,11 @@ class TestGenerationQuality:
         print(f"\n  Avg Answer Relevancy: {avg_relevancy:.3f} (n={len(scores)})")
 
         # 베이스라인(2026-02-24): 0.240 → 회귀 감지 임계값: 0.14
-        assert avg_relevancy >= 0.14, (
-            f"Avg relevancy {avg_relevancy:.3f} below 0.14 threshold (baseline: 0.24)"
-        )
+        assert (
+            avg_relevancy >= 0.14
+        ), f"Avg relevancy {avg_relevancy:.3f} below 0.14 threshold (baseline: 0.24)"
 
-    def test_keyword_presence_in_answers(
-        self, evaluated_cases: list[dict]
-    ) -> None:
+    def test_keyword_presence_in_answers(self, evaluated_cases: list[dict]) -> None:
         """기대 키워드가 답변에 포함되는 비율 (무비용 체크)."""
         matches = 0
         total = 0
@@ -383,9 +385,7 @@ class TestGenerationQuality:
         match_rate = matches / total if total > 0 else 0
         print(f"\n  Keyword match rate: {match_rate:.2%} ({matches}/{total})")
 
-    def test_no_english_only_responses(
-        self, evaluated_cases: list[dict]
-    ) -> None:
+    def test_no_english_only_responses(self, evaluated_cases: list[dict]) -> None:
         """한국어 질문에 대해 영어로만 답변하지 않는지 확인."""
         korean_pattern = re.compile(r"[가-힣]")
 
@@ -393,9 +393,7 @@ class TestGenerationQuality:
             answer = case["rag_answer"]
             if len(answer) > 20:  # 에러 메시지가 아닌 실제 답변만
                 has_korean = bool(korean_pattern.search(answer))
-                assert has_korean, (
-                    f"[{case['id']}] No Korean in answer: {answer[:100]}"
-                )
+                assert has_korean, f"[{case['id']}] No Korean in answer: {answer[:100]}"
 
 
 # ─── 3. End-to-End 품질 테스트 ─────────────────────────────────────
@@ -456,7 +454,11 @@ JSON으로 응답: {{"score": <0-3>, "reasoning": "<한줄 설명>"}}"""
         results_dir = ensure_results_dir()
         with open(results_dir / "correctness.json", "w", encoding="utf-8") as f:
             json.dump(
-                {"avg": avg_correctness, "details": details, "timestamp": datetime.now().isoformat()},
+                {
+                    "avg": avg_correctness,
+                    "details": details,
+                    "timestamp": datetime.now().isoformat(),
+                },
                 f,
                 ensure_ascii=False,
                 indent=2,
@@ -553,7 +555,12 @@ class TestRAGASMetrics:
 
         # 결과 출력 및 저장
         print("\n  === RAGAS Evaluation Results ===")
-        for col in ["faithfulness", "answer_relevancy", "context_precision", "context_recall"]:
+        for col in [
+            "faithfulness",
+            "answer_relevancy",
+            "context_precision",
+            "context_recall",
+        ]:
             if col in df.columns:
                 mean_val = df[col].mean()
                 print(f"    {col}: {mean_val:.3f}")

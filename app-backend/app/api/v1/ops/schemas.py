@@ -1,7 +1,9 @@
-from uuid import UUID
 from datetime import datetime
-from pydantic import BaseModel, ConfigDict
 from typing import List, Optional
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict
+
 
 class ActionKitFileResponse(BaseModel):
     id: int
@@ -14,6 +16,7 @@ class ActionKitFileResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class RelatedLawResponse(BaseModel):
     id: int
     law_name: str
@@ -22,6 +25,7 @@ class RelatedLawResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ActionKitItemHighlightResponse(BaseModel):
     id: int
     content: str
@@ -29,12 +33,14 @@ class ActionKitItemHighlightResponse(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
+
 class ActionKitChecklistResponse(BaseModel):
     id: int
     content: str
     sort_order: int
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class ActionKitItemResponse(BaseModel):
     id: int
@@ -57,6 +63,8 @@ class ActionKitItemResponse(BaseModel):
     checklists: List[ActionKitChecklistResponse] = []
 
     model_config = ConfigDict(from_attributes=True)
+
+
 class ActionKitCategoryCreateRequest(BaseModel):
     domain: str = "kits"
     slug: str
@@ -64,11 +72,13 @@ class ActionKitCategoryCreateRequest(BaseModel):
     sort_order: int = 0
     is_active: bool = True
 
+
 class ActionKitCategoryUpdateRequest(BaseModel):
     slug: str | None = None
     title: str | None = None
     sort_order: int | None = None
     is_active: bool | None = None
+
 
 class ActionKitCategoryResponse(BaseModel):
     id: int
@@ -79,6 +89,7 @@ class ActionKitCategoryResponse(BaseModel):
     is_active: bool
 
     model_config = ConfigDict(from_attributes=True)
+
 
 class ActionKitItemCreateRequest(BaseModel):
     domain: str
@@ -93,6 +104,7 @@ class ActionKitItemCreateRequest(BaseModel):
     sort_order: int = 0
     is_active: bool = True
 
+
 class ActionKitItemUpdateRequest(BaseModel):
     category_id: int | None = None
     name: str | None = None
@@ -105,9 +117,11 @@ class ActionKitItemUpdateRequest(BaseModel):
     sort_order: int | None = None
     is_active: bool | None = None
 
+
 class ActionKitItemOrderUpdate(BaseModel):
     id: int
     sort_order: int
+
 
 class ActionKitItemReorderRequest(BaseModel):
     items: List[ActionKitItemOrderUpdate]

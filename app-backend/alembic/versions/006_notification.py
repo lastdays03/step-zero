@@ -4,9 +4,11 @@ Revision ID: 006_notification
 Revises: 005_admin
 Create Date: 2026-02-25
 """
-from alembic import op
+
 import sqlalchemy as sa
 import sqlmodel.sql.sqltypes
+
+from alembic import op
 
 revision = "006_notification"
 down_revision = "005_admin"
@@ -22,7 +24,9 @@ def upgrade() -> None:
         sa.Column("content", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("type", sqlmodel.sql.sqltypes.AutoString(), nullable=False),
         sa.Column("link", sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-        sa.Column("is_read", sa.Boolean(), nullable=False, server_default=sa.text("false")),
+        sa.Column(
+            "is_read", sa.Boolean(), nullable=False, server_default=sa.text("false")
+        ),
         sa.Column("created_at", sa.DateTime(), nullable=False),
         sa.ForeignKeyConstraint(["user_id"], ["user.id"]),
         sa.PrimaryKeyConstraint("id"),

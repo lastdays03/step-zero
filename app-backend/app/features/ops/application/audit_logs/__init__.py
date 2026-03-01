@@ -1,5 +1,5 @@
 from .constants import AuditAction, AuditTargetType
-from .service import AuditLogList, record_admin_audit_log, list_audit_logs
+from .service import AuditLogList, list_audit_logs, record_admin_audit_log
 
 __all__ = [
     "AuditAction",

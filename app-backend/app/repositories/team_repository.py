@@ -1,5 +1,5 @@
-from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
 from app.models.team import Team, TeamMember
 
@@ -9,7 +9,11 @@ class TeamRepository:
         self.session = session
 
     async def create_default_team_for_user(self, user_id: int, user_email: str) -> Team:
-        team = Team(name=f"{user_email.split('@')[0]}'s Team", created_by=user_id, updated_by=user_id)
+        team = Team(
+            name=f"{user_email.split('@')[0]}'s Team",
+            created_by=user_id,
+            updated_by=user_id,
+        )
         self.session.add(team)
         await self.session.flush()
 

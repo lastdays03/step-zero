@@ -4,7 +4,6 @@ from typing import Optional
 from sqlmodel import Field, SQLModel
 
 
-
 class UserDisciplineHistory(SQLModel, table=True):
     __tablename__ = "user_discipline_history"
 
@@ -15,4 +14,6 @@ class UserDisciplineHistory(SQLModel, table=True):
     new_status: str
     reason: str
     suspended_until: Optional[datetime] = Field(default=None, index=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )

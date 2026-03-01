@@ -67,9 +67,7 @@ class SemanticRouter:
             embeddings = await self.embeddings.aembed_documents(texts)
             self._anchor_embeddings[category] = np.array(embeddings)
         self._initialized = True
-        logger.info(
-            "SemanticRouter initialized with %d categories", len(self.anchors)
-        )
+        logger.info("SemanticRouter initialized with %d categories", len(self.anchors))
 
     async def classify(self, query: str, threshold: float = 0.7) -> str:
         """Classify query using cosine similarity + keyword fallback."""
