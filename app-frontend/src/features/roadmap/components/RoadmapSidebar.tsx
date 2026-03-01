@@ -1,10 +1,14 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { BookOpen, Gavel } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { computeDeadlineDate, formatDeadlineDate } from "./roadmap-utils";
 import type { RoadmapDetailStep } from "./roadmap-utils";
+import { ENDOWED_STEPS, ENDOWED_LABELS } from "./roadmap-constants";
+import { computeReadinessLevel } from "./roadmap-utils";
+import { ReadinessTracker } from "./ReadinessTracker";
 
 interface RoadmapSidebarProps {
     createdAt: string;
@@ -21,6 +25,22 @@ export function RoadmapSidebar({
     completedSteps,
     totalSteps,
 }: RoadmapSidebarProps) {
+    const [showEndowedBadge, setShowEndowedBadge] = useState(() => {
+        if (typeof window === "undefined") return false;
+        const key = "stepzero_endowed_intro_shown";
+        if (!localStorage.getItem(key)) {
+            localStorage.setItem(key, "1");
+            return true;
+        }
+        return false;
+    });
+
+    useEffect(() => {
+        if (!showEndowedBadge) return;
+        const timer = setTimeout(() => setShowEndowedBadge(false), 8000);
+        return () => clearTimeout(timer);
+    }, [showEndowedBadge]);
+
     const incompleteSteps = steps.filter((s) => s.status !== "COMPLETED");
     const deadlines = incompleteSteps.slice(0, 3).map((step) => {
         const deadline = computeDeadlineDate(createdAt, steps, step);
@@ -45,9 +65,27 @@ export function RoadmapSidebar({
                     className="h-2.5 bg-slate-100"
                     indicatorClassName="bg-[#36a4f2]"
                 />
-                <p className="mt-2 text-xs text-slate-400">
-                    {completedSteps}/{totalSteps} 단계 완료
-                </p>
+                <div className="mt-2 space-y-1">
+                    <p className="text-xs text-emerald-600 font-medium">
+                        ✅ {ENDOWED_STEPS}단계 준비 완료
+                    </p>
+                    <p className="text-xs text-slate-400">
+                        {completedSteps}/{totalSteps} 단계 진행 중 · 준비 단계 포함
+                    </p>
+                </div>
+                {showEndowedBadge && (
+                    <div className="mt-2 rounded-lg bg-blue-50 border border-blue-100 p-3 text-xs text-blue-700 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <p className="font-semibold mb-1">이미 {ENDOWED_STEPS}단계 준비가 완료되었습니다!</p>
+                        <p className="text-blue-600">{ENDOWED_LABELS.join(", ")}이 끝났습니다.</p>
+                    </div>
+                )}
+                <div className="mt-3 pt-3 border-t border-slate-100">
+                    <p className="text-[10px] font-semibold text-slate-400 uppercase mb-2">준비도</p>
+                    <ReadinessTracker progressPercent={overallProgress} />
+                    <p className="mt-1.5 text-xs text-slate-500">
+                        {computeReadinessLevel(overallProgress).emoji} {computeReadinessLevel(overallProgress).label}
+                    </p>
+                </div>
             </div>
 
             {/* Upcoming Deadlines */}

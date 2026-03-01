@@ -7,7 +7,7 @@ import { useDashboard } from '../hooks/useDashboard';
 import { ProgressCard } from './ProgressCard';
 import { RoadmapStepper } from './RoadmapStepper';
 import { GrowthClubCard } from './GrowthClubCard';
-import { RoadmapGenerationPanel } from '@/features/roadmap/components';
+import { RoadmapGenerationPanel, computeEndowedProgress, computeReadinessLevel } from '@/features/roadmap/components';
 import { fetchRoadmapDetail } from '@/features/roadmap/api';
 import { useAuth } from "@/providers/AuthProvider";
 import { Card, CardContent } from "@/components/ui/card";
@@ -111,6 +111,38 @@ export const DashboardView = () => {
         return nextStep?.title || null;
     }, [roadmapDetail, currentStep, data?.roadmap]);
 
+    const endowedProgress = useMemo(() => {
+        if (!roadmapDetail) return null;
+        const completed = roadmapDetail.steps.filter((s) => s.status === "COMPLETED").length;
+        return computeEndowedProgress(completed, roadmapDetail.steps.length);
+    }, [roadmapDetail]);
+
+    const readinessInfo = useMemo(() => {
+        if (!endowedProgress) return null;
+        return computeReadinessLevel(endowedProgress.display);
+    }, [endowedProgress]);
+
+    const readinessLabel = readinessInfo ? `${readinessInfo.emoji} ${readinessInfo.label}` : null;
+
+    const [upgradeAlert, setUpgradeAlert] = useState<{ from: string; to: string } | null>(null);
+
+    useEffect(() => {
+        if (!readinessInfo || !activeRoadmapId) return;
+        const storageKey = `stepzero_readiness_level_${activeRoadmapId}`;
+        const stored = localStorage.getItem(storageKey);
+        const storedLevel = stored ? Number(stored) : 0;
+        if (storedLevel > 0 && readinessInfo.level > storedLevel) {
+            const prevInfo = computeReadinessLevel(
+                storedLevel === 1 ? 0 : storedLevel === 2 ? 10 : storedLevel === 3 ? 35 : storedLevel === 4 ? 65 : 90,
+            );
+            setUpgradeAlert({ from: prevInfo.label, to: readinessInfo.label });
+            const timer = setTimeout(() => setUpgradeAlert(null), 5000);
+            localStorage.setItem(storageKey, String(readinessInfo.level));
+            return () => clearTimeout(timer);
+        }
+        localStorage.setItem(storageKey, String(readinessInfo.level));
+    }, [readinessInfo, activeRoadmapId]);
+
     const documentActions = useMemo(() => {
         if (!currentStep) return [];
 
@@ -168,6 +200,18 @@ export const DashboardView = () => {
 
     return (
         <div className="">
+            {upgradeAlert && (
+                <div className="mb-4 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-sm">
+                    <span>🎉 준비도가 &lsquo;{upgradeAlert.from}&rsquo; → &lsquo;{upgradeAlert.to}&rsquo;로 올라갔습니다!</span>
+                    <button
+                        type="button"
+                        onClick={() => setUpgradeAlert(null)}
+                        className="ml-3 text-emerald-400 hover:text-emerald-600"
+                    >
+                        ✕
+                    </button>
+                </div>
+            )}
             {/* Main Grid: 4 Columns */}
             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
 
@@ -177,6 +221,8 @@ export const DashboardView = () => {
                         phase={data.current_phase}
                         daysLeft={data.stats.days_left}
                         nextTitle={nextRoadmapTitle}
+                        endowedProgress={endowedProgress?.display ?? null}
+                        readinessLabel={readinessLabel}
                     />
                 </div>
 

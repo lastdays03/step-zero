@@ -1,3 +1,16 @@
+import { ENDOWED_STEPS, READINESS_LEVELS } from "./roadmap-constants";
+
+// ---------- Readiness Types ----------
+
+export type ReadinessLevel = 1 | 2 | 3 | 4 | 5;
+
+export interface ReadinessInfo {
+    level: ReadinessLevel;
+    emoji: string;
+    label: string;
+    description: string;
+}
+
 // ---------- Types ----------
 
 export interface RoadmapDetailAction {
@@ -164,4 +177,31 @@ export function formatDeadlineDate(date: Date): { month: string; day: string; da
         day: String(date.getDate()).padStart(2, "0"),
         daysLeft,
     };
+}
+
+// ---------- Endowed Progress ----------
+
+export function computeEndowedProgress(
+    completedSteps: number,
+    totalSteps: number,
+): { display: number; actual: number; endowedSteps: number; totalWithEndowed: number } {
+    const endowedSteps = ENDOWED_STEPS;
+    const totalWithEndowed = totalSteps + endowedSteps;
+    const completedWithEndowed = completedSteps + endowedSteps;
+    return {
+        display: Math.round((completedWithEndowed / totalWithEndowed) * 100),
+        actual: totalSteps > 0 ? Math.round((completedSteps / totalSteps) * 100) : 0,
+        endowedSteps,
+        totalWithEndowed,
+    };
+}
+
+// ---------- Readiness Level ----------
+
+export function computeReadinessLevel(progressPercent: number): ReadinessInfo {
+    if (progressPercent >= 90) return READINESS_LEVELS[4];
+    if (progressPercent >= 65) return READINESS_LEVELS[3];
+    if (progressPercent >= 35) return READINESS_LEVELS[2];
+    if (progressPercent >= 10) return READINESS_LEVELS[1];
+    return READINESS_LEVELS[0];
 }

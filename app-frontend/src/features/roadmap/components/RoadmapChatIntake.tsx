@@ -14,7 +14,7 @@ import {
     Sparkles,
     Wallet,
 } from "lucide-react";
-import { INTAKE_FIELD_SUGGESTIONS, VALIDATE_FALLBACK_MESSAGE } from "./roadmap-constants";
+import { INTAKE_FIELD_SUGGESTIONS, VALIDATE_FALLBACK_MESSAGE, INTAKE_CONFIRMATION_MESSAGES } from "./roadmap-constants";
 
 export interface RoadmapIntakePayload {
     business_type: string;
@@ -218,7 +218,11 @@ export const RoadmapChatIntake = ({
 
     const renderedHistory = QUESTIONS.slice(0, stepIndex)
         .filter((q) => answers[q.key])
-        .map((q) => ({ prompt: q.prompt, answer: answers[q.key] || "(미입력)" }));
+        .map((q) => ({
+            prompt: q.prompt,
+            answer: answers[q.key] || "(미입력)",
+            confirmation: INTAKE_CONFIRMATION_MESSAGES[q.key]?.(answers[q.key]) ?? null,
+        }));
 
     const suggestionItems = validated ? [] : (INTAKE_FIELD_SUGGESTIONS[current.key] || []);
 
@@ -264,6 +268,12 @@ export const RoadmapChatIntake = ({
                                 <p className="ml-auto w-fit rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-800 shadow-sm">
                                     {item.answer}
                                 </p>
+                                {item.confirmation && (
+                                    <div className="ml-12 inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-600">
+                                        <span>✅</span>
+                                        <span>{item.confirmation}</span>
+                                    </div>
+                                )}
                             </div>
                         ))}
 

@@ -4,7 +4,7 @@ import { useEffect, useRef, useMemo, useState } from "react";
 import { RoadmapHeader } from "./RoadmapHeader";
 import { TimelinePhaseCard } from "./TimelinePhaseCard";
 import { RoadmapSidebar } from "./RoadmapSidebar";
-import { derivePhaseGroups } from "./roadmap-utils";
+import { derivePhaseGroups, computeEndowedProgress } from "./roadmap-utils";
 import type { RoadmapDetailResponse } from "./roadmap-utils";
 
 // Re-export types for backward compatibility
@@ -30,9 +30,7 @@ export const RoadmapExecutionView = ({
     const phaseGroups = useMemo(() => derivePhaseGroups(data.steps), [data.steps]);
 
     const totalCompleted = data.steps.filter((s) => s.status === "COMPLETED").length;
-    const overallProgress = data.steps.length
-        ? Math.round((totalCompleted / data.steps.length) * 100)
-        : 0;
+    const endowed = computeEndowedProgress(totalCompleted, data.steps.length);
     const currentPhase = phaseGroups.find((g) => g.state === "CURRENT");
 
     // Find the last completed step (only that step can be reverted)
@@ -88,6 +86,7 @@ export const RoadmapExecutionView = ({
                                 key={group.phase}
                                 group={group}
                                 lastCompletedStepId={lastCompletedStepId}
+                                overallProgress={endowed.display}
                                 onStepStatusChange={onStepStatusChange}
                                 onActionCompletionChange={onActionCompletionChange}
                                 updatingStepId={updatingStepId}
@@ -102,7 +101,7 @@ export const RoadmapExecutionView = ({
                     <RoadmapSidebar
                         createdAt={data.created_at}
                         steps={data.steps}
-                        overallProgress={overallProgress}
+                        overallProgress={endowed.display}
                         completedSteps={totalCompleted}
                         totalSteps={data.steps.length}
                     />

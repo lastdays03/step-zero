@@ -16,10 +16,34 @@ jest.mock('../../../providers/AuthProvider', () => ({
         user: { username: 'Alex' },
     }),
 }));
+jest.mock('next/navigation', () => ({
+    useRouter: () => ({
+        push: jest.fn(),
+    }),
+}));
 jest.mock('../../../lib/api-client', () => ({
     apiClient: {
         get: jest.fn(),
         post: jest.fn(),
+    },
+}));
+jest.mock('../../../features/roadmap/api', () => ({
+    fetchRoadmapDetail: jest.fn(),
+}));
+jest.mock('../../../features/roadmap/components', () => ({
+    RoadmapGenerationPanel: () => <div data-testid="generation-panel" />,
+    computeEndowedProgress: (completed: number, total: number) => ({
+        display: Math.round(((completed + 3) / (total + 3)) * 100),
+        actual: total > 0 ? Math.round((completed / total) * 100) : 0,
+        endowedSteps: 3,
+        totalWithEndowed: total + 3,
+    }),
+    computeReadinessLevel: (pct: number) => {
+        if (pct >= 90) return { level: 5, emoji: '🚀', label: '창업 준비 완료', description: '' };
+        if (pct >= 65) return { level: 4, emoji: '✅', label: '인허가 완료', description: '' };
+        if (pct >= 35) return { level: 3, emoji: '📝', label: '서류 준비 중', description: '' };
+        if (pct >= 10) return { level: 2, emoji: '📋', label: '준비 착수', description: '' };
+        return { level: 1, emoji: '🌱', label: '아이디어', description: '' };
     },
 }));
 
@@ -48,7 +72,7 @@ const mockData = {
 
 describe('DashboardView', () => {
     beforeEach(() => {
-        (apiClient.get as jest.Mock).mockResolvedValue({
+        jest.mocked(apiClient.get).mockResolvedValue({
             data: {
                 roadmap_id: "r-1",
                 title: "테스트 로드맵",
@@ -98,7 +122,7 @@ describe('DashboardView', () => {
                 ],
             },
         });
-        (useDashboard as jest.Mock).mockReturnValue({
+        jest.mocked(useDashboard).mockReturnValue({
             data: mockData,
             loading: false,
             reload: jest.fn(),
@@ -112,7 +136,6 @@ describe('DashboardView', () => {
 
     it('renders current task progress card', () => {
         render(<DashboardView />);
-        expect(screen.getByText(/20%/i)).toBeInTheDocument();
         expect(screen.getByText(/현재 진행 단계/i)).toBeInTheDocument();
     });
 
