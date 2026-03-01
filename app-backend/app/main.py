@@ -1,17 +1,21 @@
-
-from contextlib import asynccontextmanager
 import time
+from contextlib import asynccontextmanager
+from urllib.parse import unquote
+
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.staticfiles import StaticFiles
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from starlette.responses import Response
+from starlette.types import Scope
+
 from app.api.problem import (
     http_exception_to_problem,
     problem_response,
     validation_exception_to_problem,
 )
 from app.core import config
-from app.core.logging import setup_logging, get_logger
+from app.core.logging import get_logger, setup_logging
 from app.features.rag.application.deps import get_rag_service
 
 # 로깅 설정 초기화
@@ -20,6 +24,7 @@ logger = get_logger("app.main")
 
 settings = config.get_settings()
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting up StepZero Backend...")
@@ -27,6 +32,7 @@ async def lifespan(app: FastAPI):
     get_rag_service()
     yield
     logger.info("Shutting down StepZero Backend...")
+
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -62,15 +68,18 @@ upload_dir = settings.STORAGE_ROOT_PATH
 upload_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/api/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
 
+
 # 1. 로깅 미들웨어 추가
 @app.middleware("http")
 async def log_request_response(request: Request, call_next):
     start_time = time.time()
-    
+
     # 요청 정보 로깅
     auth_header = request.headers.get("Authorization")
-    logger.info(f"Request: {request.method} {request.url.path} | Auth: {'Present' if auth_header else 'Missing'}")
-    
+    logger.info(
+        f"Request: {request.method} {request.url.path} | Auth: {'Present' if auth_header else 'Missing'}"
+    )
+
     response = await call_next(request)
 
     # 응답 시간 및 상태 코드 로깅
@@ -80,8 +89,9 @@ async def log_request_response(request: Request, call_next):
         f"Status: {response.status_code} "
         f"Elapsed: {process_time:.4f}s"
     )
-    
+
     return response
+
 
 # RFC7807-style error responses
 app.add_exception_handler(HTTPException, http_exception_to_problem)
@@ -101,16 +111,27 @@ async def global_exception_handler(request: Request, exc: Exception):
 
 
 # Static files for ActionKit
+# Custom StaticFiles to handle double-encoded URLs from reverse proxy
+# (e.g. Korean characters: %EC%A0%84 → %25EC%25A0%2584)
+class DecodingStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope: Scope) -> Response:
+        decoded = unquote(path)
+        if decoded != path:
+            logger.debug("StaticFiles path decoded: %s → %s", path, decoded)
+        return await super().get_response(decoded, scope)
+
+
 actionkit_storage_dir = settings.ACTIONKIT_STORAGE_PATH
 actionkit_storage_dir.mkdir(parents=True, exist_ok=True)
 logger.info("ActionKit storage mounted at: %s", actionkit_storage_dir)
 app.mount(
     "/api/v1/actionkits/files",
-    StaticFiles(directory=str(actionkit_storage_dir)),
+    DecodingStaticFiles(directory=str(actionkit_storage_dir)),
     name="actionkit-files",
 )
 
 from app.api.v1.api import api_router as api_v1_router
+
 
 @app.get(
     "/health",
@@ -121,5 +142,6 @@ from app.api.v1.api import api_router as api_v1_router
 )
 async def health_check():
     return {"status": "ok"}
+
 
 app.include_router(api_v1_router, prefix="/api/v1")

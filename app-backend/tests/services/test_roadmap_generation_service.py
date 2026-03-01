@@ -9,7 +9,9 @@ from app.features.roadmaps.application.roadmap_generation_service import (
 )
 
 
-@pytest.mark.skipif(not os.environ.get("OPENAI_API_KEY"), reason="OPENAI_API_KEY not set")
+@pytest.mark.skipif(
+    not os.environ.get("OPENAI_API_KEY"), reason="OPENAI_API_KEY not set"
+)
 @pytest.mark.asyncio
 async def test_generate_phase_detail_normalizes_document_source_url():
     async with db.async_session() as session:
@@ -26,7 +28,7 @@ async def test_generate_phase_detail_normalizes_document_source_url():
 
         service.rag_service.query = _mock_query  # type: ignore[method-assign]
 
-        detail = await service._generate_phase_detail_with_retry(
+        detail, is_fallback = await service._generate_phase_detail_with_retry(
             "인허가",
             GenerationPayload(
                 business_type="휴게음식점",
@@ -35,6 +37,7 @@ async def test_generate_phase_detail_normalizes_document_source_url():
             ),
         )
 
+        assert not is_fallback
         assert detail.documents
         assert detail.documents[0].template_url == "https://gov.kr/form.pdf"
         assert detail.documents[0].source_url == "https://gov.kr/form.pdf"

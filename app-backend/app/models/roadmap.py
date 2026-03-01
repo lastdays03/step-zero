@@ -14,11 +14,17 @@ class Roadmap(SQLModel, table=True):
     location: str
     description: str = ""
     startup_type: str | None = None
+    startup_method: str | None = None  # 신규/양수양도/프랜차이즈
     open_timeline: str | None = None
     budget_range: str | None = None
     additional_notes: str = ""
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None), index=True)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+        index=True,
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
     deleted_at: datetime | None = None
     created_by: Optional[int] = Field(default=None, foreign_key="user.id")
     updated_by: Optional[int] = Field(default=None, foreign_key="user.id")
@@ -30,7 +36,9 @@ class RoadmapStep(SQLModel, table=True):
     step_order: int = Field(index=True)
     title: str
     status: str = "PENDING"
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
     completed_at: datetime | None = None
 
 
@@ -43,12 +51,19 @@ class RoadmapGenerationJob(SQLModel, table=True):
     status: str = Field(default="QUEUED", index=True)
     progress: int = Field(default=0)
     stage: str = Field(default="QUEUED")
-    input_payload: dict = Field(default_factory=dict, sa_column=sa.Column(sa.JSON, nullable=False))
+    input_payload: dict = Field(
+        default_factory=dict, sa_column=sa.Column(sa.JSON, nullable=False)
+    )
     error_code: str | None = None
     error_message: str | None = None
     roadmap_id: UUID | None = Field(default=None, foreign_key="roadmap.id", index=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None), index=True)
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
+        index=True,
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
     started_at: datetime | None = None
     completed_at: datetime | None = None
 
@@ -61,13 +76,19 @@ class RoadmapStepDetail(SQLModel, table=True):
     phase: str = Field(default="기본")
     objective: str = Field(default="")
     estimated_days: int = Field(default=0)
-    risk_notes: list[str] = Field(default_factory=list, sa_column=sa.Column(sa.JSON, nullable=False))
+    risk_notes: list[str] = Field(
+        default_factory=list, sa_column=sa.Column(sa.JSON, nullable=False)
+    )
     generation_mode: str = Field(default="RAG")
     source_count: int | None = Field(default=None, nullable=True)
     has_fallback: bool | None = Field(default=None, nullable=True)
     mapping_source: str | None = Field(default=None, nullable=True)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
+    updated_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )
 
 
 class RoadmapStepAction(SQLModel, table=True):
@@ -79,5 +100,9 @@ class RoadmapStepAction(SQLModel, table=True):
     title: str
     description: str = Field(default="")
     source_url: str | None = None
-    metadata_json: dict = Field(default_factory=dict, sa_column=sa.Column(sa.JSON, nullable=False))
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None))
+    metadata_json: dict = Field(
+        default_factory=dict, sa_column=sa.Column(sa.JSON, nullable=False)
+    )
+    created_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
+    )

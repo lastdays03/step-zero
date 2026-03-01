@@ -2,10 +2,15 @@ from datetime import datetime
 from uuid import UUID
 
 from sqlalchemy import func
-from sqlmodel import select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlmodel import select
 
-from app.models.roadmap import Roadmap, RoadmapStep, RoadmapStepAction, RoadmapStepDetail
+from app.models.roadmap import (
+    Roadmap,
+    RoadmapStep,
+    RoadmapStepAction,
+    RoadmapStepDetail,
+)
 
 
 class RoadmapRepository:
@@ -14,6 +19,10 @@ class RoadmapRepository:
 
     @staticmethod
     def _resolve_document_source_url(item: dict) -> str | None:
+        # Prefer item_id-based URL for consistent linking
+        item_id = item.get("actionkit_item_id")
+        if item_id:
+            return f"/api/v1/actionkits/items/{item_id}"
         for key in ("source_url", "download_url", "template_url", "file_url"):
             value = item.get(key)
             if isinstance(value, str) and value.strip():
@@ -30,7 +39,9 @@ class RoadmapRepository:
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_id_for_team(self, roadmap_id: UUID, team_id: UUID) -> Roadmap | None:
+    async def get_by_id_for_team(
+        self, roadmap_id: UUID, team_id: UUID
+    ) -> Roadmap | None:
         stmt = select(Roadmap).where(
             Roadmap.id == roadmap_id,
             Roadmap.team_id == team_id,
@@ -48,7 +59,9 @@ class RoadmapRepository:
         step_result = await self.session.execute(step_stmt)
         return list(step_result.scalars().all())
 
-    async def get_step_for_team(self, step_id: int, team_id: UUID) -> RoadmapStep | None:
+    async def get_step_for_team(
+        self, step_id: int, team_id: UUID
+    ) -> RoadmapStep | None:
         stmt = (
             select(RoadmapStep)
             .join(Roadmap, Roadmap.id == RoadmapStep.roadmap_id)
@@ -92,6 +105,7 @@ class RoadmapRepository:
         description: str,
         created_by: int,
         startup_type: str | None = None,
+        startup_method: str | None = None,
         open_timeline: str | None = None,
         budget_range: str | None = None,
         additional_notes: str = "",
@@ -103,6 +117,7 @@ class RoadmapRepository:
             location=location,
             description=description,
             startup_type=startup_type,
+            startup_method=startup_method,
             open_timeline=open_timeline,
             budget_range=budget_range,
             additional_notes=additional_notes,
@@ -113,7 +128,9 @@ class RoadmapRepository:
         await self.session.flush()
         return roadmap
 
-    async def create_steps(self, roadmap_id: UUID, step_titles: list[str]) -> list[RoadmapStep]:
+    async def create_steps(
+        self, roadmap_id: UUID, step_titles: list[str]
+    ) -> list[RoadmapStep]:
         steps: list[RoadmapStep] = []
         for idx, step_title in enumerate(step_titles, start=1):
             step = RoadmapStep(
@@ -251,14 +268,20 @@ class RoadmapRepository:
             created_steps.append(step)
         return created_steps
 
-    async def list_step_details(self, roadmap_step_ids: list[int]) -> list[RoadmapStepDetail]:
+    async def list_step_details(
+        self, roadmap_step_ids: list[int]
+    ) -> list[RoadmapStepDetail]:
         if not roadmap_step_ids:
             return []
-        stmt = select(RoadmapStepDetail).where(RoadmapStepDetail.roadmap_step_id.in_(roadmap_step_ids))
+        stmt = select(RoadmapStepDetail).where(
+            RoadmapStepDetail.roadmap_step_id.in_(roadmap_step_ids)
+        )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def list_step_actions(self, roadmap_step_ids: list[int]) -> list[RoadmapStepAction]:
+    async def list_step_actions(
+        self, roadmap_step_ids: list[int]
+    ) -> list[RoadmapStepAction]:
         if not roadmap_step_ids:
             return []
         stmt = (

@@ -9,8 +9,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
 from app.features.rag.application.deps import get_rag_service
-from app.features.roadmaps.application.actionkit_matcher import ActionKitMatcher, MatchedActionKit
-from app.features.roadmaps.application.llm_personalizer import LLMPersonalizer, PersonalizedStepDetail
+from app.features.roadmaps.application.actionkit_matcher import (
+    ActionKitMatcher,
+    MatchedActionKit,
+)
+from app.features.roadmaps.application.llm_personalizer import (
+    LLMPersonalizer,
+    PersonalizedStepDetail,
+)
 from app.repositories.roadmap_job_repository import RoadmapJobRepository
 from app.repositories.roadmap_repository import RoadmapRepository
 
@@ -23,6 +29,11 @@ logger = get_logger(__name__)
 # to purely LLM-generated content.  The LLMPersonalizer already handles
 # small match counts by grouping available facts into phases.
 _MIN_ACTIONKIT_MATCHES = 1
+
+
+def _actionkit_item_url(item_id: int) -> str:
+    """Build a consistent item-based URL for ActionKit references."""
+    return f"/api/v1/actionkits/items/{item_id}"
 
 
 class LegalBasisItem(BaseModel):
@@ -71,6 +82,7 @@ class GenerationPayload:
     location: str
     description: str
     startup_type: str | None = None
+    startup_method: str | None = None  # 신규/양수양도/프랜차이즈
     open_timeline: str | None = None
     budget_range: str | None = None
     additional_notes: str = ""
@@ -97,6 +109,7 @@ class RoadmapGenerationService:
                 get_actionkit_matcher,
                 get_llm_personalizer,
             )
+
             self.actionkit_matcher = actionkit_matcher or get_actionkit_matcher()
             self.llm_personalizer = llm_personalizer or get_llm_personalizer()
         else:
@@ -104,7 +117,9 @@ class RoadmapGenerationService:
             self.llm_personalizer = llm_personalizer
 
     async def submit_job(self, *, team_id: UUID, user_id: int, payload: dict) -> UUID:
-        job = await self.job_repo.create_job(team_id=team_id, user_id=user_id, payload=payload)
+        job = await self.job_repo.create_job(
+            team_id=team_id, user_id=user_id, payload=payload
+        )
         return job.id
 
     async def validate_generation_input(
@@ -192,7 +207,9 @@ class RoadmapGenerationService:
                 location=payload.location,
                 session=self.session,
             )
-            await self.job_repo.set_progress(job, stage="MATCHING_COMPLETE", progress=20)
+            await self.job_repo.set_progress(
+                job, stage="MATCHING_COMPLETE", progress=20
+            )
 
             # --- Decision point: ACTIONKIT_RAG vs RAG ---
             match_count = len(matched_items)
@@ -213,7 +230,9 @@ class RoadmapGenerationService:
                     "ActionKit matched %d items; using personalized generation",
                     match_count,
                 )
-                await self.job_repo.set_progress(job, stage="PERSONALIZING", progress=35)
+                await self.job_repo.set_progress(
+                    job, stage="PERSONALIZING", progress=35
+                )
 
                 payload_dict = self._payload_to_dict(payload)
                 personalized = await self.llm_personalizer.personalize(
@@ -224,7 +243,8 @@ class RoadmapGenerationService:
 
                 # Convert personalized details to step payload format
                 steps_payload = self._personalized_to_steps_payload(
-                    personalized, matched_items=matched_items,
+                    personalized,
+                    matched_items=matched_items,
                 )
                 generation_mode = "ACTIONKIT_RAG"
                 title = f"{payload.business_type} 창업 로드맵"
@@ -237,8 +257,12 @@ class RoadmapGenerationService:
                     _MIN_ACTIONKIT_MATCHES,
                 )
                 master = await self._generate_master_with_retry(payload)
-                await self.job_repo.set_progress(job, stage="DETAIL_GENERATING", progress=35)
-                details, fallback_phases = await self._generate_details_parallel(master, payload)
+                await self.job_repo.set_progress(
+                    job, stage="DETAIL_GENERATING", progress=35
+                )
+                details, fallback_phases = await self._generate_details_parallel(
+                    master, payload
+                )
                 await self.job_repo.set_progress(job, stage="PERSISTING", progress=80)
 
                 steps_payload = [item.model_dump() for item in details]
@@ -260,6 +284,7 @@ class RoadmapGenerationService:
                 location=payload.location,
                 description=payload.description,
                 startup_type=payload.startup_type,
+                startup_method=payload.startup_method,
                 open_timeline=payload.open_timeline,
                 budget_range=payload.budget_range,
                 additional_notes=payload.additional_notes,
@@ -288,6 +313,7 @@ class RoadmapGenerationService:
             "location": payload.location,
             "description": payload.description,
             "startup_type": payload.startup_type,
+            "startup_method": payload.startup_method,
             "open_timeline": payload.open_timeline,
             "budget_range": payload.budget_range,
             "additional_notes": payload.additional_notes,
@@ -309,60 +335,64 @@ class RoadmapGenerationService:
           legal_basis (list[dict] with title, snippet, source_url, ...),
           documents (list[dict] with name, type, source_url, ...)
         """
-        # Build item_id -> file_url map for source_url enrichment
-        item_file_urls: dict[int, str] = {}
+        # Build item_id -> file_urls map for source_url enrichment
+        item_file_urls: dict[int, list[str]] = {}
         if matched_items:
             for m in matched_items:
                 if m.item.id is not None and m.files:
-                    # Use the first current file's object_key as source_url
-                    for f in m.files:
-                        item_file_urls[m.item.id] = (
-                            f"/api/v1/actionkits/files/{f.object_key}"
-                        )
-                        break
+                    item_file_urls[m.item.id] = [
+                        f"/api/v1/actionkits/files/{f.object_key}" for f in m.files
+                    ]
 
         results: list[dict] = []
         for detail in personalized:
             # Build legal_basis entries compatible with LegalBasisItem / repository
             legal_basis_items: list[dict] = []
             for lb in detail.legal_basis:
-                # Enrich source_url from ActionKit file if not provided by LLM
-                source_url = lb.get("source_url")
-                if not source_url:
-                    item_id = lb.get("actionkit_item_id")
-                    if item_id and item_id in item_file_urls:
-                        source_url = item_file_urls[item_id]
+                item_id = lb.get("actionkit_item_id")
+                # Use item_id-based URL for consistent linking
+                source_url = (
+                    _actionkit_item_url(item_id) if item_id else lb.get("source_url")
+                )
 
-                legal_basis_items.append({
-                    "title": lb.get("title", ""),
-                    "snippet": lb.get("snippet", ""),
-                    "source_url": source_url,
-                    "actionkit_item_id": lb.get("actionkit_item_id"),
-                    "mapping_source": detail.mapping_source,
-                })
+                legal_basis_items.append(
+                    {
+                        "title": lb.get("title", ""),
+                        "snippet": lb.get("snippet", ""),
+                        "source_url": source_url,
+                        "actionkit_item_id": item_id,
+                        "mapping_source": detail.mapping_source,
+                    }
+                )
 
             # Build document entries compatible with DocumentItem / repository
             document_items: list[dict] = []
             for doc in detail.documents:
+                item_id = doc.get("actionkit_item_id")
                 file_url = doc.get("file_url") or ""
                 # Enrich file_url to full API path if it's an object_key
                 if file_url and not file_url.startswith("/"):
                     file_url = f"/api/v1/actionkits/files/{file_url}"
                 # Fallback: derive from actionkit_item_id
-                if not file_url:
-                    item_id = doc.get("actionkit_item_id")
-                    if item_id and item_id in item_file_urls:
-                        file_url = item_file_urls[item_id]
+                if not file_url and item_id and item_id in item_file_urls:
+                    file_url = item_file_urls[item_id][0]
+                # Use item_id-based URL for source_url, file_url for download
+                source_url = (
+                    _actionkit_item_url(item_id) if item_id else (file_url or None)
+                )
 
-                document_items.append({
-                    "name": doc.get("name", "서류"),
-                    "type": doc.get("type", "FORM"),
-                    "file_url": file_url or None,
-                    "source_url": file_url or None,
-                    "actionkit_item_id": doc.get("actionkit_item_id"),
-                    "actionkit_file_id": doc.get("actionkit_file_id"),
-                    "mapping_source": detail.mapping_source,
-                })
+                document_items.append(
+                    {
+                        "name": doc.get("name", "서류"),
+                        "type": doc.get("type", "FORM"),
+                        "file_url": file_url or None,
+                        "source_url": source_url,
+                        "actionkit_item_id": item_id,
+                        "actionkit_file_id": doc.get("actionkit_file_id"),
+                        "all_file_urls": item_file_urls.get(item_id, []),
+                        "mapping_source": detail.mapping_source,
+                    }
+                )
 
             # Build checklist with metadata
             checklist_items: list[str] = detail.checklist or ["필수 요건 확인"]
@@ -371,23 +401,27 @@ class RoadmapGenerationService:
             source_count = len(detail.actionkit_items) if detail.actionkit_items else 0
             is_fallback = detail.mapping_source == "fallback"
 
-            results.append({
-                "phase": detail.phase,
-                "title": detail.title or f"{detail.phase} 단계",
-                "objective": detail.objective,
-                "estimated_days": detail.estimated_days,
-                "risk_notes": detail.risk_notes,
-                "checklist": checklist_items,
-                "legal_basis": legal_basis_items,
-                "documents": document_items,
-                "mapping_source": detail.mapping_source,
-                "actionkit_items": detail.actionkit_items,
-                "source_count": source_count,
-                "has_fallback": is_fallback,
-            })
+            results.append(
+                {
+                    "phase": detail.phase,
+                    "title": detail.title or f"{detail.phase} 단계",
+                    "objective": detail.objective,
+                    "estimated_days": detail.estimated_days,
+                    "risk_notes": detail.risk_notes,
+                    "checklist": checklist_items,
+                    "legal_basis": legal_basis_items,
+                    "documents": document_items,
+                    "mapping_source": detail.mapping_source,
+                    "actionkit_items": detail.actionkit_items,
+                    "source_count": source_count,
+                    "has_fallback": is_fallback,
+                }
+            )
         return results
 
-    async def _generate_master_with_retry(self, payload: GenerationPayload) -> MasterRoadmap:
+    async def _generate_master_with_retry(
+        self, payload: GenerationPayload
+    ) -> MasterRoadmap:
         prompt = (
             "업종/지역 기반 창업 로드맵 상위 단계를 JSON만으로 생성해 주세요.\n"
             "필수 키: title, summary, phases(list of phase string).\n"
@@ -420,7 +454,9 @@ class RoadmapGenerationService:
 
         async def _run(phase_name: str) -> StepDetail:
             async with semaphore:
-                detail, is_fallback = await self._generate_phase_detail_with_retry(phase_name, payload)
+                detail, is_fallback = await self._generate_phase_detail_with_retry(
+                    phase_name, payload
+                )
                 if is_fallback:
                     fallback_phases.add(phase_name)
                 return detail
@@ -455,13 +491,18 @@ class RoadmapGenerationService:
                 return self._normalize_document_urls(detail), False
             except ValidationError:
                 continue
-        logger.warning("Phase detail generation failed for '%s'; using fallback template", phase_name)
+        logger.warning(
+            "Phase detail generation failed for '%s'; using fallback template",
+            phase_name,
+        )
         return self._fallback_detail(phase_name), True
 
     @staticmethod
     def _normalize_document_urls(detail: StepDetail) -> StepDetail:
         for doc in detail.documents:
-            preferred = doc.source_url or doc.download_url or doc.template_url or doc.file_url
+            preferred = (
+                doc.source_url or doc.download_url or doc.template_url or doc.file_url
+            )
             if preferred:
                 doc.source_url = preferred
         return detail
@@ -506,7 +547,10 @@ class RoadmapGenerationService:
             "legal_basis_title": "부가가치세법, 소득세법",
             "legal_basis_snippet": "사업자등록 의무 및 세금 신고 절차 관련 법령",
             "estimated_days": 7,
-            "risk_notes": ["사업자등록 지연 시 매입세액 공제 불가", "간이과세 선택 오류 시 세금 부담 증가"],
+            "risk_notes": [
+                "사업자등록 지연 시 매입세액 공제 불가",
+                "간이과세 선택 오류 시 세금 부담 증가",
+            ],
         },
         "인사·노무": {
             "title": "인사·노무 관리 체계 수립",
@@ -521,7 +565,10 @@ class RoadmapGenerationService:
             "legal_basis_title": "근로기준법, 고용보험법",
             "legal_basis_snippet": "근로계약, 임금, 4대보험 가입 의무 관련 법령",
             "estimated_days": 5,
-            "risk_notes": ["근로계약서 미작성 시 과태료 부과", "4대보험 미가입 시 사업주 부담금 소급 징수"],
+            "risk_notes": [
+                "근로계약서 미작성 시 과태료 부과",
+                "4대보험 미가입 시 사업주 부담금 소급 징수",
+            ],
         },
         "정책자금 신청": {
             "title": "정책자금·지원사업 신청",
@@ -536,7 +583,10 @@ class RoadmapGenerationService:
             "legal_basis_title": "소상공인 보호 및 지원에 관한 법률",
             "legal_basis_snippet": "소상공인 정책자금 지원 근거 및 신청 절차",
             "estimated_days": 14,
-            "risk_notes": ["신청 기간 경과 시 다음 차수까지 대기 필요", "서류 미비 시 심사 탈락 가능"],
+            "risk_notes": [
+                "신청 기간 경과 시 다음 차수까지 대기 필요",
+                "서류 미비 시 심사 탈락 가능",
+            ],
         },
         "법률 준비": {
             "title": "법률·행정 기초 준비",
@@ -551,7 +601,10 @@ class RoadmapGenerationService:
             "legal_basis_title": "상법, 민법",
             "legal_basis_snippet": "법인 설립, 계약, 상호 관련 법률 기초",
             "estimated_days": 7,
-            "risk_notes": ["법인 형태 선택 오류 시 세금·책임 구조 변경 곤란", "임대차 특약 미확인 시 분쟁 가능"],
+            "risk_notes": [
+                "법인 형태 선택 오류 시 세금·책임 구조 변경 곤란",
+                "임대차 특약 미확인 시 분쟁 가능",
+            ],
         },
         "준비": {
             "title": "창업 사전 준비",
@@ -581,7 +634,10 @@ class RoadmapGenerationService:
             "legal_basis_title": "업종별 개별법",
             "legal_basis_snippet": "업종에 따른 인허가 근거 법령 (식품위생법, 공중위생관리법 등)",
             "estimated_days": 10,
-            "risk_notes": ["서류 미비 시 보완 명령으로 개업 지연", "시설 기준 미달 시 불허 가능"],
+            "risk_notes": [
+                "서류 미비 시 보완 명령으로 개업 지연",
+                "시설 기준 미달 시 불허 가능",
+            ],
         },
         "운영준비": {
             "title": "영업 운영 준비",
@@ -596,7 +652,10 @@ class RoadmapGenerationService:
             "legal_basis_title": "관련 업종별 개별법",
             "legal_basis_snippet": "영업장 시설 기준 및 위생 관리 의무",
             "estimated_days": 14,
-            "risk_notes": ["시설 기준 미달 시 영업정지 가능", "보험 미가입 시 사고 발생 시 전액 배상 부담"],
+            "risk_notes": [
+                "시설 기준 미달 시 영업정지 가능",
+                "보험 미가입 시 사고 발생 시 전액 배상 부담",
+            ],
         },
     }
 
@@ -643,7 +702,9 @@ class RoadmapGenerationService:
         )
 
     @staticmethod
-    def _fallback_validation(*, business_type: str, location: str) -> InputValidationResult:
+    def _fallback_validation(
+        *, business_type: str, location: str
+    ) -> InputValidationResult:
         business = business_type.strip()
         loc = location.strip()
         if len(business) < 2 or len(loc) < 2:
@@ -652,14 +713,28 @@ class RoadmapGenerationService:
                 reason="업종과 지역은 최소 2자 이상 입력해 주세요.",
                 confidence=0.0,
             )
-        has_region_hint = any(token in loc for token in ("특별시", "광역시", "특별자치시", "특별자치도", "도", "시", "군", "구"))
+        has_region_hint = any(
+            token in loc
+            for token in (
+                "특별시",
+                "광역시",
+                "특별자치시",
+                "특별자치도",
+                "도",
+                "시",
+                "군",
+                "구",
+            )
+        )
         if not has_region_hint:
             return InputValidationResult(
                 valid=False,
                 reason="지역은 시/도/군/구 단위까지 포함해 입력해 주세요.",
                 confidence=0.0,
             )
-        normalized_business = "휴게음식점" if business in {"카페", "커피숍", "커피숖"} else business
+        normalized_business = (
+            "휴게음식점" if business in {"카페", "커피숍", "커피숖"} else business
+        )
         return InputValidationResult(
             valid=True,
             normalized_business_type=normalized_business,

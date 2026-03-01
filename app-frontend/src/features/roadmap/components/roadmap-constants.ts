@@ -8,6 +8,7 @@ export const INTAKE_FIELD_SUGGESTIONS: Record<string, string[]> = {
     business_type: ["카페", "온라인 쇼핑몰", "SaaS"],
     location: ["서울 마포구", "서울 강남구", "부산 해운대구"],
     startup_type: ["개인사업자", "법인", "미정"],
+    startup_method: ["신규 창업", "양수양도", "프랜차이즈"],
     open_timeline: ["3개월 내", "6개월 내", "1년 내"],
     budget_range: ["3천만 원 이하", "1억 이하", "1억 이상"],
 };

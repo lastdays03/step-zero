@@ -1,12 +1,14 @@
-from fastapi import APIRouter, Depends, File, HTTPException, Path, UploadFile
-from fastapi.responses import FileResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 import os
+from urllib.parse import quote
+
+from fastapi import APIRouter, Depends, File, HTTPException, Path, UploadFile
+from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import require_platform_admin
 from app.api.v1.actionkit.schemas import ActionKitFileUploadResponse
-from app.core.db import get_session
 from app.core.config import get_settings
+from app.core.db import get_session
 from app.features.actionkit.application import ActionKitService
 from app.models.user import AuthenticatedUser
 from app.repositories.actionkit_repository import ActionKitRepository
@@ -45,14 +47,51 @@ async def upload_actionkit_file(
 
 
 @router.get(
-    "/items/{item_id}/download",
-    summary="액션키트 아이템 최신 파일 다운로드",
-    description="해당 아이템의 최신 버전 파일을 다운로드합니다.",
+    "/items/{item_id}",
+    summary="액션키트 아이템 파일 뷰어 리다이렉트",
+    description="아이템의 최신 파일 뷰어 URL로 리다이렉트합니다.",
+    response_class=RedirectResponse,
+    status_code=307,
 )
-async def download_item_current_file(
-    item_id: int = Path(description="다운로드할 아이템 ID"),
-    session: AsyncSession = Depends(get_session),
+async def redirect_item_to_view(
+    item_id: int = Path(description="아이템 ID"),
 ):
+    return f"/api/v1/actionkits/items/{item_id}/view"
+
+
+_MD_HTML_TEMPLATE = """<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{title}</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  body {{ max-width: 800px; margin: 2rem auto; padding: 0 1.5rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1e293b; line-height: 1.7; }}
+  h1 {{ border-bottom: 2px solid #e2e8f0; padding-bottom: .5rem; }}
+  h2 {{ border-bottom: 1px solid #e2e8f0; padding-bottom: .3rem; margin-top: 2rem; }}
+  h3 {{ margin-top: 1.5rem; }}
+  pre {{ background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 1rem; overflow-x: auto; }}
+  code {{ background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-size: .9em; }}
+  pre code {{ background: none; padding: 0; }}
+  table {{ border-collapse: collapse; width: 100%; margin: 1rem 0; }}
+  th, td {{ border: 1px solid #e2e8f0; padding: .5rem .75rem; text-align: left; }}
+  th {{ background: #f8fafc; font-weight: 600; }}
+  blockquote {{ border-left: 4px solid #36a4f2; margin: 1rem 0; padding: .5rem 1rem; background: #f0f9ff; }}
+  a {{ color: #36a4f2; }}
+</style>
+</head>
+<body>
+<div id="content"></div>
+<script>
+document.getElementById('content').innerHTML = marked.parse({markdown_json});
+</script>
+</body>
+</html>"""
+
+
+async def _resolve_file(item_id: int, session: AsyncSession):
+    """Resolve item_id to (file_path, current_file) or raise 404."""
     repo = ActionKitRepository(session)
     files = await repo.list_current_files(item_ids=[item_id])
     if not files:
@@ -65,9 +104,64 @@ async def download_item_current_file(
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="File not found on disk")
 
+    return file_path, current_file
+
+
+@router.get(
+    "/items/{item_id}/view",
+    summary="액션키트 아이템 파일 뷰어",
+    description="해당 아이템의 최신 파일을 브라우저에서 볼 수 있도록 제공합니다. "
+    "Markdown 파일은 HTML로 변환, PDF는 인라인으로 표시합니다.",
+)
+async def view_item_current_file(
+    item_id: int = Path(description="아이템 ID"),
+    session: AsyncSession = Depends(get_session),
+):
+    file_path, current_file = await _resolve_file(item_id, session)
+    filename = current_file.original_filename or "file"
+    ext = os.path.splitext(filename)[1].lower()
+
+    # Markdown → HTML viewer (rendered client-side via marked.js)
+    if ext in (".md", ".markdown"):
+        import json as _json
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            md_content = f.read()
+        title = os.path.splitext(filename)[0]
+        html = _MD_HTML_TEMPLATE.format(
+            title=title,
+            markdown_json=_json.dumps(md_content),
+        )
+        return HTMLResponse(content=html)
+
+    # PDF, images → inline (browser renders natively)
+    mime = current_file.mime_type or "application/octet-stream"
+    if ext == ".pdf":
+        mime = "application/pdf"
+
+    encoded_filename = quote(filename)
+    return Response(
+        content=open(file_path, "rb").read(),
+        media_type=mime,
+        headers={
+            "Content-Disposition": f"inline; filename*=UTF-8''{encoded_filename}",
+        },
+    )
+
+
+@router.get(
+    "/items/{item_id}/download",
+    summary="액션키트 아이템 최신 파일 다운로드",
+    description="해당 아이템의 최신 버전 파일을 다운로드합니다.",
+)
+async def download_item_current_file(
+    item_id: int = Path(description="다운로드할 아이템 ID"),
+    session: AsyncSession = Depends(get_session),
+):
+    file_path, current_file = await _resolve_file(item_id, session)
+
     return FileResponse(
         path=file_path,
         filename=current_file.original_filename or "download",
         media_type=current_file.mime_type or "application/octet-stream",
     )
-

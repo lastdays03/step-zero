@@ -97,6 +97,7 @@ _USER_PROMPT_TEMPLATE = """\
 - 업종: {business_type}
 - 지역: {location}
 - 창업 형태: {startup_type}
+- 창업 방식: {startup_method}
 - 오픈 목표: {open_timeline}
 - 예산 범위: {budget_range}
 - 경험 수준: {experience_level}
@@ -139,6 +140,7 @@ class LLMPersonalizer:
             business_type=payload.get("business_type", ""),
             location=payload.get("location", ""),
             startup_type=payload.get("startup_type") or "신규",
+            startup_method=payload.get("startup_method") or "미입력",
             open_timeline=payload.get("open_timeline") or "미입력",
             budget_range=payload.get("budget_range") or "미입력",
             experience_level=payload.get("experience_level", "BEGINNER"),
@@ -155,10 +157,10 @@ class LLMPersonalizer:
         try:
             from fastapi.concurrency import run_in_threadpool
 
-            response = await run_in_threadpool(
-                self.llm.invoke, messages
+            response = await run_in_threadpool(self.llm.invoke, messages)
+            raw_text = (
+                response.content if hasattr(response, "content") else str(response)
             )
-            raw_text = response.content if hasattr(response, "content") else str(response)
         except Exception:
             logger.exception("LLM personalization call failed")
             return self._fallback_from_facts(matched_items, payload)
@@ -172,9 +174,8 @@ class LLMPersonalizer:
         # Convert to PersonalizedStepDetail objects
         details = self._convert_to_details(parsed)
 
-        # Post-processing validation: verify law names and file paths
-        original_law_names, original_file_keys = self._collect_originals(matched_items)
-        details = self._validate_references(details, original_law_names, original_file_keys)
+        # Post-processing validation & repair: fix LLM-hallucinated references
+        details = self._validate_and_repair_references(details, matched_items)
 
         return details
 
@@ -286,46 +287,236 @@ class LLMPersonalizer:
         return details
 
     @staticmethod
-    def _collect_originals(
+    def _build_repair_indexes(
         matched_items: list[MatchedActionKit],
-    ) -> tuple[set[str], set[str]]:
-        """Collect original law names and file keys from ActionKit data."""
-        law_names: set[str] = set()
-        file_keys: set[str] = set()
+    ) -> dict[str, Any]:
+        """Build lookup indexes from ActionKit data for reference repair."""
+        valid_item_ids: set[int] = set()
+        item_id_to_laws: dict[int, list[dict]] = {}
+        item_id_to_files: dict[int, list[dict]] = {}
+        law_name_to_item_id: dict[str, int] = {}
+        file_key_to_item_id: dict[str, int] = {}
+        law_name_set: set[str] = set()
+        file_key_set: set[str] = set()
+
         for m in matched_items:
+            if m.item.id is None:
+                continue
+            valid_item_ids.add(m.item.id)
             for law in m.related_laws:
-                law_names.add(law.law_name)
+                law_name_set.add(law.law_name)
+                law_name_to_item_id[law.law_name] = m.item.id
+                item_id_to_laws.setdefault(m.item.id, []).append(
+                    {
+                        "title": law.law_name,
+                        "snippet": law.law_summary or "",
+                        "actionkit_item_id": m.item.id,
+                    }
+                )
             for f in m.files:
-                file_keys.add(f.object_key)
-        return law_names, file_keys
+                file_key_set.add(f.object_key)
+                file_key_to_item_id[f.object_key] = m.item.id
+                item_id_to_files.setdefault(m.item.id, []).append(
+                    {
+                        "name": f.original_filename or f.object_key,
+                        "file_url": f.object_key,
+                        "actionkit_item_id": m.item.id,
+                        "actionkit_file_id": f.id,
+                    }
+                )
 
-    @staticmethod
-    def _validate_references(
+        return {
+            "valid_item_ids": valid_item_ids,
+            "item_id_to_laws": item_id_to_laws,
+            "item_id_to_files": item_id_to_files,
+            "law_name_to_item_id": law_name_to_item_id,
+            "file_key_to_item_id": file_key_to_item_id,
+            "law_name_set": law_name_set,
+            "file_key_set": file_key_set,
+        }
+
+    @classmethod
+    def _validate_and_repair_references(
+        cls,
         details: list[PersonalizedStepDetail],
-        original_law_names: set[str],
-        original_file_keys: set[str],
+        matched_items: list[MatchedActionKit],
     ) -> list[PersonalizedStepDetail]:
-        """Validate that LLM output references match ActionKit originals.
+        """Validate and repair LLM output references against ActionKit originals.
 
-        If a law name or file path was modified by the LLM, log a warning
-        but keep the entry (the LLM may have reformatted slightly).
+        Repair strategy (priority order):
+        1. actionkit_item_id valid -> restore original law_name/file_url from that item
+        2. title/file_url exists in original set -> reverse-map to get correct actionkit_item_id
+        2.5. Fuzzy match (handled by _fuzzy_match_* helpers if available)
+        3. All invalid -> hallucination, remove entry (logger.warning)
         """
-        for detail in details:
-            for lb in detail.legal_basis:
-                title = lb.get("title", "")
-                if title and original_law_names and title not in original_law_names:
-                    logger.debug(
-                        "LLM modified law name: '%s' not in originals", title
-                    )
+        idx = cls._build_repair_indexes(matched_items)
+        valid_ids = idx["valid_item_ids"]
+        law_name_set = idx["law_name_set"]
+        file_key_set = idx["file_key_set"]
+        law_name_to_item_id = idx["law_name_to_item_id"]
+        file_key_to_item_id = idx["file_key_to_item_id"]
+        item_id_to_laws = idx["item_id_to_laws"]
+        item_id_to_files = idx["item_id_to_files"]
 
-            for doc in detail.documents:
-                file_url = doc.get("file_url", "")
-                if file_url and original_file_keys and file_url not in original_file_keys:
-                    logger.debug(
-                        "LLM modified file path: '%s' not in originals", file_url
+        for detail in details:
+            # --- Repair legal_basis ---
+            repaired_legal: list[dict] = []
+            for lb in detail.legal_basis:
+                item_id = lb.get("actionkit_item_id")
+                title = lb.get("title", "")
+
+                # Strategy 1: item_id is valid
+                if item_id and item_id in valid_ids:
+                    if title not in law_name_set:
+                        # Restore original law name from item
+                        originals = item_id_to_laws.get(item_id, [])
+                        if originals:
+                            lb["title"] = originals[0]["title"]
+                            lb["snippet"] = originals[0].get(
+                                "snippet", lb.get("snippet", "")
+                            )
+                            logger.info(
+                                "Repaired law name via item_id=%d: '%s' -> '%s'",
+                                item_id,
+                                title,
+                                lb["title"],
+                            )
+                    repaired_legal.append(lb)
+                    continue
+
+                # Strategy 2: title exists in originals -> reverse-map
+                if title and title in law_name_set:
+                    lb["actionkit_item_id"] = law_name_to_item_id[title]
+                    repaired_legal.append(lb)
+                    continue
+
+                # Strategy 2.5: fuzzy match
+                fuzzy_match = cls._fuzzy_match_law_name(title, law_name_set)
+                if fuzzy_match:
+                    lb["title"] = fuzzy_match
+                    lb["actionkit_item_id"] = law_name_to_item_id[fuzzy_match]
+                    logger.info(
+                        "Fuzzy-matched law name: '%s' -> '%s'", title, fuzzy_match
                     )
+                    repaired_legal.append(lb)
+                    continue
+
+                # Strategy 3: hallucination -> remove
+                logger.warning("Removing hallucinated legal_basis: '%s'", title)
+
+            # Preserve original if repair removed everything
+            if repaired_legal or not detail.legal_basis:
+                detail.legal_basis = repaired_legal
+
+            # --- Repair documents ---
+            repaired_docs: list[dict] = []
+            for doc in detail.documents:
+                item_id = doc.get("actionkit_item_id")
+                file_url = doc.get("file_url", "")
+
+                # Strategy 1: item_id is valid
+                if item_id and item_id in valid_ids:
+                    if file_url and file_url not in file_key_set:
+                        originals = item_id_to_files.get(item_id, [])
+                        if originals:
+                            doc["file_url"] = originals[0]["file_url"]
+                            doc["name"] = originals[0].get(
+                                "name", doc.get("name", "서류")
+                            )
+                            logger.info(
+                                "Repaired file_url via item_id=%d: '%s' -> '%s'",
+                                item_id,
+                                file_url,
+                                doc["file_url"],
+                            )
+                    repaired_docs.append(doc)
+                    continue
+
+                # Strategy 2: file_url exists in originals
+                if file_url and file_url in file_key_set:
+                    doc["actionkit_item_id"] = file_key_to_item_id[file_url]
+                    repaired_docs.append(doc)
+                    continue
+
+                # Strategy 2.5: fuzzy match
+                fuzzy_match = cls._fuzzy_match_file_key(file_url, file_key_set)
+                if fuzzy_match:
+                    doc["file_url"] = fuzzy_match
+                    doc["actionkit_item_id"] = file_key_to_item_id[fuzzy_match]
+                    logger.info(
+                        "Fuzzy-matched file_key: '%s' -> '%s'", file_url, fuzzy_match
+                    )
+                    repaired_docs.append(doc)
+                    continue
+
+                # Strategy 3: hallucination -> remove
+                logger.warning(
+                    "Removing hallucinated document: '%s'", doc.get("name", file_url)
+                )
+
+            if repaired_docs or not detail.documents:
+                detail.documents = repaired_docs
+
+            # --- Filter invalid actionkit_items IDs ---
+            if detail.actionkit_items:
+                detail.actionkit_items = [
+                    aid for aid in detail.actionkit_items if aid in valid_ids
+                ]
 
         return details
+
+    @staticmethod
+    def _fuzzy_match_law_name(
+        title: str,
+        law_name_set: set[str],
+        threshold: float = 0.6,
+    ) -> str | None:
+        """Fuzzy match a law name using Jaccard similarity + substring bonus."""
+        if not title or not law_name_set:
+            return None
+
+        best_match: str | None = None
+        best_score: float = 0.0
+        title_chars = set(title)
+
+        for law_name in law_name_set:
+            law_chars = set(law_name)
+            intersection = len(title_chars & law_chars)
+            union = len(title_chars | law_chars)
+            if union == 0:
+                continue
+            score = intersection / union
+            # Substring bonus
+            if title in law_name or law_name in title:
+                score = max(score, 0.8)
+            if score > best_score:
+                best_score = score
+                best_match = law_name
+
+        return best_match if best_score >= threshold else None
+
+    @staticmethod
+    def _fuzzy_match_file_key(
+        file_url: str,
+        file_key_set: set[str],
+    ) -> str | None:
+        """Fuzzy match a file key by basename or substring."""
+        if not file_url or not file_key_set:
+            return None
+
+        # Extract basename for comparison
+        url_basename = file_url.rsplit("/", 1)[-1] if "/" in file_url else file_url
+
+        for key in file_key_set:
+            key_basename = key.rsplit("/", 1)[-1] if "/" in key else key
+            # Basename match
+            if url_basename and key_basename and url_basename == key_basename:
+                return key
+            # Substring match
+            if file_url in key or key in file_url:
+                return key
+
+        return None
 
     # ------------------------------------------------------------------ #
     #  Fallback (when LLM fails)
@@ -363,26 +554,32 @@ class LLMPersonalizer:
 
                 if m.related_laws:
                     for law in m.related_laws:
-                        legal_basis.append({
-                            "title": law.law_name,
-                            "snippet": law.law_summary or "",
-                            "actionkit_item_id": m.item.id,
-                        })
+                        legal_basis.append(
+                            {
+                                "title": law.law_name,
+                                "snippet": law.law_summary or "",
+                                "actionkit_item_id": m.item.id,
+                            }
+                        )
                 else:
                     # No related_laws: use item name as legal basis
-                    legal_basis.append({
-                        "title": m.item.name,
-                        "snippet": m.item.summary or "",
-                        "actionkit_item_id": m.item.id,
-                    })
+                    legal_basis.append(
+                        {
+                            "title": m.item.name,
+                            "snippet": m.item.summary or "",
+                            "actionkit_item_id": m.item.id,
+                        }
+                    )
 
                 for f in m.files:
-                    documents.append({
-                        "name": f.original_filename or f.object_key,
-                        "file_url": f.object_key,
-                        "actionkit_item_id": m.item.id,
-                        "actionkit_file_id": f.id,
-                    })
+                    documents.append(
+                        {
+                            "name": f.original_filename or f.object_key,
+                            "file_url": f.object_key,
+                            "actionkit_item_id": m.item.id,
+                            "actionkit_file_id": f.id,
+                        }
+                    )
 
             if not checklist:
                 checklist = [f"{business_type} {phase} 관련 필수 요건 확인"]
@@ -393,7 +590,16 @@ class LLMPersonalizer:
                 objective=f"{business_type} 창업을 위한 {phase} 절차를 진행합니다.",
                 estimated_days=5,
                 checklist=checklist,
-                legal_basis=legal_basis if legal_basis else [{"title": "관련 법령 확인 필요", "snippet": f"{business_type} {phase} 관련 법령을 확인하세요."}],
+                legal_basis=(
+                    legal_basis
+                    if legal_basis
+                    else [
+                        {
+                            "title": "관련 법령 확인 필요",
+                            "snippet": f"{business_type} {phase} 관련 법령을 확인하세요.",
+                        }
+                    ]
+                ),
                 documents=documents,
                 risk_notes=[f"{phase} 세부 요건 미확인 시 보완 명령 가능성"],
                 actionkit_items=actionkit_ids,
