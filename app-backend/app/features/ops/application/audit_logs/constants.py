@@ -20,12 +20,20 @@ class AuditAction:
 
     ACTIONKIT_ITEM_STATUS_UPDATED: Final[str] = "actionkit.item.status.updated"
 
+    TEMPLATE_CREATED: Final[str] = "template.created"
+    TEMPLATE_UPDATED: Final[str] = "template.updated"
+    TEMPLATE_STATUS_CHANGED: Final[str] = "template.status.changed"
+    TEMPLATE_APPROVED: Final[str] = "template.approved"
+    TEMPLATE_ARCHIVED: Final[str] = "template.archived"
+    TEMPLATE_DELETED: Final[str] = "template.deleted"
+
 
 class AuditTargetType:
     USER: Final[str] = "user"
     ANNOUNCEMENT: Final[str] = "announcement"
     GROWTH_CLUB_POST: Final[str] = "growth_club_post"
     ACTIONKIT_ITEM: Final[str] = "actionkit_item"
+    ROADMAP_TEMPLATE: Final[str] = "roadmap_template"
 
 
 ALLOWED_AUDIT_ACTIONS: set[str] = {
@@ -41,6 +49,12 @@ ALLOWED_AUDIT_ACTIONS: set[str] = {
     AuditAction.GROWTH_CLUB_POST_UNBLINDED,
     AuditAction.GROWTH_CLUB_POST_DELETED,
     AuditAction.ACTIONKIT_ITEM_STATUS_UPDATED,
+    AuditAction.TEMPLATE_CREATED,
+    AuditAction.TEMPLATE_UPDATED,
+    AuditAction.TEMPLATE_STATUS_CHANGED,
+    AuditAction.TEMPLATE_APPROVED,
+    AuditAction.TEMPLATE_ARCHIVED,
+    AuditAction.TEMPLATE_DELETED,
 }
 
 ALLOWED_AUDIT_TARGET_TYPES: set[str] = {
@@ -48,4 +62,5 @@ ALLOWED_AUDIT_TARGET_TYPES: set[str] = {
     AuditTargetType.ANNOUNCEMENT,
     AuditTargetType.GROWTH_CLUB_POST,
     AuditTargetType.ACTIONKIT_ITEM,
+    AuditTargetType.ROADMAP_TEMPLATE,
 }

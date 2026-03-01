@@ -2,50 +2,42 @@
 
 ## Last Updated
 - Date: 2026-03-02
-- Branch: `feature/1-fe-quick-wins`
+- Branch: `feature/2-template-system`
 
 ## Sprint Focus
-- Phase 1: FE Quick Wins — BE 변경 없이 UX 가치 즉시 전달 (5개 기능)
+- Phase 2: 로드맵 템플릿 관리 시스템 — APPROVED 템플릿 기반 즉시 생성 + Ops 관리 UI
 
 ## Current State
-- Phase 0 전체 완료 (types:sync 포함 커밋 완료, develop 머지 완료)
-- Phase 1 전체 구현 완료 — 5개 기능 + 보완 항목 7개 모두 완료
-- Quality Gates 전체 통과 (lint/build/test)
+- Phase 0 전체 완료 (develop 머지 완료)
+- Phase 1 전체 완료 (develop 머지 완료)
+- Phase 2 구현 완료 — 백엔드 + 프론트엔드 + 테스트
+- Quality Gates 전체 통과 (pytest/lint/build)
 - **미커밋 상태** — 커밋 + PR 생성 필요
 
-## Completed (Phase 0)
-- **Phase A**: LLM 참조 자동 복구, 다중 파일 매핑, FE 폴백/대안 링크
-- **Phase B**: source_url item_id 기반 통일, DB 마이그레이션 (396건), 퍼지 매칭
-- **Phase C**: startup_method DB→BE→FE 전 계층 추가
-- **Phase D**: 이중 인코딩 StaticFiles, FE API_URL prefix, 아이템 뷰어 엔드포인트
-
-## Completed (Phase 1)
-- **Endowed Progress UI**: 17% 시작점, Sidebar + Dashboard 적용, 첫 방문 배지
-- **다음 3-5 액션 집중**: CURRENT Phase에서 3개 스텝만 펼침, 나머지 접힘
-- **준비도 5단계 스코어**: ReadinessTracker 컴포넌트, Sidebar + Dashboard 통합, 등급 업그레이드 토스트
-- **마일스톤 축하 모먼트**: MilestoneCelebration 컴포넌트, Phase 완료 컨페티 + 등급 변화 표시, 스텝 20% 인사이트 (30s cooldown)
-- **첫 5분 경험 최적화**: 인테이크 정규화 확인 메시지, 생성 중 동적 메시지 + 인사이트 로테이션 (정적 3개 완전 제거)
-- **유닛 테스트 추가**: roadmap-utils.test.ts (14 tests — endowed 6 + readiness 8)
-- **기존 테스트 수정**: LoginForm + Dashboard 테스트 mock 보완
+## Completed (Phase 2)
+- **Section A**: DB 스키마 (RoadmapTemplate/Step/Action 3개 모델), Alembic 010 마이그레이션, 감사로그 상수 6개
+- **Section B-1**: CRUD 서비스 (10개 함수), API 스키마, API 라우터 (10개 엔드포인트), Ops 라우터 등록
+- **Section B-2**: TemplateResolver (resolve/template_to_steps_payload/should_create_auto_draft), RoadmapGenerationService 파이프라인 통합 (TEMPLATE/기존 분기), 자동 DRAFT 등록
+- **Section C**: 프론트엔드 Ops 템플릿 관리 UI (목록 뷰, 상세/편집 뷰, 상태 배지, 스텝 아코디언, 액션 편집기), Ops 홈 카드 추가, 라우트 2개
+- **Section D**: 백엔드 API 테스트 9개, TemplateResolver 유닛 테스트 6개
 
 ## In Progress
-- (없음 — Phase 1 전체 완료, 커밋/PR 대기)
+- (없음 — Phase 2 전체 완료, 커밋/PR 대기)
 
 ## Risks And Blockers
 - (없음)
 
 ## Next 3 Actions
-1. Phase 1 변경사항 커밋 (`feat: phase 1 FE quick wins 5개 기능 구현`)
-2. `feature/1-fe-quick-wins` → `develop` PR 생성
-3. Phase 2 계획 수립
+1. Phase 2 변경사항 커밋
+2. `feature/2-template-system` → `develop` PR 생성
+3. Phase 3 계획 수립 (AI 코치 또는 추가 개선)
 
 ## Test Status
-- Frontend lint: 통과 (0 errors, 0 warnings)
-- Frontend build: 통과 (18 routes, 11.3s)
-- Frontend Jest: 3 suites, 22 tests 전부 통과
+- Backend pytest: 188 passed, 5 skipped
+- Frontend lint: 통과
+- Frontend build: 통과 (20 routes)
 
 ## Sync Notes
 - 2026-03-01: Phase 0 전체 완료 — develop 머지 완료
-- 2026-03-01: Phase 1 FE Quick Wins 구현 계획 수립
-- 2026-03-02: Phase 1 구현 완료 — 12 수정 + 3 신규 + 1 의존성 추가
-- 2026-03-02: 보완 세션 — 미구현 7항목 해결 (유닛테스트, 배지, 등급표시, throttle, 정적메시지 제거)
+- 2026-03-02: Phase 1 완료 — develop 머지 완료
+- 2026-03-02: Phase 2 구현 완료 — 템플릿 관리 시스템 (BE + FE + 테스트)

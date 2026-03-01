@@ -49,6 +49,11 @@ export function OpsHomeView() {
           <p className="mt-1 text-sm text-slate-600">운영자 조치 이력 조회 및 추적</p>
           <Link href="/ops/audit-logs" className="mt-4 inline-block text-sm font-semibold text-blue-600">열기</Link>
         </article>
+        <article className="rounded-2xl border border-slate-200 bg-white p-5">
+          <h2 className="text-base font-semibold text-slate-900">로드맵 템플릿 관리</h2>
+          <p className="mt-1 text-sm text-slate-600">업종별 로드맵 템플릿 검수 및 승인</p>
+          <Link href="/ops/roadmap-templates" className="mt-4 inline-block text-sm font-semibold text-blue-600">열기</Link>
+        </article>
       </div>
     </section>
   );

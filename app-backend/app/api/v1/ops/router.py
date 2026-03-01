@@ -8,6 +8,7 @@ from app.api.v1.ops import (
     growth_club,
     home,
     reports,
+    roadmap_templates,
     users,
 )
 
@@ -20,4 +21,5 @@ router.include_router(users.router)
 router.include_router(growth_club.router)
 router.include_router(actionkit.router)
 router.include_router(announcements.router)
+router.include_router(roadmap_templates.router)
 router.include_router(audit_logs.router)

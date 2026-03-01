@@ -2,38 +2,58 @@
 
 ## 마지막 업데이트
 - Date: 2026-03-02
-- Branch: `feature/1-fe-quick-wins`
+- Branch: `feature/2-template-system`
 
 ## 이번 세션 완료
-- **Phase 1 FE Quick Wins 보완 완료** — 이전 세션에서 미구현된 7개 항목 모두 해결:
-  1. `computeEndowedProgress` + `computeReadinessLevel` 유닛 테스트 (14 tests)
-  2. 첫 방문 Endowed 배지 1회 표시 (RoadmapSidebar, localStorage, 8초 자동 닫힘)
-  3. Phase 축하 모달에 등급 변화 표시 (MilestoneCelebration previousReadiness/currentReadiness props)
-  4. 연속 인사이트 30초 cooldown (TimelinePhaseCard lastInsightTimeRef)
-  5. 생성 중 정적 텍스트 3개 → 동적 stageMessage 단일 표시로 완전 대체
-  6. overallProgress prop 전달 (RoadmapExecutionView → TimelinePhaseCard)
-  7. state 기반 readiness tracking (ESLint react-hooks/refs 회피)
+- **Phase 2 로드맵 템플릿 관리 시스템 전체 구현 완료** — 4개 Section 모두 완료:
+
+### Section A: DB 스키마 + 마이그레이션
+- `RoadmapTemplate`, `RoadmapTemplateStep`, `RoadmapTemplateAction` 3개 모델 생성
+- Alembic `010_roadmap_templates` 마이그레이션 (3개 테이블 + roadmap.template_id FK)
+- 감사로그 상수 6개 (TEMPLATE_CREATED/UPDATED/STATUS_CHANGED/APPROVED/ARCHIVED/DELETED)
+
+### Section B-1: CRUD 서비스 + API
+- 서비스 10개 함수 (get_summary, list, detail, create_from_roadmap, update, status_transition, action CRUD, delete)
+- API 라우터 10개 엔드포인트, Ops 라우터 등록 완료
+- 상태 머신: DRAFT → REVIEW → APPROVED → ARCHIVED (+ REVIEW → DRAFT 반려)
+
+### Section B-2: 파이프라인 통합
+- `TemplateResolver` (resolve/template_to_steps_payload/should_create_auto_draft)
+- `RoadmapGenerationService` 분기: TEMPLATE 경로(즉시 생성) / 기존 경로(ActionKit+RAG)
+- 자동 DRAFT 템플릿 등록 (신규 업종 로드맵 생성 후)
+
+### Section C: 프론트엔드 Ops UI
+- 목록 뷰 (summary 카드, 탭 필터, 테이블)
+- 상세/편집 뷰 (메타 편집, 상태 워크플로우 버튼, 스텝 아코디언)
+- 컴포넌트 4개 (status-badge, list-table, step-editor, action-editor)
+- Ops 홈 카드 추가, 라우트 2개 등록
+
+### Section D: 테스트 + 문서
+- API 테스트 9개 (test_ops_roadmap_templates.py)
+- TemplateResolver 유닛 테스트 6개 (test_template_resolver.py)
+- Quality gates 전체 통과
 
 ## 핵심 기술 결정 (이번 세션)
-- **ESLint react-hooks/refs**: render 중 ref 접근 금지 → `useState` + render-time state comparison 패턴 사용
-- **ESLint react-hooks/set-state-in-effect**: useEffect 내 동기 setState 금지 → `useState(() => ...)` lazy init 패턴 사용
-- **30초 cooldown**: `lastInsightTimeRef`는 event handler에서만 접근하므로 lint 통과
+- **FK CASCADE**: SQLModel `sa_column_kwargs` 대신 Alembic 마이그레이션에서만 CASCADE 정의
+- **스키마 파일명**: 기존 `schemas.py`와 충돌 방지 위해 `roadmap_template_schemas.py` 별도 파일
+- **파이프라인 통합**: TemplateResolver를 try-except로 감싸서 기존 테스트 호환성 유지
+- **상태 머신**: DRAFT→REVIEW→APPROVED→ARCHIVED (DRAFT→APPROVED 직접 전환 차단)
 
 ## 검증
-- Frontend lint: 통과 (0 errors, 0 warnings)
-- Frontend build: 통과 (18 routes, 11.3s 컴파일)
-- Frontend Jest: 3 suites, 22 tests 전부 통과
+- Backend pytest: 188 passed, 5 skipped, 0 failed
+- Frontend lint: 통과 (0 errors)
+- Frontend build: 통과 (20 routes)
 
 ## 커밋되지 않은 변경사항
-- `git status`로 확인 필요 — Phase 1 전체 변경사항 미커밋 상태
-- 수정 파일 12개 + 신규 파일 3개 + dev 문서 3개 + docs 문서 2개
+- Phase 2 전체 변경사항 미커밋 상태
+- 신규 파일 약 20개 (BE 모델/서비스/API/테스트 + FE 컴포넌트/뷰/라우트)
+- 수정 파일 약 8개 (모델 등록, 라우터 등록, 감사로그 상수, 파이프라인 통합 등)
 
 ## 다음 세션 시작점
-1. **즉시**: `git add` + `git commit` (feat: phase 1 FE quick wins 구현)
-2. **즉시**: `gh pr create` (`feature/1-fe-quick-wins` → `develop`)
-3. **이후**: Phase 2 계획 수립 (`docs/research/roadmap-improvement/01-master-plan.md` Section 3 참조)
+1. **즉시**: Phase 2 변경사항 `git add` + `git commit`
+2. **즉시**: `gh pr create` (`feature/2-template-system` → `develop`)
+3. **이후**: Phase 3 계획 수립 (AI 코치 또는 추가 개선)
 
 ## 커밋 시 주의사항
 - 커밋 메시지는 소문자 시작 필수 (commitlint subject-case 규칙)
 - `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>` 포함
-- `next-env.d.ts` 권한 변경됨 (root → 666) — 커밋에 포함 여부 확인 필요
