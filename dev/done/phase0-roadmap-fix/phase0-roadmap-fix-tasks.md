@@ -1,6 +1,6 @@
 # Phase 0 로드맵 파이프라인 수정 - Tasks
 
-> Last Updated: 2026-03-01 (Session 2)
+> Last Updated: 2026-03-01 (Session 3 — 전체 완료)
 
 ---
 
@@ -110,26 +110,25 @@
 - [x] **Frontend 검증 (Docker)**
   - [x] `npm run lint` 통과
   - [x] `npm run build` 성공 (Next.js 16.1.6 Turbopack)
-  - [ ] `npm run types:sync` 실행 (배포 전 확인 필요)
+  - [x] `npm run types:sync` 실행 — `startup_method` 포함 타입 생성 확인
 
-- [ ] **코드 포맷** (배포 전 수행)
-  - [ ] `black .` 실행
-  - [ ] `isort . --profile black` 실행
+- [x] **코드 포맷** (배포 전 수행)
+  - [x] `black .` 실행 — 191 files unchanged
+  - [x] `isort . --profile black` 실행 — 변경 없음
 
-- [ ] **Git 커밋 & PR**
-  - [ ] 변경사항 커밋 (13 modified + 4 untracked)
-  - [ ] `.gitignore`의 `test_*.py` 규칙 때문에 테스트 파일은 `git add -f` 필요
-  - [ ] develop 브랜치로 PR 생성
+- [x] **Git 커밋 & PR**
+  - [x] 변경사항 커밋 완료
+  - [x] develop 브랜치로 PR 생성 완료
 
-- [ ] **배포 순서**
-  - [ ] BE 배포 + 마이그레이션 (`alembic upgrade head`)
-  - [ ] FE 배포
+- [x] **배포 순서**
+  - [x] BE 배포 + 마이그레이션 (`alembic upgrade head`)
+  - [x] FE 배포
 
-- [ ] **수동 검증**
+- [x] **수동 검증**
   - [x] 기존 로드맵 링크 클릭 → item 기반 URL로 변환 확인
   - [x] 파일 뷰어 (.md → HTML 렌더링, .pdf → 인라인) 동작 확인
-  - [ ] 새 로드맵 생성 → source_url 패턴 확인
-  - [ ] 인테이크 폼 "창업 방식" 질문 + 제안 칩 동작
+  - [x] 새 로드맵 생성 → source_url 패턴 확인
+  - [x] 인테이크 폼 "창업 방식" 질문 + 제안 칩 동작
 
 ---
 
@@ -142,5 +141,5 @@
 | Phase C (startup_method) | 3 | 3 | 100% |
 | Phase D (URL 접근성) | 4 | 4 | 100% |
 | 테스트 | 2 | 2 | 100% |
-| FE/포맷/배포 검증 | 2 | 5 | 40% |
-| **합계** | **18** | **21** | **86%** |
+| FE/포맷/배포 검증 | 5 | 5 | 100% |
+| **합계** | **21** | **21** | **100%** |

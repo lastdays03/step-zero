@@ -1,7 +1,7 @@
 # Phase 0 로드맵 파이프라인 수정 - 구현 계획
 
-> Last Updated: 2026-03-01 (Session 2)
-> Status: **구현 완료 / 커밋 & PR 대기**
+> Last Updated: 2026-03-01 (Session 3)
+> Status: **전체 완료 — 배포 및 검증 완료**
 > Branch: `feature/0-roadmap-improvement`
 
 ---
@@ -148,11 +148,11 @@
 
 1. [x] `npm run lint` (Docker) — 통과
 2. [x] `npm run build` (Docker) — Next.js 16.1.6 성공
-3. [ ] `npm run types:sync` 실행하여 BE OpenAPI → FE 타입 동기화
-4. [ ] `black .` + `isort . --profile black` 코드 포맷
-5. [ ] Git 커밋 (13 modified + 4 untracked, test 파일은 `git add -f`)
-6. [ ] PR 생성: `feature/0-roadmap-improvement` → `develop`
-7. [ ] **BE 먼저 배포** → 마이그레이션 실행 (`alembic upgrade head`)
-8. [ ] FE 배포
-9. [ ] 수동 검증: 기존 로드맵 링크 클릭 → 404 없음
-10. [ ] 수동 검증: 새 로드맵 생성 → startup_method 질문 + source_url 패턴 확인
+3. [x] `npm run types:sync` 실행하여 BE OpenAPI → FE 타입 동기화
+4. [x] `black .` + `isort . --profile black` 코드 포맷
+5. [x] Git 커밋
+6. [x] PR 생성: `feature/0-roadmap-improvement` → `develop`
+7. [x] **BE 먼저 배포** → 마이그레이션 실행 (`alembic upgrade head`)
+8. [x] FE 배포
+9. [x] 수동 검증: 기존 로드맵 링크 클릭 → 404 없음
+10. [x] 수동 검증: 새 로드맵 생성 → startup_method 질문 + source_url 패턴 확인
