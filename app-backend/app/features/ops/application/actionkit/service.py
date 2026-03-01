@@ -1,19 +1,23 @@
+from __future__ import annotations
+
 import os
 import shutil
 import uuid
-from typing import List, TypedDict
+from typing import TYPE_CHECKING, List, TypedDict
 
 from fastapi import UploadFile
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from app.api.v1.ops.schemas import (
-    ActionKitCategoryCreateRequest,
-    ActionKitCategoryUpdateRequest,
-    ActionKitItemCreateRequest,
-    ActionKitItemUpdateRequest,
-)
+if TYPE_CHECKING:
+    from app.api.v1.ops.schemas import (
+        ActionKitCategoryCreateRequest,
+        ActionKitCategoryUpdateRequest,
+        ActionKitItemCreateRequest,
+        ActionKitItemUpdateRequest,
+    )
+
 from app.models.actionkit import (
     ActionKitCategory,
     ActionKitChecklist,
