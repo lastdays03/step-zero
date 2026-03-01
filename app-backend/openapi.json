@@ -246,6 +246,24 @@
         ],
         "parameters": [
           {
+            "name": "roadmap_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "조회 대상 로드맵 ID. 생략 시 최신 로드맵을 사용합니다.",
+              "title": "Roadmap Id"
+            },
+            "description": "조회 대상 로드맵 ID. 생략 시 최신 로드맵을 사용합니다."
+          },
+          {
             "name": "X-Team-Id",
             "in": "header",
             "required": false,
@@ -286,53 +304,6 @@
             }
           }
         }
-      }
-    },
-    "/api/v1/generate": {
-      "post": {
-        "tags": [
-          "generation"
-        ],
-        "summary": "로드맵 생성(레거시 엔드포인트)",
-        "description": "기존 클라이언트 호환을 위해 유지되는 로드맵 즉시 생성 API입니다.",
-        "operationId": "generate_roadmap_api_v1_generate_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/GenerationRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "생성된 로드맵 ID, 제목, 단계 목록을 반환합니다.",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/GenerationResponse"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "OAuth2PasswordBearer": []
-          }
-        ]
       }
     },
     "/api/v1/rag/query": {
@@ -420,6 +391,86 @@
       }
     },
     "/api/v1/roadmaps": {
+      "get": {
+        "tags": [
+          "roadmaps"
+        ],
+        "summary": "로드맵 목록 조회",
+        "description": "현재 팀의 로드맵 목록을 최신순으로 조회합니다.",
+        "operationId": "list_roadmaps_api_v1_roadmaps_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "description": "페이징 오프셋",
+              "default": 0,
+              "title": "Offset"
+            },
+            "description": "페이징 오프셋"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "description": "페이징 제한",
+              "default": 20,
+              "title": "Limit"
+            },
+            "description": "페이징 제한"
+          },
+          {
+            "name": "X-Team-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Team-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "로드맵 요약 목록과 전체 건수를 반환합니다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadmapListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
       "post": {
         "tags": [
           "roadmaps"
@@ -484,20 +535,32 @@
         }
       }
     },
-    "/api/v1/roadmaps/latest/detail": {
-      "get": {
+    "/api/v1/roadmaps/{roadmap_id}": {
+      "delete": {
         "tags": [
           "roadmaps"
         ],
-        "summary": "최신 로드맵 상세 조회",
-        "description": "현재 팀의 최신 로드맵과 단계/액션 상세를 조회합니다.",
-        "operationId": "get_latest_roadmap_detail_api_v1_roadmaps_latest_detail_get",
+        "summary": "로드맵 삭제",
+        "description": "로드맵을 소프트 삭제합니다.",
+        "operationId": "delete_roadmap_api_v1_roadmaps__roadmap_id__delete",
         "security": [
           {
             "OAuth2PasswordBearer": []
           }
         ],
         "parameters": [
+          {
+            "name": "roadmap_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "삭제할 로드맵 ID",
+              "title": "Roadmap Id"
+            },
+            "description": "삭제할 로드맵 ID"
+          },
           {
             "name": "X-Team-Id",
             "in": "header",
@@ -516,12 +579,80 @@
           }
         ],
         "responses": {
-          "200": {
-            "description": "최신 로드맵 상세 정보를 반환합니다.",
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RoadmapDetailResponse"
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "roadmaps"
+        ],
+        "summary": "로드맵 제목 수정",
+        "description": "로드맵의 제목을 수정합니다.",
+        "operationId": "update_roadmap_api_v1_roadmaps__roadmap_id__patch",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "roadmap_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "description": "수정할 로드맵 ID",
+              "title": "Roadmap Id"
+            },
+            "description": "수정할 로드맵 ID"
+          },
+          {
+            "name": "X-Team-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Team-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RoadmapUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "수정된 로드맵 요약 정보를 반환합니다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadmapSummaryItem"
                 }
               }
             }
@@ -537,9 +668,7 @@
             }
           }
         }
-      }
-    },
-    "/api/v1/roadmaps/{roadmap_id}": {
+      },
       "get": {
         "tags": [
           "roadmaps"
@@ -589,6 +718,61 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RoadmapResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/roadmaps/latest/detail": {
+      "get": {
+        "tags": [
+          "roadmaps"
+        ],
+        "summary": "최신 로드맵 상세 조회",
+        "description": "현재 팀의 최신 로드맵과 단계/액션 상세를 조회합니다.",
+        "operationId": "get_latest_roadmap_detail_api_v1_roadmaps_latest_detail_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Team-Id",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Team-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "최신 로드맵 상세 정보를 반환합니다.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RoadmapDetailResponse"
                 }
               }
             }
@@ -1421,6 +1605,87 @@
         }
       }
     },
+    "/api/v1/actionkits/items/{item_id}": {
+      "get": {
+        "tags": [
+          "actionkits"
+        ],
+        "summary": "액션키트 아이템 파일 뷰어 리다이렉트",
+        "description": "아이템의 최신 파일 뷰어 URL로 리다이렉트합니다.",
+        "operationId": "redirect_item_to_view_api_v1_actionkits_items__item_id__get",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "아이템 ID",
+              "title": "Item Id"
+            },
+            "description": "아이템 ID"
+          }
+        ],
+        "responses": {
+          "307": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/actionkits/items/{item_id}/view": {
+      "get": {
+        "tags": [
+          "actionkits"
+        ],
+        "summary": "액션키트 아이템 파일 뷰어",
+        "description": "해당 아이템의 최신 파일을 브라우저에서 볼 수 있도록 제공합니다. Markdown 파일은 HTML로 변환, PDF는 인라인으로 표시합니다.",
+        "operationId": "view_item_current_file_api_v1_actionkits_items__item_id__view_get",
+        "parameters": [
+          {
+            "name": "item_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "아이템 ID",
+              "title": "Item Id"
+            },
+            "description": "아이템 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/actionkits/items/{item_id}/download": {
       "get": {
         "tags": [
@@ -1492,6 +1757,18 @@
             "description": "카테고리 필터 (`all`이면 전체)"
           },
           {
+            "name": "search_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "검색 기준 (all, title, content)",
+              "default": "all",
+              "title": "Search Type"
+            },
+            "description": "검색 기준 (all, title, content)"
+          },
+          {
             "name": "search",
             "in": "query",
             "required": false,
@@ -1504,10 +1781,10 @@
                   "type": "null"
                 }
               ],
-              "description": "제목/내용 검색어",
+              "description": "검색어",
               "title": "Search"
             },
-            "description": "제목/내용 검색어"
+            "description": "검색어"
           }
         ],
         "responses": {
@@ -1660,6 +1937,16 @@
             "description": "신고할 게시글 ID"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "신고 처리 결과와 누적 신고 수를 반환합니다.",
@@ -1828,6 +2115,65 @@
         }
       }
     },
+    "/api/v1/growth-club/comments/{comment_id}/report": {
+      "post": {
+        "tags": [
+          "growth-club",
+          "comments"
+        ],
+        "summary": "댓글 신고",
+        "description": "댓글을 신고합니다. 1회 이상 신고 시 자동 블라인드 처리됩니다.",
+        "operationId": "report_comment_api_v1_growth_club_comments__comment_id__report_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "comment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "신고할 댓글 ID",
+              "title": "Comment Id"
+            },
+            "description": "신고할 댓글 ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "신고 결과와 블라인드 상태를 반환합니다.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/community/posts": {
       "get": {
         "tags": [
@@ -1856,6 +2202,18 @@
             "description": "카테고리 필터 (`all`이면 전체)"
           },
           {
+            "name": "search_type",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "검색 기준 (all, title, content)",
+              "default": "all",
+              "title": "Search Type"
+            },
+            "description": "검색 기준 (all, title, content)"
+          },
+          {
             "name": "search",
             "in": "query",
             "required": false,
@@ -1868,10 +2226,10 @@
                   "type": "null"
                 }
               ],
-              "description": "제목/내용 검색어",
+              "description": "검색어",
               "title": "Search"
             },
-            "description": "제목/내용 검색어"
+            "description": "검색어"
           }
         ],
         "responses": {
@@ -2024,6 +2382,16 @@
             "description": "신고할 게시글 ID"
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "신고 처리 결과와 누적 신고 수를 반환합니다.",
@@ -2176,6 +2544,284 @@
             "content": {
               "application/json": {
                 "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/community/comments/{comment_id}/report": {
+      "post": {
+        "tags": [
+          "community",
+          "comments"
+        ],
+        "summary": "댓글 신고",
+        "description": "댓글을 신고합니다. 1회 이상 신고 시 자동 블라인드 처리됩니다.",
+        "operationId": "report_comment_api_v1_community_comments__comment_id__report_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "comment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "신고할 댓글 ID",
+              "title": "Comment Id"
+            },
+            "description": "신고할 댓글 ID"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReportRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "신고 결과와 블라인드 상태를 반환합니다.",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications": {
+      "get": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "List Notifications",
+        "description": "현재 사용자의 알림 목록을 최신순으로 조회합니다.\n7일 이내의 알림만 노출하며, 삭제된 알림은 제외합니다.\n공지사항의 경우 'published' 상태인 것만 노출합니다.",
+        "operationId": "list_notifications_api_v1_notifications_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NotificationRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Notifications Api V1 Notifications Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/read-all": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Mark All As Read",
+        "description": "현재 사용자의 모든 알림을 읽음 처리합니다.",
+        "operationId": "mark_all_as_read_api_v1_notifications_read_all_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/{notification_id}/read": {
+      "post": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Mark As Read",
+        "description": "특정 알림을 읽음 처리합니다.",
+        "operationId": "mark_as_read_api_v1_notifications__notification_id__read_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Notification Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/notifications/{notification_id}": {
+      "delete": {
+        "tags": [
+          "notifications"
+        ],
+        "summary": "Delete Notification",
+        "description": "특정 알림을 삭제(숨김) 처리합니다.",
+        "operationId": "delete_notification_api_v1_notifications__notification_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "notification_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Notification Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/announcements": {
+      "get": {
+        "tags": [
+          "announcements"
+        ],
+        "summary": "공지사항 목록 조회",
+        "description": "게시 중인 모든 공지사항을 최신순으로 조회합니다.",
+        "operationId": "list_published_announcements_api_v1_announcements_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AnnouncementItem"
+                  },
+                  "type": "array",
+                  "title": "Response List Published Announcements Api V1 Announcements Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/announcements/{announcement_id}": {
+      "get": {
+        "tags": [
+          "announcements"
+        ],
+        "summary": "공지사항 상세 조회",
+        "description": "특정 공지사항의 상세 내용을 조회합니다.",
+        "operationId": "get_published_announcement_api_v1_announcements__announcement_id__get",
+        "parameters": [
+          {
+            "name": "announcement_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "조회할 공지 ID",
+              "title": "Announcement Id"
+            },
+            "description": "조회할 공지 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnnouncementItem"
+                }
               }
             }
           },
@@ -2379,7 +3025,7 @@
           "ops"
         ],
         "summary": "사용자 일괄 상태 변경",
-        "description": "여러 명의 사용자 상태를 한꺼번에 변경합니다.",
+        "description": "여러 명의 사용자 상태를 한꺼번에 변경하고 감사로그를 남깁니다.",
         "operationId": "bulk_update_ops_users_status_api_v1_ops_users_bulk_status_patch",
         "requestBody": {
           "content": {
@@ -2428,7 +3074,7 @@
           "ops"
         ],
         "summary": "사용자 상태 변경",
-        "description": "운영자가 사용자의 계정 상태(활성/정지 등)를 변경합니다.",
+        "description": "운영자가 사용자의 계정 상태(활성/정지 등)를 변경하고 감사로그를 남깁니다.",
         "operationId": "update_ops_user_status_api_v1_ops_users__user_id__status_patch",
         "security": [
           {
@@ -2563,14 +3209,45 @@
         ]
       }
     },
-    "/api/v1/ops/growth-club/posts/{post_id}/moderate": {
-      "patch": {
+    "/api/v1/ops/growth-club/posts/blinded": {
+      "get": {
         "tags": [
           "ops"
         ],
-        "summary": "운영 그로스클럽 게시글 조치",
-        "description": "게시글 블라인드/해제/삭제 조치를 수행하고 감사로그를 남깁니다.",
-        "operationId": "moderate_growth_club_post_api_v1_ops_growth_club_posts__post_id__moderate_patch",
+        "summary": "블라인드 게시글 목록 조회",
+        "description": "운영자에 의해 또는 자동 신고로 블라인드 처리된 게시글 목록을 조회합니다.",
+        "operationId": "list_blinded_posts_api_v1_ops_growth_club_posts_blinded_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GrowthClubPostRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Blinded Posts Api V1 Ops Growth Club Posts Blinded Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ops/growth-club/posts/{post_id}/unblind": {
+      "post": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "게시글 블라인드 해제",
+        "description": "블라인드 처리된 게시글을 다시 활성화하여 모든 사용자에게 보이게 합니다.",
+        "operationId": "unblind_post_api_v1_ops_growth_club_posts__post_id__unblind_post",
         "security": [
           {
             "OAuth2PasswordBearer": []
@@ -2583,10 +3260,137 @@
             "required": true,
             "schema": {
               "type": "integer",
-              "description": "조치할 게시글 ID",
+              "description": "블라인드 해제할 게시글 ID",
               "title": "Post Id"
             },
-            "description": "조치할 게시글 ID"
+            "description": "블라인드 해제할 게시글 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ops/growth-club/comments/blinded": {
+      "get": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "블라인드 댓글 목록 조회",
+        "description": "신고로 인해 블라인드 처리된 댓글 목록을 조회합니다.",
+        "operationId": "list_blinded_comments_api_v1_ops_growth_club_comments_blinded_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/GrowthClubCommentRead"
+                  },
+                  "type": "array",
+                  "title": "Response List Blinded Comments Api V1 Ops Growth Club Comments Blinded Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ops/growth-club/comments/{comment_id}/unblind": {
+      "post": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "댓글 블라인드 해제",
+        "description": "블라인드 처리된 댓글을 다시 활성화합니다.",
+        "operationId": "unblind_comment_api_v1_ops_growth_club_comments__comment_id__unblind_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "comment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "블라인드 해제할 댓글 ID",
+              "title": "Comment Id"
+            },
+            "description": "블라인드 해제할 댓글 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ops/growth-club/users/{user_id}/suspend": {
+      "post": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "작성자 정지",
+        "description": "작성자를 정지하여 그로스 클럽 활동을 제한합니다.",
+        "operationId": "suspend_user_api_v1_ops_growth_club_users__user_id__suspend_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "정지할 사용자 ID",
+              "title": "User Id"
+            },
+            "description": "정지할 사용자 ID"
           }
         ],
         "requestBody": {
@@ -2594,21 +3398,161 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/OpsGrowthClubModerateRequest"
+                "$ref": "#/components/schemas/SuspendRequest"
               }
             }
           }
         },
         "responses": {
           "200": {
-            "description": "조치 결과를 반환합니다.",
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
             "content": {
               "application/json": {
                 "schema": {
-                  "type": "object",
-                  "additionalProperties": true,
-                  "title": "Response Moderate Growth Club Post Api V1 Ops Growth Club Posts  Post Id  Moderate Patch"
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ops/growth-club/users/{user_id}/unsuspend": {
+      "post": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "작성자 정지 해제",
+        "description": "정지된 작성자를 원래 상태로 복구합니다.",
+        "operationId": "unsuspend_user_api_v1_ops_growth_club_users__user_id__unsuspend_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "user_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "정지 해제할 사용자 ID",
+              "title": "User Id"
+            },
+            "description": "정지 해제할 사용자 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ops/growth-club/posts/{post_id}": {
+      "delete": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "블라인드 게시글 영구 삭제",
+        "description": "블라인드 처리된 게시글을 영구적으로 삭제합니다.",
+        "operationId": "delete_blinded_post_api_v1_ops_growth_club_posts__post_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "post_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "삭제할 게시글 ID",
+              "title": "Post Id"
+            },
+            "description": "삭제할 게시글 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ops/growth-club/comments/{comment_id}": {
+      "delete": {
+        "tags": [
+          "ops"
+        ],
+        "summary": "블라인드 댓글 영구 삭제",
+        "description": "블라인드 처리된 댓글을 영구적으로 삭제합니다.",
+        "operationId": "delete_blinded_comment_api_v1_ops_growth_club_comments__comment_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "comment_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "description": "삭제할 댓글 ID",
+              "title": "Comment Id"
+            },
+            "description": "삭제할 댓글 ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -3762,22 +4706,18 @@
               "title": "Announcement Id"
             },
             "description": "상태를 변경할 공지 ID"
-          },
-          {
-            "name": "status",
-            "in": "query",
-            "required": true,
-            "schema": {
-              "enum": [
-                "draft",
-                "published",
-                "archived"
-              ],
-              "type": "string",
-              "title": "Status"
-            }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnnouncementStatusUpdate"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "상태 변경된 운영 공지를 반환합니다.",
@@ -3808,7 +4748,7 @@
           "ops"
         ],
         "summary": "운영 감사로그 목록 조회",
-        "description": "운영자 조치 이력 목록을 조회합니다.",
+        "description": "운영자 조치 이력 목록을 조회합니다. 필터, 페이지네이션, 검색 지원.",
         "operationId": "get_audit_logs_api_v1_ops_audit_logs_get",
         "security": [
           {
@@ -3816,24 +4756,6 @@
           }
         ],
         "parameters": [
-          {
-            "name": "actor",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "description": "운영자 ID",
-              "title": "Actor"
-            },
-            "description": "운영자 ID"
-          },
           {
             "name": "action",
             "in": "query",
@@ -3847,10 +4769,10 @@
                   "type": "null"
                 }
               ],
-              "description": "액션 코드",
+              "description": "액션 타입 필터",
               "title": "Action"
             },
-            "description": "액션 코드"
+            "description": "액션 타입 필터"
           },
           {
             "name": "target_type",
@@ -3865,10 +4787,28 @@
                   "type": "null"
                 }
               ],
-              "description": "대상 타입",
+              "description": "대상 타입 필터",
               "title": "Target Type"
             },
-            "description": "대상 타입"
+            "description": "대상 타입 필터"
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "세부 내용, 대상자 검색",
+              "title": "Keyword"
+            },
+            "description": "세부 내용, 대상자 검색"
           },
           {
             "name": "from",
@@ -3884,10 +4824,10 @@
                   "type": "null"
                 }
               ],
-              "description": "시작 시각(ISO8601, timezone 없으면 UTC로 처리)",
+              "description": "시작 날짜 (ISO)",
               "title": "From"
             },
-            "description": "시작 시각(ISO8601, timezone 없으면 UTC로 처리)"
+            "description": "시작 날짜 (ISO)"
           },
           {
             "name": "to",
@@ -3903,10 +4843,10 @@
                   "type": "null"
                 }
               ],
-              "description": "종료 시각(ISO8601, timezone 없으면 UTC로 처리)",
+              "description": "종료 날짜 (ISO)",
               "title": "To"
             },
-            "description": "종료 시각(ISO8601, timezone 없으면 UTC로 처리)"
+            "description": "종료 날짜 (ISO)"
           },
           {
             "name": "page",
@@ -3915,11 +4855,11 @@
             "schema": {
               "type": "integer",
               "minimum": 1,
-              "description": "페이지 번호(1-base)",
+              "description": "페이지 번호",
               "default": 1,
               "title": "Page"
             },
-            "description": "페이지 번호(1-base)"
+            "description": "페이지 번호"
           },
           {
             "name": "size",
@@ -3927,22 +4867,63 @@
             "required": false,
             "schema": {
               "type": "integer",
-              "maximum": 200,
+              "maximum": 500,
               "minimum": 1,
-              "description": "페이지 크기",
+              "description": "페이지 사이즈",
               "default": 20,
               "title": "Size"
             },
-            "description": "페이지 크기"
+            "description": "페이지 사이즈"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "maximum": 500,
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "최대 조회 건수 (page/size 대신 사용)",
+              "title": "Limit"
+            },
+            "description": "최대 조회 건수 (page/size 대신 사용)"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 0
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "오프셋 (page/size 대신 사용)",
+              "title": "Offset"
+            },
+            "description": "오프셋 (page/size 대신 사용)"
           }
         ],
         "responses": {
           "200": {
-            "description": "운영 감사로그 목록을 반환합니다.",
+            "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/AuditLogList"
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Audit Logs Api V1 Ops Audit Logs Get"
                 }
               }
             }
@@ -4847,6 +5828,18 @@
             "format": "date-time",
             "title": "Created At"
           },
+          "published_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Published At"
+          },
           "updated_at": {
             "type": "string",
             "format": "date-time",
@@ -4882,6 +5875,36 @@
         ],
         "title": "AnnouncementList"
       },
+      "AnnouncementStatusUpdate": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ],
+            "title": "Status"
+          },
+          "audit_log_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Audit Log Reason",
+            "description": "상태 변경 사유"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "AnnouncementStatusUpdate"
+      },
       "AnnouncementUpdate": {
         "properties": {
           "title": {
@@ -4909,101 +5932,6 @@
         },
         "type": "object",
         "title": "AnnouncementUpdate"
-      },
-      "AuditLogItem": {
-        "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "admin_id": {
-            "type": "integer",
-            "title": "Admin Id"
-          },
-          "action": {
-            "type": "string",
-            "title": "Action"
-          },
-          "target_type": {
-            "type": "string",
-            "title": "Target Type"
-          },
-          "target_id": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Target Id"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reason"
-          },
-          "meta": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Meta"
-          },
-          "created_at": {
-            "type": "string",
-            "format": "date-time",
-            "title": "Created At"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "admin_id",
-          "action",
-          "target_type",
-          "target_id",
-          "reason",
-          "meta",
-          "created_at"
-        ],
-        "title": "AuditLogItem"
-      },
-      "AuditLogList": {
-        "properties": {
-          "items": {
-            "items": {
-              "$ref": "#/components/schemas/AuditLogItem"
-            },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
-          },
-          "page": {
-            "type": "integer",
-            "title": "Page"
-          },
-          "size": {
-            "type": "integer",
-            "title": "Size"
-          }
-        },
-        "type": "object",
-        "required": [
-          "items",
-          "total",
-          "page",
-          "size"
-        ],
-        "title": "AuditLogList"
       },
       "AuthorRead": {
         "properties": {
@@ -5044,6 +5972,33 @@
             ],
             "title": "Username"
           },
+          "nickname": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nickname"
+          },
+          "profile_img": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Img"
+          },
+          "is_public": {
+            "type": "boolean",
+            "title": "Is Public",
+            "default": true
+          },
           "neighborhood": {
             "anyOf": [
               {
@@ -5065,6 +6020,23 @@
               }
             ],
             "title": "Industry"
+          },
+          "is_suspended": {
+            "type": "boolean",
+            "title": "Is Suspended",
+            "default": false
+          },
+          "suspended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suspended At"
           }
         },
         "type": "object",
@@ -5284,6 +6256,17 @@
           "reason": {
             "type": "string",
             "title": "Reason"
+          },
+          "duration_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Days"
           }
         },
         "type": "object",
@@ -5472,6 +6455,18 @@
             "type": "string",
             "title": "Reason"
           },
+          "suspended_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suspended Until"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -5489,94 +6484,6 @@
           "created_at"
         ],
         "title": "DisciplineHistoryRead"
-      },
-      "GenerationRequest": {
-        "properties": {
-          "business_type": {
-            "type": "string",
-            "title": "Business Type"
-          },
-          "location": {
-            "type": "string",
-            "title": "Location"
-          },
-          "description": {
-            "type": "string",
-            "title": "Description",
-            "default": ""
-          },
-          "startup_type": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Startup Type"
-          },
-          "open_timeline": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Open Timeline"
-          },
-          "budget_range": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Budget Range"
-          },
-          "additional_notes": {
-            "type": "string",
-            "title": "Additional Notes",
-            "default": ""
-          }
-        },
-        "type": "object",
-        "required": [
-          "business_type",
-          "location"
-        ],
-        "title": "GenerationRequest"
-      },
-      "GenerationResponse": {
-        "properties": {
-          "roadmap_id": {
-            "type": "string",
-            "format": "uuid",
-            "title": "Roadmap Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "steps": {
-            "items": {
-              "$ref": "#/components/schemas/RoadmapStepResponse"
-            },
-            "type": "array",
-            "title": "Steps"
-          }
-        },
-        "type": "object",
-        "required": [
-          "roadmap_id",
-          "title",
-          "steps"
-        ],
-        "title": "GenerationResponse"
       },
       "GoogleLoginRequest": {
         "properties": {
@@ -5703,6 +6610,22 @@
           },
           "author": {
             "$ref": "#/components/schemas/AuthorRead"
+          },
+          "report_count": {
+            "type": "integer",
+            "title": "Report Count",
+            "default": 0
+          },
+          "report_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Reason"
           }
         },
         "type": "object",
@@ -5785,6 +6708,17 @@
           "report_count": {
             "type": "integer",
             "title": "Report Count"
+          },
+          "report_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Report Reason"
           },
           "likes_count": {
             "type": "integer",
@@ -5922,6 +6856,72 @@
         ],
         "title": "LawItem"
       },
+      "NotificationRead": {
+        "properties": {
+          "user_id": {
+            "type": "integer",
+            "title": "User Id"
+          },
+          "content": {
+            "type": "string",
+            "title": "Content"
+          },
+          "type": {
+            "type": "string",
+            "title": "Type"
+          },
+          "link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Link"
+          },
+          "is_read": {
+            "type": "boolean",
+            "title": "Is Read",
+            "default": false
+          },
+          "is_deleted": {
+            "type": "boolean",
+            "title": "Is Deleted",
+            "default": false
+          },
+          "resource_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Resource Id"
+          },
+          "id": {
+            "type": "integer",
+            "title": "Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "user_id",
+          "content",
+          "type",
+          "id",
+          "created_at"
+        ],
+        "title": "NotificationRead"
+      },
       "OpsActionKitItemStatusUpdateRequest": {
         "properties": {
           "is_active": {
@@ -5945,30 +6945,6 @@
           "is_active"
         ],
         "title": "OpsActionKitItemStatusUpdateRequest"
-      },
-      "OpsGrowthClubModerateRequest": {
-        "properties": {
-          "action": {
-            "type": "string",
-            "title": "Action"
-          },
-          "reason": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reason"
-          }
-        },
-        "type": "object",
-        "required": [
-          "action"
-        ],
-        "title": "OpsGrowthClubModerateRequest"
       },
       "OpsUserRead": {
         "properties": {
@@ -6018,6 +6994,18 @@
           "is_superuser": {
             "type": "boolean",
             "title": "Is Superuser"
+          },
+          "suspended_until": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suspended Until"
           },
           "created_at": {
             "type": "string",
@@ -6161,6 +7149,20 @@
         ],
         "title": "RelatedLawResponse"
       },
+      "ReportRequest": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "title": "Reason",
+            "description": "신고 사유"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason"
+        ],
+        "title": "ReportRequest"
+      },
       "RoadmapCreateRequest": {
         "properties": {
           "business_type": {
@@ -6186,6 +7188,17 @@
               }
             ],
             "title": "Startup Type"
+          },
+          "startup_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startup Method"
           },
           "open_timeline": {
             "anyOf": [
@@ -6243,6 +7256,10 @@
             "type": "string",
             "title": "Title"
           },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
           "steps": {
             "items": {
               "$ref": "#/components/schemas/RoadmapDetailStepResponse"
@@ -6255,6 +7272,7 @@
         "required": [
           "roadmap_id",
           "title",
+          "created_at",
           "steps"
         ],
         "title": "RoadmapDetailResponse"
@@ -6272,6 +7290,17 @@
           "status": {
             "type": "string",
             "title": "Status"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
           },
           "detail": {
             "anyOf": [
@@ -6415,6 +7444,17 @@
             ],
             "title": "Startup Type"
           },
+          "startup_method": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Startup Method"
+          },
           "open_timeline": {
             "anyOf": [
               {
@@ -6554,6 +7594,27 @@
         ],
         "title": "RoadmapJobResultResponse"
       },
+      "RoadmapListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RoadmapSummaryItem"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          }
+        },
+        "type": "object",
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "RoadmapListResponse"
+      },
       "RoadmapResponse": {
         "properties": {
           "roadmap_id": {
@@ -6667,6 +7728,39 @@
             "type": "string",
             "title": "Generation Mode"
           },
+          "source_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Count"
+          },
+          "has_fallback": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Has Fallback"
+          },
+          "mapping_source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mapping Source"
+          },
           "actions": {
             "items": {
               "$ref": "#/components/schemas/RoadmapStepActionResponse"
@@ -6722,6 +7816,93 @@
           "status"
         ],
         "title": "RoadmapStepStatusUpdateRequest"
+      },
+      "RoadmapSummaryItem": {
+        "properties": {
+          "roadmap_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Roadmap Id"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "business_type": {
+            "type": "string",
+            "title": "Business Type"
+          },
+          "location": {
+            "type": "string",
+            "title": "Location"
+          },
+          "created_at": {
+            "type": "string",
+            "title": "Created At"
+          },
+          "progress": {
+            "type": "integer",
+            "title": "Progress"
+          },
+          "total_steps": {
+            "type": "integer",
+            "title": "Total Steps"
+          },
+          "completed_steps": {
+            "type": "integer",
+            "title": "Completed Steps"
+          }
+        },
+        "type": "object",
+        "required": [
+          "roadmap_id",
+          "title",
+          "business_type",
+          "location",
+          "created_at",
+          "progress",
+          "total_steps",
+          "completed_steps"
+        ],
+        "title": "RoadmapSummaryItem"
+      },
+      "RoadmapUpdateRequest": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Title"
+          }
+        },
+        "type": "object",
+        "required": [
+          "title"
+        ],
+        "title": "RoadmapUpdateRequest"
+      },
+      "SuspendRequest": {
+        "properties": {
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          },
+          "target_type": {
+            "type": "string",
+            "title": "Target Type"
+          },
+          "target_id": {
+            "type": "integer",
+            "title": "Target Id"
+          }
+        },
+        "type": "object",
+        "required": [
+          "reason",
+          "target_type",
+          "target_id"
+        ],
+        "title": "SuspendRequest"
       },
       "TeamRead": {
         "properties": {
@@ -7041,6 +8222,34 @@
             "title": "Is Superuser",
             "default": false
           },
+          "is_suspended": {
+            "type": "boolean",
+            "title": "Is Suspended",
+            "default": false
+          },
+          "suspended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suspended At"
+          },
+          "suspension_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Suspension Reason"
+          },
           "id": {
             "type": "integer",
             "title": "Id"
@@ -7062,6 +8271,17 @@
           "reason": {
             "type": "string",
             "title": "Reason"
+          },
+          "duration_days": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Days"
           }
         },
         "type": "object",

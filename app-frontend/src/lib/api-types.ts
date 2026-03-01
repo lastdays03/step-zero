@@ -148,6 +148,7 @@ export type AnnouncementItem = {
   "created_by": number;
   "updated_by": number;
   "created_at": string;
+  "published_at"?: string | unknown;
   "updated_at": string;
 };
 
@@ -155,29 +156,14 @@ export type AnnouncementList = {
   "items": AnnouncementItem[];
 };
 
+export type AnnouncementStatusUpdate = {
+  "status": "draft" | "published" | "archived";
+  "audit_log_reason"?: string | unknown;
+};
+
 export type AnnouncementUpdate = {
   "title"?: string | unknown;
   "content"?: string | unknown;
-};
-
-export type AuditLogItem = {
-  "id": number;
-  "admin_id": number;
-  "action": string;
-  "target_type": string;
-  "target_id": string | unknown;
-  "reason": string | unknown;
-  "meta": {
-  [key: string]: unknown;
-};
-  "created_at": string;
-};
-
-export type AuditLogList = {
-  "items": AuditLogItem[];
-  "total": number;
-  "page": number;
-  "size": number;
 };
 
 export type AuthorRead = {
@@ -185,8 +171,13 @@ export type AuthorRead = {
   "full_name"?: string | unknown;
   "email"?: string | unknown;
   "username"?: string | unknown;
+  "nickname"?: string | unknown;
+  "profile_img"?: string | unknown;
+  "is_public"?: boolean;
   "neighborhood"?: string | unknown;
   "industry"?: string | unknown;
+  "is_suspended"?: boolean;
+  "suspended_at"?: string | unknown;
 };
 
 export type Body_create_post_api_v1_community_posts_post = {
@@ -230,6 +221,7 @@ export type BulkStatusUpdateRequest = {
   "user_ids": number[];
   "status": string;
   "reason": string;
+  "duration_days"?: number | unknown;
 };
 
 export type ChatRequest = {
@@ -278,23 +270,8 @@ export type DisciplineHistoryRead = {
   "prev_status": string;
   "new_status": string;
   "reason": string;
+  "suspended_until"?: string | unknown;
   "created_at": string;
-};
-
-export type GenerationRequest = {
-  "business_type": string;
-  "location": string;
-  "description"?: string;
-  "startup_type"?: string | unknown;
-  "open_timeline"?: string | unknown;
-  "budget_range"?: string | unknown;
-  "additional_notes"?: string;
-};
-
-export type GenerationResponse = {
-  "roadmap_id": string;
-  "title": string;
-  "steps": RoadmapStepResponse[];
 };
 
 export type GoogleLoginRequest = {
@@ -323,6 +300,8 @@ export type GrowthClubCommentRead = {
   "author_id": number;
   "created_at": string;
   "author": AuthorRead;
+  "report_count"?: number;
+  "report_reason"?: string | unknown;
 };
 
 export type GrowthClubPostRead = {
@@ -338,6 +317,7 @@ export type GrowthClubPostRead = {
   "comments"?: GrowthClubCommentRead[];
   "attachments"?: GrowthClubAttachmentRead[];
   "report_count": number;
+  "report_reason"?: string | unknown;
   "likes_count"?: number;
   "is_liked"?: boolean;
 };
@@ -369,13 +349,20 @@ export type LawItem = {
   "highlights"?: string[] | unknown;
 };
 
-export type OpsActionKitItemStatusUpdateRequest = {
-  "is_active": boolean;
-  "reason"?: string | unknown;
+export type NotificationRead = {
+  "user_id": number;
+  "content": string;
+  "type": string;
+  "link"?: string | unknown;
+  "is_read"?: boolean;
+  "is_deleted"?: boolean;
+  "resource_id"?: number | unknown;
+  "id": number;
+  "created_at": string;
 };
 
-export type OpsGrowthClubModerateRequest = {
-  "action": string;
+export type OpsActionKitItemStatusUpdateRequest = {
+  "is_active": boolean;
   "reason"?: string | unknown;
 };
 
@@ -388,6 +375,7 @@ export type OpsUserRead = {
   "last_login_at": string | unknown;
   "is_active": boolean;
   "is_superuser": boolean;
+  "suspended_until"?: string | unknown;
   "created_at": string;
 };
 
@@ -420,11 +408,16 @@ export type RelatedLawResponse = {
   "sort_order": number;
 };
 
+export type ReportRequest = {
+  "reason": string;
+};
+
 export type RoadmapCreateRequest = {
   "business_type": string;
   "location": string;
   "description"?: string;
   "startup_type"?: string | unknown;
+  "startup_method"?: string | unknown;
   "open_timeline"?: string | unknown;
   "budget_range"?: string | unknown;
   "additional_notes"?: string;
@@ -435,6 +428,7 @@ export type RoadmapCreateRequest = {
 export type RoadmapDetailResponse = {
   "roadmap_id": string;
   "title": string;
+  "created_at": string;
   "steps": RoadmapDetailStepResponse[];
 };
 
@@ -442,6 +436,7 @@ export type RoadmapDetailStepResponse = {
   "id": number;
   "title": string;
   "status": string;
+  "completed_at"?: string | unknown;
   "detail"?: RoadmapStepDetailResponse | unknown;
 };
 
@@ -470,6 +465,7 @@ export type RoadmapJobCreateRequest = {
   "location": string;
   "description"?: string;
   "startup_type"?: string | unknown;
+  "startup_method"?: string | unknown;
   "open_timeline"?: string | unknown;
   "budget_range"?: string | unknown;
   "additional_notes"?: string;
@@ -491,6 +487,11 @@ export type RoadmapJobResultResponse = {
   "job_id": string;
   "status": string;
   "roadmap_id"?: string | unknown;
+};
+
+export type RoadmapListResponse = {
+  "items": RoadmapSummaryItem[];
+  "total": number;
 };
 
 export type RoadmapResponse = {
@@ -521,6 +522,9 @@ export type RoadmapStepDetailResponse = {
   "estimated_days": number;
   "risk_notes": string[];
   "generation_mode": string;
+  "source_count"?: number | unknown;
+  "has_fallback"?: boolean | unknown;
+  "mapping_source"?: string | unknown;
   "actions": RoadmapStepActionResponse[];
 };
 
@@ -532,6 +536,27 @@ export type RoadmapStepResponse = {
 
 export type RoadmapStepStatusUpdateRequest = {
   "status": string;
+};
+
+export type RoadmapSummaryItem = {
+  "roadmap_id": string;
+  "title": string;
+  "business_type": string;
+  "location": string;
+  "created_at": string;
+  "progress": number;
+  "total_steps": number;
+  "completed_steps": number;
+};
+
+export type RoadmapUpdateRequest = {
+  "title": string;
+};
+
+export type SuspendRequest = {
+  "reason": string;
+  "target_type": string;
+  "target_id": number;
 };
 
 export type TeamRead = {
@@ -584,12 +609,16 @@ export type UserRead = {
   "full_name"?: string | unknown;
   "is_active"?: boolean;
   "is_superuser"?: boolean;
+  "is_suspended"?: boolean;
+  "suspended_at"?: string | unknown;
+  "suspension_reason"?: string | unknown;
   "id": number;
 };
 
 export type UserStatusUpdateRequest = {
   "status": string;
   "reason": string;
+  "duration_days"?: number | unknown;
 };
 
 export type ValidationError = {
