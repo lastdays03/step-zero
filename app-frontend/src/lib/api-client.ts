@@ -16,7 +16,6 @@ export const apiClient = axios.create({
 // --- Silent Refresh Infrastructure ---
 
 let isRefreshing = false;
-let suppressAuthEvent = false;
 let failedQueue: {
     resolve: (token: string) => void;
     reject: (error: unknown) => void;
@@ -40,12 +39,7 @@ function clearAuthState() {
     localStorage.removeItem("current_team_id");
     localStorage.removeItem(ROADMAP_JOB_STORAGE_KEY);
     window.dispatchEvent(new Event(ROADMAP_POLLING_CLEARED_EVENT));
-    // Skip dispatching the auth event when called from a failed refresh to
-    // prevent an infinite loop: clearAuthState → auth event → loadData → 401
-    // → refresh → clearAuthState → …
-    if (!suppressAuthEvent) {
-        window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
-    }
+    window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
 }
 
 // --- Interceptors ---
@@ -132,11 +126,14 @@ apiClient.interceptors.response.use(
             return apiClient(originalRequest);
         } catch (refreshError) {
             // Refresh failed — clear everything and log out.
-            // Suppress the auth event to avoid an infinite retry loop.
+            // The infinite-loop concern (clearAuthState → auth event → loadData
+            // → 401 → refresh → clearAuthState) does NOT apply because:
+            //   1. clearAuthState() removes the token from localStorage
+            //   2. Subsequent 401 responses hit `!localStorage.getItem("token")`
+            //      guard above and simply reject without calling clearAuthState again
+            //   3. Components check `user` state and skip API calls when null
             processQueue(refreshError, null);
-            suppressAuthEvent = true;
             clearAuthState();
-            suppressAuthEvent = false;
             return Promise.reject(refreshError);
         } finally {
             isRefreshing = false;
