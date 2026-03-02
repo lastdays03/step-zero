@@ -1,7 +1,7 @@
 "use client";
 
 import type { Ref } from "react";
-import { Trash2, X } from "lucide-react";
+import { Info, Trash2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { ChatMessage } from "../types/chat";
 import { ChatMessageList } from "./ChatMessageList";
@@ -9,9 +9,12 @@ import { ChatInput } from "./ChatInput";
 
 interface ChatPanelProps {
   messages: ChatMessage[];
+  isStreaming: boolean;
   isLoading: boolean;
   error: string | null;
   input: string;
+  hasCoachContext: boolean;
+  stepTitle: string | null;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onClear: () => void;
@@ -21,9 +24,12 @@ interface ChatPanelProps {
 
 export function ChatPanel({
   messages,
+  isStreaming,
   isLoading,
   error,
   input,
+  hasCoachContext,
+  stepTitle,
   onInputChange,
   onSend,
   onClear,
@@ -38,7 +44,16 @@ export function ChatPanel({
           <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-[#36a4f2] to-purple-400 flex items-center justify-center">
             <span className="text-[10px] text-white font-bold">AI</span>
           </div>
-          <h3 className="text-sm font-bold text-slate-800">AI 어시스턴트</h3>
+          <div className="min-w-0">
+            <h3 className="text-sm font-bold text-slate-800">
+              {hasCoachContext ? "AI 코치" : "AI 어시스턴트"}
+            </h3>
+            {hasCoachContext && stepTitle && (
+              <p className="text-[11px] text-slate-500 truncate">
+                {stepTitle}
+              </p>
+            )}
+          </div>
         </div>
         <div className="flex items-center gap-1">
           <Button
@@ -65,7 +80,9 @@ export function ChatPanel({
       {/* Messages */}
       <ChatMessageList
         messages={messages}
+        isStreaming={isStreaming}
         isLoading={isLoading}
+        hasCoachContext={hasCoachContext}
         scrollRef={scrollRef}
       />
 
@@ -76,12 +93,19 @@ export function ChatPanel({
         </div>
       )}
 
+      {/* 면책 고지 */}
+      <div className="px-4 py-2 text-xs text-slate-400 border-t border-slate-100 bg-slate-50/80">
+        <Info className="w-3 h-3 inline mr-1 -mt-0.5" />
+        AI가 생성한 정보이며, 정확성을 보장하지 않습니다. 중요한 결정은 전문가와
+        상담하세요.
+      </div>
+
       {/* Input */}
       <ChatInput
         value={input}
         onChange={onInputChange}
         onSend={onSend}
-        isLoading={isLoading}
+        isLoading={isStreaming}
       />
     </div>
   );

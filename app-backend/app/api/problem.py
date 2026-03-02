@@ -1,3 +1,4 @@
+import json as _json
 from typing import Any
 
 from fastapi import HTTPException, Request
@@ -54,11 +55,13 @@ async def http_exception_to_problem(
 async def validation_exception_to_problem(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
+    # exc.errors() ctx may contain non-serializable objects (e.g. ValueError)
+    errors = _json.loads(_json.dumps(exc.errors(), default=str))
     return problem_response(
         request=request,
         status_code=422,
         title="Validation Error",
         detail="Request validation failed",
         type_uri="https://stepzero.dev/problems/validation-error",
-        extra={"errors": exc.errors()},
+        extra={"errors": errors},
     )

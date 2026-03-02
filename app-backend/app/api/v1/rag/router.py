@@ -1,16 +1,27 @@
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api import deps
 from app.api.v1.schemas import (
     ChatRequest,
     ChatResponse,
     RagQueryRequest,
     RagQueryResponse,
+    UnifiedChatRequest,
 )
+from app.core.db import get_session
 from app.features.rag.application.chat_service import ChatService
-from app.features.rag.application.deps import get_chat_service, get_rag_service
+from app.features.rag.application.deps import (
+    get_chat_service,
+    get_rag_service,
+    get_unified_chat_service,
+)
 from app.features.rag.application.rag_service import RagService
+from app.models.team import Team
+from app.models.user import AuthenticatedUser
 
 router = APIRouter()
 
@@ -57,3 +68,36 @@ async def chat(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Chat service unavailable",
         )
+
+
+@router.post(
+    "/chat/stream",
+    summary="통합 AI 챗 SSE 스트리밍",
+    description="글로벌 챗봇과 AI 코치를 통합하는 SSE 스트리밍 엔드포인트. "
+    "roadmap_id + step_id를 함께 보내면 AI 코치 모드, 없으면 글로벌 챗봇 모드.",
+    response_description="text/event-stream SSE 응답",
+)
+async def unified_chat_stream(
+    request: UnifiedChatRequest,
+    current_user: AuthenticatedUser = Depends(deps.get_current_user),
+    current_team: Team = Depends(deps.get_current_team),
+    session: AsyncSession = Depends(get_session),
+) -> StreamingResponse:
+    service = get_unified_chat_service(session)
+
+    return StreamingResponse(
+        service.stream(
+            message=request.message,
+            user_id=current_user.id,
+            team_id=current_team.id,
+            roadmap_id=request.roadmap_id,
+            step_id=request.step_id,
+            thread_id=request.thread_id,
+        ),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
