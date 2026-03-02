@@ -126,7 +126,7 @@ class AuthService:
             result = await self.refresh_token_repo.session.execute(
                 select(RefreshToken).where(RefreshToken.token_hash == token_hash)
             )
-            revoked_token = result.scalar_one_or_none()
+            revoked_token = result.scalars().first()
             if revoked_token and revoked_token.revoked:
                 # Reuse detected — revoke all tokens for this user
                 await self.refresh_token_repo.revoke_all_for_user(revoked_token.user_id)
