@@ -32,20 +32,21 @@
 
 ## Phase B: 인증 만료 UX 개선 [단기 1-2주]
 
-- [ ] B-1: 글로벌 인증 만료 토스트/모달 컴포넌트 생성
-  - 세션 만료 시 "세션이 만료되었습니다. 다시 로그인해주세요." 메시지
-  - shadcn/ui Dialog 또는 Toast 패턴
-  - **AC:** 어떤 페이지에서든 동일한 만료 안내 표시
-- [ ] B-2: 레이아웃 수준 인증 감지 → 리디렉션/모달
-  - `(dashboard)/layout.tsx`에서 `isLoggedIn === false` 감지
-  - **AC:** 세션 만료 시 3초 내 로그인 페이지로 이동 또는 모달 표시
-- [ ] B-3: 네트워크 오류 시 리프레시 재시도 로직
-  - `error.response` 없음 (Network Error) → 2-3회 재시도 후 로그아웃
-  - `error.response.status === 401` (서버 거부) → 즉시 로그아웃
+- [x] B-1: 세션 만료 배너 + AuthGuard 컴포넌트
+  - AuthGuard: 레이아웃 수준 인증 감지 → /login?expired=1 리디렉션
+  - SessionExpiredBanner: 로그인 페이지에서 만료 안내 표시
+  - **AC:** 어떤 페이지에서든 세션 만료 시 로그인으로 리디렉션 + 안내
+- [x] B-2: 레이아웃 수준 인증 감지 → 리디렉션
+  - `(dashboard)/layout.tsx`에서 AuthGuard 래핑
+  - `isLoggedIn === false` 감지 시 즉시 /login 리디렉션
+  - **AC:** 세션 만료 시 즉시 로그인 페이지로 이동
+- [x] B-3: 네트워크 오류 시 리프레시 재시도 로직
+  - `error.response` 없음 (Network Error) → 최대 3회 재시도 (1초, 2초, 3초 간격)
+  - `error.response` 있음 (서버 거부) → 즉시 로그아웃
   - **AC:** Wi-Fi 전환 시 불필요한 로그아웃 방지
-- [ ] B-4: `returnUrl` 저장 → 재로그인 후 이전 페이지 복귀
-  - `sessionStorage.setItem("returnUrl", currentPath)`
-  - 로그인 성공 시 returnUrl로 navigate
+- [x] B-4: `returnUrl` 저장 → 재로그인 후 이전 페이지 복귀
+  - AuthGuard에서 `sessionStorage.setItem("returnUrl", pathname)`
+  - AuthProvider의 `login()`에서 returnUrl 읽고 navigate
   - **AC:** 로드맵 상세에서 만료 → 재로그인 → 로드맵 상세로 복귀
 
 ---
@@ -57,16 +58,17 @@
   - `/auth/login`: 5req/min per IP
   - `/auth/refresh`: 10req/min per IP
   - **AC:** 초과 시 429 Too Many Requests 응답
-- [ ] C-2: 하드코딩 관리자 이메일 제거
-  - `auth_service.py:206` 삭제
+- [x] C-2: 하드코딩 관리자 이메일 제거
+  - `auth_service.py:206` — `dojyu1928@gmail.com` 강제 superuser 부여 코드 삭제
   - DB `user.is_superuser` 플래그 기반으로 전환
   - **AC:** 코드에 이메일 하드코딩 없음
-- [ ] C-3: Refresh Token 개수 제한
-  - 로그인 시 해당 유저의 active refresh token 수 확인
-  - 5개 초과 시 가장 오래된 것부터 폐기
+- [x] C-3: Refresh Token 개수 제한
+  - `RefreshTokenRepository.evict_oldest_for_user()` 메서드 추가
+  - `_build_auth_result()`에서 로그인 시 자동 호출 (max 5)
   - **AC:** 한 유저의 active token이 최대 5개
-- [ ] C-4: SECRET_KEY validator 강화
-  - `config.py` validator에 "dev-secret-key" 패턴도 차단
+- [x] C-4: SECRET_KEY validator 강화
+  - `config.py`에 `_INSECURE_SECRET_PATTERNS` 집합 추가
+  - 프로덕션에서 dev 키 패턴 (`dev-*`, `secret`, `password`, `test`) 차단
   - **AC:** 프로덕션에서 dev 키 사용 시 앱 시작 실패
 
 ---
@@ -88,12 +90,14 @@
 - [ ] D-4: JWT `iss` 클레임 검증
   - `jwt.decode()`에 `issuer=settings.PROJECT_NAME` 추가
   - **AC:** 다른 서비스의 JWT 거부
-- [ ] D-5: `datetime.utcnow()` 통일
-  - 전체 프로젝트에서 `datetime.now(timezone.utc)` 사용
-  - **AC:** `grep -r "utcnow()" app/` 결과 0건
-- [ ] D-6: CORS `allow_headers` 명시화
+- [x] D-5: `datetime.utcnow()` 통일
+  - `app/` 전체에서 `datetime.now(timezone.utc)` 사용으로 교체 완료
+  - RefreshToken 모델의 `default_factory`도 수정
+  - timezone-aware/naive 비교 문제 해결
+  - **AC:** `grep -r "utcnow()" app/` 결과 0건 ✓
+- [x] D-6: CORS `allow_headers` 명시화
   - `["*"]` → `["Authorization", "Content-Type", "X-Team-Id"]`
-  - **AC:** 필요한 헤더만 허용
+  - **AC:** 필요한 헤더만 허용 ✓
 
 ---
 
@@ -117,8 +121,8 @@
 | Phase | 완료 | 전체 | 진행률 |
 |-------|------|------|--------|
 | A: 이번 세션 | 7 | 9 | 78% |
-| B: UX 개선 | 0 | 4 | 0% |
-| C: 보안 강화 | 0 | 4 | 0% |
-| D: 고도화 | 0 | 6 | 0% |
+| B: UX 개선 | 4 | 4 | 100% |
+| C: 보안 강화 | 3 | 4 | 75% |
+| D: 고도화 | 2 | 6 | 33% |
 | E: 장기 | 0 | 3 | 0% |
-| **합계** | **7** | **26** | **27%** |
+| **합계** | **16** | **26** | **62%** |

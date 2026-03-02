@@ -1,4 +1,6 @@
 from datetime import datetime
+
+from app.core.security import utc_now
 from typing import Literal
 
 import sqlalchemy as sa
@@ -101,7 +103,7 @@ async def update_announcement(
     if content is not None:
         row.content = content
     row.updated_by = actor_id
-    row.updated_at = datetime.utcnow()
+    row.updated_at = utc_now()
     session.add(row)
     await session.flush()
     await session.refresh(row)
@@ -126,9 +128,9 @@ async def update_announcement_status(
     old_status = row.status
     row.status = status
     if status == "published" and row.published_at is None:
-        row.published_at = datetime.utcnow()
+        row.published_at = utc_now()
     row.updated_by = actor_id
-    row.updated_at = datetime.utcnow()
+    row.updated_at = utc_now()
     session.add(row)
     await session.flush()
     await session.refresh(row)

@@ -109,32 +109,45 @@ apiClient.interceptors.response.use(
         originalRequest._retry = true;
 
         try {
-            // Use raw axios to avoid interceptor recursion
-            const response = await axios.post(`${baseURL}/auth/refresh`, {
-                refresh_token: refreshToken,
-            });
+            // Use raw axios to avoid interceptor recursion.
+            // Retry up to 3 times on network errors (no server response),
+            // but fail immediately on server rejection (4xx/5xx).
+            const MAX_REFRESH_RETRIES = 3;
+            let lastError: unknown = null;
 
-            const { access_token, refresh_token: newRefreshToken } = response.data;
+            for (let attempt = 0; attempt < MAX_REFRESH_RETRIES; attempt++) {
+                try {
+                    const response = await axios.post(`${baseURL}/auth/refresh`, {
+                        refresh_token: refreshToken,
+                    });
 
-            localStorage.setItem("token", access_token);
-            localStorage.setItem("refresh_token", newRefreshToken);
-            window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
+                    const { access_token, refresh_token: newRefreshToken } = response.data;
 
-            // Retry original request + queued requests
-            processQueue(null, access_token);
-            originalRequest.headers.Authorization = `Bearer ${access_token}`;
-            return apiClient(originalRequest);
-        } catch (refreshError) {
-            // Refresh failed — clear everything and log out.
-            // The infinite-loop concern (clearAuthState → auth event → loadData
-            // → 401 → refresh → clearAuthState) does NOT apply because:
-            //   1. clearAuthState() removes the token from localStorage
-            //   2. Subsequent 401 responses hit `!localStorage.getItem("token")`
-            //      guard above and simply reject without calling clearAuthState again
-            //   3. Components check `user` state and skip API calls when null
-            processQueue(refreshError, null);
+                    localStorage.setItem("token", access_token);
+                    localStorage.setItem("refresh_token", newRefreshToken);
+                    window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
+
+                    processQueue(null, access_token);
+                    originalRequest.headers.Authorization = `Bearer ${access_token}`;
+                    return apiClient(originalRequest);
+                } catch (err) {
+                    lastError = err;
+                    const axiosErr = err as AxiosError;
+                    // Server responded with an error (token invalid/expired) → no retry
+                    if (axiosErr.response) {
+                        break;
+                    }
+                    // Network error (no response) → retry after short delay
+                    if (attempt < MAX_REFRESH_RETRIES - 1) {
+                        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+                    }
+                }
+            }
+
+            // All retries exhausted or server rejected — log out
+            processQueue(lastError, null);
             clearAuthState();
-            return Promise.reject(refreshError);
+            return Promise.reject(lastError);
         } finally {
             isRefreshing = false;
         }

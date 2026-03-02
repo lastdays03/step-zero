@@ -1,4 +1,6 @@
 from datetime import datetime
+
+from app.core.security import utc_now
 from uuid import UUID
 
 from sqlalchemy import func
@@ -317,7 +319,7 @@ class RoadmapRepository:
         roadmap = await self.get_by_id_for_team(roadmap_id, team_id)
         if not roadmap:
             return False
-        roadmap.deleted_at = datetime.utcnow()
+        roadmap.deleted_at = utc_now()
         self.session.add(roadmap)
         await self.session.flush()
         return True
@@ -329,7 +331,7 @@ class RoadmapRepository:
         if not roadmap:
             return None
         roadmap.title = new_title
-        roadmap.updated_at = datetime.utcnow()
+        roadmap.updated_at = utc_now()
         self.session.add(roadmap)
         await self.session.flush()
         return roadmap

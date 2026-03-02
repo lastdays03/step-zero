@@ -73,15 +73,25 @@ class Settings(BaseSettings):
         }
         return None if cleaned in placeholders else cleaned
 
+    _INSECURE_SECRET_PATTERNS = {
+        "CHANGE_ME_IN_PROD",
+        "dev-secret-key-change-me",
+        "secret",
+        "password",
+        "test",
+    }
+
     @model_validator(mode="after")
     def validate_security(self) -> "Settings":
         if not self.SECRET_KEY.strip():
             raise ValueError("SECRET_KEY must be set")
-        if (
-            self.ENVIRONMENT.lower() == "production"
-            and self.SECRET_KEY == "CHANGE_ME_IN_PROD"
-        ):
-            raise ValueError("SECRET_KEY must not use a default value in production")
+        if self.ENVIRONMENT.lower() == "production":
+            key_lower = self.SECRET_KEY.strip().lower()
+            for pattern in self._INSECURE_SECRET_PATTERNS:
+                if key_lower == pattern.lower() or key_lower.startswith("dev-"):
+                    raise ValueError(
+                        "SECRET_KEY must not use an insecure default value in production"
+                    )
         self.OPENAI_API_KEY = self._normalize_optional_secret(self.OPENAI_API_KEY)
         self.GOOGLE_CLIENT_ID = self._normalize_optional_secret(self.GOOGLE_CLIENT_ID)
         self.LAW_API_OC = self._normalize_optional_secret(self.LAW_API_OC)

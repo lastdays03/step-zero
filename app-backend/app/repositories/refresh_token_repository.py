@@ -1,6 +1,8 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
+from app.core.security import utc_now
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -67,10 +69,31 @@ class RefreshTokenRepository:
             self.session.add(token)
         await self.session.commit()
 
+    async def evict_oldest_for_user(
+        self, user_id: int, max_active: int = 5
+    ) -> None:
+        """Keep at most *max_active* active tokens per user (FIFO eviction)."""
+        result = await self.session.execute(
+            select(RefreshToken)
+            .where(
+                RefreshToken.user_id == user_id,
+                RefreshToken.revoked == False,  # noqa: E712
+            )
+            .order_by(RefreshToken.created_at.asc())
+        )
+        active_tokens = list(result.scalars().all())
+        if len(active_tokens) <= max_active:
+            return
+        to_revoke = active_tokens[: len(active_tokens) - max_active]
+        for token in to_revoke:
+            token.revoked = True
+            self.session.add(token)
+        await self.session.commit()
+
     def is_expired(self, token: RefreshToken) -> bool:
         expires = token.expires_at
-        now = datetime.utcnow()
-        # Handle timezone-aware datetimes (e.g. from PostgreSQL with tz)
+        now = utc_now()
+        # Normalize to naive UTC for comparison
         if expires.tzinfo is not None:
             expires = expires.replace(tzinfo=None)
         return expires < now

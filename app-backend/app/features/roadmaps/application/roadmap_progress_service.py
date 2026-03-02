@@ -1,4 +1,6 @@
 from datetime import datetime
+
+from app.core.security import utc_now
 from uuid import UUID
 
 from app.models.roadmap import RoadmapStep, RoadmapStepAction
@@ -54,7 +56,7 @@ class RoadmapProgressService:
 
         step.status = normalized_status
         if normalized_status == "COMPLETED":
-            step.completed_at = datetime.utcnow()
+            step.completed_at = utc_now()
         else:
             step.completed_at = None
 

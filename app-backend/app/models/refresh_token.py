@@ -1,8 +1,12 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID, uuid4
 
 from sqlmodel import Field, SQLModel
+
+
+def _utc_now_naive() -> datetime:
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 class RefreshToken(SQLModel, table=True):
@@ -14,4 +18,4 @@ class RefreshToken(SQLModel, table=True):
     expires_at: datetime
     revoked: bool = Field(default=False)
     replaced_by: Optional[UUID] = Field(default=None)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=_utc_now_naive)
