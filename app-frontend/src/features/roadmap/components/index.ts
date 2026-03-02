@@ -12,3 +12,4 @@ export { RoadmapRenameDialog } from "./RoadmapRenameDialog";
 export { MilestoneCelebration } from "./MilestoneCelebration";
 export { computeEndowedProgress, computeReadinessLevel } from "./roadmap-utils";
 export { ReadinessTracker } from "./ReadinessTracker";
+export { StepChatPanel } from "./StepChatPanel";

@@ -201,3 +201,26 @@ class ChatRequest(BaseModel):
 class ChatResponse(BaseModel):
     answer: str
     source: str
+
+
+# ─── AI 코치 채팅 (Phase 4) ───
+
+
+class StepChatRequest(BaseModel):
+    message: str = Field(min_length=1, max_length=2000)
+    thread_id: UUID | None = None
+
+
+class ThreadSummary(BaseModel):
+    thread_id: UUID
+    message_count: int
+    created_at: str
+    updated_at: str
+
+
+class ChatMessageResponse(BaseModel):
+    id: int
+    role: str
+    content: str
+    sources: list[dict] | None = None
+    created_at: str
