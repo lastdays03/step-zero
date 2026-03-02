@@ -20,6 +20,7 @@ import {
   updateTemplate,
   updateTemplateStatus,
 } from "./api";
+import { StatusChangeDialog } from "./components/status-change-dialog";
 import { TemplateStatusBadge } from "./components/template-status-badge";
 import { TemplateStepEditor } from "./components/template-step-editor";
 import type { RoadmapTemplateDetail, TemplateStatus } from "./types";
@@ -46,7 +47,12 @@ export function TemplateDetailView({ templateId }: TemplateDetailViewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [editTitle, setEditTitle] = useState("");
   const [editBusinessType, setEditBusinessType] = useState("");
+  const [editStartupMethod, setEditStartupMethod] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [statusDialog, setStatusDialog] = useState<{
+    isOpen: boolean;
+    targetStatus: TemplateStatus;
+  }>({ isOpen: false, targetStatus: "DRAFT" });
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -55,6 +61,7 @@ export function TemplateDetailView({ templateId }: TemplateDetailViewProps) {
       setTemplate(data);
       setEditTitle(data.title);
       setEditBusinessType(data.business_type);
+      setEditStartupMethod(data.startup_method || "");
     } catch {
       console.error("Failed to load template detail");
     } finally {
@@ -78,6 +85,7 @@ export function TemplateDetailView({ templateId }: TemplateDetailViewProps) {
       await updateTemplate(template.id, {
         title: editTitle,
         business_type: editBusinessType,
+        startup_method: editStartupMethod || undefined,
       });
       await load();
     } catch {
@@ -87,9 +95,8 @@ export function TemplateDetailView({ templateId }: TemplateDetailViewProps) {
     }
   };
 
-  const handleStatusChange = async (newStatus: TemplateStatus) => {
+  const handleStatusChange = async (newStatus: TemplateStatus, reason?: string) => {
     if (!template) return;
-    const reason = prompt("사유를 입력하세요 (선택):");
     try {
       await updateTemplateStatus(template.id, {
         new_status: newStatus,
@@ -101,6 +108,7 @@ export function TemplateDetailView({ templateId }: TemplateDetailViewProps) {
         "상태 변경 실패: " +
           (err instanceof Error ? err.message : String(err)),
       );
+      throw err;
     }
   };
 
@@ -157,7 +165,9 @@ export function TemplateDetailView({ templateId }: TemplateDetailViewProps) {
               variant="outline"
               size="sm"
               className="text-red-600"
-              onClick={() => handleStatusChange(rejectAction.value)}
+              onClick={() =>
+                setStatusDialog({ isOpen: true, targetStatus: rejectAction.value })
+              }
             >
               {rejectAction.label}
             </Button>
@@ -166,7 +176,9 @@ export function TemplateDetailView({ templateId }: TemplateDetailViewProps) {
             <Button
               size="sm"
               className="gap-2 bg-blue-600 hover:bg-blue-700"
-              onClick={() => handleStatusChange(nextAction.value)}
+              onClick={() =>
+                setStatusDialog({ isOpen: true, targetStatus: nextAction.value })
+              }
             >
               <CheckCircle size={14} />
               {nextAction.label}
@@ -182,7 +194,7 @@ export function TemplateDetailView({ templateId }: TemplateDetailViewProps) {
             <h2 className="flex items-center gap-2 text-sm font-bold text-slate-700">
               <FileText size={14} /> 기본 정보 수정
             </h2>
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-3">
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-500">
                   제목
@@ -202,6 +214,18 @@ export function TemplateDetailView({ templateId }: TemplateDetailViewProps) {
                   type="text"
                   value={editBusinessType}
                   onChange={(e) => setEditBusinessType(e.target.value)}
+                  className="h-9 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-500"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-bold text-slate-500">
+                  창업방식
+                </label>
+                <input
+                  type="text"
+                  value={editStartupMethod}
+                  onChange={(e) => setEditStartupMethod(e.target.value)}
+                  placeholder="예: 프랜차이즈, 독립창업"
                   className="h-9 w-full rounded-md border border-slate-200 px-3 text-sm outline-none focus:border-blue-500"
                 />
               </div>
@@ -277,6 +301,16 @@ export function TemplateDetailView({ templateId }: TemplateDetailViewProps) {
           />
         ))}
       </div>
+
+      {/* Status Change Dialog */}
+      <StatusChangeDialog
+        isOpen={statusDialog.isOpen}
+        onClose={() => setStatusDialog((s) => ({ ...s, isOpen: false }))}
+        onConfirm={(reason) => handleStatusChange(statusDialog.targetStatus, reason)}
+        currentStatus={template.status}
+        targetStatus={statusDialog.targetStatus}
+        templateTitle={template.title}
+      />
     </div>
   );
 }

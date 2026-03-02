@@ -1,6 +1,6 @@
 "use client";
 
-import { FileStack, RefreshCw } from "lucide-react";
+import { FileStack, Plus, RefreshCw } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { useOpsAccessGuard } from "@/features/ops/shared/use-ops-access-guard";
 import { OpsAccessPlaceholder } from "@/features/ops/shared/ops-access-placeholder";
 
 import { deleteTemplate, fetchTemplates, fetchTemplateSummary } from "./api";
+import { CreateFromRoadmapDialog } from "./components/create-from-roadmap-dialog";
 import { TemplateListTable } from "./components/template-list-table";
 import type { RoadmapTemplate, TemplateSummary, TemplateStatus } from "./types";
 
@@ -57,6 +58,8 @@ export function OpsRoadmapTemplatesView() {
   const [summary, setSummary] = useState<TemplateSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>("all");
+  const [businessTypeFilter, setBusinessTypeFilter] = useState("");
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const load = useCallback(async () => {
     setIsLoading(true);
@@ -80,10 +83,21 @@ export function OpsRoadmapTemplatesView() {
     }
   }, [canRender, load]);
 
+  const businessTypes = useMemo(() => {
+    const types = new Set(templates.map((t) => t.business_type));
+    return Array.from(types).sort();
+  }, [templates]);
+
   const filtered = useMemo(() => {
-    if (activeTab === "all") return templates;
-    return templates.filter((t) => t.status === activeTab);
-  }, [templates, activeTab]);
+    let result = templates;
+    if (activeTab !== "all") {
+      result = result.filter((t) => t.status === activeTab);
+    }
+    if (businessTypeFilter) {
+      result = result.filter((t) => t.business_type === businessTypeFilter);
+    }
+    return result;
+  }, [templates, activeTab, businessTypeFilter]);
 
   const handleDelete = async (template: RoadmapTemplate) => {
     if (
@@ -110,15 +124,25 @@ export function OpsRoadmapTemplatesView() {
           <FileStack className="text-blue-600" />
           로드맵 템플릿 관리
         </h1>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => void load()}
-          className="gap-2"
-        >
-          <RefreshCw size={14} />
-          새로고침
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            size="sm"
+            className="gap-2 bg-blue-600 hover:bg-blue-700"
+            onClick={() => setIsCreateDialogOpen(true)}
+          >
+            <Plus size={14} />
+            로드맵에서 생성
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void load()}
+            className="gap-2"
+          >
+            <RefreshCw size={14} />
+            새로고침
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -146,9 +170,10 @@ export function OpsRoadmapTemplatesView() {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex items-center gap-1 border-b border-slate-200">
-        {TABS.map((tab) => (
+      {/* Filters */}
+      <div className="flex items-center gap-4">
+        <div className="flex items-center gap-1 flex-1 border-b border-slate-200">
+          {TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
@@ -164,6 +189,21 @@ export function OpsRoadmapTemplatesView() {
             )}
           </button>
         ))}
+        </div>
+        {businessTypes.length > 1 && (
+          <select
+            value={businessTypeFilter}
+            onChange={(e) => setBusinessTypeFilter(e.target.value)}
+            className="h-9 rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+          >
+            <option value="">전체 업종</option>
+            {businessTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+        )}
       </div>
 
       {/* Table */}
@@ -178,6 +218,13 @@ export function OpsRoadmapTemplatesView() {
         총 {filtered.length}개
         {activeTab !== "all" && ` (전체 ${templates.length}개 중)`}
       </p>
+
+      {/* Dialogs */}
+      <CreateFromRoadmapDialog
+        isOpen={isCreateDialogOpen}
+        onClose={() => setIsCreateDialogOpen(false)}
+        onCreated={() => void load()}
+      />
     </div>
   );
 }

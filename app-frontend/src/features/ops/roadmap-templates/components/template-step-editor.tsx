@@ -71,9 +71,10 @@ export function TemplateStepEditor({
             </div>
           )}
 
-          {checklists.length > 0 && (
+          {(checklists.length > 0 || editable) && (
             <TemplateActionEditor
               label="체크리스트"
+              actionType="CHECKLIST"
               actions={checklists}
               templateId={templateId}
               stepId={step.id}
@@ -82,9 +83,10 @@ export function TemplateStepEditor({
             />
           )}
 
-          {legalBasis.length > 0 && (
+          {(legalBasis.length > 0 || editable) && (
             <TemplateActionEditor
               label="법적근거"
+              actionType="LEGAL_BASIS"
               actions={legalBasis}
               templateId={templateId}
               stepId={step.id}
@@ -93,9 +95,10 @@ export function TemplateStepEditor({
             />
           )}
 
-          {documents.length > 0 && (
+          {(documents.length > 0 || editable) && (
             <TemplateActionEditor
               label="필요서류"
+              actionType="DOCUMENT"
               actions={documents}
               templateId={templateId}
               stepId={step.id}
@@ -104,7 +107,8 @@ export function TemplateStepEditor({
             />
           )}
 
-          {checklists.length === 0 &&
+          {!editable &&
+            checklists.length === 0 &&
             legalBasis.length === 0 &&
             documents.length === 0 && (
               <p className="text-sm text-slate-400">등록된 액션이 없습니다.</p>

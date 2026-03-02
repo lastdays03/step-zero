@@ -1,6 +1,48 @@
 # Phase 2: 로드맵 템플릿 관리 시스템 — 컨텍스트
 
-> Last Updated: 2026-03-02
+> Last Updated: 2026-03-02 (세션 2)
+
+---
+
+## 0. 세션 3 핵심 기록
+
+### 0.1 완료된 작업 (세션 2~3 누적)
+- **Section A 완료 (A-1~A-9)**: 모델 3개 + 마이그레이션 + DB 적용 + pytest 통과 + 감사로그 상수 6개
+- **Section B 완료 (B-1~B-11)**: CRUD 서비스 10개 함수 + API 스키마 10개 + 라우터 10개 엔드포인트 + TemplateResolver 3개 함수 + 파이프라인 통합
+- **Section D 일부 (D-1~D-2)**: 백엔드 API 테스트 9개 + TemplateResolver 테스트 6개 — 모두 통과
+- **pytest 전체 통과**: 174 passed, 19 skipped
+
+### 0.2 신규 파일 (세션 2~3 생성)
+
+| 파일 | 용도 |
+|------|------|
+| `app/models/roadmap_template.py` | RoadmapTemplate, RoadmapTemplateStep, RoadmapTemplateAction 모델 |
+| `alembic/versions/010_roadmap_templates.py` | 마이그레이션 |
+| `app/features/ops/application/roadmap_templates/__init__.py` | 서비스 패키지 export |
+| `app/features/ops/application/roadmap_templates/service.py` | CRUD 서비스 (10개 함수) |
+| `app/api/v1/ops/roadmap_template_schemas.py` | API 요청/응답 스키마 (10개 클래스) |
+| `app/api/v1/ops/roadmap_templates.py` | API 라우터 (10개 엔드포인트) |
+| `app/features/roadmaps/application/template_resolver.py` | TemplateResolver (resolve, template_to_steps_payload, should_create_auto_draft) |
+| `tests/api/test_ops_roadmap_templates.py` | API 테스트 (9 tests) |
+| `tests/services/test_template_resolver.py` | TemplateResolver 테스트 (6 tests) |
+
+### 0.3 세션 2에서 발견 & 수정한 버그 3건
+
+| 버그 | 원인 | 수정 파일 |
+|------|------|----------|
+| `alembic check`가 템플릿 테이블을 NullType으로 인식 | `alembic/env.py`에 `roadmap_template` import 누락 | `alembic/env.py` |
+| FK ondelete 불일치 (alembic이 FK 재생성 시도) | 모델에서 `ondelete` 미선언 (마이그레이션에만 있음) | `app/models/roadmap_template.py`, `app/models/roadmap.py` |
+| 복합 인덱스 삭제 시도 | 모델에 `__table_args__` 미정의 | `app/models/roadmap_template.py` |
+
+### 0.4 핵심 교훈: 마이그레이션 실행 주의
+
+- **호스트 alembic**: `.env`의 `DATABASE_URL=...@193.122.102.216:5432` → 외부 DB에 적용
+- **Docker 백엔드**: `.env.docker.local`의 `DATABASE_URL=...@app-db:5432` → Docker 내부 DB 사용
+- **마이그레이션은 반드시 Docker 컨테이너 안에서 실행**: `docker compose -f docker-compose.dev.yml exec app-backend python -m alembic upgrade head`
+
+### 0.5 남은 작업
+- **Section C (FE UI)**: 프론트엔드 관리자 UI 9개 항목 — Phase 3에서 진행중
+- **Section D (D-3~D-6)**: FE 테스트 + 문서 업데이트 — Phase 3 완료 후 진행
 
 ---
 
@@ -129,7 +171,7 @@ G4 (감사로그 상수) ──→ G2 (CRUD 서비스)
 
 ## 5. 기존 코드 핵심 구조 요약
 
-### 5.1 Roadmap 모델 현재 필드
+### 5.1 Roadmap 모델 현재 필드 (Phase 2 적용 완료)
 
 ```python
 class Roadmap(SQLModel, table=True):
@@ -139,16 +181,15 @@ class Roadmap(SQLModel, table=True):
     business_type: str
     location: str
     description: str = ""
-    startup_type: str | None    # 개인사업자/법인 (FE 입력)
-    startup_method: str | None  # 신규/양수양도/프랜차이즈 (Phase 0에서 추가)
+    startup_type: str | None
+    startup_method: str | None
     open_timeline: str | None
     budget_range: str | None
     additional_notes: str = ""
     created_at, updated_at: datetime
     deleted_at: datetime | None
+    template_id: int | None (FK → roadmap_templates.id, ondelete=SET NULL)  # ★ Phase 2 추가 완료
     created_by, updated_by: int | None (FK → user.id)
-    # ★ Phase 2 추가:
-    # template_id: int | None (FK → roadmap_templates.id)
 ```
 
 ### 5.2 RoadmapStepAction.metadata_json 구조
@@ -181,10 +222,13 @@ await record_admin_audit_log(
 ### 5.4 Alembic 마이그레이션 규칙
 
 - Revision ID: `010_roadmap_templates`
-- Down revision: `009_startup_method_and_source_urls` (정확한 ID: grep 확인 필요)
+- Down revision: `009_startup_method` (확인 완료)
 - 패턴: `create_table()` → `create_index()` → `add_column()` → downgrade 역순
 - FK: `sa.ForeignKeyConstraint(...)` with `ondelete="CASCADE"`
 - JSON: `sa.Column(sa.JSON, nullable=False)`
+- **중요**: 모델의 `Field(foreign_key=...)` 에도 반드시 `ondelete=` 명시 (growth_club.py 패턴)
+- **중요**: 복합 인덱스는 `__table_args__`에도 선언 필요 (alembic check 통과용)
+- **중요**: `alembic/env.py`에 새 모델 모듈 import 필수
 
 ### 5.5 Ops API 라우터 등록 패턴
 

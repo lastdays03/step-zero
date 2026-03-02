@@ -23,3 +23,5 @@
 - 2026-03-02 | 템플릿 상태 머신은 DRAFT→REVIEW→APPROVED→ARCHIVED 4단계 + REVIEW→DRAFT 반려 | DRAFT→APPROVED 직접 전환 차단하여 검수 프로세스 강제
 - 2026-03-02 | TemplateResolver는 3단계 우선순위 매칭 (업종+창업방식 정확 매칭 → 업종만 공통 → None) | 점진적 템플릿 확장 지원 + 미매칭 시 기존 파이프라인 자연 fallback
 - 2026-03-02 | 파이프라인 통합 시 TemplateResolver를 try-except로 감싸서 호출 | 기존 테스트의 mock session에서 테이블 미존재 에러 방지, 하위 호환성 유지
+- 2026-03-02 | Ops UI 상태변경/삭제 확인은 브라우저 prompt()/confirm() 대신 shadcn/ui Dialog 사용 | UX 일관성 + 사유 입력 지원
+- 2026-03-02 | 액션 편집은 인라인 폼 패턴 (추가: 토글 폼, 수정: 행 전환) | ActionKit 기존 패턴과 일관, 별도 모달 불필요
