@@ -210,6 +210,7 @@ class RoadmapGenerationService:
                     self.session,
                     business_type=payload.business_type,
                     startup_method=payload.startup_method,
+                    startup_type=getattr(payload, "startup_type", None),
                 )
             except Exception:
                 logger.debug("Template resolution skipped (table may not exist)")
@@ -314,7 +315,10 @@ class RoadmapGenerationService:
                 # --- Auto-DRAFT: register template for new business types ---
                 try:
                     should_draft = await TemplateResolver.should_create_auto_draft(
-                        self.session, business_type=payload.business_type
+                        self.session,
+                        business_type=payload.business_type,
+                        startup_method=payload.startup_method,
+                        startup_type=getattr(payload, "startup_type", None),
                     )
                     if should_draft:
                         logger.info(

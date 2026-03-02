@@ -41,6 +41,9 @@ export function TemplateListTable({
               창업방식
             </th>
             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
+              창업형태
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
               제목
             </th>
             <th className="px-6 py-3 text-left text-xs font-bold uppercase tracking-wider text-slate-500">
@@ -60,13 +63,13 @@ export function TemplateListTable({
         <tbody className="divide-y divide-slate-100">
           {isLoading ? (
             <tr>
-              <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
+              <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
                 로딩 중...
               </td>
             </tr>
           ) : templates.length === 0 ? (
             <tr>
-              <td colSpan={7} className="px-6 py-12 text-center text-slate-400">
+              <td colSpan={8} className="px-6 py-12 text-center text-slate-400">
                 등록된 템플릿이 없습니다.
               </td>
             </tr>
@@ -84,6 +87,9 @@ export function TemplateListTable({
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-500">
                   {t.startup_method || "-"}
+                </td>
+                <td className="px-6 py-4 text-sm text-slate-500">
+                  {t.startup_type || "-"}
                 </td>
                 <td className="px-6 py-4 text-sm text-slate-700">
                   {t.title}

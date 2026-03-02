@@ -22,60 +22,86 @@ class TemplateResolver:
         *,
         business_type: str,
         startup_method: str | None = None,
+        startup_type: str | None = None,
     ) -> RoadmapTemplate | None:
-        """Match an APPROVED template by business_type (+ startup_method).
+        """Match an APPROVED template by business_type + startup_method + startup_type.
 
         Priority:
-        1. Exact match: business_type + startup_method (APPROVED)
-        2. Common fallback: business_type + startup_method=NULL (APPROVED)
-        3. None -> use existing pipeline
+        1. Exact match: business_type + startup_method + startup_type
+        2. Partial A: business_type + startup_method (startup_type=NULL)
+        3. Partial B: business_type + startup_type (startup_method=NULL)
+        4. Common fallback: business_type only (startup_method=NULL, startup_type=NULL)
+        5. None -> use existing pipeline
         """
-        # 1. Exact match with startup_method
-        if startup_method:
-            stmt = (
-                select(RoadmapTemplate)
-                .where(
-                    RoadmapTemplate.business_type == business_type,
-                    RoadmapTemplate.startup_method == startup_method,
-                    RoadmapTemplate.status == "APPROVED",
-                )
-                .order_by(RoadmapTemplate.version.desc())
-                .limit(1)
-            )
-            result = await session.execute(stmt)
-            template = result.scalar_one_or_none()
-            if template:
-                logger.info(
-                    "Template resolved: exact match id=%d btype=%s smethod=%s",
-                    template.id,
-                    business_type,
-                    startup_method,
-                )
-                return template
-
-        # 2. Common fallback (startup_method is NULL)
-        stmt = (
+        base = (
             select(RoadmapTemplate)
             .where(
                 RoadmapTemplate.business_type == business_type,
-                RoadmapTemplate.startup_method.is_(None),
                 RoadmapTemplate.status == "APPROVED",
             )
             .order_by(RoadmapTemplate.version.desc())
             .limit(1)
         )
-        result = await session.execute(stmt)
-        template = result.scalar_one_or_none()
+
+        # 1. Exact match: all 3 fields
+        if startup_method and startup_type:
+            stmt = base.where(
+                RoadmapTemplate.startup_method == startup_method,
+                RoadmapTemplate.startup_type == startup_type,
+            )
+            template = (await session.execute(stmt)).scalar_one_or_none()
+            if template:
+                logger.info(
+                    "Template resolved: exact 3-tier id=%d btype=%s smethod=%s stype=%s",
+                    template.id, business_type, startup_method, startup_type,
+                )
+                return template
+
+        # 2. Partial A: business_type + startup_method (startup_type=NULL)
+        if startup_method:
+            stmt = base.where(
+                RoadmapTemplate.startup_method == startup_method,
+                RoadmapTemplate.startup_type.is_(None),
+            )
+            template = (await session.execute(stmt)).scalar_one_or_none()
+            if template:
+                logger.info(
+                    "Template resolved: partial-smethod id=%d btype=%s smethod=%s",
+                    template.id, business_type, startup_method,
+                )
+                return template
+
+        # 3. Partial B: business_type + startup_type (startup_method=NULL)
+        if startup_type:
+            stmt = base.where(
+                RoadmapTemplate.startup_method.is_(None),
+                RoadmapTemplate.startup_type == startup_type,
+            )
+            template = (await session.execute(stmt)).scalar_one_or_none()
+            if template:
+                logger.info(
+                    "Template resolved: partial-stype id=%d btype=%s stype=%s",
+                    template.id, business_type, startup_type,
+                )
+                return template
+
+        # 4. Common fallback: business_type only (others NULL)
+        stmt = base.where(
+            RoadmapTemplate.startup_method.is_(None),
+            RoadmapTemplate.startup_type.is_(None),
+        )
+        template = (await session.execute(stmt)).scalar_one_or_none()
         if template:
             logger.info(
                 "Template resolved: common fallback id=%d btype=%s",
-                template.id,
-                business_type,
+                template.id, business_type,
             )
             return template
 
-        # 3. No match
-        logger.info("No approved template for btype=%s smethod=%s", business_type, startup_method)
+        logger.info(
+            "No approved template for btype=%s smethod=%s stype=%s",
+            business_type, startup_method, startup_type,
+        )
         return None
 
     @staticmethod
@@ -159,15 +185,25 @@ class TemplateResolver:
         session: AsyncSession,
         *,
         business_type: str,
+        startup_method: str | None = None,
+        startup_type: str | None = None,
     ) -> bool:
         """Check if auto-DRAFT creation should proceed.
 
-        Returns True only if no template (any status) exists for this business_type.
+        Returns True if no active (DRAFT/REVIEW/APPROVED) template exists
+        for this combination. ARCHIVED-only counts as "no active template".
         """
         stmt = (
             select(RoadmapTemplate.id)
-            .where(RoadmapTemplate.business_type == business_type)
-            .limit(1)
+            .where(
+                RoadmapTemplate.business_type == business_type,
+                RoadmapTemplate.status.in_(["DRAFT", "REVIEW", "APPROVED"]),
+            )
         )
+        if startup_method:
+            stmt = stmt.where(RoadmapTemplate.startup_method == startup_method)
+        if startup_type:
+            stmt = stmt.where(RoadmapTemplate.startup_type == startup_type)
+        stmt = stmt.limit(1)
         result = await session.execute(stmt)
         return result.scalar_one_or_none() is None

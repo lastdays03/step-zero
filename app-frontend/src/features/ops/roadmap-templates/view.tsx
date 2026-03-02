@@ -59,6 +59,7 @@ export function OpsRoadmapTemplatesView() {
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>("all");
   const [businessTypeFilter, setBusinessTypeFilter] = useState("");
+  const [startupTypeFilter, setStartupTypeFilter] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const load = useCallback(async () => {
@@ -88,6 +89,11 @@ export function OpsRoadmapTemplatesView() {
     return Array.from(types).sort();
   }, [templates]);
 
+  const startupTypes = useMemo(() => {
+    const types = new Set(templates.map((t) => t.startup_type).filter(Boolean) as string[]);
+    return Array.from(types).sort();
+  }, [templates]);
+
   const filtered = useMemo(() => {
     let result = templates;
     if (activeTab !== "all") {
@@ -96,8 +102,11 @@ export function OpsRoadmapTemplatesView() {
     if (businessTypeFilter) {
       result = result.filter((t) => t.business_type === businessTypeFilter);
     }
+    if (startupTypeFilter) {
+      result = result.filter((t) => t.startup_type === startupTypeFilter);
+    }
     return result;
-  }, [templates, activeTab, businessTypeFilter]);
+  }, [templates, activeTab, businessTypeFilter, startupTypeFilter]);
 
   const handleDelete = async (template: RoadmapTemplate) => {
     if (
@@ -198,6 +207,20 @@ export function OpsRoadmapTemplatesView() {
           >
             <option value="">전체 업종</option>
             {businessTypes.map((type) => (
+              <option key={type} value={type}>
+                {type}
+              </option>
+            ))}
+          </select>
+        )}
+        {startupTypes.length > 0 && (
+          <select
+            value={startupTypeFilter}
+            onChange={(e) => setStartupTypeFilter(e.target.value)}
+            className="h-9 rounded-md border border-slate-200 px-3 text-sm text-slate-700 outline-none focus:border-blue-500"
+          >
+            <option value="">전체 창업형태</option>
+            {startupTypes.map((type) => (
               <option key={type} value={type}>
                 {type}
               </option>

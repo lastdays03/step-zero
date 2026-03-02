@@ -11,9 +11,10 @@ class RoadmapTemplate(SQLModel, table=True):
     __tablename__ = "roadmap_templates"
     __table_args__ = (
         Index(
-            "ix_roadmap_templates_btype_smethod_status",
+            "ix_roadmap_templates_btype_smethod_stype_status",
             "business_type",
             "startup_method",
+            "startup_type",
             "status",
         ),
     )
@@ -21,6 +22,7 @@ class RoadmapTemplate(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
     business_type: str = Field(index=True)
     startup_method: str | None = Field(default=None, index=True)
+    startup_type: str | None = Field(default=None, index=True)
     title: str
     status: str = Field(default="DRAFT", index=True)
     version: int = Field(default=1)

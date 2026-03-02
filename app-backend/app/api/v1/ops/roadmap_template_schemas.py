@@ -42,6 +42,7 @@ class RoadmapTemplateResponse(BaseModel):
     id: int
     business_type: str
     startup_method: str | None
+    startup_type: str | None
     title: str
     status: str
     version: int
@@ -78,6 +79,7 @@ class RoadmapTemplateUpdateRequest(BaseModel):
     title: str | None = None
     business_type: str | None = None
     startup_method: str | None = None
+    startup_type: str | None = None
 
 
 class RoadmapTemplateStatusUpdateRequest(BaseModel):
@@ -105,3 +107,41 @@ class RoadmapTemplateActionUpdateRequest(BaseModel):
     actionkit_file_id: int | None = None
     sort_order: int | None = None
     metadata_json: dict | None = None
+
+
+# ── Step CRUD schemas ──
+
+
+class RoadmapTemplateStepCreateRequest(BaseModel):
+    phase: str = "기본"
+    title: str
+    objective: str = ""
+    estimated_days: int = 0
+    risk_notes: list[str] = []
+    step_order: int | None = None
+
+
+class RoadmapTemplateStepUpdateRequest(BaseModel):
+    phase: str | None = None
+    title: str | None = None
+    objective: str | None = None
+    estimated_days: int | None = None
+    risk_notes: list[str] | None = None
+
+
+class RoadmapTemplateStepReorderRequest(BaseModel):
+    step_ids: list[int]
+
+
+# ── Roadmap search schemas ──
+
+
+class RoadmapSearchResult(BaseModel):
+    id: UUID
+    title: str
+    business_type: str
+    startup_method: str | None
+    startup_type: str | None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)

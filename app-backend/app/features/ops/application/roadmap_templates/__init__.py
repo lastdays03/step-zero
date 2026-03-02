@@ -1,25 +1,33 @@
 from app.features.ops.application.roadmap_templates.service import (
     create_template_action,
     create_template_from_roadmap,
+    create_template_step,
     delete_template,
     delete_template_action,
+    delete_template_step,
     get_template_detail,
     get_template_summary,
     list_templates,
+    reorder_template_steps,
     update_template,
     update_template_action,
     update_template_status,
+    update_template_step,
 )
 
 __all__ = [
     "create_template_action",
     "create_template_from_roadmap",
+    "create_template_step",
     "delete_template",
     "delete_template_action",
+    "delete_template_step",
     "get_template_detail",
     "get_template_summary",
     "list_templates",
+    "reorder_template_steps",
     "update_template",
     "update_template_action",
     "update_template_status",
+    "update_template_step",
 ]

@@ -1,8 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
 from app.api.v1.ops.roadmap_template_schemas import (
+    RoadmapSearchResult,
     RoadmapTemplateActionCreateRequest,
     RoadmapTemplateActionResponse,
     RoadmapTemplateActionUpdateRequest,
@@ -10,7 +12,10 @@ from app.api.v1.ops.roadmap_template_schemas import (
     RoadmapTemplateDetailResponse,
     RoadmapTemplateResponse,
     RoadmapTemplateStatusUpdateRequest,
+    RoadmapTemplateStepCreateRequest,
+    RoadmapTemplateStepReorderRequest,
     RoadmapTemplateStepResponse,
+    RoadmapTemplateStepUpdateRequest,
     RoadmapTemplateSummaryResponse,
     RoadmapTemplateUpdateRequest,
 )
@@ -18,18 +23,39 @@ from app.core.db import get_session
 from app.features.ops.application.roadmap_templates import (
     create_template_action,
     create_template_from_roadmap,
+    create_template_step,
     delete_template,
     delete_template_action,
+    delete_template_step,
     get_template_detail,
     get_template_summary,
     list_templates,
+    reorder_template_steps,
     update_template,
     update_template_action,
     update_template_status,
+    update_template_step,
 )
+from app.models.roadmap import Roadmap
 from app.models.user import AuthenticatedUser
 
 router = APIRouter(prefix="/roadmap-templates", tags=["ops-roadmap-templates"])
+
+
+def _serialize_step(step) -> dict:
+    """Convert RoadmapTemplateStep to response dict with empty actions."""
+    return {
+        "id": step.id,
+        "template_id": step.template_id,
+        "step_order": step.step_order,
+        "phase": step.phase,
+        "title": step.title,
+        "objective": step.objective,
+        "estimated_days": step.estimated_days,
+        "risk_notes": step.risk_notes,
+        "created_at": step.created_at,
+        "actions": [],
+    }
 
 
 def _serialize_detail(template) -> dict:
@@ -38,6 +64,7 @@ def _serialize_detail(template) -> dict:
         "id": template.id,
         "business_type": template.business_type,
         "startup_method": template.startup_method,
+        "startup_type": template.startup_type,
         "title": template.title,
         "status": template.status,
         "version": template.version,
@@ -89,6 +116,32 @@ async def get_summary_endpoint(
     session: AsyncSession = Depends(get_session),
 ):
     return await get_template_summary(session)
+
+
+@router.get(
+    "/roadmaps/search",
+    response_model=list[RoadmapSearchResult],
+    summary="로드맵 검색 (템플릿 생성용)",
+)
+async def search_roadmaps_endpoint(
+    business_type: str | None = None,
+    startup_method: str | None = None,
+    startup_type: str | None = None,
+    q: str | None = None,
+    session: AsyncSession = Depends(get_session),
+):
+    stmt = select(Roadmap).where(Roadmap.deleted_at.is_(None))
+    if business_type:
+        stmt = stmt.where(Roadmap.business_type == business_type)
+    if startup_method:
+        stmt = stmt.where(Roadmap.startup_method == startup_method)
+    if startup_type:
+        stmt = stmt.where(Roadmap.startup_type == startup_type)
+    if q:
+        stmt = stmt.where(Roadmap.title.ilike(f"%{q}%"))
+    stmt = stmt.order_by(Roadmap.created_at.desc()).limit(50)
+    result = await session.execute(stmt)
+    return list(result.scalars().all())
 
 
 @router.get(
@@ -200,6 +253,88 @@ async def delete_template_endpoint(
     if not success:
         raise HTTPException(status_code=404, detail="Template not found")
     return {"ok": True}
+
+
+# ── Step CRUD ──
+
+
+@router.post(
+    "/{template_id}/steps",
+    response_model=RoadmapTemplateStepResponse,
+    summary="템플릿에 단계 추가",
+)
+async def create_step_endpoint(
+    template_id: int,
+    data: RoadmapTemplateStepCreateRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        step = await create_template_step(session, template_id, data.model_dump())
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not step:
+        raise HTTPException(status_code=404, detail="Template not found")
+    return _serialize_step(step)
+
+
+@router.patch(
+    "/{template_id}/steps/reorder",
+    response_model=list[RoadmapTemplateStepResponse],
+    summary="템플릿 단계 순서 변경",
+)
+async def reorder_steps_endpoint(
+    template_id: int,
+    data: RoadmapTemplateStepReorderRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        steps = await reorder_template_steps(session, template_id, data.step_ids)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    return [_serialize_step(s) for s in steps]
+
+
+@router.patch(
+    "/{template_id}/steps/{step_id}",
+    response_model=RoadmapTemplateStepResponse,
+    summary="템플릿 단계 수정 (목표/위험 포함)",
+)
+async def update_step_endpoint(
+    template_id: int,
+    step_id: int,
+    data: RoadmapTemplateStepUpdateRequest,
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        step = await update_template_step(
+            session, step_id, data.model_dump(exclude_unset=True)
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not step:
+        raise HTTPException(status_code=404, detail="Step not found")
+    return _serialize_step(step)
+
+
+@router.delete(
+    "/{template_id}/steps/{step_id}",
+    summary="템플릿 단계 삭제",
+)
+async def delete_step_endpoint(
+    template_id: int,
+    step_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    try:
+        success = await delete_template_step(session, step_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    if not success:
+        raise HTTPException(status_code=404, detail="Step not found")
+    return {"ok": True}
+
+
+# ── Action CRUD ──
 
 
 @router.post(

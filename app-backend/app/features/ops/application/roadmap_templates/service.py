@@ -19,8 +19,8 @@ from app.models.roadmap_template import (
 _VALID_TRANSITIONS: dict[str, set[str]] = {
     "DRAFT": {"REVIEW"},
     "REVIEW": {"DRAFT", "APPROVED"},
-    "APPROVED": {"ARCHIVED"},
-    "ARCHIVED": set(),
+    "APPROVED": {"ARCHIVED", "REVIEW"},
+    "ARCHIVED": {"APPROVED"},
 }
 
 # Statuses that allow editing
@@ -152,6 +152,7 @@ async def create_template_from_roadmap(
     template = RoadmapTemplate(
         business_type=roadmap.business_type,
         startup_method=roadmap.startup_method,
+        startup_type=roadmap.startup_type,
         title=f"{roadmap.business_type} 로드맵 템플릿",
         status="DRAFT",
         version=1,
@@ -276,6 +277,129 @@ async def update_template_status(
     await session.commit()
     await session.refresh(template)
     return template
+
+
+async def create_template_step(
+    session: AsyncSession,
+    template_id: int,
+    data: dict[str, Any],
+) -> RoadmapTemplateStep | None:
+    template = (
+        await session.execute(
+            select(RoadmapTemplate).where(RoadmapTemplate.id == template_id)
+        )
+    ).scalar_one_or_none()
+    if not template:
+        return None
+    if template.status not in _EDITABLE_STATUSES:
+        raise ValueError("Cannot add steps to non-editable template")
+
+    # Determine next step_order
+    max_order = (
+        await session.execute(
+            select(func.max(RoadmapTemplateStep.step_order)).where(
+                RoadmapTemplateStep.template_id == template_id
+            )
+        )
+    ).scalar_one_or_none()
+    next_order = (max_order or 0) + 1
+
+    step = RoadmapTemplateStep(
+        template_id=template_id,
+        step_order=data.get("step_order") or next_order,
+        phase=data.get("phase", "기본"),
+        title=data.get("title", "새 단계"),
+        objective=data.get("objective", ""),
+        estimated_days=data.get("estimated_days", 0),
+        risk_notes=data.get("risk_notes", []),
+    )
+    session.add(step)
+    await session.commit()
+    await session.refresh(step)
+    return step
+
+
+async def update_template_step(
+    session: AsyncSession,
+    step_id: int,
+    data: dict[str, Any],
+) -> RoadmapTemplateStep | None:
+    step = (
+        await session.execute(
+            select(RoadmapTemplateStep).where(RoadmapTemplateStep.id == step_id)
+        )
+    ).scalar_one_or_none()
+    if not step:
+        return None
+
+    template = (
+        await session.execute(
+            select(RoadmapTemplate).where(RoadmapTemplate.id == step.template_id)
+        )
+    ).scalar_one_or_none()
+    if template and template.status not in _EDITABLE_STATUSES:
+        raise ValueError("Cannot edit steps of non-editable template")
+
+    for key, value in data.items():
+        if hasattr(step, key) and key not in ("id", "created_at", "template_id"):
+            setattr(step, key, value)
+    await session.commit()
+    await session.refresh(step)
+    return step
+
+
+async def delete_template_step(
+    session: AsyncSession, step_id: int
+) -> bool:
+    step = (
+        await session.execute(
+            select(RoadmapTemplateStep).where(RoadmapTemplateStep.id == step_id)
+        )
+    ).scalar_one_or_none()
+    if not step:
+        return False
+
+    template = (
+        await session.execute(
+            select(RoadmapTemplate).where(RoadmapTemplate.id == step.template_id)
+        )
+    ).scalar_one_or_none()
+    if template and template.status not in _EDITABLE_STATUSES:
+        raise ValueError("Cannot delete steps of non-editable template")
+
+    await session.delete(step)
+    await session.commit()
+    return True
+
+
+async def reorder_template_steps(
+    session: AsyncSession,
+    template_id: int,
+    step_ids: list[int],
+) -> list[RoadmapTemplateStep]:
+    template = (
+        await session.execute(
+            select(RoadmapTemplate).where(RoadmapTemplate.id == template_id)
+        )
+    ).scalar_one_or_none()
+    if not template:
+        raise ValueError("Template not found")
+    if template.status not in _EDITABLE_STATUSES:
+        raise ValueError("Cannot reorder steps of non-editable template")
+
+    steps_result = await session.execute(
+        select(RoadmapTemplateStep).where(
+            RoadmapTemplateStep.template_id == template_id
+        )
+    )
+    steps_map = {s.id: s for s in steps_result.scalars().all()}
+
+    for order, sid in enumerate(step_ids):
+        if sid in steps_map:
+            steps_map[sid].step_order = order
+
+    await session.commit()
+    return sorted(steps_map.values(), key=lambda s: s.step_order)
 
 
 async def create_template_action(

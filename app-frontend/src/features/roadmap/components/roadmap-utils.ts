@@ -22,7 +22,7 @@ export interface RoadmapDetailAction {
     metadata_json?: Record<string, unknown>;
 }
 
-export type MappingSource = "actionkit_direct" | "rag" | "fallback";
+export type MappingSource = "actionkit_direct" | "rag" | "fallback" | "llm_generated" | "template";
 
 export interface RoadmapDetailStep {
     id: number;

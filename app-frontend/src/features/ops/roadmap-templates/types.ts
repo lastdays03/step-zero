@@ -31,6 +31,7 @@ export interface RoadmapTemplate {
   id: number;
   business_type: string;
   startup_method: string | null;
+  startup_type: string | null;
   title: string;
   status: TemplateStatus;
   version: number;
@@ -52,4 +53,13 @@ export interface TemplateSummary {
   review: number;
   approved: number;
   archived: number;
+}
+
+export interface RoadmapSearchResult {
+  id: string;
+  title: string;
+  business_type: string;
+  startup_method: string | null;
+  startup_type: string | null;
+  created_at: string;
 }

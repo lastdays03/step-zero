@@ -1,9 +1,11 @@
 import { apiClient } from "@/lib/api-client";
 
 import type {
+  RoadmapSearchResult,
   RoadmapTemplate,
   RoadmapTemplateAction,
   RoadmapTemplateDetail,
+  RoadmapTemplateStep,
   TemplateSummary,
 } from "./types";
 
@@ -51,7 +53,7 @@ export async function createTemplateFromRoadmap(
 /** PATCH /ops/roadmap-templates/:id */
 export async function updateTemplate(
   id: number,
-  payload: { title?: string; business_type?: string; startup_method?: string },
+  payload: { title?: string; business_type?: string; startup_method?: string; startup_type?: string },
 ): Promise<RoadmapTemplate> {
   const { data } = await apiClient.patch<RoadmapTemplate>(
     `/ops/roadmap-templates/${id}`,
@@ -118,4 +120,81 @@ export async function deleteTemplateAction(
   await apiClient.delete(
     `/ops/roadmap-templates/${templateId}/steps/${stepId}/actions/${actionId}`,
   );
+}
+
+// ── Step CRUD ──
+
+/** POST /ops/roadmap-templates/:templateId/steps */
+export async function createTemplateStep(
+  templateId: number,
+  payload: {
+    phase?: string;
+    title: string;
+    objective?: string;
+    estimated_days?: number;
+    risk_notes?: string[];
+  },
+): Promise<RoadmapTemplateStep> {
+  const { data } = await apiClient.post<RoadmapTemplateStep>(
+    `/ops/roadmap-templates/${templateId}/steps`,
+    payload,
+  );
+  return data;
+}
+
+/** PATCH /ops/roadmap-templates/:templateId/steps/:stepId */
+export async function updateTemplateStep(
+  templateId: number,
+  stepId: number,
+  payload: {
+    phase?: string;
+    title?: string;
+    objective?: string;
+    estimated_days?: number;
+    risk_notes?: string[];
+  },
+): Promise<RoadmapTemplateStep> {
+  const { data } = await apiClient.patch<RoadmapTemplateStep>(
+    `/ops/roadmap-templates/${templateId}/steps/${stepId}`,
+    payload,
+  );
+  return data;
+}
+
+/** DELETE /ops/roadmap-templates/:templateId/steps/:stepId */
+export async function deleteTemplateStep(
+  templateId: number,
+  stepId: number,
+): Promise<void> {
+  await apiClient.delete(
+    `/ops/roadmap-templates/${templateId}/steps/${stepId}`,
+  );
+}
+
+/** PATCH /ops/roadmap-templates/:templateId/steps/reorder */
+export async function reorderTemplateSteps(
+  templateId: number,
+  stepIds: number[],
+): Promise<RoadmapTemplateStep[]> {
+  const { data } = await apiClient.patch<RoadmapTemplateStep[]>(
+    `/ops/roadmap-templates/${templateId}/steps/reorder`,
+    { step_ids: stepIds },
+  );
+  return data;
+}
+
+// ── Roadmap search ──
+
+/** GET /ops/roadmap-templates/roadmaps/search */
+export async function searchRoadmaps(params?: {
+  business_type?: string;
+  startup_method?: string;
+  startup_type?: string;
+  q?: string;
+}): Promise<RoadmapSearchResult[]> {
+  const { data } = await apiClient.get<RoadmapSearchResult[]>(
+    "/ops/roadmap-templates/roadmaps/search",
+    { params },
+  );
+  return data;
 }
