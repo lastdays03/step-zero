@@ -6,6 +6,8 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from starlette.responses import Response
 from starlette.types import Scope
 
@@ -16,6 +18,7 @@ from app.api.problem import (
 )
 from app.core import config
 from app.core.logging import get_logger, setup_logging
+from app.core.rate_limit import limiter
 from app.features.rag.application.deps import get_rag_service
 
 # 로깅 설정 초기화
@@ -60,8 +63,12 @@ app.add_middleware(
     allow_origins=settings.BACKEND_CORS_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"],
+    allow_headers=["Authorization", "Content-Type", "X-Team-Id"],
 )
+
+# Rate limiting
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 # Serve user-uploaded files from the shared storage root.
 upload_dir = settings.STORAGE_ROOT_PATH

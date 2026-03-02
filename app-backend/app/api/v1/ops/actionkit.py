@@ -1,4 +1,6 @@
 from datetime import datetime
+
+from app.core.security import utc_now
 from typing import List
 
 from fastapi import APIRouter, Depends, File, HTTPException, Path, UploadFile
@@ -206,7 +208,7 @@ async def update_actionkit_item_status(
         }
 
     item.is_active = after_is_active
-    item.updated_at = datetime.utcnow()
+    item.updated_at = utc_now()
     session.add(item)
 
     await record_admin_audit_log(

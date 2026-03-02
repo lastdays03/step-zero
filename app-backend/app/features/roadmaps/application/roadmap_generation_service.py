@@ -17,6 +17,7 @@ from app.features.roadmaps.application.llm_personalizer import (
     LLMPersonalizer,
     PersonalizedStepDetail,
 )
+from app.features.roadmaps.application.template_resolver import TemplateResolver
 from app.repositories.roadmap_job_repository import RoadmapJobRepository
 from app.repositories.roadmap_repository import RoadmapRepository
 
@@ -200,81 +201,133 @@ class RoadmapGenerationService:
         await self.job_repo.mark_running(job)
         try:
             payload = GenerationPayload(**job.input_payload)
+            template_id: int | None = None
+            should_draft = False
 
-            # --- Step 1: ActionKit matching (fact layer) ---
-            matched_items = await self.actionkit_matcher.match(
-                business_type=payload.business_type,
-                location=payload.location,
-                session=self.session,
-            )
-            await self.job_repo.set_progress(
-                job, stage="MATCHING_COMPLETE", progress=20
-            )
+            # --- Step 0: Template resolution ---
+            try:
+                template = await TemplateResolver.resolve(
+                    self.session,
+                    business_type=payload.business_type,
+                    startup_method=payload.startup_method,
+                    startup_type=getattr(payload, "startup_type", None),
+                )
+            except Exception:
+                logger.debug("Template resolution skipped (table may not exist)")
+                template = None
 
-            # --- Decision point: ACTIONKIT_RAG vs RAG ---
-            match_count = len(matched_items)
-            top_scores = [f"{m.relevance_score:.3f}" for m in matched_items[:5]]
-            logger.info(
-                "generation_mode decision: matched=%d, threshold=%d, "
-                "business_type=%s, top_scores=%s -> %s",
-                match_count,
-                _MIN_ACTIONKIT_MATCHES,
-                payload.business_type,
-                top_scores,
-                "ACTIONKIT_RAG" if match_count >= _MIN_ACTIONKIT_MATCHES else "RAG",
-            )
-
-            if match_count >= _MIN_ACTIONKIT_MATCHES:
-                # --- Step 2a: Sufficient matches -> LLM personalization ---
+            if template:
+                # --- TEMPLATE path: use approved template ---
                 logger.info(
-                    "ActionKit matched %d items; using personalized generation",
-                    match_count,
+                    "Using template id=%d for business_type=%s",
+                    template.id,
+                    payload.business_type,
                 )
                 await self.job_repo.set_progress(
-                    job, stage="PERSONALIZING", progress=35
+                    job, stage="TEMPLATE_RESOLVING", progress=20
                 )
-
-                payload_dict = self._payload_to_dict(payload)
-                personalized = await self.llm_personalizer.personalize(
-                    matched_items=matched_items,
-                    payload=payload_dict,
+                steps_payload = await TemplateResolver.template_to_steps_payload(
+                    self.session, template
                 )
                 await self.job_repo.set_progress(job, stage="PERSISTING", progress=80)
-
-                # Convert personalized details to step payload format
-                steps_payload = self._personalized_to_steps_payload(
-                    personalized,
-                    matched_items=matched_items,
-                )
-                generation_mode = "ACTIONKIT_RAG"
+                generation_mode = "TEMPLATE"
+                template_id = template.id
                 title = f"{payload.business_type} 창업 로드맵"
 
             else:
-                # --- Step 2b: Insufficient matches -> fallback to legacy ---
+                # --- Existing pipeline (no template) ---
+
+                # --- Step 1: ActionKit matching (fact layer) ---
+                matched_items = await self.actionkit_matcher.match(
+                    business_type=payload.business_type,
+                    location=payload.location,
+                    session=self.session,
+                )
+                await self.job_repo.set_progress(
+                    job, stage="MATCHING_COMPLETE", progress=20
+                )
+
+                # --- Decision point: ACTIONKIT_RAG vs RAG ---
+                match_count = len(matched_items)
+                top_scores = [f"{m.relevance_score:.3f}" for m in matched_items[:5]]
                 logger.info(
-                    "ActionKit matched only %d items (< %d); falling back to LLM generation",
+                    "generation_mode decision: matched=%d, threshold=%d, "
+                    "business_type=%s, top_scores=%s -> %s",
                     match_count,
                     _MIN_ACTIONKIT_MATCHES,
+                    payload.business_type,
+                    top_scores,
+                    "ACTIONKIT_RAG" if match_count >= _MIN_ACTIONKIT_MATCHES else "RAG",
                 )
-                master = await self._generate_master_with_retry(payload)
-                await self.job_repo.set_progress(
-                    job, stage="DETAIL_GENERATING", progress=35
-                )
-                details, fallback_phases = await self._generate_details_parallel(
-                    master, payload
-                )
-                await self.job_repo.set_progress(job, stage="PERSISTING", progress=80)
 
-                steps_payload = [item.model_dump() for item in details]
-                # Attach quality metadata to each legacy RAG step
-                for sp in steps_payload:
-                    phase = sp.get("phase", "")
-                    is_fb = phase in fallback_phases
-                    sp["mapping_source"] = "fallback" if is_fb else "rag"
-                    sp["source_count"] = 0
-                    sp["has_fallback"] = is_fb
-                generation_mode = "RAG"
-                title = master.title
+                if match_count >= _MIN_ACTIONKIT_MATCHES:
+                    # --- Step 2a: Sufficient matches -> LLM personalization ---
+                    logger.info(
+                        "ActionKit matched %d items; using personalized generation",
+                        match_count,
+                    )
+                    await self.job_repo.set_progress(
+                        job, stage="PERSONALIZING", progress=35
+                    )
+
+                    payload_dict = self._payload_to_dict(payload)
+                    personalized = await self.llm_personalizer.personalize(
+                        matched_items=matched_items,
+                        payload=payload_dict,
+                    )
+                    await self.job_repo.set_progress(job, stage="PERSISTING", progress=80)
+
+                    # Convert personalized details to step payload format
+                    steps_payload = self._personalized_to_steps_payload(
+                        personalized,
+                        matched_items=matched_items,
+                    )
+                    generation_mode = "ACTIONKIT_RAG"
+                    title = f"{payload.business_type} 창업 로드맵"
+
+                else:
+                    # --- Step 2b: Insufficient matches -> fallback to legacy ---
+                    logger.info(
+                        "ActionKit matched only %d items (< %d); falling back to LLM generation",
+                        match_count,
+                        _MIN_ACTIONKIT_MATCHES,
+                    )
+                    master = await self._generate_master_with_retry(payload)
+                    await self.job_repo.set_progress(
+                        job, stage="DETAIL_GENERATING", progress=35
+                    )
+                    details, fallback_phases = await self._generate_details_parallel(
+                        master, payload
+                    )
+                    await self.job_repo.set_progress(job, stage="PERSISTING", progress=80)
+
+                    steps_payload = [item.model_dump() for item in details]
+                    # Attach quality metadata to each legacy RAG step
+                    for sp in steps_payload:
+                        phase = sp.get("phase", "")
+                        is_fb = phase in fallback_phases
+                        sp["mapping_source"] = "fallback" if is_fb else "rag"
+                        sp["source_count"] = 0
+                        sp["has_fallback"] = is_fb
+                    generation_mode = "RAG"
+                    title = master.title
+
+                # --- Auto-DRAFT: register template for new business types ---
+                try:
+                    should_draft = await TemplateResolver.should_create_auto_draft(
+                        self.session,
+                        business_type=payload.business_type,
+                        startup_method=payload.startup_method,
+                        startup_type=getattr(payload, "startup_type", None),
+                    )
+                    if should_draft:
+                        logger.info(
+                            "Auto-DRAFT: will create template for btype=%s after roadmap persist",
+                            payload.business_type,
+                        )
+                except Exception:
+                    logger.warning("Auto-DRAFT check failed", exc_info=True)
+                    should_draft = False
 
             # --- Step 3: Persist ---
             roadmap = await self.roadmap_repo.create_roadmap(
@@ -290,12 +343,42 @@ class RoadmapGenerationService:
                 additional_notes=payload.additional_notes,
                 created_by=job.user_id,
             )
+
+            # Set template_id if using template
+            if template_id is not None:
+                roadmap.template_id = template_id
+
             await self.roadmap_repo.create_steps_with_details(
                 roadmap_id=roadmap.id,
                 steps_payload=steps_payload,
                 generation_mode=generation_mode,
             )
             await self.roadmap_repo.commit()
+
+            # --- Auto-DRAFT creation (after commit) ---
+            if not template and should_draft:
+                try:
+                    from app.features.ops.application.roadmap_templates.service import (
+                        create_template_from_roadmap,
+                    )
+
+                    await create_template_from_roadmap(
+                        self.session,
+                        roadmap_id=roadmap.id,
+                        user_id=job.user_id,
+                    )
+                    logger.info(
+                        "Auto-DRAFT template created for btype=%s from roadmap=%s",
+                        payload.business_type,
+                        roadmap.id,
+                    )
+                except Exception:
+                    logger.warning(
+                        "Auto-DRAFT template creation failed for roadmap=%s",
+                        roadmap.id,
+                        exc_info=True,
+                    )
+
             await self.job_repo.mark_succeeded(job, roadmap_id=roadmap.id)
         except Exception as exc:
             logger.exception("Roadmap generation failed for job=%s", job_id)

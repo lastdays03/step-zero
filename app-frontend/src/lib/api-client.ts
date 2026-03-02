@@ -5,6 +5,7 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
 export const AUTH_STORAGE_EVENT = "auth-storage-changed";
 export const ROADMAP_POLLING_CLEARED_EVENT = "roadmap-polling-cleared";
 const ROADMAP_JOB_STORAGE_KEY = "roadmap_polling_job_id";
+const PROACTIVE_REFRESH_MARGIN_MS = 5 * 60 * 1000; // 5 minutes before expiry
 
 const baseURL = explicitBaseUrl
     || (apiUrl ? `${apiUrl.replace(/\/$/, "")}/api/v1` : "http://localhost:8000/api/v1");
@@ -16,7 +17,6 @@ export const apiClient = axios.create({
 // --- Silent Refresh Infrastructure ---
 
 let isRefreshing = false;
-let suppressAuthEvent = false;
 let failedQueue: {
     resolve: (token: string) => void;
     reject: (error: unknown) => void;
@@ -40,12 +40,7 @@ function clearAuthState() {
     localStorage.removeItem("current_team_id");
     localStorage.removeItem(ROADMAP_JOB_STORAGE_KEY);
     window.dispatchEvent(new Event(ROADMAP_POLLING_CLEARED_EVENT));
-    // Skip dispatching the auth event when called from a failed refresh to
-    // prevent an infinite loop: clearAuthState → auth event → loadData → 401
-    // → refresh → clearAuthState → …
-    if (!suppressAuthEvent) {
-        window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
-    }
+    window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
 }
 
 // --- Interceptors ---
@@ -115,31 +110,105 @@ apiClient.interceptors.response.use(
         originalRequest._retry = true;
 
         try {
-            // Use raw axios to avoid interceptor recursion
-            const response = await axios.post(`${baseURL}/auth/refresh`, {
-                refresh_token: refreshToken,
-            });
+            // Use raw axios to avoid interceptor recursion.
+            // Retry up to 3 times on network errors (no server response),
+            // but fail immediately on server rejection (4xx/5xx).
+            const MAX_REFRESH_RETRIES = 3;
+            let lastError: unknown = null;
 
-            const { access_token, refresh_token: newRefreshToken } = response.data;
+            for (let attempt = 0; attempt < MAX_REFRESH_RETRIES; attempt++) {
+                try {
+                    const response = await axios.post(`${baseURL}/auth/refresh`, {
+                        refresh_token: refreshToken,
+                    });
 
-            localStorage.setItem("token", access_token);
-            localStorage.setItem("refresh_token", newRefreshToken);
-            window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
+                    const { access_token, refresh_token: newRefreshToken } = response.data;
 
-            // Retry original request + queued requests
-            processQueue(null, access_token);
-            originalRequest.headers.Authorization = `Bearer ${access_token}`;
-            return apiClient(originalRequest);
-        } catch (refreshError) {
-            // Refresh failed — clear everything and log out.
-            // Suppress the auth event to avoid an infinite retry loop.
-            processQueue(refreshError, null);
-            suppressAuthEvent = true;
+                    localStorage.setItem("token", access_token);
+                    localStorage.setItem("refresh_token", newRefreshToken);
+                    window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
+
+                    processQueue(null, access_token);
+                    originalRequest.headers.Authorization = `Bearer ${access_token}`;
+                    return apiClient(originalRequest);
+                } catch (err) {
+                    lastError = err;
+                    const axiosErr = err as AxiosError;
+                    // Server responded with an error (token invalid/expired) → no retry
+                    if (axiosErr.response) {
+                        break;
+                    }
+                    // Network error (no response) → retry after short delay
+                    if (attempt < MAX_REFRESH_RETRIES - 1) {
+                        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+                    }
+                }
+            }
+
+            // All retries exhausted or server rejected — log out
+            processQueue(lastError, null);
             clearAuthState();
-            suppressAuthEvent = false;
-            return Promise.reject(refreshError);
+            return Promise.reject(lastError);
         } finally {
             isRefreshing = false;
         }
     }
 );
+
+// --- Proactive Token Refresh ---
+// Parses JWT exp claim and schedules a background refresh before expiry.
+
+let proactiveRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+function parseJwtExp(token: string): number | null {
+    try {
+        const parts = token.split(".");
+        if (parts.length !== 3) return null;
+        const payload = JSON.parse(atob(parts[1]));
+        return typeof payload.exp === "number" ? payload.exp : null;
+    } catch {
+        return null;
+    }
+}
+
+function scheduleProactiveRefresh() {
+    if (typeof window === "undefined") return;
+    if (proactiveRefreshTimer) {
+        clearTimeout(proactiveRefreshTimer);
+        proactiveRefreshTimer = null;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const exp = parseJwtExp(token);
+    if (!exp) return;
+
+    const expiresAtMs = exp * 1000;
+    const delayMs = expiresAtMs - Date.now() - PROACTIVE_REFRESH_MARGIN_MS;
+    if (delayMs <= 0) return; // already within margin or expired
+
+    proactiveRefreshTimer = setTimeout(async () => {
+        proactiveRefreshTimer = null;
+        const refreshToken = localStorage.getItem("refresh_token");
+        if (!refreshToken || isRefreshing) return;
+
+        try {
+            const response = await axios.post(`${baseURL}/auth/refresh`, {
+                refresh_token: refreshToken,
+            });
+            const { access_token, refresh_token: newRefreshToken } = response.data;
+            localStorage.setItem("token", access_token);
+            localStorage.setItem("refresh_token", newRefreshToken);
+            window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
+        } catch {
+            // Proactive refresh failed silently — the 401 interceptor will handle it
+        }
+    }, delayMs);
+}
+
+// Re-schedule whenever auth state changes (login, silent refresh, etc.)
+if (typeof window !== "undefined") {
+    window.addEventListener(AUTH_STORAGE_EVENT, scheduleProactiveRefresh);
+    scheduleProactiveRefresh();
+}

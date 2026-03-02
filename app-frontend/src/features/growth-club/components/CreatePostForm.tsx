@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react';
 import Image from 'next/image';
+import { toast } from "sonner";
 import { Camera, Paperclip, Send, X, FileText } from 'lucide-react';
 import { AxiosError } from 'axios';
 import { growthClubApi } from '../api';
@@ -47,7 +48,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
         if (incoming.length === 0) return;
 
         if (imageFiles.length + incoming.length > MAX_IMAGE_COUNT) {
-            alert(`이미지는 최대 ${MAX_IMAGE_COUNT}개까지 첨부할 수 있습니다.`);
+            toast.warning(`이미지는 최대 ${MAX_IMAGE_COUNT}개까지 첨부할 수 있습니다.`);
             if (imageInputRef.current) imageInputRef.current.value = '';
             return;
         }
@@ -78,7 +79,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
         });
 
         if (rejected.length > 0) {
-            alert(rejected.join("\n"));
+            toast.warning(rejected.join("\n"));
         }
         if (accepted.length === 0) {
             if (imageInputRef.current) imageInputRef.current.value = '';
@@ -100,7 +101,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
         if (incoming.length === 0) return;
 
         if (otherFiles.length + incoming.length > MAX_FILE_COUNT) {
-            alert(`일반 파일은 최대 ${MAX_FILE_COUNT}개까지 첨부할 수 있습니다.`);
+            toast.warning(`일반 파일은 최대 ${MAX_FILE_COUNT}개까지 첨부할 수 있습니다.`);
             if (fileInputRef.current) fileInputRef.current.value = '';
             return;
         }
@@ -130,7 +131,7 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
         });
 
         if (rejected.length > 0) {
-            alert(rejected.join("\n"));
+            toast.warning(rejected.join("\n"));
         }
         if (accepted.length === 0) {
             if (fileInputRef.current) fileInputRef.current.value = '';
@@ -178,9 +179,9 @@ export const CreatePostForm: React.FC<CreatePostFormProps> = ({ onSuccess }) => 
             console.error('Failed to create post:', error);
             const status = error instanceof AxiosError ? error.response?.status : undefined;
             if (status === 401) {
-                alert('인증이 만료되었습니다. 다시 로그인해주세요.');
+                toast.warning('인증이 만료되었습니다. 다시 로그인해주세요.');
             } else {
-                alert('게시글 작성에 실패했습니다. 네트워크 상태를 확인해주세요.');
+                toast.error('게시글 작성에 실패했습니다. 네트워크 상태를 확인해주세요.');
             }
         } finally {
             setIsSubmitting(false);

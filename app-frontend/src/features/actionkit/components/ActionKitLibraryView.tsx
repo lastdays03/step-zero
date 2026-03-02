@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
+import { toast } from "sonner";
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { useActionKit } from '../hooks/useActionKit';
@@ -200,7 +201,7 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
             saveAs(content, '나만의_액션키트_보관함.zip');
         } catch (error) {
             console.error(error);
-            alert("다운로드 중 오류가 발생했습니다.");
+            toast.error("다운로드 중 오류가 발생했습니다.");
         } finally {
             setIsZipping(false);
         }
@@ -309,7 +310,7 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
             }
         } catch (err) {
             console.error('Download failed:', err);
-            alert('다운로드 중 오류가 발생했습니다.');
+            toast.error('다운로드 중 오류가 발생했습니다.');
         }
     };
 

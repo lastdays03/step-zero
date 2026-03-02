@@ -8,6 +8,16 @@ from passlib.context import CryptContext
 
 from app.core.config import get_settings
 
+
+def utc_now() -> datetime:
+    """Return current UTC time as a naive datetime (no tzinfo).
+
+    All DB columns use TIMESTAMP WITHOUT TIME ZONE with an implicit
+    UTC convention.  This helper replaces the deprecated
+    ``datetime.utcnow()`` without breaking DB compatibility.
+    """
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 settings = get_settings()
 

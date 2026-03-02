@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from 'react';
+import { toast } from "sonner";
 import { useLawGuide } from '../hooks/useLawGuide';
 import { Disclaimer } from '@/components/ui/Disclaimer';
 import { Card, CardContent } from "@/components/ui/card";
@@ -100,7 +101,7 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
             document.body.removeChild(link);
         } catch (err) {
             console.error('Download failed:', err);
-            alert('다운로드 중 오류가 발생했습니다.');
+            toast.error('다운로드 중 오류가 발생했습니다.');
         }
     };
 

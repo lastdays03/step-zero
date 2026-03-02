@@ -31,6 +31,11 @@ from app.models.roadmap import (
     RoadmapStepAction,
     RoadmapStepDetail,
 )
+from app.models.roadmap_template import (
+    RoadmapTemplate,
+    RoadmapTemplateAction,
+    RoadmapTemplateStep,
+)
 from app.models.team import Team, TeamMember
 from app.models.user import AuthenticatedUser, TokenWithUser, User, UserRead
 from app.models.user_discipline_history import UserDisciplineHistory
@@ -62,6 +67,9 @@ __all__ = [
     "RoadmapStep",
     "RoadmapStepAction",
     "RoadmapStepDetail",
+    "RoadmapTemplate",
+    "RoadmapTemplateAction",
+    "RoadmapTemplateStep",
     "Team",
     "TeamMember",
     "TokenWithUser",

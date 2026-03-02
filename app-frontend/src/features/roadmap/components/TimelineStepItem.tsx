@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Lock, ExternalLink, Undo2, BookOpen, AlertCircle, Database } from "lucide-react";
+import { Check, Lock, ExternalLink, Undo2, BookOpen, AlertCircle, Database, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RoadmapDetailStep, StepItemState, MappingSource } from "./roadmap-utils";
 import { TOGGLE_ACTION_TYPES, ACTION_TYPE_LABEL } from "./roadmap-utils";
@@ -24,10 +24,26 @@ const MAPPING_SOURCE_CONFIG: Record<MappingSource, { label: string; className: s
         className: "bg-amber-50 text-amber-700 border-amber-200",
         icon: AlertCircle,
     },
+    llm_generated: {
+        label: "AI 생성",
+        className: "bg-purple-50 text-purple-700 border-purple-200",
+        icon: Sparkles,
+    },
+    template: {
+        label: "법령 기반",
+        className: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        icon: BookOpen,
+    },
+};
+
+const FALLBACK_SOURCE_CONFIG = {
+    label: "AI 생성",
+    className: "bg-purple-50 text-purple-700 border-purple-200",
+    icon: Sparkles,
 };
 
 function MappingSourceBadge({ source }: { source: MappingSource }) {
-    const config = MAPPING_SOURCE_CONFIG[source];
+    const config = MAPPING_SOURCE_CONFIG[source] ?? FALLBACK_SOURCE_CONFIG;
     const Icon = config.icon;
     return (
         <span
@@ -36,11 +52,13 @@ function MappingSourceBadge({ source }: { source: MappingSource }) {
                 config.className,
             )}
             title={
-                source === "actionkit_direct"
+                source === "actionkit_direct" || source === "template"
                     ? "법령·규정에서 직접 매칭된 정보입니다"
                     : source === "rag"
                         ? "AI가 관련 자료를 분석하여 생성한 정보입니다"
-                        : "일반적인 창업 안내 정보입니다"
+                        : source === "llm_generated"
+                            ? "AI가 자체 생성한 정보입니다"
+                            : "일반적인 창업 안내 정보입니다"
             }
         >
             <Icon className="w-3 h-3" />

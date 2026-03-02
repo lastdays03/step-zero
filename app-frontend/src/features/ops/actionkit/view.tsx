@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
 import { fetchCategories, fetchCategoryItems, fetchSummary, updateItemOrders } from "./api";
@@ -102,7 +103,7 @@ export function OpsActionKitView() {
       fetchSummary().then(setSummary).catch(console.error);
     } catch (error) {
       console.error("Failed to delete item:", error);
-      alert("삭제 중 오류가 발생했습니다.");
+      toast.error("삭제 중 오류가 발생했습니다.");
     }
   };
 

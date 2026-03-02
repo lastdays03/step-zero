@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { toast } from "sonner";
 import { AlertTriangle, ShieldCheck, UserX, UserCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -32,7 +33,7 @@ export function DisciplineModal({ user, isOpen, onClose, onConfirm, isBulk, sele
 
     const handleConfirm = async () => {
         if (!reason.trim()) {
-            alert("처리 사유를 입력해 주세요.");
+            toast.warning("처리 사유를 입력해 주세요.");
             return;
         }
         setIsSubmitting(true);
@@ -42,7 +43,7 @@ export function DisciplineModal({ user, isOpen, onClose, onConfirm, isBulk, sele
             setReason("");
         } catch (err) {
             console.error(err);
-            alert("처리에 실패했습니다.");
+            toast.error("처리에 실패했습니다.");
         } finally {
             setIsSubmitting(false);
         }

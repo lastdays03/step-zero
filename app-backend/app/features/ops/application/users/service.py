@@ -1,5 +1,7 @@
 from datetime import datetime, timedelta
 
+from app.core.security import utc_now
+
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import or_, select
 
@@ -19,7 +21,7 @@ def _apply_status_update(user: User, status: str, duration_days: int | None) -> 
             and duration_days > 0
             and status != "suspended_permanent"
         ):
-            user.suspended_until = datetime.utcnow() + timedelta(
+            user.suspended_until = utc_now() + timedelta(
                 days=float(duration_days)
             )
         else:

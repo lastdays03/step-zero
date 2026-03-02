@@ -5,6 +5,7 @@ import { cn } from '@/lib/utils'
 import { AuthProvider } from '@/providers/AuthProvider'
 import { GoogleOAuthProvider } from '@react-oauth/google'
 import { GlobalChatbot } from '@/features/chatbot'
+import { Toaster } from '@/components/ui/sonner'
 
 const inter = Inter({ subsets: ['latin'], variable: "--font-sans" })
 
@@ -32,12 +33,14 @@ export default function RootLayout({
                         <AuthProvider>
                             {children}
                             <GlobalChatbot />
+                            <Toaster />
                         </AuthProvider>
                     </GoogleOAuthProvider>
                 ) : (
                     <AuthProvider>
                         {children}
                         <GlobalChatbot />
+                        <Toaster />
                     </AuthProvider>
                 )}
             </body>

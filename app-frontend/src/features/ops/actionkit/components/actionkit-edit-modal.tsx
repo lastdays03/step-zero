@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -117,7 +118,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
             setTimeout(() => setUploadSuccess(false), 3000);
         } catch (error) {
             console.error("Failed to upload file:", error);
-            alert("파일 업로드 중 오류가 발생했습니다.");
+            toast.error("파일 업로드 중 오류가 발생했습니다.");
         } finally {
             setUploading(false);
         }
@@ -142,7 +143,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
             onClose();
         } catch (error) {
             console.error("Failed to update item:", error);
-            alert("저장 중 오류가 발생했습니다.");
+            toast.error("저장 중 오류가 발생했습니다.");
         } finally {
             setLoading(false);
         }
@@ -285,7 +286,7 @@ export function ActionKitEditModal({ item, isOpen, onClose, onSaved }: ActionKit
                                                             link.remove();
                                                             window.URL.revokeObjectURL(url);
                                                         } catch {
-                                                            alert("파일 다운로드 중 오류가 발생했습니다.");
+                                                            toast.error("파일 다운로드 중 오류가 발생했습니다.");
                                                         }
                                                     }}
                                                     className="flex items-center gap-1 px-2.5 py-1.5 rounded-md bg-white border border-slate-200 text-slate-500 hover:text-[#36a4f2] hover:border-[#36a4f2]/30 transition-colors flex-shrink-0 ml-2"

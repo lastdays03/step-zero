@@ -26,6 +26,10 @@ class Roadmap(SQLModel, table=True):
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
     )
     deleted_at: datetime | None = None
+    template_id: Optional[int] = Field(
+        default=None, foreign_key="roadmap_templates.id", index=True,
+        ondelete="SET NULL",
+    )
     created_by: Optional[int] = Field(default=None, foreign_key="user.id")
     updated_by: Optional[int] = Field(default=None, foreign_key="user.id")
 
