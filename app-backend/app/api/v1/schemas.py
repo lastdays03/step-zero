@@ -1,3 +1,4 @@
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -220,7 +221,7 @@ class ThreadSummary(BaseModel):
 
 class ChatMessageResponse(BaseModel):
     id: int
-    role: str
+    role: Literal["user", "assistant", "system"]
     content: str
     sources: list[dict] | None = None
     created_at: str

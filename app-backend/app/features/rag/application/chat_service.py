@@ -97,6 +97,14 @@ class ChatService:
         else:
             source = classify_query(message)
 
+        if source == "out_of_scope":
+            return (
+                "이 질문은 전문가 상담을 권장합니다. "
+                "세금, 소송, 의료, 투자 등의 전문 분야는 "
+                "해당 분야 전문가에게 문의해 주세요.",
+                "out_of_scope",
+            )
+
         if source == "legal":
             answer = await self.rag_service.query(message)
             return answer, "legal_rag"

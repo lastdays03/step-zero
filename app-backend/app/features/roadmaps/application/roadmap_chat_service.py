@@ -115,8 +115,8 @@ class RoadmapChatService:
 
         # 3. 최근 대화 조회 + 컨텍스트 빌드
         recent = await self.chat_repo.get_recent_messages(thread.id, limit=5)
-        system_prompt = await self.context_builder.build(
-            roadmap, step, session, recent
+        system_prompt, step_actions = await self.context_builder.build(
+            roadmap, step
         )
 
         # 4. LangChain 메시지 배열 구성
@@ -170,10 +170,7 @@ class RoadmapChatService:
             })
             return
 
-        # 6. 출처 파싱
-        step_actions = await self.context_builder.roadmap_repo.list_step_actions(
-            [step.id]
-        )
+        # 6. 출처 파싱 (build()에서 이미 조회한 actions 재활용)
         sources = self._parse_citations(full_response, step_actions)
         if sources:
             yield _sse_event("sources", {"sources": sources})

@@ -48,11 +48,6 @@ def upgrade() -> None:
         "roadmap_chat_threads",
         ["step_id"],
     )
-    op.create_index(
-        "ix_roadmap_chat_threads_roadmap_step",
-        "roadmap_chat_threads",
-        ["roadmap_id", "step_id"],
-    )
     op.create_unique_constraint(
         "uq_thread_roadmap_step_user",
         "roadmap_chat_threads",
@@ -93,10 +88,6 @@ def downgrade() -> None:
         "uq_thread_roadmap_step_user",
         "roadmap_chat_threads",
         type_="unique",
-    )
-    op.drop_index(
-        "ix_roadmap_chat_threads_roadmap_step",
-        table_name="roadmap_chat_threads",
     )
     op.drop_index(
         "ix_roadmap_chat_threads_step_id",

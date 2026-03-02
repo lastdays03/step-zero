@@ -3,7 +3,7 @@ from typing import Optional
 from uuid import UUID, uuid4
 
 import sqlalchemy as sa
-from sqlalchemy import Index, UniqueConstraint
+from sqlalchemy import UniqueConstraint
 from sqlmodel import Field, SQLModel
 
 
@@ -15,11 +15,6 @@ class RoadmapChatThread(SQLModel, table=True):
 
     __tablename__ = "roadmap_chat_threads"
     __table_args__ = (
-        Index(
-            "ix_roadmap_chat_threads_roadmap_step",
-            "roadmap_id",
-            "step_id",
-        ),
         UniqueConstraint(
             "roadmap_id",
             "step_id",

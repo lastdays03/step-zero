@@ -279,6 +279,7 @@ export function useStepChat(
         let buffer = "";
         let receivedSources: CitationSource[] | undefined;
         let receivedThreadId: string | null = null;
+        let serverMessageId: string | null = null;
 
         while (true) {
           const { done, value } = await reader.read();
@@ -319,26 +320,29 @@ export function useStepChat(
 
               case "meta":
                 receivedThreadId = event.thread_id;
+                serverMessageId = String(event.message_id);
                 // 어시스턴트 메시지 ID를 서버 ID로 교체
                 setMessages((prev) =>
                   prev.map((m) =>
                     m.id === assistantId
-                      ? { ...m, id: String(event.message_id) }
+                      ? { ...m, id: serverMessageId! }
                       : m,
                   ),
                 );
                 break;
 
-              case "done":
-                // 스트리밍 완료 — 최종 상태 업데이트
+              case "done": {
+                // 스트리밍 완료 — meta에서 교체된 서버 ID 또는 원래 ID로 탐색
+                const targetId = serverMessageId ?? assistantId;
                 setMessages((prev) =>
                   prev.map((m) =>
-                    m.id === assistantId || m.id === String((event as SSEDoneEvent & { message_id?: number }).message_id)
+                    m.id === targetId
                       ? { ...m, isStreaming: false, sources: receivedSources }
                       : m,
                   ),
                 );
                 break;
+              }
 
               case "error":
                 setError(event.message);

@@ -8,14 +8,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from app.core.logging import get_logger
 from app.repositories.roadmap_repository import RoadmapRepository
 
 if TYPE_CHECKING:
-    from sqlalchemy.ext.asyncio import AsyncSession
-
     from app.models.roadmap import (
         Roadmap,
         RoadmapStep,
@@ -41,21 +39,17 @@ class RoadmapContextBuilder:
         self,
         roadmap: Roadmap,
         step: RoadmapStep,
-        session: AsyncSession,
-        recent_messages: list[Any] | None = None,
         token_budget: int = _DEFAULT_TOKEN_BUDGET,
-    ) -> str:
+    ) -> tuple[str, list[RoadmapStepAction]]:
         """3레이어 시스템 프롬프트 생성.
 
         Args:
             roadmap: 대상 로드맵
             step: 현재 단계
-            session: DB 세션 (step_details/actions 조회용)
-            recent_messages: 최근 대화 메시지 (role, content 속성 필요)
             token_budget: 최대 토큰 예산 (기본 1,200)
 
         Returns:
-            조합된 시스템 프롬프트 문자열
+            (시스템 프롬프트 문자열, step actions 목록) 튜플
         """
         # 단계 상세 + 액션 조회
         details = await self.roadmap_repo.list_step_details([step.id])
@@ -66,11 +60,11 @@ class RoadmapContextBuilder:
         # 3레이어 조합
         layer1 = self._build_fact_layer(roadmap, step_detail, actions)
         layer2 = self._build_state_layer(step, step_detail, actions)
-        layer3 = self._build_instruction_layer(step, recent_messages)
+        layer3 = self._build_instruction_layer(step)
 
         prompt = f"{layer1}\n\n{layer2}\n\n{layer3}"
 
-        return self._trim_to_budget(prompt, max_tokens=token_budget)
+        return self._trim_to_budget(prompt, max_tokens=token_budget), actions
 
     # ------------------------------------------------------------------ #
     #  LAYER 1: 불변 팩트 (<FACTS>)
@@ -187,9 +181,8 @@ class RoadmapContextBuilder:
     def _build_instruction_layer(
         self,
         step: RoadmapStep,
-        recent_messages: list[Any] | None = None,
     ) -> str:
-        """LAYER 3: 안내 규칙 — 안전장치 + few-shot + 최근 대화 요약."""
+        """LAYER 3: 안내 규칙 — 안전장치 + few-shot."""
         parts: list[str] = ["<RULES>"]
 
         # 역할 정의
@@ -262,16 +255,6 @@ class RoadmapContextBuilder:
             "X 잘못된 예: \"건축법 시행령 제12조에 의하면...\" "
             "→ <FACTS>에 없는 법령 조항을 생성. 팩트에 있는 정보만 인용할 것."
         )
-
-        # 최근 대화 맥락 (최대 5개)
-        if recent_messages:
-            parts.append("")
-            parts.append("## 최근 대화 맥락")
-            for msg in recent_messages[-5:]:
-                role = getattr(msg, "role", "unknown")
-                content = getattr(msg, "content", "")
-                truncated = content[:200] + "..." if len(content) > 200 else content
-                parts.append(f"{role}: {truncated}")
 
         parts.append("</RULES>")
         return "\n".join(parts)

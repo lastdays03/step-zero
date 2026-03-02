@@ -1,6 +1,7 @@
 from datetime import datetime, timezone
 from uuid import UUID
 
+from sqlalchemy import update as sa_update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -94,16 +95,15 @@ class RoadmapChatRepository:
         )
         self.session.add(message)
 
-        # 스레드 카운터 및 타임스탬프 갱신
-        stmt = select(RoadmapChatThread).where(
-            RoadmapChatThread.id == thread_id
+        # 스레드 카운터 및 타임스탬프 갱신 (SELECT 없이 UPDATE)
+        await self.session.execute(
+            sa_update(RoadmapChatThread)
+            .where(RoadmapChatThread.id == thread_id)
+            .values(
+                message_count=RoadmapChatThread.message_count + 1,
+                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+            )
         )
-        result = await self.session.execute(stmt)
-        thread = result.scalar_one_or_none()
-        if thread:
-            thread.message_count += 1
-            thread.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
-            self.session.add(thread)
 
         await self.session.flush()
         return message
