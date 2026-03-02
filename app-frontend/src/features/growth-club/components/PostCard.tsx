@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { toast } from "sonner";
 import { Post } from '../types';
 import { MessageSquare, ThumbsUp, Trash2, AlertCircle, Paperclip } from 'lucide-react';
 
@@ -48,7 +49,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
             }
         } catch (error) {
             console.error('Failed to delete post:', error);
-            alert('게시글 삭제에 실패했습니다.');
+            toast.error('게시글 삭제에 실패했습니다.');
         } finally {
             setIsDeleting(false);
         }
@@ -62,7 +63,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
         setIsReportModalOpen(false);
         try {
             const result = await growthClubApi.reportPost(post.id, reason);
-            alert(result.message);
+            toast.info(result.message);
             if (result.is_blinded && onDeleteSuccess) {
                 onDeleteSuccess();
             } else if (onReportSuccess) {
@@ -72,13 +73,13 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
             console.error('Failed to report post:', error);
             const axiosErr = error as { response?: { data?: { detail?: string } } };
             const message = axiosErr.response?.data?.detail || '게시글 신고에 실패했습니다.';
-            alert(message);
+            toast.error(message);
         }
     };
 
     const handleLike = async () => {
         if (!user) {
-            alert('좋아요를 누르려면 먼저 로그인해주세요.');
+            toast.warning('좋아요를 누르려면 먼저 로그인해주세요.');
             return;
         }
         if (isLiking) return;

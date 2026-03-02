@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { toast } from "sonner";
 import {
     Camera,
     Plus,
@@ -156,7 +157,7 @@ export default function ProfilePage() {
             setCurrentTime(new Date());
 
             setError(null);
-            alert("프로필이 성공적으로 저장되었습니다.");
+            toast.success("프로필이 성공적으로 저장되었습니다.");
         } catch (err) {
             console.error("Failed to save profile:", err);
             setError("저장 중 오류가 발생했습니다.");

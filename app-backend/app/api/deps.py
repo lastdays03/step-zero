@@ -32,7 +32,10 @@ async def get_current_user(
 
     try:
         payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+            issuer=settings.PROJECT_NAME,
         )
         subject = payload.get("sub")
         if subject is None:
@@ -123,7 +126,10 @@ async def get_optional_current_user(
 
     try:
         payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+            issuer=settings.PROJECT_NAME,
         )
         subject = payload.get("sub")
         if subject is None:
@@ -165,7 +171,10 @@ async def get_current_user_or_guest(
 
     try:
         payload = jwt.decode(
-            token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM]
+            token,
+            settings.SECRET_KEY,
+            algorithms=[settings.ALGORITHM],
+            issuer=settings.PROJECT_NAME,
         )
         subject = payload.get("sub")
         if subject is None:

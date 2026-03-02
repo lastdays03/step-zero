@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import type { DraggableProvidedDragHandleProps } from "@hello-pangea/dnd";
 import React, { useState } from "react";
+import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -131,7 +132,7 @@ export function TemplateStepEditor({
       setIsEditingMeta(false);
       onChange();
     } catch {
-      alert("단계 수정에 실패했습니다.");
+      toast.error("단계 수정에 실패했습니다.");
     } finally {
       setIsSaving(false);
     }
@@ -143,7 +144,7 @@ export function TemplateStepEditor({
       await deleteTemplateStep(templateId, step.id);
       onChange();
     } catch {
-      alert("단계 삭제에 실패했습니다.");
+      toast.error("단계 삭제에 실패했습니다.");
     }
   };
 

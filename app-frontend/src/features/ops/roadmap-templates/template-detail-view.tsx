@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 import {
   DragDropContext,
   Draggable,
@@ -154,7 +155,7 @@ export function TemplateDetailView({ templateId }: TemplateDetailViewProps) {
       });
       await load();
     } catch {
-      alert("저장에 실패했습니다.");
+      toast.error("저장에 실패했습니다.");
     } finally {
       setIsSaving(false);
     }
@@ -169,7 +170,7 @@ export function TemplateDetailView({ templateId }: TemplateDetailViewProps) {
       });
       await load();
     } catch (err) {
-      alert(
+      toast.error(
         "상태 변경 실패: " +
           (err instanceof Error ? err.message : String(err)),
       );
@@ -189,7 +190,7 @@ export function TemplateDetailView({ templateId }: TemplateDetailViewProps) {
       setIsAddingStep(false);
       await load();
     } catch {
-      alert("단계 추가에 실패했습니다.");
+      toast.error("단계 추가에 실패했습니다.");
     }
   };
 
@@ -212,7 +213,7 @@ export function TemplateDetailView({ templateId }: TemplateDetailViewProps) {
       );
       await load();
     } catch {
-      alert("순서 변경에 실패했습니다.");
+      toast.error("순서 변경에 실패했습니다.");
       await load();
     }
   };

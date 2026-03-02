@@ -5,6 +5,7 @@ const apiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
 export const AUTH_STORAGE_EVENT = "auth-storage-changed";
 export const ROADMAP_POLLING_CLEARED_EVENT = "roadmap-polling-cleared";
 const ROADMAP_JOB_STORAGE_KEY = "roadmap_polling_job_id";
+const PROACTIVE_REFRESH_MARGIN_MS = 5 * 60 * 1000; // 5 minutes before expiry
 
 const baseURL = explicitBaseUrl
     || (apiUrl ? `${apiUrl.replace(/\/$/, "")}/api/v1` : "http://localhost:8000/api/v1");
@@ -153,3 +154,61 @@ apiClient.interceptors.response.use(
         }
     }
 );
+
+// --- Proactive Token Refresh ---
+// Parses JWT exp claim and schedules a background refresh before expiry.
+
+let proactiveRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+function parseJwtExp(token: string): number | null {
+    try {
+        const parts = token.split(".");
+        if (parts.length !== 3) return null;
+        const payload = JSON.parse(atob(parts[1]));
+        return typeof payload.exp === "number" ? payload.exp : null;
+    } catch {
+        return null;
+    }
+}
+
+function scheduleProactiveRefresh() {
+    if (typeof window === "undefined") return;
+    if (proactiveRefreshTimer) {
+        clearTimeout(proactiveRefreshTimer);
+        proactiveRefreshTimer = null;
+    }
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    const exp = parseJwtExp(token);
+    if (!exp) return;
+
+    const expiresAtMs = exp * 1000;
+    const delayMs = expiresAtMs - Date.now() - PROACTIVE_REFRESH_MARGIN_MS;
+    if (delayMs <= 0) return; // already within margin or expired
+
+    proactiveRefreshTimer = setTimeout(async () => {
+        proactiveRefreshTimer = null;
+        const refreshToken = localStorage.getItem("refresh_token");
+        if (!refreshToken || isRefreshing) return;
+
+        try {
+            const response = await axios.post(`${baseURL}/auth/refresh`, {
+                refresh_token: refreshToken,
+            });
+            const { access_token, refresh_token: newRefreshToken } = response.data;
+            localStorage.setItem("token", access_token);
+            localStorage.setItem("refresh_token", newRefreshToken);
+            window.dispatchEvent(new Event(AUTH_STORAGE_EVENT));
+        } catch {
+            // Proactive refresh failed silently — the 401 interceptor will handle it
+        }
+    }, delayMs);
+}
+
+// Re-schedule whenever auth state changes (login, silent refresh, etc.)
+if (typeof window !== "undefined") {
+    window.addEventListener(AUTH_STORAGE_EVENT, scheduleProactiveRefresh);
+    scheduleProactiveRefresh();
+}

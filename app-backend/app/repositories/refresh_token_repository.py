@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from app.core.security import utc_now
@@ -89,6 +89,23 @@ class RefreshTokenRepository:
             token.revoked = True
             self.session.add(token)
         await self.session.commit()
+
+    async def delete_expired_and_revoked(self, older_than_days: int = 30) -> int:
+        """Delete tokens that are expired or revoked and older than the given days."""
+        cutoff = utc_now() - timedelta(days=older_than_days)
+        result = await self.session.execute(
+            select(RefreshToken).where(
+                RefreshToken.created_at < cutoff,
+                (RefreshToken.revoked == True) | (RefreshToken.expires_at < utc_now()),  # noqa: E712
+            )
+        )
+        tokens = result.scalars().all()
+        count = len(tokens)
+        for token in tokens:
+            await self.session.delete(token)
+        if count:
+            await self.session.commit()
+        return count
 
     def is_expired(self, token: RefreshToken) -> bool:
         expires = token.expires_at

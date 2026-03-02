@@ -2,6 +2,7 @@
 
 import { FileStack, Plus, RefreshCw } from "lucide-react";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -119,7 +120,7 @@ export function OpsRoadmapTemplatesView() {
       await deleteTemplate(template.id);
       await load();
     } catch {
-      alert("삭제에 실패했습니다.");
+      toast.error("삭제에 실패했습니다.");
     }
   };
 

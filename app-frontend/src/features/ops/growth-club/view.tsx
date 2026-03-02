@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { toast } from "sonner";
 import { OpsAccessPlaceholder } from "@/features/ops/shared/ops-access-placeholder";
 import { useOpsAccessGuard } from "@/features/ops/shared/use-ops-access-guard";
 import { Post, Comment } from "@/features/growth-club/types";
@@ -287,7 +288,7 @@ export function OpsGrowthClubView() {
       await unblindPost(postId);
       void loadData(true);
     } catch {
-      alert("해제 중 오류가 발생했습니다.");
+      toast.error("해제 중 오류가 발생했습니다.");
     }
   };
 
@@ -297,7 +298,7 @@ export function OpsGrowthClubView() {
       await unblindComment(commentId);
       void loadData(true);
     } catch {
-      alert("해제 중 오류가 발생했습니다.");
+      toast.error("해제 중 오류가 발생했습니다.");
     }
   };
 
@@ -307,10 +308,10 @@ export function OpsGrowthClubView() {
       try {
         await unsuspendUser(userId);
         setSuspendedUsers((prev) => ({ ...prev, [userId]: false }));
-        alert("정지 해제 처리가 완료되었습니다.");
+        toast.success("정지 해제 처리가 완료되었습니다.");
         void loadData(true);
       } catch {
-        alert("정지 해제 중 오류가 발생했습니다.");
+        toast.error("정지 해제 중 오류가 발생했습니다.");
       }
     } else {
       setSuspensionTarget({ userId, username, targetType, targetId });
@@ -328,10 +329,10 @@ export function OpsGrowthClubView() {
       );
       setSuspendedUsers((prev) => ({ ...prev, [suspensionTarget.userId]: true }));
       setSuspensionTarget(null);
-      alert("유저 정지 처리가 완료되었습니다.");
+      toast.success("유저 정지 처리가 완료되었습니다.");
       void loadData(true);
     } catch {
-      alert("정지 처리 중 오류가 발생했습니다.");
+      toast.error("정지 처리 중 오류가 발생했습니다.");
     }
   };
 
@@ -341,7 +342,7 @@ export function OpsGrowthClubView() {
       await deletePost(postId);
       void loadData(true);
     } catch {
-      alert("삭제 중 오류가 발생했습니다.");
+      toast.error("삭제 중 오류가 발생했습니다.");
     }
   };
 
@@ -351,7 +352,7 @@ export function OpsGrowthClubView() {
       await deleteComment(commentId);
       void loadData(true);
     } catch {
-      alert("삭제 중 오류가 발생했습니다.");
+      toast.error("삭제 중 오류가 발생했습니다.");
     }
   };
 
@@ -363,7 +364,7 @@ export function OpsGrowthClubView() {
       await Promise.all(Array.from(selectedPostIds).map((id) => deletePost(id)));
       void loadData(true);
     } catch {
-      alert("일괄 삭제 중 오류가 발생했습니다.");
+      toast.error("일괄 삭제 중 오류가 발생했습니다.");
     }
   };
 
@@ -374,7 +375,7 @@ export function OpsGrowthClubView() {
       await Promise.all(Array.from(selectedPostIds).map((id) => unblindPost(id)));
       void loadData(true);
     } catch {
-      alert("일괄 블라인드 해제 중 오류가 발생했습니다.");
+      toast.error("일괄 블라인드 해제 중 오류가 발생했습니다.");
     }
   };
 
@@ -385,7 +386,7 @@ export function OpsGrowthClubView() {
       await Promise.all(Array.from(selectedCommentIds).map((id) => deleteComment(id)));
       void loadData(true);
     } catch {
-      alert("일괄 삭제 중 오류가 발생했습니다.");
+      toast.error("일괄 삭제 중 오류가 발생했습니다.");
     }
   };
 
@@ -396,7 +397,7 @@ export function OpsGrowthClubView() {
       await Promise.all(Array.from(selectedCommentIds).map((id) => unblindComment(id)));
       void loadData(true);
     } catch {
-      alert("일괄 블라인드 해제 중 오류가 발생했습니다.");
+      toast.error("일괄 블라인드 해제 중 오류가 발생했습니다.");
     }
   };
 

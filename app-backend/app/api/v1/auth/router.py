@@ -1,7 +1,7 @@
 import logging
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from google.auth.exceptions import GoogleAuthError
 from pydantic import BaseModel, Field
@@ -11,6 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.schemas import RefreshTokenRequest, TeamRead, TokenWithTeams
 from app.core import config, security
 from app.core.db import get_session
+from app.core.rate_limit import limiter
 from app.features.auth.application.auth_service import AuthService
 from app.models.user import User, UserRead
 from app.repositories.refresh_token_repository import RefreshTokenRepository
@@ -113,7 +114,9 @@ async def _login_social_mock_user(
     description="이메일/비밀번호로 로그인하고 팀 컨텍스트가 포함된 액세스 토큰을 발급합니다.",
     response_description="액세스 토큰과 사용자/팀 정보를 반환합니다.",
 )
+@limiter.limit("5/minute")
 async def login_access_token(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
@@ -146,7 +149,9 @@ async def login_access_token(
     description="Google ID Token을 검증해 로그인합니다.",
     response_description="액세스 토큰과 사용자/팀 정보를 반환합니다.",
 )
+@limiter.limit("5/minute")
 async def login_google(
+    request: Request,
     request_data: GoogleLoginRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
@@ -206,7 +211,9 @@ async def login_google(
     description="개발 환경에서 mock 소셜 계정으로 로그인합니다.",
     response_description="액세스 토큰과 사용자/팀 정보를 반환합니다.",
 )
+@limiter.limit("5/minute")
 async def login_social(
+    request: Request,
     provider: str = Path(..., description="소셜 로그인 제공자 (`google` 또는 `kakao`)"),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
@@ -235,7 +242,9 @@ async def login_social(
     description="리프레시 토큰으로 새 액세스 토큰과 리프레시 토큰을 발급합니다.",
     response_description="새 액세스 토큰과 리프레시 토큰을 반환합니다.",
 )
+@limiter.limit("10/minute")
 async def refresh_token(
+    request: Request,
     body: RefreshTokenRequest,
     session: AsyncSession = Depends(get_session),
 ) -> Any:
@@ -264,7 +273,9 @@ async def refresh_token(
     summary="로그아웃",
     description="리프레시 토큰을 폐기합니다.",
 )
+@limiter.limit("10/minute")
 async def logout(
+    request: Request,
     body: RefreshTokenRequest,
     session: AsyncSession = Depends(get_session),
 ) -> None:

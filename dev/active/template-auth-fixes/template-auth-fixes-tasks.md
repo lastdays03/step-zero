@@ -53,11 +53,12 @@
 
 ## Phase C: 백엔드 보안 강화 [단기 1-2주]
 
-- [ ] C-1: Auth 엔드포인트 Rate Limiting
-  - `slowapi` 패키지 설치
-  - `/auth/login`: 5req/min per IP
-  - `/auth/refresh`: 10req/min per IP
-  - **AC:** 초과 시 429 Too Many Requests 응답
+- [x] C-1: Auth 엔드포인트 Rate Limiting
+  - `slowapi` 패키지 설치 + `core/rate_limit.py` 모듈 추가
+  - `/auth/login`, `/auth/login/google`, `/auth/login/social/{provider}`: 5req/min per IP
+  - `/auth/refresh`, `/auth/logout`: 10req/min per IP
+  - 테스트에서 `limiter.enabled = False`로 비활성화
+  - **AC:** 초과 시 429 Too Many Requests 응답 ✓
 - [x] C-2: 하드코딩 관리자 이메일 제거
   - `auth_service.py:206` — `dojyu1928@gmail.com` 강제 superuser 부여 코드 삭제
   - DB `user.is_superuser` 플래그 기반으로 전환
@@ -75,21 +76,27 @@
 
 ## Phase D: 인증 시스템 고도화 [중기 1개월]
 
-- [ ] D-1: Proactive Token Refresh
-  - Access Token 만료 5분 전에 백그라운드 갱신
-  - JWT `exp` 클레임 파싱하여 타이머 설정
-  - **AC:** 사용자가 30분 연속 사용 시 401 에러 제로
-- [ ] D-2: 글로벌 Toast 컴포넌트 통합
-  - shadcn/ui Toast 또는 react-hot-toast
-  - 인증 에러, 저장 성공, 네트워크 오류 등 통일된 알림
-  - **AC:** alert() 호출 전면 제거
-- [ ] D-3: Refresh Token DB Cleanup Task
-  - ARQ worker에 주기적 cleanup 작업 추가
+- [x] D-1: Proactive Token Refresh
+  - `api-client.ts`에 `scheduleProactiveRefresh()` 추가
+  - JWT `exp` 클레임 base64 파싱 → 만료 5분 전 타이머 설정
+  - AUTH_STORAGE_EVENT 리스너로 로그인/갱신 시 자동 재스케줄
+  - 실패 시 silent (401 interceptor가 후속 처리)
+  - **AC:** 사용자가 30분 연속 사용 시 401 에러 제로 ✓
+- [x] D-2: 글로벌 Toast 컴포넌트 통합
+  - `sonner` 라이브러리 설치 + `components/ui/sonner.tsx` Toaster 래퍼 생성
+  - `layout.tsx`에 `<Toaster />` 추가 (position: top-right, richColors)
+  - 18개 파일에서 `alert()` → `toast.error/success/warning/info()` 교체
+  - 에러 메시지 → `toast.error()`, 성공 → `toast.success()`, 경고 → `toast.warning()`
+  - **AC:** alert() 호출 전면 제거 ✓
+- [x] D-3: Refresh Token DB Cleanup Task
+  - ARQ worker에 `cleanup_expired_refresh_tokens` cron job 추가 (매일 03:00 UTC)
+  - `RefreshTokenRepository.delete_expired_and_revoked()` 메서드 추가
   - 만료 + revoked 토큰 중 30일 경과분 삭제
-  - **AC:** refresh_tokens 테이블 무제한 성장 방지
-- [ ] D-4: JWT `iss` 클레임 검증
-  - `jwt.decode()`에 `issuer=settings.PROJECT_NAME` 추가
-  - **AC:** 다른 서비스의 JWT 거부
+  - **AC:** refresh_tokens 테이블 무제한 성장 방지 ✓
+- [x] D-4: JWT `iss` 클레임 검증
+  - `deps.py`의 3개 `jwt.decode()` 호출에 `issuer=settings.PROJECT_NAME` 추가
+  - `get_current_user`, `get_optional_current_user`, `get_current_user_or_guest` 모두 적용
+  - **AC:** 다른 서비스의 JWT 거부 ✓
 - [x] D-5: `datetime.utcnow()` 통일
   - `app/` 전체에서 `datetime.now(timezone.utc)` 사용으로 교체 완료
   - RefreshToken 모델의 `default_factory`도 수정
@@ -122,7 +129,7 @@
 |-------|------|------|--------|
 | A: 이번 세션 | 7 | 9 | 78% |
 | B: UX 개선 | 4 | 4 | 100% |
-| C: 보안 강화 | 3 | 4 | 75% |
-| D: 고도화 | 2 | 6 | 33% |
+| C: 보안 강화 | 4 | 4 | 100% |
+| D: 고도화 | 6 | 6 | 100% |
 | E: 장기 | 0 | 3 | 0% |
-| **합계** | **16** | **26** | **62%** |
+| **합계** | **21** | **26** | **81%** |

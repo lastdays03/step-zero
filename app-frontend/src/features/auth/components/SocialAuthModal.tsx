@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { toast } from "sonner";
 import {
     Dialog,
     DialogContent,
@@ -48,7 +49,7 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
 
     const handleGoogleSuccess = async (credentialResponse: { credential?: string }) => {
         if (!credentialResponse.credential) {
-            alert('구글 로그인 토큰을 받지 못했습니다.');
+            toast.error('구글 로그인 토큰을 받지 못했습니다.');
             return;
         }
         try {
@@ -74,12 +75,12 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
 
             console.error('Google login verification failed:', error);
             if (status === 401) {
-                alert('구글 로그인 토큰 검증에 실패했습니다. Google Client ID 설정과 토큰 발급 계정을 확인해주세요.');
+                toast.error('구글 로그인 토큰 검증에 실패했습니다. Google Client ID 설정과 토큰 발급 계정을 확인해주세요.');
                 return;
             }
             if (status === 503) {
                 if (data?.detail === 'Authentication backend unavailable') {
-                    alert('로그인 서버가 데이터베이스에 연결되지 않았습니다. 백엔드/DB 상태를 먼저 확인해주세요.');
+                    toast.error('로그인 서버가 데이터베이스에 연결되지 않았습니다. 백엔드/DB 상태를 먼저 확인해주세요.');
                     return;
                 }
                 try {
@@ -102,14 +103,14 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                         return;
                     }
 
-                    alert(
+                    toast.error(
                         (typeof fallbackData?.detail === 'string' ? fallbackData.detail : null)
                         || '구글 인증 서비스 연결에 실패했습니다. 잠시 후 다시 시도하거나 일반 로그인으로 진행해주세요.',
                     );
                     return;
                 }
             }
-            alert((typeof data?.detail === 'string' ? data.detail : null) || '구글 로그인 검증에 실패했습니다.');
+            toast.error((typeof data?.detail === 'string' ? data.detail : null) || '구글 로그인 검증에 실패했습니다.');
         }
     };
 
@@ -137,7 +138,7 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                                 onSuccess={handleGoogleSuccess}
                                 onError={() => {
                                     console.error('Google Login Failed');
-                                    alert('구글 로그인에 실패했습니다.');
+                                    toast.error('구글 로그인에 실패했습니다.');
                                 }}
                                 text="signin_with"
                                 shape="pill"

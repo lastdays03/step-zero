@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
+import { toast } from "sonner";
 import { Comment } from '../types';
 import { useAuth } from '@/providers/AuthProvider';
 import { growthClubApi } from '../api';
@@ -36,7 +37,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
 
         if (!content.trim()) return;
         if (!isLoggedIn) {
-            alert('로그인이 필요한 기능입니다.');
+            toast.warning('로그인이 필요한 기능입니다.');
             return;
         }
 
@@ -49,7 +50,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
         } catch (error: unknown) {
             const axiosErr = error as { response?: { data?: { detail?: string } } };
             const message = axiosErr.response?.data?.detail || '댓글 작성에 실패했습니다.';
-            alert(message);
+            toast.error(message);
         } finally {
             setIsSubmitting(false);
         }
@@ -63,7 +64,7 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
             await growthClubApi.deleteComment(commentId);
             onCommentAdded();
         } catch {
-            alert('댓글 삭제에 실패했습니다.');
+            toast.error('댓글 삭제에 실패했습니다.');
         } finally {
             setIsSubmitting(false);
         }
@@ -82,15 +83,15 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
         try {
             const res = await growthClubApi.reportComment(commentId, reason);
             if (res.is_blinded) {
-                alert('댓글이 신고 누적으로 인해 블라인드 처리되었습니다.');
+                toast.warning('댓글이 신고 누적으로 인해 블라인드 처리되었습니다.');
             } else {
-                alert('신고가 접수되었습니다.');
+                toast.success('신고가 접수되었습니다.');
             }
             onCommentAdded(); // Refresh list if blinded
         } catch (error: unknown) {
             const axiosErr = error as { response?: { data?: { detail?: string } } };
             const message = axiosErr.response?.data?.detail || '신고 처리에 실패했습니다.';
-            alert(message);
+            toast.error(message);
         }
     };
 

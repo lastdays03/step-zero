@@ -2,6 +2,7 @@
 
 import { Pencil, Plus, Trash2 } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,7 +50,7 @@ export function TemplateActionEditor({
       await deleteTemplateAction(templateId, stepId, action.id);
       onActionChange();
     } catch {
-      alert("삭제에 실패했습니다.");
+      toast.error("삭제에 실패했습니다.");
     }
   };
 
@@ -69,7 +70,7 @@ export function TemplateActionEditor({
       setIsAdding(false);
       onActionChange();
     } catch {
-      alert("추가에 실패했습니다.");
+      toast.error("추가에 실패했습니다.");
     } finally {
       setIsSaving(false);
     }
@@ -108,7 +109,7 @@ export function TemplateActionEditor({
       handleCancelEdit();
       onActionChange();
     } catch {
-      alert("수정에 실패했습니다.");
+      toast.error("수정에 실패했습니다.");
     } finally {
       setIsSaving(false);
     }

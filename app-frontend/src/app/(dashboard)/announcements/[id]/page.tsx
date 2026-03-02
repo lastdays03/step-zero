@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
+import { toast } from "sonner";
 import { useParams } from 'next/navigation';
 import { AnnouncementDetailView } from '@/features/announcements/components/AnnouncementDetailView';
 import { announcementsApi } from '@/features/announcements/api';
@@ -41,7 +42,7 @@ export default function AnnouncementDetailPage() {
     useEffect(() => {
         if (error === '게시가 종료된 공지입니다.') {
             const timer = setTimeout(() => {
-                window.alert('게시가 종료된 공지입니다.');
+                toast.warning('게시가 종료된 공지입니다.');
                 window.location.href = '/dashboard';
             }, 100);
             return () => clearTimeout(timer);

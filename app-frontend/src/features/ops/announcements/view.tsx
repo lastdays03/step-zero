@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 import {
   Plus,
   Loader2,
@@ -179,7 +180,7 @@ export function OpsAnnouncementsView() {
       await updateOpsAnnouncementStatus(announcement.id, { status: newStatus });
       await load();
     } catch (err) {
-      alert(
+      toast.error(
         "상태 변경에 실패했습니다: " +
         (err instanceof Error ? err.message : String(err)),
       );

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,7 +45,7 @@ export function CategoryEditModal({ isOpen, onClose, onSaved, category, activeDo
 
     const handleSave = async () => {
         if (!title.trim() || !slug.trim()) {
-            alert("카테고리명과 슬러그(영어 영문명)는 필수입니다.");
+            toast.warning("카테고리명과 슬러그(영어 영문명)는 필수입니다.");
             return;
         }
 
@@ -67,7 +68,7 @@ export function CategoryEditModal({ isOpen, onClose, onSaved, category, activeDo
             onClose();
         } catch (err) {
             console.error("Failed to save category:", err);
-            alert("카테고리 저장 중 오류가 발생했습니다.");
+            toast.error("카테고리 저장 중 오류가 발생했습니다.");
         } finally {
             setLoading(false);
         }
@@ -84,7 +85,7 @@ export function CategoryEditModal({ isOpen, onClose, onSaved, category, activeDo
             onClose();
         } catch (err) {
             console.error("Failed to delete category:", err);
-            alert("삭제 중 오류가 발생했습니다. 카테고리에 속한 항목을 먼저 모두 삭제하거나 이동하세요.");
+            toast.error("삭제 중 오류가 발생했습니다. 카테고리에 속한 항목을 먼저 모두 삭제하거나 이동하세요.");
         } finally {
             setLoading(false);
         }
