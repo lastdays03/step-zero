@@ -4,7 +4,7 @@ import './globals.css'
 import { cn } from '@/lib/utils'
 import { AuthProvider } from '@/providers/AuthProvider'
 import { GoogleOAuthProvider } from '@react-oauth/google'
-import { ChatContextProvider, GlobalChatbot } from '@/features/chatbot'
+import { ChatProvider, ChatWidget } from '@/features/chat'
 import { Toaster } from '@/components/ui/sonner'
 
 const inter = Inter({ subsets: ['latin'], variable: "--font-sans" })
@@ -31,19 +31,19 @@ export default function RootLayout({
                 {hasGoogleClientId ? (
                     <GoogleOAuthProvider clientId={googleClientId}>
                         <AuthProvider>
-                            <ChatContextProvider>
+                            <ChatProvider>
                                 {children}
-                                <GlobalChatbot />
-                            </ChatContextProvider>
+                                <ChatWidget />
+                            </ChatProvider>
                             <Toaster />
                         </AuthProvider>
                     </GoogleOAuthProvider>
                 ) : (
                     <AuthProvider>
-                        <ChatContextProvider>
+                        <ChatProvider>
                             {children}
-                            <GlobalChatbot />
-                        </ChatContextProvider>
+                            <ChatWidget />
+                        </ChatProvider>
                         <Toaster />
                     </AuthProvider>
                 )}

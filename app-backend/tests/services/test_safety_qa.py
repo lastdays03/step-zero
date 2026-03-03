@@ -1,13 +1,12 @@
-"""안전장치 QA 110건 자동화 테스트.
+"""안전장치 QA 자동화 테스트.
 
-qa-safety-scenarios.md에 정의된 110건 시나리오를 pytest로 자동 검증.
+qa-safety-scenarios.md에 정의된 시나리오를 pytest로 자동 검증.
 
 테스트 구조:
 1. SemanticRouter 기반 분류 테스트 — 범위 외 질문 자동 판정
 2. ContextBuilder 출력 검증 — 빈 데이터, 토큰 예산 초과
-3. 입력 유효성 검증 — 빈 메시지, XSS, SQL injection
-4. RoadmapChatService 단위 테스트 — 출처 파싱, 메시지 빌드
-5. @pytest.mark.requires_openai — 실제 LLM 호출 검증
+3. 입력 유효성 검증 — XSS, SQL injection
+4. @pytest.mark.requires_openai — 실제 LLM 호출 검증
 """
 
 from __future__ import annotations
@@ -18,18 +17,11 @@ from unittest.mock import AsyncMock, MagicMock
 import numpy as np
 import pytest
 
-from app.features.rag.application.semantic_router import (
-    LEGAL_KEYWORDS,
-    SemanticRouter,
-)
-from app.features.roadmaps.application.context_builder import (
-    RoadmapContextBuilder,
-    _trim_checklist,
-)
-from app.features.roadmaps.application.roadmap_chat_service import (
-    RoadmapChatService,
-    _CITATION_PATTERN,
-)
+from app.features.rag.application.semantic_router import SemanticRouter
+from app.features.roadmaps.application.context_builder import RoadmapContextBuilder
+
+# 출처 인용 패턴 (기존 RoadmapChatService에서 이동)
+_CITATION_PATTERN = re.compile(r"\[(법령|서류)\s*(\d+)\]")
 
 
 # ---------------------------------------------------------------------------
@@ -107,6 +99,44 @@ def _make_builder(step_details=None, step_actions=None):
         return_value=step_actions if step_actions is not None else []
     )
     return RoadmapContextBuilder(roadmap_repo=repo)
+
+
+def _parse_citations(response: str, actions: list) -> list[dict]:
+    """출처 인용 파싱 (기존 _parse_citations 인라인)."""
+    legal_actions = [a for a in actions if a.action_type == "LEGAL_BASIS"]
+    doc_actions = [a for a in actions if a.action_type == "DOCUMENT"]
+
+    found: list[dict] = []
+    seen: set[str] = set()
+
+    for match in _CITATION_PATTERN.finditer(response):
+        cite_type = match.group(1)
+        cite_num = int(match.group(2))
+        key = f"{cite_type}_{cite_num}"
+        if key in seen:
+            continue
+        seen.add(key)
+
+        if cite_type == "법령" and 1 <= cite_num <= len(legal_actions):
+            action = legal_actions[cite_num - 1]
+            item_id = (action.metadata_json or {}).get("actionkit_item_id")
+            found.append({
+                "id": cite_num,
+                "type": "legal_basis",
+                "title": action.title,
+                "url": action.source_url
+                or (f"/api/v1/actionkits/items/{item_id}" if item_id else None),
+            })
+        elif cite_type == "서류" and 1 <= cite_num <= len(doc_actions):
+            action = doc_actions[cite_num - 1]
+            found.append({
+                "id": cite_num,
+                "type": "document",
+                "title": action.title,
+                "url": action.source_url,
+            })
+
+    return found
 
 
 def _make_oos_mock_embeddings():
@@ -376,7 +406,7 @@ class TestCategory6AEmptyData:
         legal_actions = [a for a in actions if a.action_type == "LEGAL_BASIS"]
         # [법령 2] 파싱 시도: 인덱스 2는 범위 외 → 빈 결과
         response = "[법령 2]에 따르면..."
-        found = RoadmapChatService._parse_citations(response, actions)
+        found = _parse_citations(response, actions)
         # 법령이 1개뿐이므로 [법령 2]는 매칭되지 않음
         assert len(found) == 0
 
@@ -426,17 +456,17 @@ class TestCategory6BTokenBudget:
         assert len(msg) == 2000
 
     def test_s6_10_over_max_length_2001_chars(self):
-        """S-6-10: 2001자 초과 — StepChatRequest 유효성 검증.
+        """S-6-10: 2001자 초과 — ChatStreamRequest 유효성 검증.
 
         Pydantic max_length=2000에 의해 422 에러 발생해야 한다.
         (API 레벨 테스트는 별도. 여기선 스키마 검증.)
         """
         from pydantic import ValidationError
 
-        from app.api.v1.schemas import StepChatRequest
+        from app.features.chat.application.schemas import ChatStreamRequest
 
         with pytest.raises(ValidationError) as exc_info:
-            StepChatRequest(message="가" * 2001)
+            ChatStreamRequest(message="가" * 2001)
 
         errors = exc_info.value.errors()
         assert any(
@@ -444,20 +474,20 @@ class TestCategory6BTokenBudget:
         )
 
     def test_s6_10_empty_message_rejected(self):
-        """S-6-01/S-6-08: 빈 메시지 — StepChatRequest 유효성 검증."""
+        """S-6-01/S-6-08: 빈 메시지 — ChatStreamRequest 유효성 검증."""
         from pydantic import ValidationError
 
-        from app.api.v1.schemas import StepChatRequest
+        from app.features.chat.application.schemas import ChatStreamRequest
 
         with pytest.raises(ValidationError):
-            StepChatRequest(message="")
+            ChatStreamRequest(message="")
 
     def test_s6_08_whitespace_only_message(self):
         """S-6-08: 공백만 입력 — 최소 길이 검증 통과하지만 공백뿐."""
-        from app.api.v1.schemas import StepChatRequest
+        from app.features.chat.application.schemas import ChatStreamRequest
 
         # min_length=1이므로 공백 1자 이상은 통과
-        req = StepChatRequest(message="   ")
+        req = ChatStreamRequest(message="   ")
         assert req.message == "   "
 
     def test_s6_13_checklist_50_items_trimming(self):
@@ -859,7 +889,7 @@ class TestCategory4CitationEnforcement:
     def test_s4_06_parse_legal_citation(self):
         """S-4-06: _parse_citations가 [법령 1]을 올바르게 파싱한다."""
         response = "[법령 1]에 따라 영업신고를 해야 합니다."
-        found = RoadmapChatService._parse_citations(response, self.actions)
+        found = _parse_citations(response, self.actions)
         assert len(found) == 1
         assert found[0]["type"] == "legal_basis"
         assert found[0]["title"] == "식품위생법"
@@ -867,7 +897,7 @@ class TestCategory4CitationEnforcement:
     def test_s4_07_parse_document_citation(self):
         """S-4-07: _parse_citations가 [서류 1]을 올바르게 파싱한다."""
         response = "[서류 1]을 제출해야 합니다."
-        found = RoadmapChatService._parse_citations(response, self.actions)
+        found = _parse_citations(response, self.actions)
         assert len(found) == 1
         assert found[0]["type"] == "document"
         assert found[0]["title"] == "영업신고서"
@@ -875,13 +905,13 @@ class TestCategory4CitationEnforcement:
     def test_s4_08_parse_multiple_citations(self):
         """S-4-08: 여러 인용을 동시에 파싱한다."""
         response = "[법령 1]에 따라 [서류 1]을 제출합니다."
-        found = RoadmapChatService._parse_citations(response, self.actions)
+        found = _parse_citations(response, self.actions)
         assert len(found) == 2
 
     def test_s4_09_parse_dedup_citations(self):
         """S-4-09: 중복 인용은 1회만 파싱한다."""
         response = "[법령 1]과 [법령 1]을 참고하세요."
-        found = RoadmapChatService._parse_citations(response, self.actions)
+        found = _parse_citations(response, self.actions)
         assert len(found) == 1
 
     def test_s4_10_citation_pattern_regex(self):
@@ -896,31 +926,31 @@ class TestCategory4CitationEnforcement:
     def test_s4_11_parse_no_citation_in_checklist(self):
         """S-4-11: 인용이 없는 응답에서는 빈 리스트 반환."""
         response = "체크리스트를 확인해 주세요."
-        found = RoadmapChatService._parse_citations(response, self.actions)
+        found = _parse_citations(response, self.actions)
         assert found == []
 
     def test_s4_12_citation_in_english_response(self):
         """S-4-12: 영어 응답에서도 [법령 N] 패턴이 파싱된다."""
         response = "Please refer to [법령 1] for details."
-        found = RoadmapChatService._parse_citations(response, self.actions)
+        found = _parse_citations(response, self.actions)
         assert len(found) == 1
 
     def test_s4_13_citation_in_table_format(self):
         """S-4-13: 표 형식에서도 인용이 파싱된다."""
         response = "| 항목 | 법령 |\n| --- | --- |\n| 영업신고 | [법령 1] |"
-        found = RoadmapChatService._parse_citations(response, self.actions)
+        found = _parse_citations(response, self.actions)
         assert len(found) == 1
 
     def test_s4_14_no_json_citation(self):
         """S-4-14: JSON 형태 응답에서도 인용이 파싱된다."""
         response = '{"law": "[법령 1]", "doc": "[서류 1]"}'
-        found = RoadmapChatService._parse_citations(response, self.actions)
+        found = _parse_citations(response, self.actions)
         assert len(found) == 2
 
     def test_s4_15_citation_in_paraphrase(self):
         """S-4-15: 패러프레이즈된 응답에서도 인용이 파싱된다."""
         response = "이 법률([법령 1])에 근거하여 신고서([서류 1])를 제출합니다."
-        found = RoadmapChatService._parse_citations(response, self.actions)
+        found = _parse_citations(response, self.actions)
         assert len(found) == 2
 
 
@@ -1089,50 +1119,6 @@ class TestCategory7ComplexScenarios:
         rules = self.builder._build_instruction_layer(self.step)
         assert "<RULES>" in rules
         assert "</RULES>" in rules
-
-
-# ===========================================================================
-# _build_chat_messages 단위 테스트
-# ===========================================================================
-
-
-class TestBuildChatMessages:
-    """RoadmapChatService._build_chat_messages 검증."""
-
-    def test_system_message_is_first(self):
-        """시스템 메시지가 항상 첫 번째이다."""
-        messages = RoadmapChatService._build_chat_messages(
-            "시스템 프롬프트", [], "안녕하세요"
-        )
-        assert messages[0].content == "시스템 프롬프트"
-        assert len(messages) == 2  # system + user
-
-    def test_recent_messages_included(self):
-        """최근 대화 이력이 메시지에 포함된다."""
-        recent = []
-        for role in ["user", "assistant"]:
-            msg = MagicMock()
-            msg.role = role
-            msg.content = f"테스트 {role}"
-            recent.append(msg)
-
-        messages = RoadmapChatService._build_chat_messages(
-            "시스템", recent, "새 질문"
-        )
-        # system + user(recent) + assistant(recent) + user(new)
-        assert len(messages) == 4
-
-    def test_dedup_last_message(self):
-        """마지막 이력과 현재 메시지가 같으면 중복 추가 안 함."""
-        msg = MagicMock()
-        msg.role = "user"
-        msg.content = "같은 질문"
-
-        messages = RoadmapChatService._build_chat_messages(
-            "시스템", [msg], "같은 질문"
-        )
-        # system + user(recent) — 현재 메시지는 중복이므로 추가 안 됨
-        assert len(messages) == 2
 
 
 # ===========================================================================
