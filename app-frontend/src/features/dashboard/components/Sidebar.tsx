@@ -24,12 +24,12 @@ export const Sidebar = () => {
     const { isLoggedIn, user, logout, canAccessOps } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
 
-    const menuItems: { icon: typeof LayoutDashboard; label: string; href: string; badge?: string }[] = [
-        { icon: LayoutDashboard, label: '대시보드', href: '/dashboard' },
-        { icon: Map, label: '나의 로드맵', href: '/roadmap' },
-        { icon: Briefcase, label: '액션 키트', href: '/actionkit' },
-        { icon: Users, label: '그로스 클럽', href: '/growth-club' },
-        ...(canAccessOps ? [{ icon: Shield, label: '운영 콘솔', href: '/ops' }] : []),
+    const menuItems: { icon: typeof LayoutDashboard; label: string; caption: string; href: string; badge?: string }[] = [
+        { icon: LayoutDashboard, label: '대시보드', caption: '현재 진행 상황 한눈에', href: '/dashboard' },
+        { icon: Map, label: '나의 로드맵', caption: 'AI 맞춤 창업 단계', href: '/roadmap' },
+        { icon: Briefcase, label: '액션 키트', caption: '필요 서류 · 체크리스트', href: '/actionkit' },
+        { icon: Users, label: '그로스 클럽', caption: '창업자 커뮤니티', href: '/growth-club' },
+        ...(canAccessOps ? [{ icon: Shield, label: '운영 콘솔', caption: '관리자 전용', href: '/ops' }] : []),
     ];
 
     return (
@@ -58,8 +58,11 @@ export const Sidebar = () => {
                                     }`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <item.icon className={`w-5 h-5 ${isActive ? 'text-primary' : 'text-slate-400 group-hover:text-slate-600'}`} />
-                                    <span className="text-sm">{item.label}</span>
+                                    <item.icon className={`w-5 h-5 shrink-0 ${isActive ? 'text-primary' : 'text-slate-400 group-hover:text-slate-600'}`} />
+                                    <div className="flex flex-col">
+                                        <span className="text-sm">{item.label}</span>
+                                        <span className={`text-[10px] leading-tight ${isActive ? 'text-primary/60' : 'text-slate-400'}`}>{item.caption}</span>
+                                    </div>
                                 </div>
                                 {item.badge && !isActive && (
                                     <Badge className="text-[10px] px-2 py-0.5 rounded-md font-bold bg-blue-100 text-blue-600 border-none hover:bg-blue-100 uppercase">
