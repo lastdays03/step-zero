@@ -267,6 +267,7 @@ async def test_e2e_thread_per_roadmap_step_user_uniqueness(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires_openai
 async def test_e2e_stream_with_mock_llm_saves_messages(client: AsyncClient):
     """Mock LLM으로 SSE 스트리밍 → DB에 user/assistant 메시지 저장 확인."""
     user_id, team_id = await _get_test_user_and_team()

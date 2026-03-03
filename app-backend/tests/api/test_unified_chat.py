@@ -178,6 +178,7 @@ async def test_unified_chat_stream_message_too_long_returns_422(
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires_openai
 async def test_unified_chat_stream_general_mode(client: AsyncClient):
     """일반 모드: mock ChatService.stream → SSE 응답 검증."""
     headers = await _login_headers(client)
@@ -212,6 +213,7 @@ async def test_unified_chat_stream_general_mode(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires_openai
 async def test_unified_chat_stream_coach_mode(client: AsyncClient):
     """코치 모드: roadmap_id + step_id → mock RoadmapChatService.stream → SSE 응답."""
     user_id, team_id = await _get_test_user_and_team()
@@ -249,6 +251,7 @@ async def test_unified_chat_stream_coach_mode(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires_openai
 async def test_unified_chat_stream_coach_mode_roadmap_not_found(
     client: AsyncClient,
 ):

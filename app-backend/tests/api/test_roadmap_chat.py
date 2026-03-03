@@ -306,8 +306,9 @@ async def test_step_chat_stream_returns_sse(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+@pytest.mark.requires_openai
 async def test_step_chat_stream_returns_sse_with_mock_llm(client: AsyncClient):
-    """Mock LLM으로 SSE 스트리밍 정상 동작 검증 (OPENAI_API_KEY 불필요)."""
+    """Mock LLM으로 SSE 스트리밍 정상 동작 검증 (서비스 초기화에 OPENAI_API_KEY 필요)."""
     from langchain_core.messages import AIMessageChunk
 
     user_id, team_id = await _get_test_user_and_team()
