@@ -83,7 +83,7 @@
 ## 8. 품질/검증 기준
 - Backend 변경 완료 전: `cd app-backend && .venv/bin/pytest -q`
 - Frontend 변경 완료 전: `cd app-frontend && npm run lint`
-- 마이그레이션 변경 시: `cd app-backend && ./scripts/check_migrations.sh`
+
 
 ## 9. 운영 점검 체크리스트
 1. 개발 시작 전 Linear 이슈 존재

@@ -9,7 +9,7 @@
 ## 검증
 - [ ] backend: `cd app-backend && .venv/bin/pytest -q`
 - [ ] frontend: `cd app-frontend && npm run lint`
-- [ ] 필요 시 migration: `cd app-backend && ./scripts/check_migrations.sh`
+
 
 ## 영향 범위
 - 사용자 영향:
