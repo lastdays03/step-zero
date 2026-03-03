@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Lock, ExternalLink, Undo2, BookOpen, AlertCircle, Database, Sparkles, MessageSquare } from "lucide-react";
-import { useChatContext } from "@/features/chatbot/providers/ChatContextProvider";
+import { Check, Lock, ExternalLink, Undo2, BookOpen, AlertCircle, Database, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { RoadmapDetailStep, StepItemState, MappingSource } from "./roadmap-utils";
 import { TOGGLE_ACTION_TYPES, ACTION_TYPE_LABEL } from "./roadmap-utils";
@@ -83,7 +82,6 @@ interface TimelineStepItemProps {
 export function TimelineStepItem({
     step,
     state,
-    roadmapId,
     previousStepTitle,
     canRevert,
     onStepStatusChange,
@@ -92,14 +90,6 @@ export function TimelineStepItem({
     updatingActionId,
 }: TimelineStepItemProps) {
     const [confirming, setConfirming] = useState(false);
-    const { setCoachContext, openPanel } = useChatContext();
-
-    const showAiCoach = step.status === "IN_PROGRESS" || step.status === "COMPLETED";
-
-    const handleOpenCoach = () => {
-        setCoachContext(roadmapId, step.id, step.title);
-        openPanel();
-    };
 
     if (state === "DONE") {
         const isReverting = updatingStepId === step.id;
@@ -121,16 +111,6 @@ export function TimelineStepItem({
                     ) : null}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
-                    {showAiCoach && (
-                        <button
-                            type="button"
-                            onClick={handleOpenCoach}
-                            className="flex items-center gap-1 text-xs font-medium text-slate-400 hover:text-[#36a4f2] transition-colors whitespace-nowrap opacity-0 group-hover:opacity-100"
-                        >
-                            <MessageSquare className="w-3.5 h-3.5" />
-                            AI 코치
-                        </button>
-                    )}
                     {canRevert ? (
                         <button
                             type="button"
@@ -331,17 +311,6 @@ export function TimelineStepItem({
                         })}
                     </div>
                 ) : null}
-
-                {showAiCoach && (
-                    <button
-                        type="button"
-                        onClick={handleOpenCoach}
-                        className="mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 text-sm font-medium text-[#36a4f2] bg-[#36a4f2]/5 hover:bg-[#36a4f2]/10 border border-[#36a4f2]/20 rounded-lg transition-colors"
-                    >
-                        <MessageSquare className="w-4 h-4" />
-                        AI에게 물어보기
-                    </button>
-                )}
 
                 <div className="flex items-center gap-3 mt-4">
                     {confirming ? (

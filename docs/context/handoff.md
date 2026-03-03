@@ -6,57 +6,71 @@
 
 ## 이번 세션 완료
 
-### 글로벌 챗봇 + AI 코치 통합 (SSE 스트리밍)
-에이전트 팀(backend-dev + frontend-dev) 병렬 처리로 19개 태스크 전체 구현 완료.
+### 챗봇 클린 재작성 — 전체 구현 완료
+7인 에이전트 팀(team-lead, backend-dev, db-specialist, frontend-dev, ui-dev, qa, cleanup-dev)으로 20개 태스크를 3 Phase로 병렬 실행.
 
-**백엔드 (Section A):**
-- `UnifiedChatRequest` 스키마 + model_validator (roadmap_id/step_id 쌍 검증)
-- `ChatService.stream()` 메서드 추가 (일반 SSE 스트리밍)
-- `UnifiedChatService` 디스패처 — 컨텍스트 유무로 코치/일반 자동 분기
-- `POST /rag/chat/stream` SSE 엔드포인트 + DI 팩토리
-- `problem.py` ValueError 직렬화 버그 수정
-- 테스트 8개 추가 → 전체 433 passed, 30 skipped
+**변경 규모**: 66 files, +4,286 / -4,453 lines → 리뷰 후 추가 9 files, -104 lines
 
-**프론트엔드 (Section B~D):**
-- `sseClient.ts` — SSE 파싱/auth/URL 유틸 추출
-- `ChatContextProvider` — localStorage 기반 로드맵 컨텍스트 전역 관리
-- `renderCitationLine.tsx` + `SourcesCard.tsx` — 출처 렌더링
-- `useChatbot.ts` 전면 리팩토링 — REST→SSE, 코치/일반 모드 분기
-- `ChatBubble/ChatPanel/ChatMessageList/GlobalChatbot` 업그레이드
-- `TimelineStepItem` — StepChatPanel→ChatContext 전환
-- `StepChatPanel.tsx` + `useStepChat.ts` 삭제 (레거시 제거)
-- lint 0 errors, build 성공
+**핵심 커밋**:
+- `1d335cc` feat: 챗봇 클린 재작성 — StepZero AI 단일 정체성 + 세션 관리 + 5카테고리 분류
+- `c03ddfa` refactor: 챗봇 코드 리뷰 반영 — 데드코드 제거, 중복 해소, 효율 개선
 
-### 챗봇 완전 통합 설계 논의
-- 현재 "AI 어시스턴트" vs "AI 코치" 이중 모드 분리 분석
-- 대화 이력 저장 구조별 UX 옵션 3가지 (A: 단일 스트림, B: 대화방 목록, C: 하이브리드)
-- 미결정 사항 5개 (Q1~Q5) 정리
-- 리서치 문서: `dev/active/unified-chatbot-integration/chatbot-unification-research.md`
+**백엔드 신규 파일:**
+- `app/features/chat/` — IntentClassifier, SessionService, ChatService, schemas, deps
+- `app/api/v1/chat/router.py` — 6개 엔드포인트 (POST /stream, GET/POST/PATCH/DELETE /sessions)
+- `alembic/versions/013_chat_session_model_extension.py` — DB 마이그레이션
+- `tests/` — test_intent_classifier(21개), test_chat_sessions(10개), test_chat_stream(7개)
 
-## 핵심 기술 결정
-- **단일 SSE 엔드포인트**: `/rag/chat/stream` — roadmap_id 유무로 자동 분기
-- **UnifiedChatService = 조합 패턴**: 기존 ChatService + RoadmapChatService 변경 최소화
-- **기존 엔드포인트 유지**: `/rag/chat`, `/roadmaps/{id}/steps/{sid}/chat/*` 하위호환
-- **ChatContextProvider + localStorage**: 페이지 전환해도 로드맵 컨텍스트 유지
+**프론트엔드 신규 디렉토리:**
+- `src/features/chat/` — 100% 신규 (components 10개, hooks 2개, providers 1개, utils 3개, types 1개)
+
+**삭제된 코드:**
+- `src/features/chatbot/` 전체 (구 프론트엔드)
+- `app/features/rag/application/chat_service.py`, `unified_chat_service.py`
+- `app/features/roadmaps/application/roadmap_chat_service.py`
+- `app/api/v1/roadmaps/chat.py`
+- 테스트 5개
+
+## 핵심 설계 결정 (D1~D9)
+- D1: "StepZero AI" 단일 정체성
+- D2: 모든 대화 DB 저장
+- D3: ChatGPT식 세션 관리 (새 대화, 히스토리, 이름 변경/삭제)
+- D4: 질문 기반 자동 분류 (5카테고리 IntentClassifier)
+- D5: 패널 내 슬라이드 히스토리 UI
+- D6: RAG 실패 시 LLM 폴백 + 경고 배지
+- D7: "AI에게 물어보기" 버튼 제거 (FAB 상시 존재)
+- D8: 첫 메시지 기반 자동 제목 (30자)
+- D9: 클린 재작성 방식
+
+## /simplify 리뷰 결과
+3개 에이전트(재사용/품질/효율) 병렬 리뷰 → 30+ 발견 중 13개 수정:
+- 보안: bare except → HTTPException (세션 소유권 오류 삼킴 방지)
+- 정확성: list_sessions 정렬 created_at → updated_at
+- 효율: set_auto_title/get_messages 불필요 DB 쿼리 제거
+- 성능: ChatMessage React.memo 추가
+- 데드코드: get_chat_stream_deps, clearMessages 삭제
+- 재사용: _LEGAL_KEYWORDS, utc_now(), isSameDay 중복 해소
 
 ## 검증
-- Backend pytest: 433 passed, 30 skipped, 0 failed
+- Backend pytest: 385 passed, 15 skipped, 10 failed (requires_openai — 기존과 동일)
 - Frontend lint: 0 errors
-- Frontend build: 성공 (19 static + 2 동적 페이지)
+- Frontend build: 성공
+- 레거시 참조: 0건 (chatbot, unified_chat, roadmap_chat_service, StepChatPanel, useChatContext, GlobalChatbot)
 
-## 커밋된 변경사항
-- `cc7d861` feat: 로드맵 단계별 AI 코치 챗봇 구현 (Phase 4 Section A~C)
-- `4a7024b` fix: 로드맵 챗봇 코드 리뷰 important 8건 개선
-- `be0979d` ~ `8668bfb` docs/test: 테스트 스위트 + 문서
-- `3b93f50` feat: 글로벌 챗봇 + AI 코치 통합 SSE 스트리밍
-- `aa560bc` docs: 개발 계획 문서 정리
+## 미실행 항목
+- Alembic 마이그레이션 013: Docker 내부에서 실행 필요
+  ```bash
+  docker compose -f docker-compose.dev.yml exec app-backend python -m alembic upgrade head
+  ```
+- 수동 UX 시나리오 테스트 14개 (S1~S14, tasks.md 참조)
+- `feature/4-ai-coach-chatbot` → `develop` PR 미생성
 
 ## 다음 세션 시작점
-1. **즉시**: 챗봇 완전 통합 설계 논의 이어가기 (Q1~Q5 결정)
-   - 리서치 문서: `dev/active/unified-chatbot-integration/chatbot-unification-research.md`
-2. **설계 확정 후**: 완전 통합 구현 (대화 이력 통합, UX 일원화)
-3. **이후**: `feature/4-ai-coach-chatbot` → `develop` PR 생성
+1. **즉시**: `feature/4-ai-coach-chatbot` → `develop` PR 생성
+2. Docker에서 Alembic 마이그레이션 실행 + 검증
+3. 수동 UX 시나리오 테스트 (브라우저 MCP 활용)
 
 ## 커밋 시 주의사항
 - 커밋 메시지는 소문자 시작 필수 (commitlint subject-case 규칙)
+- 한국어로 시작하면 case 규칙 무관
 - `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>` 포함

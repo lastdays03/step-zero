@@ -53,6 +53,7 @@ app = FastAPI(
         {"name": "growth-club", "description": "그로스클럽 게시글/댓글 API"},
         {"name": "community", "description": "그로스클럽 하위호환(alias) API"},
         {"name": "ops", "description": "플랫폼 운영자 전용 API"},
+        {"name": "chat", "description": "통합 AI 챗봇 API"},
         {"name": "rag", "description": "법률 가이드 RAG 질의 API"},
     ],
 )

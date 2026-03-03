@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from typing import Optional
 from uuid import UUID
 
 from sqlalchemy import update as sa_update
@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
+from app.core.security import utc_now
 from app.models.roadmap_chat import RoadmapChatMessage, RoadmapChatThread
 
 
@@ -82,7 +83,8 @@ class RoadmapChatRepository:
         thread_id: UUID,
         role: str,
         content: str,
-        sources_json: dict | None = None,
+        sources_json: list[dict] | None = None,
+        intent_category: str | None = None,
         token_count: int | None = None,
     ) -> RoadmapChatMessage:
         """메시지 추가 + 스레드 message_count/updated_at 갱신."""
@@ -91,6 +93,7 @@ class RoadmapChatRepository:
             role=role,
             content=content,
             sources_json=sources_json,
+            intent_category=intent_category,
             token_count=token_count,
         )
         self.session.add(message)
@@ -101,7 +104,7 @@ class RoadmapChatRepository:
             .where(RoadmapChatThread.id == thread_id)
             .values(
                 message_count=RoadmapChatThread.message_count + 1,
-                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                updated_at=utc_now(),
             )
         )
 
@@ -140,3 +143,102 @@ class RoadmapChatRepository:
         )
         result = await self.session.execute(stmt)
         return result.scalar_one()
+
+    # ------------------------------------------------------------------ #
+    #  세션 관리 확장 메서드 (통합 챗봇용)
+    # ------------------------------------------------------------------ #
+
+    async def create_session(
+        self,
+        *,
+        user_id: int,
+        roadmap_id: Optional[UUID] = None,
+        step_id: Optional[int] = None,
+        title: Optional[str] = None,
+    ) -> RoadmapChatThread:
+        """새 채팅 세션 생성.
+
+        roadmap_id/step_id가 None이면 일반(글로벌) 대화 세션.
+        """
+        thread = RoadmapChatThread(
+            user_id=user_id,
+            roadmap_id=roadmap_id,
+            step_id=step_id,
+            title=title,
+        )
+        self.session.add(thread)
+        await self.session.flush()
+        return thread
+
+    async def list_sessions(
+        self,
+        user_id: int,
+        *,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> tuple[list[RoadmapChatThread], int]:
+        """사용자의 활성 세션 목록 (soft delete 제외, 최근 업데이트순).
+
+        Returns:
+            (sessions, total_count)
+        """
+        from sqlalchemy import func
+
+        base_filter = (
+            RoadmapChatThread.user_id == user_id,
+            RoadmapChatThread.is_deleted == False,  # noqa: E712
+        )
+
+        # total count
+        count_stmt = (
+            select(func.count())
+            .select_from(RoadmapChatThread)
+            .where(*base_filter)
+        )
+        count_result = await self.session.execute(count_stmt)
+        total = count_result.scalar_one()
+
+        # paginated list
+        list_stmt = (
+            select(RoadmapChatThread)
+            .where(*base_filter)
+            .order_by(RoadmapChatThread.updated_at.desc())
+            .limit(limit)
+            .offset(offset)
+        )
+        list_result = await self.session.execute(list_stmt)
+        sessions = list(list_result.scalars().all())
+
+        return sessions, total
+
+    async def update_thread_title(
+        self, thread_id: UUID, title: str
+    ) -> RoadmapChatThread:
+        """세션 제목 업데이트 후 갱신된 스레드 반환."""
+        await self.session.execute(
+            sa_update(RoadmapChatThread)
+            .where(RoadmapChatThread.id == thread_id)
+            .values(
+                title=title,
+                updated_at=utc_now(),
+            )
+        )
+        await self.session.flush()
+        # 갱신된 상태 반환을 위해 재조회
+        stmt = select(RoadmapChatThread).where(
+            RoadmapChatThread.id == thread_id
+        )
+        result = await self.session.execute(stmt)
+        return result.scalar_one()
+
+    async def soft_delete_thread(self, thread_id: UUID) -> None:
+        """세션 소프트 삭제 (is_deleted=True)."""
+        await self.session.execute(
+            sa_update(RoadmapChatThread)
+            .where(RoadmapChatThread.id == thread_id)
+            .values(
+                is_deleted=True,
+                updated_at=utc_now(),
+            )
+        )
+        await self.session.flush()

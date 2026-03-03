@@ -1,7 +1,6 @@
-from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field
 
 from app.models.user import UserRead
 
@@ -193,52 +192,3 @@ class RagQueryRequest(BaseModel):
 
 class RagQueryResponse(BaseModel):
     answer: str
-
-
-class ChatRequest(BaseModel):
-    message: str
-
-
-class ChatResponse(BaseModel):
-    answer: str
-    source: str
-
-
-# ─── AI 코치 채팅 (Phase 4) ───
-
-
-class StepChatRequest(BaseModel):
-    message: str = Field(min_length=1, max_length=2000)
-    thread_id: UUID | None = None
-
-
-class ThreadSummary(BaseModel):
-    thread_id: UUID
-    message_count: int
-    created_at: str
-    updated_at: str
-
-
-class UnifiedChatRequest(BaseModel):
-    """통합 챗봇 요청: 글로벌 챗봇 + AI 코치 겸용."""
-
-    message: str = Field(min_length=1, max_length=2000)
-    thread_id: UUID | None = None
-    roadmap_id: UUID | None = None
-    step_id: int | None = None
-
-    @model_validator(mode="after")
-    def validate_roadmap_step_pair(self):
-        if (self.roadmap_id is None) != (self.step_id is None):
-            raise ValueError(
-                "roadmap_id and step_id must both be provided or both omitted"
-            )
-        return self
-
-
-class ChatMessageResponse(BaseModel):
-    id: int
-    role: Literal["user", "assistant", "system"]
-    content: str
-    sources: list[dict] | None = None
-    created_at: str

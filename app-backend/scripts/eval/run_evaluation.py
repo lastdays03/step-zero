@@ -146,7 +146,18 @@ def run_tier1(dataset: list[dict]) -> dict:
     print("TIER 1: 무비용 기본 검증")
     print("=" * 60)
 
-    from app.features.rag.application.chat_service import classify_query
+    # Inline keyword classifier (moved from deleted rag/chat_service.py)
+    _LEGAL_KEYWORDS = frozenset([
+        "법", "허가", "등록", "신고", "인가", "규정", "법률", "법령",
+        "조례", "면허", "신청", "영업", "위생", "행정심판", "행정조사",
+        "소방", "개인정보", "근로계약", "보험", "세금",
+    ])
+
+    def classify_query(message: str) -> str:
+        for keyword in _LEGAL_KEYWORDS:
+            if keyword in message:
+                return "legal"
+        return "general"
 
     # 라우팅 정확성
     correct = 0
