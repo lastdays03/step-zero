@@ -18,6 +18,7 @@ class ChatStreamRequest(BaseModel):
 
     message: str = Field(min_length=1, max_length=2000)
     session_id: UUID | None = None
+    roadmap_id: UUID | None = None
 
 
 class SessionCreateRequest(BaseModel):

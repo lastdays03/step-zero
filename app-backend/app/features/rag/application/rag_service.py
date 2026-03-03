@@ -103,6 +103,32 @@ class RagService:
             )
             logger.exception("Failed to initialize RAG service")
 
+    async def retrieve(self, question: str) -> tuple[list, list[dict]]:
+        """문서 검색 + 구조화된 출처 메타데이터 반환.
+
+        Returns:
+            (docs, sources): LangChain Document 리스트, CitationSource 호환 메타데이터
+        """
+        if not self.ready:
+            return [], []
+
+        docs = await asyncio.wait_for(
+            run_in_threadpool(self.retriever.invoke, question),
+            timeout=15,
+        )
+
+        sources: list[dict] = []
+        for i, doc in enumerate(docs, 1):
+            meta = doc.metadata
+            sources.append({
+                "id": i,
+                "type": meta.get("category", "law"),
+                "title": meta.get("title", "제목 없음"),
+                "url": meta.get("law_reference"),
+            })
+
+        return docs, sources
+
     async def query(self, question: str) -> str:
         if not self.ready:
             return (

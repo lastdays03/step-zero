@@ -53,13 +53,19 @@ async def chat_stream(
 ) -> StreamingResponse:
     service = get_chat_service(session)
 
-    return StreamingResponse(
-        service.stream(
+    async def _stream_and_commit():
+        async for event in service.stream(
             request.message,
             session_id=request.session_id,
             user_id=current_user.id,
             team_id=current_team.id,
-        ),
+            roadmap_id=request.roadmap_id,
+        ):
+            yield event
+        await session.commit()
+
+    return StreamingResponse(
+        _stream_and_commit(),
         media_type="text/event-stream",
         headers={
             "Cache-Control": "no-cache",

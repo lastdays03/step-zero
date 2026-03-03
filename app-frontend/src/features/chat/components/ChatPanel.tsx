@@ -124,6 +124,10 @@ export function ChatPanel() {
               loadSession(sessionId);
               setHistoryView(false);
             }}
+            onStartNewChat={() => {
+              startNewChat();
+              setHistoryView(false);
+            }}
           />
         </div>
       </div>

@@ -30,7 +30,7 @@ export interface UseChatReturn {
 // ------------------------------------------------------------------ //
 
 export function useChat(): UseChatReturn {
-  const { currentSessionId, setCurrentSessionId } = useChatProvider();
+  const { currentSessionId, setCurrentSessionId, roadmapContext } = useChatProvider();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -43,6 +43,7 @@ export function useChat(): UseChatReturn {
   // ---- 마운트/언마운트 ----
 
   useEffect(() => {
+    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       abortRef.current?.abort();
@@ -117,6 +118,9 @@ export function useChat(): UseChatReturn {
         const body: Record<string, unknown> = { message: text };
         if (currentSessionId) {
           body.session_id = currentSessionId;
+        }
+        if (roadmapContext?.roadmapId) {
+          body.roadmap_id = roadmapContext.roadmapId;
         }
 
         const doFetch = (headers: Record<string, string>) =>
@@ -287,7 +291,7 @@ export function useChat(): UseChatReturn {
         }
       }
     },
-    [currentSessionId, setCurrentSessionId],
+    [currentSessionId, setCurrentSessionId, roadmapContext],
   );
 
   return {

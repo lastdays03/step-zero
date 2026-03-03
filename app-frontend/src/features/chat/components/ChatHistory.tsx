@@ -183,16 +183,16 @@ function SessionItem({
 interface ChatHistoryProps {
   onClose: () => void;
   onSelectSession: (sessionId: string) => void;
+  onStartNewChat: () => void;
 }
 
-export function ChatHistory({ onClose, onSelectSession }: ChatHistoryProps) {
+export function ChatHistory({ onClose, onSelectSession, onStartNewChat }: ChatHistoryProps) {
   const { currentSessionId } = useChatProvider();
   const {
     groupedSessions,
     isLoading,
     error,
     loadSessions,
-    createSession,
     renameSession,
     deleteSession,
   } = useSessions();
@@ -202,12 +202,9 @@ export function ChatHistory({ onClose, onSelectSession }: ChatHistoryProps) {
     loadSessions();
   }, [loadSessions]);
 
-  const handleNewChat = useCallback(async () => {
-    const session = await createSession();
-    if (session) {
-      onSelectSession(session.id);
-    }
-  }, [createSession, onSelectSession]);
+  const handleNewChat = useCallback(() => {
+    onStartNewChat();
+  }, [onStartNewChat]);
 
   const handleSelectSession = useCallback(
     (sessionId: string) => {

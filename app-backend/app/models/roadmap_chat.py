@@ -56,7 +56,7 @@ class RoadmapChatMessage(SQLModel, table=True):
     )
     role: str  # "user" | "assistant" | "system"
     content: str = Field(sa_column=sa.Column(sa.Text, nullable=False))
-    sources_json: dict | None = Field(
+    sources_json: list[dict] | None = Field(
         default=None, sa_column=sa.Column(sa.JSON, nullable=True)
     )
     intent_category: str | None = Field(

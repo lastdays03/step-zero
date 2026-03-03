@@ -29,7 +29,10 @@ from app.features.chat.application.intent_classifier import (
     StepInfo,
 )
 from app.features.chat.application.session_service import SessionService
-from app.features.rag.application.rag_service import RagService
+from app.features.rag.application.rag_service import (
+    RagService,
+    format_docs_with_metadata,
+)
 from app.features.roadmaps.application.context_builder import RoadmapContextBuilder
 from app.repositories.roadmap_chat_repository import RoadmapChatRepository
 from app.repositories.roadmap_repository import RoadmapRepository
@@ -56,6 +59,18 @@ _LEGAL_FALLBACK_PROMPT = (
     "당신은 한국 창업 법률·행정 전문 AI 어시스턴트입니다.\n"
     "한국어로 답변하세요. 확실하지 않은 정보는 "
     "'확인이 필요합니다'라고 명시하세요."
+)
+
+_RAG_CONTEXT_SYSTEM_PROMPT = (
+    "당신은 한국 창업 법률·행정 전문 AI 어시스턴트입니다.\n\n"
+    "[규칙]\n"
+    "1. 아래 제공된 컨텍스트 문서에 기반해서만 답변하세요.\n"
+    "2. 컨텍스트에 답변 근거가 없으면 "
+    '"제공된 문서에서 해당 정보를 찾을 수 없습니다."라고 솔직히 답하세요.\n'
+    "3. 관련 법령이 있으면 법령명과 조항을 인용하세요.\n"
+    "4. 창업 초보자도 이해할 수 있는 쉬운 한국어로 설명하세요.\n"
+    "5. 핵심 내용은 불릿 포인트로 정리하세요.\n\n"
+    "[컨텍스트]\n{context}"
 )
 
 _OUT_OF_SCOPE_MESSAGE = (
@@ -111,6 +126,7 @@ class ChatService:
         session_id: UUID | None = None,
         user_id: int,
         team_id: UUID,
+        roadmap_id: UUID | None = None,
     ) -> AsyncGenerator[str, None]:
         """SSE 스트리밍 응답 생성.
 
@@ -144,7 +160,7 @@ class ChatService:
 
         # 4. 로드맵 컨텍스트 조회
         roadmap, steps, current_step_id = await self._load_roadmap_context(
-            team_id
+            team_id, roadmap_id=roadmap_id
         )
 
         # StepInfo 변환
@@ -170,8 +186,16 @@ class ChatService:
             "step_title": intent.step_title,
         })
 
+        # 6-1. SSE intent 이벤트 (별도 분리)
+        yield _sse_event("intent", {
+            "category": intent.category,
+            "step_id": intent.step_id,
+            "step_title": intent.step_title,
+        })
+
         # 7. 카테고리별 응답 생성
         tokens: list[str] = []
+        stream_meta: dict = {}  # sources 등 핸들러→저장 전달용
 
         try:
             if intent.category == "out_of_scope":
@@ -189,7 +213,7 @@ class ChatService:
 
             elif intent.category == "legal_general":
                 async for event in self._handle_legal_response(
-                    message, tokens
+                    message, tokens, stream_meta
                 ):
                     yield event
 
@@ -209,17 +233,22 @@ class ChatService:
 
         # 8. 어시스턴트 응답 DB 저장
         full_response = "".join(tokens)
+        msg = None
         if full_response:
-            await self._chat_repo.add_message(
+            msg = await self._chat_repo.add_message(
                 thread_id=thread.id,
                 role="assistant",
                 content=full_response,
                 intent_category=intent.category,
+                sources_json=stream_meta.get("sources"),
             )
 
         # 9. SSE done 이벤트 (out_of_scope 제외)
         if intent.category != "out_of_scope":
-            yield _sse_event("done", {})
+            done_data: dict = {}
+            if msg is not None:
+                done_data["message_id"] = msg.id
+            yield _sse_event("done", done_data)
 
     # ------------------------------------------------------------------ #
     #  의도 분류
@@ -245,10 +274,23 @@ class ChatService:
     # ------------------------------------------------------------------ #
 
     async def _load_roadmap_context(
-        self, team_id: UUID,
+        self,
+        team_id: UUID,
+        *,
+        roadmap_id: UUID | None = None,
     ) -> tuple[Roadmap | None, list[RoadmapStep], int | None]:
-        """팀의 최신 로드맵 + 단계 목록 조회."""
-        roadmap = await self._roadmap_repo.get_latest_for_team(team_id)
+        """팀의 로드맵 + 단계 목록 조회.
+
+        roadmap_id가 지정되면 해당 로드맵을 사용하고,
+        미지정 시 팀의 최신 로드맵을 사용한다.
+        """
+        if roadmap_id is not None:
+            roadmap = await self._roadmap_repo.get_by_id_for_team(
+                roadmap_id, team_id
+            )
+        else:
+            roadmap = await self._roadmap_repo.get_latest_for_team(team_id)
+
         if roadmap is None:
             return None, [], None
 
@@ -256,12 +298,18 @@ class ChatService:
         if not steps:
             return roadmap, [], None
 
-        # 현재 단계: 첫 번째 PENDING 또는 IN_PROGRESS
+        # 현재 단계: 첫 번째 IN_PROGRESS (없으면 첫 번째 PENDING)
         current_step_id: int | None = None
+        first_pending_id: int | None = None
         for step in steps:
-            if step.status in ("PENDING", "IN_PROGRESS"):
+            if step.status == "IN_PROGRESS":
                 current_step_id = step.id
                 break
+            if first_pending_id is None and step.status == "PENDING":
+                first_pending_id = step.id
+
+        if current_step_id is None:
+            current_step_id = first_pending_id
 
         return roadmap, steps, current_step_id
 
@@ -300,6 +348,12 @@ class ChatService:
             })
             return
 
+        # other_step: 어떤 단계 기준인지 안내 프리픽스
+        if intent.category == "other_step":
+            prefix = f"📍 {step.step_order}단계({step.title}) 기준으로 답변합니다.\n\n"
+            tokens.append(prefix)
+            yield _sse_event("token", {"token": prefix})
+
         # ContextBuilder로 시스템 프롬프트 생성
         system_prompt, _ = await self._ctx_builder.build(roadmap, step)
 
@@ -310,12 +364,38 @@ class ChatService:
         self,
         message: str,
         tokens: list[str],
+        stream_meta: dict,
     ) -> AsyncGenerator[str, None]:
-        """legal_general → RAG 조회 (미사용 시 LLM 폴백 + warning)."""
+        """legal_general → RAG 검색 + LLM 스트리밍 (미사용 시 폴백 + warning)."""
         if self._rag.ready:
-            answer = await self._rag.query(message)
-            tokens.append(answer)
-            yield _sse_event("token", {"token": answer})
+            # RAG 문서 검색
+            try:
+                docs, sources = await self._rag.retrieve(message)
+            except Exception:
+                logger.exception("RAG retrieval failed")
+                docs, sources = [], []
+
+            # sources SSE 이벤트 발행
+            if sources:
+                stream_meta["sources"] = sources
+                yield _sse_event("sources", {"sources": sources})
+
+            # 검색 결과 기반 LLM 스트리밍
+            if docs:
+                context = format_docs_with_metadata(docs)
+                system_prompt = _RAG_CONTEXT_SYSTEM_PROMPT.format(context=context)
+            else:
+                system_prompt = _LEGAL_FALLBACK_PROMPT
+
+            if not self._llm_ready:
+                yield _sse_event("error", {
+                    "code": "LLM_UNAVAILABLE",
+                    "message": "현재 법령 검색 서비스를 사용할 수 없습니다.",
+                })
+                return
+
+            async for event in self._llm_stream(system_prompt, message, tokens):
+                yield event
             return
 
         # RAG 미사용 → LLM 폴백
@@ -328,6 +408,7 @@ class ChatService:
             return
 
         yield _sse_event("warning", {
+            "code": "RAG_FALLBACK",
             "message": "법령 검색 서비스를 사용할 수 없어 "
             "일반 AI가 답변합니다.",
         })

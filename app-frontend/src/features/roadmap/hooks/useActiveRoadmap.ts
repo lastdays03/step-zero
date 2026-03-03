@@ -59,6 +59,13 @@ export function useActiveRoadmap(): UseActiveRoadmapReturn {
     const setActiveRoadmapFn = useCallback(
         async (roadmapId: string) => {
             localStorage.setItem(STORAGE_KEY, roadmapId);
+            // 같은 탭 내 ChatProvider 등 storage 리스너에 변경 알림
+            window.dispatchEvent(
+                new StorageEvent("storage", {
+                    key: STORAGE_KEY,
+                    newValue: roadmapId,
+                }),
+            );
             await loadDetail(roadmapId);
         },
         [loadDetail],
@@ -66,6 +73,13 @@ export function useActiveRoadmap(): UseActiveRoadmapReturn {
 
     const clearActiveRoadmap = useCallback(() => {
         localStorage.removeItem(STORAGE_KEY);
+        // 같은 탭 내 ChatProvider 등 storage 리스너에 제거 알림
+        window.dispatchEvent(
+            new StorageEvent("storage", {
+                key: STORAGE_KEY,
+                newValue: null,
+            }),
+        );
         setActiveRoadmapId(null);
         setActiveRoadmap(null);
         setError(null);
@@ -78,6 +92,13 @@ export function useActiveRoadmap(): UseActiveRoadmapReturn {
             const detail = await fetchRoadmapDetail(currentId);
             setActiveRoadmapId(currentId);
             setActiveRoadmap(detail);
+            // ChatProvider에 단계 변경을 알려 roadmapContext 갱신
+            window.dispatchEvent(
+                new StorageEvent("storage", {
+                    key: STORAGE_KEY,
+                    newValue: currentId,
+                }),
+            );
         } catch {
             // Silently fail on background refresh
         }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import type { ChatSession } from "../types";
 import {
   fetchSessions,
@@ -24,7 +24,7 @@ export interface SessionGroup {
 // ------------------------------------------------------------------ //
 
 export function useSessions() {
-  const { setCurrentSessionId } = useChatProvider();
+  const { currentSessionId, setCurrentSessionId } = useChatProvider();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -42,6 +42,15 @@ export function useSessions() {
       setIsLoading(false);
     }
   }, []);
+
+  // 서버에서 새 세션 생성 시 (null→non-null) 목록 자동 갱신
+  const prevSessionIdRef = useRef<string | null>(currentSessionId);
+  useEffect(() => {
+    if (prevSessionIdRef.current === null && currentSessionId !== null) {
+      loadSessions();
+    }
+    prevSessionIdRef.current = currentSessionId;
+  }, [currentSessionId, loadSessions]);
 
   // 새 세션 생성
   const handleCreateSession = useCallback(async () => {

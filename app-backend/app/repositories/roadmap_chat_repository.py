@@ -83,7 +83,7 @@ class RoadmapChatRepository:
         thread_id: UUID,
         role: str,
         content: str,
-        sources_json: dict | None = None,
+        sources_json: list[dict] | None = None,
         intent_category: str | None = None,
         token_count: int | None = None,
     ) -> RoadmapChatMessage:
