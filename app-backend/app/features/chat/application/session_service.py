@@ -83,12 +83,11 @@ class SessionService:
         Returns:
             (messages, total_count)
         """
-        await self.get_session(session_id, user_id)
+        thread = await self.get_session(session_id, user_id)
         messages = await self._repo.get_recent_messages(
             session_id, limit=limit, offset=offset
         )
-        total = await self._repo.count_messages(session_id)
-        return messages, total
+        return messages, thread.message_count
 
     # ------------------------------------------------------------------ #
     #  수정
@@ -113,15 +112,14 @@ class SessionService:
     async def set_auto_title(
         self, session_id: UUID, first_message: str
     ) -> None:
-        """첫 메시지 기반 자동 제목 설정 (제목이 없는 세션만).
+        """첫 메시지 기반 자동 제목 설정.
 
         소유권 검증 없이 호출 (내부 서비스 전용).
+        호출자가 이미 thread.title 없음을 확인한 후 호출해야 한다.
         """
-        thread = await self._repo.get_thread(session_id)
-        if thread is None or thread.title is not None:
-            return
-        title = first_message.strip()[:_AUTO_TITLE_MAX_LENGTH]
-        if len(first_message.strip()) > _AUTO_TITLE_MAX_LENGTH:
+        stripped = first_message.strip()
+        title = stripped[:_AUTO_TITLE_MAX_LENGTH]
+        if len(stripped) > _AUTO_TITLE_MAX_LENGTH:
             title += "…"
         await self._repo.update_thread_title(session_id, title)
 

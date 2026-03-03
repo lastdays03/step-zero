@@ -1,5 +1,6 @@
 "use client";
 
+import React from "react";
 import { Bot } from "lucide-react";
 import type { ChatMessage as ChatMessageType } from "../types";
 import { SourcesCard } from "./SourcesCard";
@@ -14,7 +15,7 @@ interface ChatMessageProps {
   message: ChatMessageType;
 }
 
-export function ChatMessage({ message }: ChatMessageProps) {
+export const ChatMessage = React.memo(function ChatMessage({ message }: ChatMessageProps) {
   const isUser = message.role === "user";
 
   // ---- 사용자 메시지 ----
@@ -67,4 +68,4 @@ export function ChatMessage({ message }: ChatMessageProps) {
       </div>
     </div>
   );
-}
+});

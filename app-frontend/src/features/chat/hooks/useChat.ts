@@ -23,7 +23,6 @@ export interface UseChatReturn {
   sendMessage: (content: string) => Promise<void>;
   loadSession: (sessionId: string) => Promise<void>;
   startNewChat: () => void;
-  clearMessages: () => void;
 }
 
 // ------------------------------------------------------------------ //
@@ -44,7 +43,6 @@ export function useChat(): UseChatReturn {
   // ---- 마운트/언마운트 ----
 
   useEffect(() => {
-    mountedRef.current = true;
     return () => {
       mountedRef.current = false;
       abortRef.current?.abort();
@@ -85,15 +83,6 @@ export function useChat(): UseChatReturn {
     setIsStreaming(false);
     setCurrentSessionId(null);
   }, [setCurrentSessionId]);
-
-  // ---- 메시지 초기화 ----
-
-  const clearMessages = useCallback(() => {
-    abortRef.current?.abort();
-    setMessages([]);
-    setError(null);
-    setIsStreaming(false);
-  }, []);
 
   // ---- SSE 스트리밍 메시지 전송 ----
 
@@ -309,6 +298,5 @@ export function useChat(): UseChatReturn {
     sendMessage,
     loadSession,
     startNewChat,
-    clearMessages,
   };
 }

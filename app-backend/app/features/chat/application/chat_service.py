@@ -19,6 +19,8 @@ from uuid import UUID
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
+from fastapi import HTTPException
+
 from app.core.config import get_settings
 from app.core.logging import get_logger
 from app.features.chat.application.intent_classifier import (
@@ -125,7 +127,8 @@ class ChatService:
         if session_id is not None:
             try:
                 thread = await self._session_svc.get_session(session_id, user_id)
-            except Exception:
+            except HTTPException:
+                # 세션 미존재(404)만 폴백 — 소유권 오류도 404로 반환되므로 안전
                 thread = await self._session_svc.create_session(user_id=user_id)
         else:
             thread = await self._session_svc.create_session(user_id=user_id)

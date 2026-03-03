@@ -1,4 +1,3 @@
-from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -7,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
+from app.core.security import utc_now
 from app.models.roadmap_chat import RoadmapChatMessage, RoadmapChatThread
 
 
@@ -104,7 +104,7 @@ class RoadmapChatRepository:
             .where(RoadmapChatThread.id == thread_id)
             .values(
                 message_count=RoadmapChatThread.message_count + 1,
-                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                updated_at=utc_now(),
             )
         )
 
@@ -202,7 +202,7 @@ class RoadmapChatRepository:
         list_stmt = (
             select(RoadmapChatThread)
             .where(*base_filter)
-            .order_by(RoadmapChatThread.created_at.desc())
+            .order_by(RoadmapChatThread.updated_at.desc())
             .limit(limit)
             .offset(offset)
         )
@@ -220,7 +220,7 @@ class RoadmapChatRepository:
             .where(RoadmapChatThread.id == thread_id)
             .values(
                 title=title,
-                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                updated_at=utc_now(),
             )
         )
         await self.session.flush()
@@ -238,7 +238,7 @@ class RoadmapChatRepository:
             .where(RoadmapChatThread.id == thread_id)
             .values(
                 is_deleted=True,
-                updated_at=datetime.now(timezone.utc).replace(tzinfo=None),
+                updated_at=utc_now(),
             )
         )
         await self.session.flush()

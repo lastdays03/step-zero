@@ -127,7 +127,7 @@ export function useSessions() {
 //  유틸
 // ------------------------------------------------------------------ //
 
-function isSameDay(a: Date, b: Date): boolean {
+export function isSameDay(a: Date, b: Date): boolean {
   return (
     a.getFullYear() === b.getFullYear() &&
     a.getMonth() === b.getMonth() &&

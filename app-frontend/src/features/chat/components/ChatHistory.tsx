@@ -18,7 +18,7 @@ import {
   MessageSquare,
   Loader2,
 } from "lucide-react";
-import { useSessions, type SessionGroup } from "../hooks/useSessions";
+import { useSessions, isSameDay, type SessionGroup } from "../hooks/useSessions";
 import { useChatProvider } from "../providers/ChatProvider";
 import type { ChatSession } from "../types";
 
@@ -44,14 +44,6 @@ function formatRelativeTime(dateStr: string): string {
 
   if (isSameDay(d, yesterday)) return "어제";
   return `${diffHour >= 48 ? Math.floor(diffHour / 24) : 2}일 전`;
-}
-
-function isSameDay(a: Date, b: Date): boolean {
-  return (
-    a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
-  );
 }
 
 // ------------------------------------------------------------------ //
@@ -194,7 +186,7 @@ interface ChatHistoryProps {
 }
 
 export function ChatHistory({ onClose, onSelectSession }: ChatHistoryProps) {
-  const { currentSessionId, setCurrentSessionId } = useChatProvider();
+  const { currentSessionId } = useChatProvider();
   const {
     groupedSessions,
     isLoading,
@@ -219,10 +211,10 @@ export function ChatHistory({ onClose, onSelectSession }: ChatHistoryProps) {
 
   const handleSelectSession = useCallback(
     (sessionId: string) => {
-      setCurrentSessionId(sessionId);
+      // setCurrentSessionId는 loadSession 내부에서 호출되므로 여기서 중복 호출하지 않음
       onSelectSession(sessionId);
     },
-    [setCurrentSessionId, onSelectSession],
+    [onSelectSession],
   );
 
   return (

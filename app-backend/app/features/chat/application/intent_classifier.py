@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, Literal, Optional
 
 from app.core.logging import get_logger
+from app.features.rag.application.semantic_router import LEGAL_KEYWORDS as _BASE_LEGAL_KEYWORDS
 
 if TYPE_CHECKING:
     from app.features.rag.application.semantic_router import SemanticRouter
@@ -45,33 +46,9 @@ _CURRENT_STEP_KEYWORDS: frozenset[str] = frozenset(
 # 다른 단계를 특정하는 패턴 (숫자 + 단계/스텝)
 _OTHER_STEP_PATTERN = re.compile(r"(\d+)\s*단계|(\d+)\s*스텝|제\s*(\d+)\s*단계")
 
-# legal 키워드 폴백 (SemanticRouter의 LEGAL_KEYWORDS와 동일 + 확장)
-_LEGAL_KEYWORDS: frozenset[str] = frozenset(
-    {
-        "법",
-        "법률",
-        "규정",
-        "허가",
-        "인허가",
-        "등록",
-        "신고",
-        "계약",
-        "근로",
-        "면허",
-        "인가",
-        "법령",
-        "조례",
-        "신청",
-        "영업",
-        "위생",
-        "행정심판",
-        "행정조사",
-        "소방",
-        "개인정보",
-        "근로계약",
-        "보험",
-        "세금",
-    }
+# legal 키워드 폴백 (SemanticRouter의 LEGAL_KEYWORDS + 확장)
+_LEGAL_KEYWORDS: frozenset[str] = _BASE_LEGAL_KEYWORDS | frozenset(
+    {"법", "인허가", "계약", "근로"}
 )
 
 

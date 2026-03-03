@@ -60,38 +60,3 @@ def get_chat_service(session: AsyncSession) -> "ChatService":
         rag_service=get_rag_service(),
         roadmap_repo=roadmap_repo,
     )
-
-
-def get_chat_stream_deps(session: AsyncSession) -> dict:
-    """채팅 스트리밍에 필요한 전체 의존성 조합.
-
-    Returns:
-        dict with keys: chat_service, session_service, chat_repo, session
-    """
-    from app.features.chat.application.chat_service import ChatService
-    from app.features.rag.application.deps import get_rag_service
-    from app.features.roadmaps.application.context_builder import (
-        RoadmapContextBuilder,
-    )
-    from app.repositories.roadmap_repository import RoadmapRepository
-
-    chat_repo = RoadmapChatRepository(session)
-    roadmap_repo = RoadmapRepository(session)
-    session_svc = SessionService(chat_repo=chat_repo)
-
-    chat_service = ChatService(
-        session_service=session_svc,
-        intent_classifier=get_intent_classifier(),
-        chat_repo=chat_repo,
-        context_builder=RoadmapContextBuilder(roadmap_repo=roadmap_repo),
-        rag_service=get_rag_service(),
-        roadmap_repo=roadmap_repo,
-    )
-
-    return {
-        "chat_service": chat_service,
-        "session_service": session_svc,
-        "intent_classifier": get_intent_classifier(),
-        "chat_repo": chat_repo,
-        "session": session,
-    }
