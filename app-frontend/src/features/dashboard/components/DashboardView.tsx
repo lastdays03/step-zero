@@ -1,15 +1,14 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import { apiClient } from "@/lib/api-client";
 import { useDashboard } from '../hooks/useDashboard';
 import { ProgressCard } from './ProgressCard';
 import { RoadmapStepper } from './RoadmapStepper';
 import { GrowthClubCard } from './GrowthClubCard';
-import { RoadmapGenerationPanel, computeEndowedProgress, computeReadinessLevel } from '@/features/roadmap/components';
+import { computeEndowedProgress, computeReadinessLevel } from '@/features/roadmap/components';
 import { fetchRoadmapDetail } from '@/features/roadmap/api';
-import { useAuth } from "@/providers/AuthProvider";
+import { ColdStartHero } from './ColdStartHero';
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, CheckSquare } from 'lucide-react';
 import type { RoadmapDetailResponse } from '@/features/roadmap/components/RoadmapExecutionView';
@@ -17,15 +16,12 @@ import type { RoadmapDetailResponse } from '@/features/roadmap/components/Roadma
 const ACTIVE_ROADMAP_STORAGE_KEY = "stepzero_active_roadmap_id";
 
 export const DashboardView = () => {
-    const { isLoggedIn } = useAuth();
-    const router = useRouter();
-
     const [activeRoadmapId] = useState<string | null>(() => {
         if (typeof window === "undefined") return null;
         return localStorage.getItem(ACTIVE_ROADMAP_STORAGE_KEY);
     });
 
-    const { data, loading: isLoading, reload } = useDashboard(activeRoadmapId);
+    const { data, loading: isLoading } = useDashboard(activeRoadmapId);
     const [roadmapDetail, setRoadmapDetail] = useState<RoadmapDetailResponse | null>(null);
     const [documentsLoading, setDocumentsLoading] = useState(false);
     const [documentsError, setDocumentsError] = useState<string | null>(null);
@@ -176,26 +172,12 @@ export const DashboardView = () => {
             });
     }, [currentStep]);
 
-    const handleGenerated = useCallback(
-        (roadmapId: string | number) => {
-            localStorage.setItem(ACTIVE_ROADMAP_STORAGE_KEY, String(roadmapId));
-            router.push("/roadmap");
-        },
-        [router],
-    );
-
     if (isLoading || !data) {
         return <div className="p-8 text-center">Loading...</div>;
     }
 
     if (isRoadmapNotReady) {
-        return (
-            <RoadmapGenerationPanel
-                isAuthenticated={isLoggedIn}
-                onRefresh={() => void reload()}
-                onGenerated={handleGenerated}
-            />
-        );
+        return <ColdStartHero />;
     }
 
     return (
