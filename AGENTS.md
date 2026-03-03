@@ -35,7 +35,7 @@
 ## Quality Gates
 - Before concluding backend changes, run `cd app-backend && .venv/bin/pytest -q`.
 - Before concluding frontend changes, run `cd app-frontend && npm run lint`.
-- If migrations changed, run `cd app-backend && ./scripts/check_migrations.sh`.
+
 
 ## Security Rules
 - Never print secrets in full (API keys, tokens, passwords).

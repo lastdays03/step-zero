@@ -69,7 +69,6 @@ docker compose -f docker-compose.dev.yml logs -f app-backend app-worker  # 로�
 ```bash
 cd app-backend && .venv/bin/pytest -q          # 백엔드 변경 시
 cd app-frontend && npm run lint                # 프론트엔드 변경 시
-cd app-backend && ./scripts/check_migrations.sh  # 마이그레이션 변경 시
 ```
 
 ## Git Workflow

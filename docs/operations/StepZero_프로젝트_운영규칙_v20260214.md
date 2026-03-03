@@ -57,8 +57,6 @@
 ## 7. 백엔드 개발 규칙
 - 새 기능 API는 `v2` 우선 구현, `v1`은 호환 유지한다.
 - DB 스키마 변경 시 Alembic 마이그레이션 필수.
-- 마이그레이션 검증:
-- `cd app-backend && ./scripts/check_migrations.sh`
 - 완료 전 최소 검증:
 - `cd app-backend && .venv/bin/pytest -q`
 - 설정 변경 시 필수 확인:

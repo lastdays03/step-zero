@@ -135,7 +135,7 @@
 - [ ] `cd app-backend && .venv/bin/pytest -q`
 - [ ] `cd app-frontend && npm run lint`
 - [ ] `cd app-frontend && npm run build`
-- [ ] 마이그레이션 체크(`./scripts/check_migrations.sh`)
+
 
 ---
 
