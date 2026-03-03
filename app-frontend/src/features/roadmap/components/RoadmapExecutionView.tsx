@@ -85,6 +85,7 @@ export const RoadmapExecutionView = ({
                             <TimelinePhaseCard
                                 key={group.phase}
                                 group={group}
+                                roadmapId={data.roadmap_id}
                                 lastCompletedStepId={lastCompletedStepId}
                                 overallProgress={endowed.display}
                                 onStepStatusChange={onStepStatusChange}

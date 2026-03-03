@@ -16,6 +16,7 @@ from app.models import (  # noqa: F401
     profile,
     refresh_token,
     roadmap,
+    roadmap_chat,
     roadmap_template,
     team,
     user,

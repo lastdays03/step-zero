@@ -57,6 +57,18 @@ class SemanticRouter:
                 "사업계획서 작성",
                 "투자 유치 방법",
             ],
+            "out_of_scope": [
+                "세금 얼마나 내야 하나요",
+                "소송을 진행하고 싶어요",
+                "투자 전략을 알려주세요",
+                "의료 관련 상담이 필요합니다",
+                "부동산 계약 조건을 검토해 주세요",
+                "노동법 위반 시 벌금이 얼마인가요",
+                "주식 투자 추천해 주세요",
+                "대출 금리 비교해 주세요",
+                "이혼 소송 절차 알려주세요",
+                "형사 고소 방법을 알려주세요",
+            ],
         }
         self._anchor_embeddings: dict[str, np.ndarray] = {}
         self._initialized = False
@@ -69,16 +81,33 @@ class SemanticRouter:
         self._initialized = True
         logger.info("SemanticRouter initialized with %d categories", len(self.anchors))
 
-    async def classify(self, query: str, threshold: float = 0.7) -> str:
-        """Classify query using cosine similarity + keyword fallback."""
+    async def classify(
+        self,
+        query: str,
+        threshold: float = 0.7,
+        out_of_scope_threshold: float = 0.75,
+    ) -> str:
+        """Classify query using cosine similarity + keyword fallback.
+
+        분류 우선순위: out_of_scope(0.75) → legal(0.7) → keyword → general
+        """
         if not self._initialized:
             await self.initialize()
 
-        # Get query embedding
+        # 쿼리 임베딩 계산
         query_embedding = await self.embeddings.aembed_query(query)
         query_vec = np.array(query_embedding)
 
-        # Compute cosine similarity with legal anchors
+        # 1단계: out_of_scope 체크 (높은 threshold)
+        oos_anchors = self._anchor_embeddings.get("out_of_scope")
+        if oos_anchors is not None:
+            oos_sims = self._cosine_similarity(query_vec, oos_anchors)
+            oos_max = float(np.max(oos_sims))
+            if oos_max >= out_of_scope_threshold:
+                logger.debug("Semantic route: out_of_scope (sim=%.3f)", oos_max)
+                return "out_of_scope"
+
+        # 2단계: legal 체크
         legal_anchors = self._anchor_embeddings.get("legal")
         if legal_anchors is not None:
             similarities = self._cosine_similarity(query_vec, legal_anchors)
@@ -87,7 +116,7 @@ class SemanticRouter:
                 logger.debug("Semantic route: legal (sim=%.3f)", max_sim)
                 return "legal"
 
-        # Keyword fallback
+        # 3단계: 키워드 폴백
         if self._keyword_match(query):
             logger.debug("Keyword fallback route: legal")
             return "legal"

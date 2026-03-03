@@ -20,7 +20,7 @@ if [ -n "$branch" ]; then
 fi
 
 echo "[pre-push] backend tests"
-cd app-backend && .venv/bin/pytest -q -m "not slow" || exit 1
+cd app-backend && .venv/bin/pytest -q -m "not slow and not requires_openai" || exit 1
 
 echo "[pre-push] frontend lint"
 cd ../app-frontend && npm run lint || exit 1

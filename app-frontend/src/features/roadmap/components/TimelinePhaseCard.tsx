@@ -12,6 +12,7 @@ import type { EnhancedPhaseGroup, ReadinessInfo } from "./roadmap-utils";
 
 interface TimelinePhaseCardProps {
     group: EnhancedPhaseGroup;
+    roadmapId: string;
     lastCompletedStepId: number | null;
     overallProgress?: number;
     onStepStatusChange: (stepId: number, status: "IN_PROGRESS" | "COMPLETED") => Promise<void>;
@@ -82,6 +83,7 @@ function computeChecklistProgress(steps: EnhancedPhaseGroup["steps"]) {
 
 export function TimelinePhaseCard({
     group,
+    roadmapId,
     lastCompletedStepId,
     overallProgress,
     onStepStatusChange,
@@ -198,6 +200,7 @@ export function TimelinePhaseCard({
                                         key={step.id}
                                         step={step}
                                         state="DONE"
+                                        roadmapId={roadmapId}
                                         canRevert={step.id === lastCompletedStepId}
                                         onStepStatusChange={handleStepStatusChange}
                                         onActionCompletionChange={onActionCompletionChange}
@@ -298,6 +301,7 @@ export function TimelinePhaseCard({
                                     key={step.id}
                                     step={step}
                                     state={state}
+                                    roadmapId={roadmapId}
                                     canRevert={state === "DONE" && step.id === lastCompletedStepId}
                                     previousStepTitle={state === "LOCKED" ? prevStep?.title : undefined}
                                     onStepStatusChange={handleStepStatusChange}

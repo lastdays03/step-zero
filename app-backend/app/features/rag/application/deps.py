@@ -48,3 +48,17 @@ def get_chat_service() -> ChatService:
         rag_service=get_rag_service(),
         semantic_router=get_semantic_router(),
     )
+
+
+def get_unified_chat_service(session):
+    """세션 바인딩 UnifiedChatService 생성 (요청 스코프)."""
+    from app.features.rag.application.unified_chat_service import UnifiedChatService
+    from app.features.roadmaps.application.deps import get_roadmap_chat_service
+    from app.repositories.roadmap_chat_repository import RoadmapChatRepository
+
+    return UnifiedChatService(
+        chat_service=get_chat_service(),
+        roadmap_chat_service=get_roadmap_chat_service(session),
+        chat_repo=RoadmapChatRepository(session),
+        session=session,
+    )

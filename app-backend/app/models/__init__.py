@@ -31,6 +31,7 @@ from app.models.roadmap import (
     RoadmapStepAction,
     RoadmapStepDetail,
 )
+from app.models.roadmap_chat import RoadmapChatMessage, RoadmapChatThread
 from app.models.roadmap_template import (
     RoadmapTemplate,
     RoadmapTemplateAction,
@@ -63,6 +64,8 @@ __all__ = [
     "GrowthClubPostTagLink",
     "GrowthClubTag",
     "Roadmap",
+    "RoadmapChatMessage",
+    "RoadmapChatThread",
     "RoadmapGenerationJob",
     "RoadmapStep",
     "RoadmapStepAction",

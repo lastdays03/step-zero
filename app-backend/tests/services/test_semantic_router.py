@@ -20,26 +20,31 @@ def _make_mock_embeddings(legal_sim: float = 0.9, general_sim: float = 0.3):
     """Create a mock OpenAIEmbeddings that returns controllable vectors.
 
     The mock produces:
-    - anchor embeddings: unit vectors along sequential axes
+    - anchor embeddings: unit vectors along sequential axes, offset per category
+      so legal, general, and out_of_scope anchors occupy different axis regions.
     - query embedding: a vector whose cosine similarity with the *first*
       legal anchor equals ``legal_sim`` (approximate).
     """
     embeddings = MagicMock()
 
-    # For aembed_documents: return unit vectors (dim=16 is enough for tests)
-    dim = 16
+    # Use a global counter to assign different axes per category call
+    dim = 32  # increased to fit 3 categories without overlap
+    call_offset = {"value": 0}
 
     async def _aembed_documents(texts):
         vecs = []
+        base = call_offset["value"]
         for i, _ in enumerate(texts):
             v = np.zeros(dim)
-            v[i % dim] = 1.0
+            v[(base + i) % dim] = 1.0
             vecs.append(v.tolist())
+        call_offset["value"] = base + len(texts)
         return vecs
 
     embeddings.aembed_documents = AsyncMock(side_effect=_aembed_documents)
 
     # For aembed_query: return a vector that is ``legal_sim`` close to axis-0
+    # (legal anchors start at axis 0)
     async def _aembed_query_legal(_text):
         v = np.zeros(dim)
         v[0] = legal_sim
@@ -77,8 +82,9 @@ async def test_semantic_router_initialize(mock_embeddings) -> None:
     assert router._initialized
     assert "legal" in router._anchor_embeddings
     assert "general" in router._anchor_embeddings
-    # aembed_documents should have been called once per category
-    assert mock_embeddings.aembed_documents.call_count == 2
+    assert "out_of_scope" in router._anchor_embeddings
+    # aembed_documents should have been called once per category (3 categories)
+    assert mock_embeddings.aembed_documents.call_count == 3
 
 
 # ---------------------------------------------------------------------------
@@ -123,7 +129,7 @@ async def test_classify_general_queries(query: str) -> None:
     embeddings = _make_mock_embeddings(legal_sim=0.3)
 
     # Override aembed_query to return a vector far from all anchors
-    dim = 16
+    dim = 32
 
     async def _aembed_query_general(_text):
         v = np.zeros(dim)
@@ -145,7 +151,7 @@ async def test_classify_general_queries(query: str) -> None:
 @pytest.mark.asyncio
 async def test_keyword_fallback_routes_to_legal(mock_embeddings_low_sim) -> None:
     """When semantic similarity is low but keyword matches, route to legal."""
-    dim = 16
+    dim = 32
 
     # Override query embedding to be far from legal anchors
     async def _aembed_query_far(_text):
@@ -164,7 +170,7 @@ async def test_keyword_fallback_routes_to_legal(mock_embeddings_low_sim) -> None
 @pytest.mark.asyncio
 async def test_keyword_fallback_no_match(mock_embeddings_low_sim) -> None:
     """When both semantic sim and keyword fail, route to general."""
-    dim = 16
+    dim = 32
 
     async def _aembed_query_far(_text):
         v = np.zeros(dim)

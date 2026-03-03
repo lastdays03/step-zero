@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import asyncio
-from typing import TYPE_CHECKING, Literal
+import json
+from typing import TYPE_CHECKING, AsyncGenerator, Literal
 
+from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_openai import ChatOpenAI
@@ -15,6 +17,12 @@ if TYPE_CHECKING:
     from app.features.rag.application.semantic_router import SemanticRouter
 
 logger = get_logger("services.chat")
+
+
+def _sse_event(event_type: str, data: dict) -> str:
+    """SSE 이벤트 문자열 생성."""
+    payload = {"type": event_type, **data}
+    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n"
 
 # Kept for backward compatibility and as keyword fallback inside SemanticRouter
 LEGAL_KEYWORDS = frozenset(
@@ -90,12 +98,26 @@ class ChatService:
         )
         self.general_ready = True
 
+    async def _classify(self, message: str) -> str:
+        """메시지 분류: legal / general / out_of_scope."""
+        if self.semantic_router is not None:
+            return await self.semantic_router.classify(message)
+        return classify_query(message)
+
     async def chat(self, message: str) -> tuple[str, str]:
         # Use SemanticRouter if available, fall back to keyword classifier
         if self.semantic_router is not None:
             source = await self.semantic_router.classify(message)
         else:
             source = classify_query(message)
+
+        if source == "out_of_scope":
+            return (
+                "이 질문은 전문가 상담을 권장합니다. "
+                "세금, 소송, 의료, 투자 등의 전문 분야는 "
+                "해당 분야 전문가에게 문의해 주세요.",
+                "out_of_scope",
+            )
 
         if source == "legal":
             answer = await self.rag_service.query(message)
@@ -125,3 +147,95 @@ class ChatService:
                 "AI 응답 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.",
                 "general",
             )
+
+    # ------------------------------------------------------------------ #
+    #  SSE 스트리밍 (통합 챗봇용)
+    # ------------------------------------------------------------------ #
+
+    _HEARTBEAT_INTERVAL = 15
+
+    async def stream(self, message: str) -> AsyncGenerator[str, None]:
+        """SSE 스트리밍 응답 생성.
+
+        - out_of_scope → error 이벤트
+        - legal → RAG 결과 단일 token + done
+        - general → LLM astream 토큰 단위 SSE
+        """
+        source = await self._classify(message)
+
+        if source == "out_of_scope":
+            yield _sse_event("error", {
+                "code": "OUT_OF_SCOPE",
+                "message": "이 질문은 전문가 상담을 권장합니다. "
+                "세금, 소송, 의료, 투자 등의 전문 분야는 "
+                "해당 분야 전문가에게 문의해 주세요.",
+            })
+            return
+
+        if source == "legal":
+            answer = await self.rag_service.query(message)
+            yield _sse_event("token", {"token": answer})
+            yield _sse_event("done", {})
+            return
+
+        if not self.general_ready:
+            yield _sse_event("error", {
+                "code": "LLM_UNAVAILABLE",
+                "message": "현재 AI 어시스턴트를 사용할 수 없습니다. "
+                "잠시 후 다시 시도해 주세요.",
+            })
+            return
+
+        # General mode — 토큰 단위 스트리밍 + 하트비트
+        full_response = ""
+        heartbeat_queue: asyncio.Queue[str] = asyncio.Queue()
+
+        async def _heartbeat_loop() -> None:
+            try:
+                while True:
+                    await asyncio.sleep(self._HEARTBEAT_INTERVAL)
+                    await heartbeat_queue.put(": heartbeat\n\n")
+            except asyncio.CancelledError:
+                pass
+
+        heartbeat_task = asyncio.create_task(_heartbeat_loop())
+
+        try:
+            messages = [
+                SystemMessage(content=GENERAL_SYSTEM_PROMPT),
+                HumanMessage(content=message),
+            ]
+            async for chunk in self.llm.astream(messages):
+                while not heartbeat_queue.empty():
+                    yield heartbeat_queue.get_nowait()
+
+                token = chunk.content if isinstance(chunk, AIMessage) else ""
+                if token:
+                    full_response += token
+                    yield _sse_event("token", {"token": token})
+        except asyncio.CancelledError:
+            logger.info("General chat SSE 스트리밍 취소됨")
+        except Exception:
+            logger.exception("General chat streaming failed")
+            yield _sse_event("error", {
+                "code": "LLM_ERROR",
+                "message": "AI 응답 중 오류가 발생했습니다. "
+                "잠시 후 다시 시도해 주세요.",
+            })
+            return
+        finally:
+            heartbeat_task.cancel()
+            try:
+                await heartbeat_task
+            except asyncio.CancelledError:
+                pass
+
+        if not full_response:
+            yield _sse_event("error", {
+                "code": "EMPTY_RESPONSE",
+                "message": "AI가 응답을 생성하지 못했습니다. "
+                "질문을 다시 입력해 주세요.",
+            })
+            return
+
+        yield _sse_event("done", {})

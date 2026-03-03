@@ -8,6 +8,7 @@ export function GlobalChatbot() {
   const {
     messages,
     isOpen,
+    isStreaming,
     isLoading,
     error,
     input,
@@ -16,6 +17,8 @@ export function GlobalChatbot() {
     togglePanel,
     clearHistory,
     scrollRef,
+    hasCoachContext,
+    stepTitle,
   } = useChatbot();
 
   return (
@@ -23,9 +26,12 @@ export function GlobalChatbot() {
       {isOpen && (
         <ChatPanel
           messages={messages}
+          isStreaming={isStreaming}
           isLoading={isLoading}
           error={error}
           input={input}
+          hasCoachContext={hasCoachContext}
+          stepTitle={stepTitle}
           onInputChange={setInput}
           onSend={sendMessage}
           onClear={clearHistory}
