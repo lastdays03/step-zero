@@ -536,7 +536,7 @@ cp showcase/.claude/commands/[command].md \\
 Commands may reference dev docs paths. **Check and update:**
 
 **dev-docs and dev-docs-update:**
-- Look for `dev/active/` path references
+- Look for `docs/dev/active/` path references
 - Ask: "Where do you want dev documentation stored?"
 - Update paths in the command files
 
