@@ -138,11 +138,6 @@ lint-*.txt
 lint-*.json
 lint-summary.json
 
-# ---------------
-# Package Managers
-# ---------------
-# pnpm 사용 - npm lock 불필요
-package-lock.json
 
 # ---------------
 # MCP
