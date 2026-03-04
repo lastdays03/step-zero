@@ -5,13 +5,12 @@
 | 폴더 | 역할 | 갱신 빈도 |
 |------|------|-----------|
 | `context/` | 세션 운영 (상태/결정/핸드오프/규칙) | 매 세션 |
-| `planning/` | 기획 문서 — 프로젝트의 What/Why | 프로젝트 착수/완료 시 |
-| `planning/completed/` | 완료 기획 아카이브 | 기획 완료 시 이동 |
+| `planning/` | 기획 문서 + 리서치 보고서 (PLAN-*.md, REPORT-*.md) | 프로젝트 착수/조사 시 |
+| `planning/completed/` | 완료 문서 아카이브 | 기획/리서치 완료 시 이동 |
 | `dev/` | 구현 계획 (How) — `/dev-docs`로 생성 | 구현 시작/완료 시 |
 | `architecture/` | 시스템 아키텍처 설계 | 분기별 검증 |
 | `operations/` | 팀 협업 프로세스 규칙 (Git, PR 등) | 규칙 변경 시 |
 | `dev-guide/` | 개발자 가이드, 체크리스트, 기능 가이드 | 필요 시 |
-| `research/` | 리서치/분석 보고서 | 조사 시 |
 | `archive/` | 역할 완료 문서 보관 (brainstorm, feedback 등) | 정리 시 |
 
 ## docs/planning/ vs docs/dev/ 역할 구분

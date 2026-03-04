@@ -4,38 +4,38 @@
 
 ## Last Updated
 - Date: 2026-03-04
-- Branch: `feature/4-ai-coach-chatbot`
+- Branch: `develop`
 
 ## Sprint Focus
-- Phase 4: AI 코치 챗봇 — 클린 재작성 완료 + 감사 수정 완료
+- Ops Reports Dashboard Phase 1 완료
+- R2 Storage Migration 진행 중 (active/)
 
 ## Current State
 - Phase 0~3: 전체 완료 (develop 머지 완료)
-- Phase 4 AI 코치 챗봇: 구현 + 리뷰 + 감사 수정 완료, PR 대기
+- Phase 4 AI 코치 챗봇: develop 머지 완료
+- Ops Reports Dashboard: PR #19 develop 머지 완료
 
 ## Completed (최근)
-- 챗봇 클린 재작성 20개 태스크 (BE 7 + FE 8 + 정리 5)
-- /simplify 코드 리뷰 13개 수정 반영
-- 핫픽스 2건 (mountedRef 복원, session.commit 추가)
-- 구현 감사 6건 수정 (intent/sources SSE 이벤트, message_id, warning code 등)
+- Ops Reports Dashboard: DB 집계 8종 KPI + delta + DAU/MAU + 2행×4열 UI (PR #19)
+- Phase 4 AI 코치 챗봇 클린 재작성 + 리뷰 + 감사 수정
 
 ## In Progress
-- Context Memory Phase 2 (템플릿 경량화 + 트리거 보정)
+- R2 Storage Migration (docs/dev/active/r2-storage-migration/)
 
 ## Risks And Blockers
+- Ops Reports: 수동 API/UI 테스트 미완 (Docker 환경 필요)
 - Alembic 마이그레이션 013: Docker 내부에서 실행 필요
 
 ## Next 3 Actions
-1. Context Memory Phase 2 완료 → 커밋
-2. `feature/4-ai-coach-chatbot` → `develop` PR 생성
-3. Docker 내 Alembic 마이그레이션 실행 + 수동 UX 테스트
+1. Docker 환경에서 Ops Reports 수동 테스트 (API + UI)
+2. R2 Storage Migration 계속 진행
+3. Alembic 마이그레이션 013 Docker 실행
 
 ## Test Status
-- Backend pytest: 260 passed (10 requires_openai 제외)
+- Backend pytest: 384 passed (10 requires_openai 제외)
 - Frontend lint: 0 errors
-- Frontend build: 성공
 
 ## Sync Notes
 - 2026-03-01~02: Phase 0~3 완료 + develop 머지
 - 2026-03-03: 챗봇 클린 재작성 구현 + 리뷰 반영 + 감사 수정
-- 2026-03-04: Context Memory Phase 2 진행 (템플릿 경량화)
+- 2026-03-04: Ops Reports Dashboard 구현 + PR #19 머지
