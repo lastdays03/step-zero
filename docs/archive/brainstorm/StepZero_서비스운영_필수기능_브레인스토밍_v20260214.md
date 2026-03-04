@@ -1,7 +1,7 @@
 # StepZero 서비스 운영 필수기능 브레인스토밍 (v2026-02-14)
 
 ## 1) 목적
-- 기준 문서: `docs/planning/StepZero_Service_Plan_v20260213.md`
+- 기준 문서: `docs/planning/completed/PLAN-service-integrated.md`
 - 목표: 사용자 기능(로드맵/챗봇/커뮤니티) 외에, 실제 서비스 운영에 필요한 기능을 아이디어 수준으로 정의
 - 현재 전제:
 - 대시보드까지 UI/흐름은 구현되었으나 실제 운영 데이터 연결은 제한적

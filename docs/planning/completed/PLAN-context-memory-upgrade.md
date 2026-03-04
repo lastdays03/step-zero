@@ -39,7 +39,7 @@
 ### Phase 1 검증 결과 요약
 - 일일 로그: 1/7 기록 (형식적 미완)
 - 실질 운영: 47커밋/2.5주, 4개 Phase 성공 이행
-- 판정: git 기반 실질 증거로 합격 (상세: `context-memory-validation-log.md`)
+- 판정: git 기반 실질 증거로 합격 (상세: `REPORT-context-memory-validation.md`)
 
 ## Phase 2 (완료): Validation + Template Refinement
 - 기간: 2026-03-04 (일괄 적용)

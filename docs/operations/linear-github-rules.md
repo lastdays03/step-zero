@@ -94,5 +94,5 @@
 
 ## 10. 문서 정합성 기준
 - 본 문서는 "운영 정책" 문서다.
-- 실제 실행 순서와 예시는 `docs/operations/Linear_GitHub_실전워크플로우.md`를 기준으로 한다.
+- 실제 실행 순서와 예시는 `docs/operations/linear-github-workflow.md`를 기준으로 한다.
 - 규칙 변경 시 두 문서를 함께 갱신한다.

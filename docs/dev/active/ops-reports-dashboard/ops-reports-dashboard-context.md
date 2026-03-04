@@ -147,5 +147,5 @@ session: AsyncSession = Depends(get_session)
 ## Related Documents
 
 - `docs/planning/PLAN-ops-reports-dashboard.md` — 원래 기획 문서
-- `docs/planning/REPORT-ops-monitoring-strategy.md` — 모니터링 전략 보고서 (이번 세션에서 생성)
+- `docs/research/REPORT-ops-monitoring-strategy.md` — 모니터링 전략 보고서
 - `CLAUDE.md` — 프로젝트 전체 컨텍스트
