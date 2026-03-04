@@ -1,6 +1,7 @@
 # Cloudflare R2 파일 저장소 마이그레이션 - 종합 계획서
 
 > Last Updated: 2026-03-04
+> 기획: `docs/planning/PLAN-cloudflare-r2-migration.md`
 
 ---
 

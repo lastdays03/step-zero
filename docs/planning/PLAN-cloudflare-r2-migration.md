@@ -2,6 +2,7 @@
 
 > 작성일: 2026-03-04
 > 상태: 계획 수립 (승인 대기)
+> 구현 추적: `dev/active/r2-storage-migration/`
 
 ---
 

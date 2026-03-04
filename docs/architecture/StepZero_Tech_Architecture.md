@@ -1,5 +1,13 @@
-
 # StepZero Technical Architecture (Option A - All-in-One Docker)
+
+> **Last Verified: 2026-03-04 — 부분 괴리 (정확도 ~75%)**
+>
+> 핵심 스택(FastAPI, Next.js, PostgreSQL, Redis, Docker Compose)은 유효.
+> **미반영 사항**:
+> - pgvector 확장 (벡터 DB로 사용 중) 미문서화
+> - Nginx reverse proxy: 문서에 있으나 dev 환경에는 미배포
+> - Phase 4 AI 코치 챗봇 아키텍처 미반영
+> - LLM 모델: 실제 `gpt-4o-mini` + `text-embedding-3-small` 사용 (문서는 미명시)
 
 ## 1. Overview
 StepZero는 **개발 속도와 운영 단순화**를 최우선으로 하여, 모든 서비스(Frontend, Backend, Worker, DB, Redis)를 **단일 서버(VPS) 내 Docker Compose**로 통합 배포하는 **Monolithic Deployment** 아키텍처를 채택합니다.

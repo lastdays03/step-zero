@@ -1,6 +1,7 @@
 # Ops Reports Dashboard - Phase 1 구현 계획
 
 > Last Updated: 2026-03-04
+> 기획: `docs/planning/PLAN-ops-reports-dashboard.md`
 
 ---
 

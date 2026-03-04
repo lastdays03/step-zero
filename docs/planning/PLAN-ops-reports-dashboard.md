@@ -1,5 +1,7 @@
 # PLAN: Ops Reports Dashboard
 
+> 구현 추적: `dev/active/ops-reports-dashboard/`
+
 ## Status
 - Draft
 

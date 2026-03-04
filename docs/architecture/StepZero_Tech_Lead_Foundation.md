@@ -1,5 +1,14 @@
-
 # Tech Lead Foundation (사전 작업 계획)
+
+> **Last Verified: 2026-03-04 — 역사적 문서 (정확도 ~70%)**
+>
+> 이 문서는 Day 0~3 사전 작업 계획으로, 초기 의사결정 기록으로서 가치 유지.
+> **실제 구현과 차이**:
+> - 벡터 DB: ChromaDB 제안 → 실제 **PGVector** 사용
+> - RAG 추상화: BaseRAGChain 제안 → 실제는 서비스 기반(RagService, SemanticRouter, ChatService)
+> - Roadmap 렌더러: SVG/Canvas 제안 → 실제 **Recharts + React 컴포넌트**
+> - Phase 4 AI 코치, Ops 관리 콘솔 등 후속 기능 미반영
+> - Alembic 마이그레이션 전략 미문서화 (현재 013까지 진행)
 
 ## 1. 개요
 **목표:** 4명의 주니어 개발자가 기술적 시행착오 없이 비즈니스 로직 개발에만 집중할 수 있도록, **Core Architecture**와 **Standard Pattern**을 미리 구축하는 것.

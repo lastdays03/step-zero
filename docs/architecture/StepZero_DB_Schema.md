@@ -1,5 +1,20 @@
-
 # StepZero Database Schema Design (v1.2 - Enterprise Ready & Detailed)
+
+> **Last Verified: 2026-03-04 — 대규모 괴리 발견**
+>
+> 이 문서는 초기 설계 기준이며, Phase 0~4 구현 이후 실제 코드와 상당히 다릅니다.
+> Alembic 마이그레이션이 013까지 진행되었으며, 아래 항목이 미반영 상태입니다:
+>
+> **미문서화 테이블 (11+)**: GrowthClub 7개, RoadmapChat 2개, RoadmapTemplate 3개,
+> ActionKit 8개, AuditLog, AdminAuditLog, UserDisciplineHistory, Notification,
+> RefreshToken, UserProfile, Announcement, RoadmapGenerationJob, RoadmapStepDetail,
+> RoadmapStepAction
+>
+> **필드 불일치**: users PK 타입(UUID→Integer), password_hash→hashed_password,
+> roadmaps의 region_code/category_id→business_type/location,
+> 사용자 정지 필드(is_suspended, suspended_at 등) 미반영
+>
+> **현행화 작업 필요**: 별도 태스크로 전체 재작성 권장
 
 ## 1. Overview
 StepZero의 **안정성(Audit Trail)**, **B2B 확장성(Multi-Tenancy)**, 그리고 **Rag/Roadmap Core Logic**을 모두 반영한 데이터베이스 설계입니다.

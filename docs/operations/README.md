@@ -1,13 +1,15 @@
 # 운영 문서 인덱스
 
-- `Linear_GitHub_운영규칙.md`
-- Linear 기반 태스크 운영, GitHub 연동, 이슈-브랜치-PR 추적 규칙
+이 폴더는 **팀 협업 프로세스 규칙**만 관리한다.
+기술 가이드는 `dev-guide/`, 아키텍처 컨셉은 `architecture/`에 위치한다.
 
-- `StepZero_프로젝트_운영규칙_v20260214.md`
-- 개발/리뷰/테스트/배포/장애 대응까지 포함한 통합 운영 규칙
+## 파일 목록
 
-- `StepZero_소셜로그인_관리자진입_컨셉_v20260215.md`
-- 소셜로그인 전용 인증 모델에서 관리자(`/ops`) 진입, 권한, UX, 보안/감사 기준
+- `Linear_GitHub_운영규칙.md` — Linear 기반 태스크 운영, GitHub 연동 규칙
+- `Linear_GitHub_실전워크플로우.md` — Linear-GitHub 연동 실전 워크플로우
+- `StepZero_프로젝트_운영규칙_v20260214.md` — 개발/리뷰/테스트/배포/장애 대응 통합 규칙
 
-- `../context/README.md`
-- 경량 컨텍스트 메모리(`NOW`, `DECISIONS`, `HANDOFF`) 운영 가이드
+## 참조
+
+- AI 세션 운영 규칙: `../context/ops-rules.md`
+- 경량 컨텍스트 메모리 가이드: `../context/README.md`

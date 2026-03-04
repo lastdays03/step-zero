@@ -1,5 +1,12 @@
 # StepZero Information Architecture (IA) - 개발자 가이드
 
+> **Last Verified: 2026-03-04 — 부분 괴리**
+>
+> 기본 구조(route groups, 핵심 페이지)는 유효하나 Phase 0~4 이후 추가된 라우트가 미반영:
+> - 미반영 라우트: `/profile`, `/ops/*` (6개 하위), `/billing`, `/announcements/[id]`, `/settings`
+> - 라우트명 불일치: 문서 `/kits` → 실제 `/actionkit`, 문서 `/club` → 실제 `/growth-club`
+> - 글로벌 챗봇 FAB 구현 완료 (문서에 미반영)
+
 > **👨‍💻 주니어 개발자를 위한 노트**
 > 이 문서는 기획 관점의 IA를 **개발자가 구현해야 할 구조**로 재해석한 문서입니다.
 > - **용어 설명**: 기획 용어가 실제 코드(Component, Page)와 어떻게 매핑되는지 설명합니다.

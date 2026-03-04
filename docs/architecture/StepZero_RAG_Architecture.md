@@ -1,5 +1,14 @@
 # StepZero Legal RAG Architecture: Hybrid Hierarchical System
 
+> **Last Verified: 2026-03-04 — 주요 괴리 (정확도 ~60%)**
+>
+> **벡터 DB 변경**: 문서는 Pinecone/Weaviate 제안 → 실제 **PGVector (PostgreSQL)** 사용
+> **메타데이터 필터**: 문서의 region_code/biz_category 기반 필터링 미구현.
+> 실제는 doc_type, category, title, summary, law_reference 사용
+> **통합 채팅 서비스**: 별도 RAG 엔드포인트 대신 `/api/v1/chat/stream`에서
+> SemanticRouter + IntentClassifier로 법률/일반/범위외 쿼리 통합 처리
+> **Phase 4 AI 코치**: 문서에 없는 IntentClassifier(5-category), SSE 스트리밍 구현 완료
+
 ## 1. Overview
 StepZero의 'Legal Chatbot'은 일반적인 RAG와 달리, **사용자의 지역(Location)과 업종(BizType)**에 따라 적용되는 법령이 달라지는 특성을 반영해야 합니다. 이를 위해 **Hybrid Hierarchical RAG (계층형 하이브리드 검색)** 아키텍처를 채택합니다.
 

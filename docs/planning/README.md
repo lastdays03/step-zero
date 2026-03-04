@@ -17,5 +17,21 @@
 5. 완료 플랜을 재활성화할 경우 `docs/planning/`으로 다시 이동하고 `Status: Reopened`를 명시한다.
 
 ## 파일 네이밍 권장
-- `PLAN-<topic>.md` 형식 유지
-- 동일 주제 버전업 시 `PLAN-<topic>-v2.md` 사용
+- 계획: `PLAN-<topic>.md`
+- 보고서: `REPORT-<topic>.md`
+- 동일 주제 버전업 시 git 이력 활용 권장 (파일명 `_v2` 접미사 지양)
+
+## docs/planning/ vs dev/ 역할 구분
+
+이 폴더는 **기획 문서(What/Why)**만 관리한다. 구현 상세는 `/dev-docs` 스킬이 생성하는 `dev/` 디렉토리에서 관리한다.
+
+| | `docs/planning/` (이 폴더) | `dev/` (`/dev-docs` 스킬) |
+|--|----------------------------|---------------------------|
+| **내용** | 기획 개요 — 범위, 목표, 완료 기준 | 구현 상세 — 설계, 태스크 추적, 컨텍스트 |
+| **작성 시점** | 프로젝트 착수 전 | `/dev-docs` 스킬 실행 시 |
+| **형식** | 단일 PLAN-*.md | 3파일 세트 (plan + tasks + context) |
+
+**규칙**:
+- PLAN 문서에 구현 상세(파일 맵, 태스크 체크리스트 등)를 작성하지 않는다
+- PLAN 문서 상단에 `→ 구현 추적: dev/active/{name}/` 참조 링크를 포함한다
+- `dev/active/*/plan.md` 상단에 `→ 기획: docs/planning/PLAN-*.md` 참조 링크를 포함한다
