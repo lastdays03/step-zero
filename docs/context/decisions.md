@@ -25,3 +25,7 @@
 - 2026-03-02 | 파이프라인 통합 시 TemplateResolver를 try-except로 감싸서 호출 | 기존 테스트의 mock session에서 테이블 미존재 에러 방지, 하위 호환성 유지
 - 2026-03-02 | Ops UI 상태변경/삭제 확인은 브라우저 prompt()/confirm() 대신 shadcn/ui Dialog 사용 | UX 일관성 + 사유 입력 지원
 - 2026-03-02 | 액션 편집은 인라인 폼 패턴 (추가: 토글 폼, 수정: 행 전환) | ActionKit 기존 패턴과 일관, 별도 모달 불필요
+- 2026-03-04 | Context memory 문서에 크기 가이드 도입: dev-status 50줄, handoff 40줄 이내 유지 | 2.5주 운영 후 문서 비대화(77줄) 발견 — 경량성 유지를 위한 Phase 2 보정안
+- 2026-03-04 | Context memory 일일 검증 로그 운영 폐기, git log를 검증 원천으로 사용 | 별도 로그 기록보다 git 커밋 이력이 더 신뢰할 수 있고 운영 비용 제로
+- 2026-03-04 | `team-standards` 외부 repo 생성 보류, `AGENTS.md`/`CLAUDE.md`가 L2-A 겸임 | 단일 프로젝트에서 별도 repo는 오버헤드만 증가. 다중 프로젝트 전환 시 분리
+- 2026-03-04 | 작업 단위 변경 로깅(Work-Unit Change Logging)을 `ops-rules.md`에 정의 | 결정/상태/리스크 누락 방지를 위한 구조화된 기록 루틴
