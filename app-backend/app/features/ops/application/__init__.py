@@ -5,7 +5,7 @@ from app.features.ops.application.announcements import list_announcements
 from app.features.ops.application.audit_logs import list_audit_logs
 from app.features.ops.application.growth_club import get_queue_summary
 from app.features.ops.application.home import get_overview
-from app.features.ops.application.reports import get_summary as get_reports_summary
+from app.features.ops.application.reports import OpsReportsService
 from app.features.ops.application.users import (
     BulkStatusUpdateRequest,
     DisciplineHistoryRead,
@@ -26,7 +26,7 @@ __all__ = [
     "get_actionkit_summary",
     "get_overview",
     "get_queue_summary",
-    "get_reports_summary",
+    "OpsReportsService",
     "get_user_discipline_history",
     "list_announcements",
     "list_audit_logs",

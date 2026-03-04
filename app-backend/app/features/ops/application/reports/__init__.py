@@ -1,3 +1,3 @@
-from .service import get_summary
+from .service import OpsReportsService
 
-__all__ = ["get_summary"]
+__all__ = ["OpsReportsService"]
