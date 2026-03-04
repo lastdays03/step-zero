@@ -16,8 +16,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-    networks:
-      - stepzero-network
 
   app-redis:
     image: redis:alpine
@@ -27,8 +25,6 @@ services:
       interval: 10s
       timeout: 3s
       retries: 10
-    networks:
-      - stepzero-network
 
   app-backend:
     build:
@@ -50,8 +46,6 @@ services:
         condition: service_healthy
       app-redis:
         condition: service_healthy
-    networks:
-      - stepzero-network
 
   app-worker:
     build:
@@ -71,8 +65,6 @@ services:
         condition: service_healthy
       app-redis:
         condition: service_healthy
-    networks:
-      - stepzero-network
 
   app-frontend:
     build:
@@ -91,12 +83,11 @@ services:
     depends_on:
       - app-backend
       - app-worker
-    networks:
-      - stepzero-network
 
 volumes:
   db_data:
 
 networks:
-  stepzero-network:
-    driver: bridge
+  default:
+    external: true
+    name: nginx-proxy
