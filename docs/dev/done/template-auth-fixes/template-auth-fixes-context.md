@@ -25,7 +25,7 @@
 
 | 파일 | 내용 |
 |------|------|
-| `docs/research/REPORT-auth-security-audit.md` | 인증 시스템 보안 감사 + UX 검토 종합 보고서 |
+| `docs/planning/completed/REPORT-auth-security-audit.md` | 인증 시스템 보안 감사 + UX 검토 종합 보고서 |
 
 ---
 

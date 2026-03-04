@@ -19,7 +19,7 @@
 - [x] A-1-4: Silent Refresh `suppressAuthEvent` 제거 (`api-client.ts`)
   - `suppressAuthEvent` 변수 및 조건부 로직 완전 제거
   - `clearAuthState()`가 항상 AUTH_STORAGE_EVENT 발송
-- [x] A-1-5: 보안 감사 보고서 작성 (`docs/research/REPORT-auth-security-audit.md`)
+- [x] A-1-5: 보안 감사 보고서 작성 (`docs/planning/completed/REPORT-auth-security-audit.md`)
 
 ### Section A-2: 품질 게이트
 

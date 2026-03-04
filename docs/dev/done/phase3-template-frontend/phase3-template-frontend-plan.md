@@ -3,7 +3,7 @@
 > Last Updated: 2026-03-02
 > Branch: `feature/2-template-system` (Phase 2와 동일 브랜치에서 진행)
 > 의존성: Phase 2 백엔드 완료 필수 (Section A + B)
-> 참조: `docs/research/roadmap-improvement/REPORT-implementation-order.md` Phase 3
+> 참조: `docs/planning/completed/roadmap-improvement/REPORT-implementation-order.md` Phase 3
 
 ---
 

@@ -276,7 +276,7 @@ router.include_router(roadmap_templates.router)
 
 | 문서 | 위치 | 핵심 섹션 |
 |------|------|----------|
-| 템플릿 관리 분석 | `docs/research/roadmap-improvement/REPORT-roadmap-template-management-analysis.md` | Section 6-8 (테이블), Section 10 (미결정) |
-| 템플릿 구현 계획 | `docs/research/roadmap-improvement/REPORT-roadmap-template-implementation-plan.md` | Group 1-7 전체 |
-| 통합 구현 순서 | `docs/research/roadmap-improvement/REPORT-implementation-order.md` | Phase 2 (Section 4) |
-| 마스터 플랜 | `docs/research/roadmap-improvement/REPORT-01-master-plan.md` | 전체 로드맵 |
+| 템플릿 관리 분석 | `docs/planning/completed/roadmap-improvement/REPORT-roadmap-template-management-analysis.md` | Section 6-8 (테이블), Section 10 (미결정) |
+| 템플릿 구현 계획 | `docs/planning/completed/roadmap-improvement/REPORT-roadmap-template-implementation-plan.md` | Group 1-7 전체 |
+| 통합 구현 순서 | `docs/planning/completed/roadmap-improvement/REPORT-implementation-order.md` | Phase 2 (Section 4) |
+| 마스터 플랜 | `docs/planning/completed/roadmap-improvement/REPORT-01-master-plan.md` | 전체 로드맵 |

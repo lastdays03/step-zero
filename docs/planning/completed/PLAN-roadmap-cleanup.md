@@ -1,7 +1,7 @@
 # 로드맵 기능 정리 계획
 
 > 작성일: 2026-02-28
-> 기반 문서: [docs/research/roadmap.md](./roadmap.md)
+> 기반 문서: roadmap-improvement 리서치 (planning/completed/roadmap-improvement/)
 > **완료일: 2026-02-28**
 
 ---

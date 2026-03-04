@@ -38,7 +38,7 @@
 
 ### 2.3 보안 감사 결과 (후속 과제)
 
-**보고서:** `docs/research/REPORT-auth-security-audit.md`
+**보고서:** `docs/planning/completed/REPORT-auth-security-audit.md`
 
 | 심각도 | 건수 | 요약 |
 |--------|------|------|

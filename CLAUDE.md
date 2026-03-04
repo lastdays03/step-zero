@@ -13,6 +13,13 @@ step-zero/
 ├── app-backend/       # FastAPI backend (Python 3.11, port 8000)
 ├── app-frontend/      # Next.js 16 frontend (React 18, port 3000)
 ├── docs/              # 기획/설계/컨텍스트 문서
+│   ├── context/       # 세션 운영 (상태/결정/핸드오프/규칙)
+│   ├── planning/      # 기획 문서 + 리서치 보고서 (PLAN-*.md, REPORT-*.md)
+│   ├── dev/           # 구현 계획 (How) — /dev-docs로 생성
+│   ├── architecture/  # 시스템 아키텍처 설계
+│   ├── operations/    # 팀 협업 프로세스 규칙
+│   ├── dev-guide/     # 개발자 가이드/체크리스트
+│   └── archive/       # 역할 완료 문서 보관
 ├── scripts/           # 루트 유틸리티 스크립트
 ├── docker-compose.dev.yml   # 개발 환경 (5 services)
 ├── docker-compose.prod.yml  # 프로덕션 환경
@@ -228,6 +235,21 @@ cd app-backend && ACTIONKIT_BOOTSTRAP_MODE=docker ./scripts/bootstrap_actionkit.
 cd app-backend && RAG_BOOTSTRAP_MODE=docker ./scripts/bootstrap_rag.sh
 ```
 
+## Document Management
+
+### 기획 vs 구현 구분
+- `docs/planning/` — 기획 (What/Why): 범위, 목표, 완료 기준. `PLAN-*.md`, `REPORT-*.md`
+- `docs/dev/` — 구현 (How): 상세 설계, 태스크 추적. `/dev-docs`로 3파일 세트 생성
+- 기획 문서에 구현 상세를 작성하지 않는다
+
+### 네이밍 규칙
+- 계획: `PLAN-<topic>.md`, 보고서: `REPORT-<topic>.md`
+- 영문 + 케밥케이스, 파일명 버전 접미사(`_v2`) 지양
+
+### 크기 가이드
+- `dev-status.md`: 50줄 이내
+- `handoff.md`: 40줄 이내
+
 ## Context Continuity
 
 세션 시작 시 반드시 읽을 파일 (순서대로):
@@ -236,7 +258,10 @@ cd app-backend && RAG_BOOTSTRAP_MODE=docker ./scripts/bootstrap_rag.sh
 3. `docs/context/handoff.md` - 세션 핸드오프 요약
 4. `docs/context/ops-rules.md` - 운영 규칙
 
-사용자가 `핸드오프`/`마무리`/`종료` 요청 시: `docs/context/handoff.md` 업데이트 후 커밋 대기.
+사용자가 `핸드오프`/`마무리`/`종료` 요청 시:
+1. `dev-status.md` 상태 갱신
+2. `decisions.md` 확정사항 기록
+3. `handoff.md` 다음 시작점 작성 후 커밋 대기
 
 ## Browser Testing (Chrome DevTools MCP)
 
