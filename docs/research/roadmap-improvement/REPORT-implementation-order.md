@@ -1,14 +1,14 @@
 # 로드맵 개선 통합 구현 순서 보고서
 
 > 작성일: 2026-03-01
-> 목적: chatbot-enhancement-analysis.md, roadmap-template-management-analysis.md, roadmap-template-implementation-plan.md 3개 문서의 전체 작업 항목을 코드베이스와 대조 검증한 후, 의존성 그래프 기반 최적 구현 순서를 제시
+> 목적: REPORT-chatbot-enhancement-analysis.md, REPORT-roadmap-template-management-analysis.md, REPORT-roadmap-template-implementation-plan.md 3개 문서의 전체 작업 항목을 코드베이스와 대조 검증한 후, 의존성 그래프 기반 최적 구현 순서를 제시
 > 방법: 백엔드(파이프라인/모델/Ops/RAG) + 프론트엔드(로드맵/챗봇/Ops) + 인프라(마이그레이션/의존성) 총 3개 영역 병렬 코드 분석
 
 ---
 
 ## 1. 3개 문서 핵심 요약
 
-### 문서 A: AI 코치 챗봇 개선 분석 (chatbot-enhancement-analysis.md)
+### 문서 A: AI 코치 챗봇 개선 분석 (REPORT-chatbot-enhancement-analysis.md)
 
 **Part 1 — AI 코치 챗봇 MVP (신규 기능)**
 - SSE 스트리밍 엔드포인트 (`POST /roadmaps/{id}/steps/{id}/chat/stream`)
@@ -23,7 +23,7 @@
 - P0 4건 + P1 3건 = 총 7건
 - 예상 공수: P0 4일 + P1 3.5일 = **약 1.5주**
 
-### 문서 B: 템플릿 관리 시스템 분석 (roadmap-template-management-analysis.md)
+### 문서 B: 템플릿 관리 시스템 분석 (REPORT-roadmap-template-management-analysis.md)
 
 - 현재 로드맵 생성의 비결정성 문제 분석
 - 공통(법령/서류) vs 개인화(체크리스트/일수) 분리 전략
@@ -34,7 +34,7 @@
 - 관리자 UI 설계 (기존 Ops ActionKit 패턴 재활용)
 - 예상 공수: **약 4주** (19일)
 
-### 문서 C: 템플릿 구현 상세 계획 (roadmap-template-implementation-plan.md)
+### 문서 C: 템플릿 구현 상세 계획 (REPORT-roadmap-template-implementation-plan.md)
 
 문서 B의 분석을 7개 Group으로 구체화:
 - Group 1: DB 스키마 & 마이그레이션

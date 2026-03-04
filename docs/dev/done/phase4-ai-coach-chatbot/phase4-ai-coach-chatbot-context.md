@@ -357,9 +357,9 @@ while (true) {
 
 | 문서 | 위치 | 참조 섹션 |
 |------|------|---------|
-| 챗봇 개선 분석 | `docs/research/roadmap-improvement/chatbot-enhancement-analysis.md` | Part 1 전체 (AI 코치 설계) |
-| 구현 순서 보고서 | `docs/research/roadmap-improvement/implementation-order-report.md` | Phase 4 (Section 4 항목 4-A, 4-B, 4-C) |
-| 템플릿 분석 | `docs/research/roadmap-improvement/roadmap-template-management-analysis.md` | Section 2-4 (공통 vs 개인화 전략) |
+| 챗봇 개선 분석 | `docs/research/roadmap-improvement/REPORT-chatbot-enhancement-analysis.md` | Part 1 전체 (AI 코치 설계) |
+| 구현 순서 보고서 | `docs/research/roadmap-improvement/REPORT-implementation-order.md` | Phase 4 (Section 4 항목 4-A, 4-B, 4-C) |
+| 템플릿 분석 | `docs/research/roadmap-improvement/REPORT-roadmap-template-management-analysis.md` | Section 2-4 (공통 vs 개인화 전략) |
 | 개발 상태 | `docs/context/dev-status.md` | Phase 0-3 완료 상태 |
 | 기술 결정 | `docs/context/decisions.md` | FK CASCADE, Dialog 패턴, 감사로그 등 |
 

@@ -110,6 +110,6 @@
 
 | 문서 | 경로 |
 |------|------|
-| 마스터 플랜 | `docs/research/roadmap-improvement/01-master-plan.md` |
-| 구현 순서 보고서 | `docs/research/roadmap-improvement/implementation-order-report.md` |
+| 마스터 플랜 | `docs/research/roadmap-improvement/REPORT-01-master-plan.md` |
+| 구현 순서 보고서 | `docs/research/roadmap-improvement/REPORT-implementation-order.md` |
 | Phase 0 완료 | `dev/done/phase0-roadmap-fix/` |

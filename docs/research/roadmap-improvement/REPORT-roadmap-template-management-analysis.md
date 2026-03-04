@@ -793,11 +793,11 @@ source_roadmap_id에 원본 로드맵 ID 기록 (역추적)
 ### 선행 작업 의존성
 
 ```
-[P0] 링크 오류 수정 (chatbot-enhancement-analysis.md Part 2)
+[P0] 링크 오류 수정 (REPORT-chatbot-enhancement-analysis.md Part 2)
   ↓ (링크가 제대로 동작해야 템플릿의 source_url도 의미 있음)
 [이 보고서] 템플릿 관리 시스템 구현 (~4주)
   ↓ (템플릿이 있어야 AI 코치가 정확한 컨텍스트를 가짐)
-[AI 코치 챗봇] 개선 (chatbot-enhancement-analysis.md Part 1)
+[AI 코치 챗봇] 개선 (REPORT-chatbot-enhancement-analysis.md Part 1)
 ```
 
 ### 즉시 시작 가능한 작업

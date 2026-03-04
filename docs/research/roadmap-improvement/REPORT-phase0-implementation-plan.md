@@ -1,9 +1,9 @@
 # Phase 0 구현 계획: 링크 오류 수정 + startup_method 어휘 정리
 
 > 작성일: 2026-03-01
-> 목적: implementation-order-report.md Phase 0의 10개 작업을 코드베이스 검증 후 구체적 구현 계획으로 상세화
+> 목적: REPORT-implementation-order.md Phase 0의 10개 작업을 코드베이스 검증 후 구체적 구현 계획으로 상세화
 > 방법: BE(llm_personalizer/generation_service/repository) + FE(TimelineStepItem/ChatIntake) + 인프라(Alembic) 3개 영역 병렬 코드 분석
-> 근거 문서: chatbot-enhancement-analysis.md, roadmap-template-management-analysis.md, implementation-order-report.md
+> 근거 문서: REPORT-chatbot-enhancement-analysis.md, REPORT-roadmap-template-management-analysis.md, REPORT-implementation-order.md
 
 ---
 
