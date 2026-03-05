@@ -1,7 +1,7 @@
 {
   "name": "stepzero-repo-tools",
   "private": true,
-  "packageManager": "pnpm@9.15.4",
+  "packageManager": "pnpm@10.30.3",
   "scripts": {
     "prepare": "husky",
     "lint:commits": "commitlint --from HEAD~1 --to HEAD"
@@ -10,5 +10,10 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "husky": "^9.1.7"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "husky"
+    ]
   }
 }
