@@ -1,17 +1,15 @@
+FROM node:24-alpine
 
-FROM node:20-alpine
+RUN corepack enable
 
 WORKDIR /app
 
 # Install dependencies (with caching)
-COPY package.json package-lock.json* ./
-RUN npm install
+COPY package.json pnpm-lock.yaml .npmrc ./
+RUN pnpm install --frozen-lockfile
 
 # Copy source code
 COPY . .
 
-# Build step is optional for dev, but good to have ready
-# RUN npm run build
-
 # Default command (overridden by docker-compose)
-CMD ["npm", "run", "dev"]
+CMD ["pnpm", "dev"]

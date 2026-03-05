@@ -81,8 +81,8 @@
 - 미완료 이슈는 다음 사이클로 이월한다.
 
 ## 8. 품질/검증 기준
-- Backend 변경 완료 전: `cd app-backend && .venv/bin/pytest -q`
-- Frontend 변경 완료 전: `cd app-frontend && npm run lint`
+- Backend 변경 완료 전: `cd app-backend && uv run pytest -q`
+- Frontend 변경 완료 전: `cd app-frontend && pnpm lint`
 
 
 ## 9. 운영 점검 체크리스트

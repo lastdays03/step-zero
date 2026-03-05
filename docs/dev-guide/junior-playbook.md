@@ -8,8 +8,8 @@
 2. 브랜치 생성: `feature/<issue-number>-<slug>`
 3. 구현: 담당 feature 폴더 내부부터 수정
 4. 로컬 검증:
-- 백엔드 변경: `cd app-backend && .venv/bin/pytest -q`
-- 프론트 변경: `cd app-frontend && npm run lint`
+- 백엔드 변경: `cd app-backend && uv run pytest -q`
+- 프론트 변경: `cd app-frontend && pnpm lint`
 5. PR 작성(한국어): `요약 / 변경 사항 / 검증`
 
 ## 백엔드 구현 순서 (필수)

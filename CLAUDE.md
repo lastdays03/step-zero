@@ -32,10 +32,10 @@ step-zero/
 ### Backend (`cd app-backend`)
 
 ```bash
-make setup            # 개발환경 초기화 (Python 3.11 venv + deps + .env)
-make run              # uvicorn app.main:app --reload --port 8000
+make setup            # 개발환경 초기화 (uv sync + .env)
+make run              # uv run uvicorn app.main:app --reload --port 8000
 make worker           # ARQ 비동기 워커 (로드맵 생성용)
-make test             # pytest -q
+make test             # uv run pytest -q
 make migrate-up       # alembic upgrade head
 make migrate-revision m="description"  # 새 마이그레이션 생성
 make migrate-verify   # 모델 ↔ DB 스키마 diff 검증
@@ -45,12 +45,12 @@ make rag-bootstrap    # RAG 벡터 시드 적재
 ### Frontend (`cd app-frontend`)
 
 ```bash
-npm install           # 의존성 설치
-npm run dev           # next dev --webpack (localhost:3000)
-npm run build         # 프로덕션 빌드
-npm run lint          # ESLint
-npm test              # Jest
-npm run types:sync    # OpenAPI → TypeScript 타입 자동 생성
+pnpm install          # 의존성 설치
+pnpm dev              # next dev --webpack (localhost:3000)
+pnpm build            # 프로덕션 빌드
+pnpm lint             # ESLint
+pnpm test             # Jest
+pnpm types:sync       # OpenAPI → TypeScript 타입 자동 생성
 ```
 
 ### Code Quality (Backend)
@@ -74,8 +74,8 @@ docker compose -f docker-compose.dev.yml logs -f app-backend app-worker  # 로�
 ### Quality Gates (변경 완료 전 반드시 실행)
 
 ```bash
-cd app-backend && .venv/bin/pytest -q          # 백엔드 변경 시
-cd app-frontend && npm run lint                # 프론트엔드 변경 시
+cd app-backend && uv run pytest -q             # 백엔드 변경 시
+cd app-frontend && pnpm lint                   # 프론트엔드 변경 시
 ```
 
 ## Git Workflow
@@ -86,7 +86,7 @@ cd app-frontend && npm run lint                # 프론트엔드 변경 시
 - 브랜치 명명: `feature/<issue-number>-<short-slug>`
 - 커밋: Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `perf:`, `ci:`, `build:`, `revert:`)
 - PR 제목/설명: 한국어
-- 루트에서 `npm install` 1회 실행 → Husky + commitlint 훅 활성화
+- 루트에서 `pnpm install` 1회 실행 → Husky + commitlint 훅 활성화
 
 ## Backend Architecture
 
@@ -178,7 +178,7 @@ cd app-backend && make worker
 ### API Type Generation
 
 ```bash
-npm run types:sync  # 백엔드 OpenAPI → src/lib/api-types.ts 자동 생성
+pnpm types:sync     # 백엔드 OpenAPI → src/lib/api-types.ts 자동 생성
 ```
 `api-types.ts`는 자동 생성 파일. 수동 편집 금지.
 
@@ -208,7 +208,7 @@ cd app-backend && make test
 ### Frontend (Jest)
 
 ```bash
-cd app-frontend && npm test
+cd app-frontend && pnpm test
 ```
 - `@testing-library/react` + `jest-environment-jsdom`
 - 테스트: `src/features/{feature}/__tests__/`

@@ -7,6 +7,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const nextConfig = {
     output: 'standalone',
     reactStrictMode: true,
+    allowedDevOrigins: process.env.ALLOWED_DEV_ORIGINS
+        ? process.env.ALLOWED_DEV_ORIGINS.split(",")
+        : ["localhost:3000"],
     turbopack: {
         root: __dirname,
     },

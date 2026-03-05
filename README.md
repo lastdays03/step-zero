@@ -61,7 +61,7 @@ step-zero/
 
 | 스크립트 | 용도 |
 | :--- | :--- |
-| `setup_dev.sh` | 로컬 개발환경 초기화 (Python venv + 의존성 + .env) |
+| `setup_dev.sh` | 로컬 개발환경 초기화 (uv sync + .env) |
 | `run_alembic.sh` | Alembic 래퍼 (예: `./scripts/run_alembic.sh upgrade head`) |
 | `reset_migrations.sh` | 마이그레이션 통합 관리 (`fresh` / `stamp` / `verify` / `status` / `history`) |
 | `bootstrap_actionkit.sh` | ActionKit 마이그레이션 + 시드 통합 실행 |
@@ -155,11 +155,11 @@ make migrate-verify   # 모델 ↔ DB 스키마 diff 검증
 ### 3) Frontend 로컬 실행
 ```bash
 cd app-frontend
-npm install
-npm run dev
+pnpm install
+pnpm dev
 
 # 백엔드 OpenAPI 기반 타입 동기화
-npm run types:sync
+pnpm types:sync
 ```
 > `types:sync`는 실행 중인 `stepzero-backend` 컨테이너에서 OpenAPI를 추출합니다.
 
@@ -188,8 +188,8 @@ cp app-frontend/.env.docker.local.example app-frontend/.env.docker.local
 ```
 
 > 참고:
-> - 백엔드는 `.python-version`으로 Python 3.11, `.uv-version`으로 uv 버전을 고정합니다.
-> - macOS에서 `uv` 패닉 이슈가 있으면 `setup_dev.sh`가 자동으로 `python/pip` 경로를 사용합니다. `uv`를 강제하려면 `FORCE_UV=1 ./scripts/setup_dev.sh`를 사용하세요.
+> - 백엔드는 `uv`를 패키지 매니저로 사용합니다. `uv`가 설치되어 있어야 합니다.
+> - 설치: `curl -LsSf https://astral.sh/uv/install.sh | sh`
 
 ---
 
@@ -297,7 +297,7 @@ git update-index --add --chmod=+x scripts/init_db.sh
 3. **로컬 훅 활성화**
    ```bash
    # 저장소 루트에서 1회 실행
-   npm install
+   pnpm install
    ```
    - `commit-msg`: Conventional Commits 검사
    - `pre-push`: backend 테스트 + frontend lint 검사

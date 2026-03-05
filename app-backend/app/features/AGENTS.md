@@ -16,6 +16,6 @@
 - 공용 변경이 필요하면 PR 본문에 이유를 명시한다.
 
 ## Required Verification
-- 변경 후 `cd app-backend && .venv/bin/pytest -q` 실행.
+- 변경 후 `cd app-backend && uv run pytest -q` 실행.
 - 인증/권한/API 변경 시 관련 테스트 케이스를 추가 또는 수정.
 - 라우터 추가/수정 시 `app/api/v1/api.py` include_router 반영 여부를 확인한다.

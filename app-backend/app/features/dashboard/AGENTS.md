@@ -18,5 +18,5 @@
 - DB 접근은 repository 계층을 사용한다.
 
 ## Verification
-- \'cd app-backend && .venv/bin/pytest -q\' 통과
+- \'cd app-backend && uv run pytest -q\' 통과
 - 이 feature 관련 테스트 1개 이상 확인/보강

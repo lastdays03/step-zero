@@ -45,11 +45,12 @@ services:
       context: ./app-backend
       dockerfile: Dockerfile
     container_name: stepzero-backend
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: uv run uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
     volumes:
       - ./app-backend:/app
+      - /app/.venv # Avoid overwriting .venv
     env_file:
       - path: ./app-backend/.env
         required: true
@@ -64,16 +65,17 @@ services:
         condition: service_healthy
 
   # ---------------------------------------------------------------------------
-  # Frontend Service (Next.js)
+  # Worker Service (ARQ)
   # ---------------------------------------------------------------------------
   app-worker:
     build:
       context: ./app-backend
       dockerfile: Dockerfile
     container_name: stepzero-worker
-    command: python -m arq app.workers.roadmap_worker.WorkerSettings
+    command: uv run python -m arq app.workers.roadmap_worker.WorkerSettings
     volumes:
       - ./app-backend:/app
+      - /app/.venv # Avoid overwriting .venv
     env_file:
       - path: ./app-backend/.env
         required: true
@@ -95,7 +97,7 @@ services:
       context: ./app-frontend
       dockerfile: Dockerfile
     container_name: stepzero-frontend
-    command: npm run dev
+    command: pnpm dev
     ports:
       - "3000:3000"
     volumes:

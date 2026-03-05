@@ -3,8 +3,8 @@ from uuid import UUID
 
 from fastapi import Depends, Header, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
-from jose import JWTError, jwt
-from jose.exceptions import ExpiredSignatureError
+import jwt
+from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -43,7 +43,7 @@ async def get_current_user(
 
             get_logger("app.api.deps").warning("Token sub is missing")
             raise credentials_exception
-    except JWTError as e:
+    except InvalidTokenError as e:
         from app.core.logging import get_logger
 
         get_logger("app.api.deps").warning(f"JWT validation failed: {str(e)}")
@@ -134,7 +134,7 @@ async def get_optional_current_user(
         subject = payload.get("sub")
         if subject is None:
             return None
-    except JWTError:
+    except InvalidTokenError:
         return None
 
     user: User | None = None
@@ -185,7 +185,7 @@ async def get_current_user_or_guest(
             detail="Token expired",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    except JWTError:
+    except InvalidTokenError:
         return None
 
     user: User | None = None
