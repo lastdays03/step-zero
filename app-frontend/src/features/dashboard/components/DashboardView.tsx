@@ -153,13 +153,25 @@ export const DashboardView = () => {
             .filter((action) => action.action_type === "DOCUMENT")
             .map((doc) => {
                 const meta = (doc.metadata_json || {}) as Record<string, unknown>;
-                const downloadUrl =
-                    (typeof meta.download_url === "string" && meta.download_url)
-                    || (typeof meta.file_url === "string" && meta.file_url)
-                    || (typeof meta.template_url === "string" && meta.template_url)
-                    || (typeof meta.source_url === "string" && meta.source_url)
-                    || doc.source_url
-                    || null;
+                const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
+                const actionkitItemId = meta.actionkit_item_id as number | undefined;
+
+                let viewUrl: string | null = null;
+                if (actionkitItemId) {
+                    viewUrl = `${apiUrl}/api/v1/actionkits/items/${actionkitItemId}/view`;
+                } else {
+                    const raw =
+                        (typeof meta.download_url === "string" && meta.download_url)
+                        || (typeof meta.file_url === "string" && meta.file_url)
+                        || (typeof meta.template_url === "string" && meta.template_url)
+                        || (typeof meta.source_url === "string" && meta.source_url)
+                        || doc.source_url
+                        || null;
+                    if (raw) {
+                        const itemMatch = raw.match(/\/actionkits\/items\/(\d+)$/);
+                        viewUrl = itemMatch ? `${raw}/view` : raw;
+                    }
+                }
 
                 return {
                     id: doc.id,
@@ -167,7 +179,7 @@ export const DashboardView = () => {
                     description: doc.description,
                     completed: doc.metadata_json?.completed === true,
                     stepTitle: currentStep.title,
-                    downloadUrl,
+                    viewUrl,
                 };
             });
     }, [currentStep]);
@@ -257,19 +269,18 @@ export const DashboardView = () => {
                                             <p className="mt-1 text-xs text-slate-600 line-clamp-2">{doc.description}</p>
                                         ) : null}
                                         <div className="mt-2">
-                                            {doc.downloadUrl ? (
+                                            {doc.viewUrl ? (
                                                 <a
-                                                    href={doc.downloadUrl}
+                                                    href={doc.viewUrl}
                                                     target="_blank"
                                                     rel="noreferrer"
-                                                    download
                                                     className="inline-flex rounded-md border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-700 hover:bg-blue-100"
                                                 >
-                                                    다운로드
+                                                    문서 보기
                                                 </a>
                                             ) : (
                                                 <span className="text-[11px] text-slate-400">
-                                                    다운로드 링크 없음
+                                                    문서 링크 없음
                                                 </span>
                                             )}
                                         </div>

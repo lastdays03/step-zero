@@ -4,6 +4,7 @@ from pydantic import BaseModel
 
 
 class LawItem(BaseModel):
+    id: int
     name: str
     ext: str
     size: str

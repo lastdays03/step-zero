@@ -267,7 +267,10 @@ export function TimelineStepItem({
                                                                 const actionkitItemId = item.metadata_json?.actionkit_item_id as number | undefined;
 
                                                                 if (item.source_url) {
-                                                                    const href = item.source_url.startsWith("/") ? `${API_URL}${item.source_url}` : item.source_url;
+                                                                    let href = item.source_url.startsWith("/") ? `${API_URL}${item.source_url}` : item.source_url;
+                                                                    if (/\/actionkits\/items\/\d+$/.test(href)) {
+                                                                        href += "/view";
+                                                                    }
                                                                     return (
                                                                         <a href={href} target="_blank" rel="noreferrer"
                                                                            className="inline-flex items-center gap-1 mt-1 text-xs text-[#36a4f2] hover:underline">
@@ -277,7 +280,7 @@ export function TimelineStepItem({
                                                                 }
                                                                 if (actionkitItemId) {
                                                                     return (
-                                                                        <a href={`${API_URL}/api/v1/actionkits/items/${actionkitItemId}/download`}
+                                                                        <a href={`${API_URL}/api/v1/actionkits/items/${actionkitItemId}/view`}
                                                                            target="_blank" rel="noreferrer"
                                                                            className="inline-flex items-center gap-1 mt-1 text-xs text-[#36a4f2]/70 hover:text-[#36a4f2] hover:underline">
                                                                             원문 보기 <ExternalLink className="w-3 h-3" />

@@ -4,7 +4,7 @@ import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-    Download,
+    ExternalLink,
     X,
     Calendar,
     CheckSquare,
@@ -66,7 +66,6 @@ function getUsageGuide(item: ActionKitItem): { about: string; tips: string[] } {
 interface ActionKitDetailModalProps {
     item: ActionKitItem;
     onClose: () => void;
-    onDownload: (path: string, name: string, id?: number) => void;
     onNavigateToLaw?: (lawTitle: string) => void;
     onToggleBookmark: (item: ActionKitItem, e: React.MouseEvent) => void;
     isBookmarked: boolean;
@@ -78,7 +77,6 @@ interface ActionKitDetailModalProps {
 export const ActionKitDetailModal = ({
     item,
     onClose,
-    onDownload,
     onNavigateToLaw,
     onToggleBookmark,
     isBookmarked,
@@ -315,15 +313,21 @@ export const ActionKitDetailModal = ({
                         >
                             닫기
                         </Button>
-                        <Button
-                            className="bg-[#36a4f2] hover:bg-[#258bd1] gap-2 rounded-full px-6 shadow-lg shadow-[#36a4f2]/20"
-                            onClick={() => {
-                                onDownload(item.path, item.name, item.id);
-                            }}
-                        >
-                            <Download className="w-4 h-4" />
-                            원본 다운로드
-                        </Button>
+                        {item.id && (
+                            <Button
+                                className="bg-[#36a4f2] hover:bg-[#258bd1] gap-2 rounded-full px-6 shadow-lg shadow-[#36a4f2]/20"
+                                asChild
+                            >
+                                <a
+                                    href={`${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? ""}/api/v1/actionkits/items/${item.id}/view`}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                >
+                                    <ExternalLink className="w-4 h-4" />
+                                    문서 보기
+                                </a>
+                            </Button>
+                        )}
                     </div>
                 </div>
             </div>
