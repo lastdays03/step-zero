@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import { toast } from "sonner";
 import { useLawGuide } from '../hooks/useLawGuide';
 import { Disclaimer } from '@/components/ui/Disclaimer';
 import { Card, CardContent } from "@/components/ui/card";
@@ -20,6 +19,8 @@ import {
 import { LawItem, RelatedLaw } from '../types';
 import { useActionKit } from '../hooks/useActionKit';
 import { LawDetailPopup } from './LawDetailPopup';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
 
 type LawItemWithChapter = LawItem & { chapterTitle: string };
 
@@ -77,33 +78,6 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
 
     const chapters = Object.entries(data);
     const currentChapter = data[activeChapter];
-
-    const handleDownload = (path: string, filename: string) => {
-        try {
-            const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
-
-            // If path already starts with actionkits/files, just use it with baseURL
-            // If it starts with library/resources, swap it to the new structure
-            let finalPath = path;
-            if (path.startsWith('library/resources/')) {
-                finalPath = path.replace('library/resources/', 'actionkits/files/');
-            }
-
-            // Build absolute URL
-            const url = finalPath.startsWith('http') ? finalPath : `${baseURL}/${finalPath}`;
-
-            const link = document.createElement('a');
-            link.href = url;
-            link.target = "_blank";
-            link.download = filename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-        } catch (err) {
-            console.error('Download failed:', err);
-            toast.error('다운로드 중 오류가 발생했습니다.');
-        }
-    };
 
     const filteredItems: LawItemWithChapter[] = Object.values(data).flatMap(chapter =>
         chapter.items.map(item => ({ ...item, chapterTitle: chapter.title }))
@@ -250,17 +224,23 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
 
                                 <div className="mt-auto pt-4 border-t border-slate-50 flex justify-between items-center">
                                     <span className="text-[11px] font-medium text-slate-400">{item.size}</span>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-[#36a4f2]"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDownload(item.path, item.name);
-                                        }}
-                                    >
-                                        <Download className="w-4 h-4" />
-                                    </Button>
+                                    {item.id && (
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-[#36a4f2]"
+                                            asChild
+                                            onClick={(e) => e.stopPropagation()}
+                                        >
+                                            <a
+                                                href={`${API_URL}/api/v1/actionkits/items/${item.id}/view`}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                            >
+                                                <Download className="w-4 h-4" />
+                                            </a>
+                                        </Button>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
@@ -285,7 +265,6 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
                     relatedKits={getRelatedKits(selectedLaw.name)}
                     onClose={() => setSelectedLaw(null)}
                     onNavigateToKit={onNavigateToKit}
-                    onDownload={handleDownload}
                 />
             )}
             <Disclaimer />

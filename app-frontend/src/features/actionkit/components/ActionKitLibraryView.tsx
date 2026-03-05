@@ -11,7 +11,6 @@ import { Badge } from "@/components/ui/badge";
 import {
     FolderOpen,
     Search,
-    Download,
     Info,
     Calendar,
     Layers,
@@ -29,10 +28,13 @@ import {
     Trash2,
     LucideIcon,
     History,
+    ExternalLink,
 } from 'lucide-react';
 import { ActionKitItem, RelatedLaw } from '../types';
 import { apiClient } from '@/lib/api-client';
 import { ActionKitDetailModal } from './ActionKitDetailModal';
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
 
 const STARTER_PACKS = [
     {
@@ -269,50 +271,6 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
 
     const categories = Object.entries(data);
     const currentCategory = data[selectedCategory];
-
-    const handleDownload = async (path: string, filename: string, itemId?: number) => {
-        try {
-            let success = false;
-            if (itemId) {
-                try {
-                    // Use authenticated API download for DB-managed files
-                    const res = await apiClient.get(`/actionkits/items/${itemId}/download`, { responseType: 'blob' });
-                    const url = window.URL.createObjectURL(new Blob([res.data]));
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.setAttribute('download', filename);
-                    document.body.appendChild(link);
-                    link.click();
-                    link.remove();
-                    window.URL.revokeObjectURL(url);
-                    success = true;
-                } catch (apiErr: unknown) {
-                    const err = apiErr as { response?: { status?: number } };
-                    if (err.response?.status !== 404) throw apiErr;
-                }
-            }
-
-            if (!success && path) {
-                // Fallback for legacy path-based files
-                const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
-                let finalPath = path;
-                if (path.startsWith('library/resources/')) {
-                    finalPath = path.replace('library/resources/', 'actionkits/files/');
-                }
-                const url = finalPath.startsWith('http') ? finalPath : `${baseURL}/${finalPath}`;
-                const link = document.createElement('a');
-                link.href = url;
-                link.target = "_blank";
-                link.download = filename;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            }
-        } catch (err) {
-            console.error('Download failed:', err);
-            toast.error('다운로드 중 오류가 발생했습니다.');
-        }
-    };
 
     const filteredItems = Object.values(data).flatMap(cat =>
         cat.items.map(item => ({ ...item, categoryTitle: cat.title }))
@@ -680,17 +638,23 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                                             <Eye className="w-3 h-3 text-slate-400" />
                                             <span className="text-[11px] font-bold text-slate-600">미리보기</span>
                                         </Button>
-                                        <Button
-                                            size="sm"
-                                            className="h-8 rounded-full bg-[#36a4f2] hover:bg-[#258bd1] gap-1.5 px-4"
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                handleDownload(item.path, item.name);
-                                            }}
-                                        >
-                                            <Download className="w-3 h-3" />
-                                            <span className="text-[11px] font-bold">다운로드</span>
-                                        </Button>
+                                        {item.id && (
+                                            <Button
+                                                size="sm"
+                                                className="h-8 rounded-full bg-[#36a4f2] hover:bg-[#258bd1] gap-1.5 px-4"
+                                                asChild
+                                                onClick={(e) => e.stopPropagation()}
+                                            >
+                                                <a
+                                                    href={`${API_URL}/api/v1/actionkits/items/${item.id}/view`}
+                                                    target="_blank"
+                                                    rel="noreferrer"
+                                                >
+                                                    <ExternalLink className="w-3 h-3" />
+                                                    <span className="text-[11px] font-bold">문서 보기</span>
+                                                </a>
+                                            </Button>
+                                        )}
                                     </div>
                                 </div>
                             </CardContent>
@@ -710,7 +674,6 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                 <ActionKitDetailModal
                     item={(detailItem || previewKit)!}
                     onClose={() => { setDetailItem(null); setPreviewKit(null); }}
-                    onDownload={handleDownload}
                     onNavigateToLaw={onNavigateToLaw}
                     onToggleBookmark={toggleBookmark}
                     isBookmarked={!!bookmarkedItems[(detailItem || previewKit)?.id ?? (detailItem || previewKit)?.name ?? '']}

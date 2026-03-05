@@ -1,4 +1,5 @@
 export interface LawItem {
+    id: number;
     name: string;
     ext: string;
     size: string;
