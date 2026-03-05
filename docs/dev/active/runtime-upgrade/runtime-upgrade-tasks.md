@@ -40,11 +40,12 @@
 
 ---
 
-## Scope Out (호스트에서 사용자 직접 진행)
+## Scope Out (이전 커밋에서 처리 완료 또는 별도 기획)
 
-- [ ] 루트 `package.json` `packageManager` 필드 pnpm 버전 변경
-- [ ] `app-frontend/pnpm-lock.yaml` 재생성
-- [ ] Frontend Dockerfile Node.js 이미지 태그 변경 (선택)
-- [ ] CI `node-version` 변경 (선택)
+- [x] 루트 `package.json` `packageManager`: `pnpm@10.30.3` (최신, 변경 불필요)
+- [x] `app-frontend/pnpm-lock.yaml`: pnpm 버전 미변경으로 재생성 불필요
+- [x] Frontend Dockerfile: `node:24-alpine` (이전 커밋 `5abb18c`에서 변경 완료)
+- [x] CI `node-version`: `"24"` (이전 커밋에서 변경 완료)
+- [ ] 호스트 code-server Dockerfile Node 22 → 24 (인프라 — 프로젝트 범위 밖)
 - [ ] React 19 마이그레이션 (별도 기획)
 - [ ] Tailwind CSS 4 마이그레이션 (별도 기획)
