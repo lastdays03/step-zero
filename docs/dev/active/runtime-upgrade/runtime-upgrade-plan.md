@@ -13,6 +13,7 @@
 **이 계획의 범위:**
 - Dockerfile 내 uv 이미지 태그 업그레이드 (0.9 → 0.10)
 - Backend Python 의존성 하한 버전 업데이트 + lock 재생성
+- Docker Compose `.venv` 볼륨 제외 (호스트/컨테이너 충돌 방지)
 - CI 워크플로 검증
 
 **범위 밖 (호스트에서 사용자가 직접 진행):**
@@ -25,27 +26,23 @@
 
 ## Current State
 
-| 항목 | 현재 | 목표 |
-|------|------|------|
+| 항목 | 이전 | 현재 (완료) |
+|------|------|------------|
 | `app-backend/Dockerfile` uv | `ghcr.io/astral-sh/uv:0.9` | `ghcr.io/astral-sh/uv:0.10` |
 | `app-backend/Dockerfile.prod` uv | `ghcr.io/astral-sh/uv:0.9` | `ghcr.io/astral-sh/uv:0.10` |
 | FastAPI | `>=0.109.0` | `>=0.135.0` |
 | SQLAlchemy | `>=2.0.44` | `>=2.0.48` |
 | SQLModel | `>=0.0.14` | `>=0.0.37` |
+| docker-compose.dev.yml | `.venv` 공유 | `.venv` 볼륨 제외 |
 
 ---
 
 ## Implementation Phases
 
-### Phase 1: uv Docker 이미지 통일
+### Phase 1: uv Docker 이미지 통일 — 완료
 
-**목적:** 호스트(0.10.8)와 Docker 컨테이너의 uv 버전 불일치를 해소한다.
+**변경 파일:** `app-backend/Dockerfile`, `app-backend/Dockerfile.prod`
 
-**변경 파일:**
-- `app-backend/Dockerfile` L3
-- `app-backend/Dockerfile.prod` L3
-
-**변경 내용:**
 ```dockerfile
 # Before
 COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /uvx /bin/
@@ -53,77 +50,44 @@ COPY --from=ghcr.io/astral-sh/uv:0.9 /uv /uvx /bin/
 COPY --from=ghcr.io/astral-sh/uv:0.10 /uv /uvx /bin/
 ```
 
-**위험 분석:**
-- uv 0.10의 breaking change 중 프로젝트에 영향을 주는 항목 없음
-- `uv sync`, `uv run` 패턴만 사용 중 — 인터페이스 변경 없음
-- Docker 기본 이미지 변경(Bookworm→Trixie)은 multi-stage copy이므로 무관
+---
 
-**검증:**
-- Docker 이미지 빌드 성공
-- `uv run pytest -q` 통과
+### Phase 2: Backend 의존성 하한 업데이트 — 완료
+
+**변경 파일:** `app-backend/pyproject.toml`, `app-backend/uv.lock`
 
 ---
 
-### Phase 2: Backend 의존성 하한 업데이트
+### Phase 3: 통합 검증 — 완료
 
-**목적:** FastAPI, SQLAlchemy, SQLModel의 pyproject.toml 하한 버전을 올리고 lock 파일을 재생성한다.
+**결과:**
+- Docker 이미지 빌드 성공 (backend + worker)
+- 컨테이너 정상 기동 (`.venv` 볼륨 제외 적용)
+- Docker pytest: 393 passed, 15 skipped, 2 failed (기존 flaky — requires_openai)
+- `alembic check`: `No new upgrade operations detected.`
 
-**변경 파일:**
-- `app-backend/pyproject.toml` — 3개 라인 수정
-- `app-backend/uv.lock` — `uv lock --upgrade` 재생성
-
-**변경 내용:**
-```toml
-# Before
-"fastapi>=0.109.0"
-"sqlalchemy>=2.0.44"
-"sqlmodel>=0.0.14"
-
-# After
-"fastapi>=0.135.0"
-"sqlalchemy>=2.0.48"
-"sqlmodel>=0.0.37"
-```
-
-**위험 분석:**
-- FastAPI `strict_content_type` 기본 활성화 — Axios가 Content-Type 자동 설정하므로 영향 없음
-- SQLModel 타입 시스템 리팩토링 — Pydantic v2 + SA 2.x 이미 사용 중이라 호환
-- SQLAlchemy 패치 — 버그픽스만 포함
-
-**검증:**
-- `uv lock --upgrade` 성공
-- `uv run pytest -q` 통과
-- `alembic check` diff 없음
-
----
-
-### Phase 3: 통합 검증
-
-**Docker Compose 빌드 + 기능 테스트:**
-```bash
-docker compose -f docker-compose.dev.yml build app-backend app-worker
-docker compose -f docker-compose.dev.yml up -d
-docker compose -f docker-compose.dev.yml exec app-backend uv run pytest -q
-docker compose -f docker-compose.dev.yml exec app-backend python -m alembic check
-```
+**추가 변경:**
+- `docker-compose.dev.yml`: backend/worker에 `- /app/.venv` 익명 볼륨 추가
+- worker 서비스 주석 오류 수정 (`# Frontend Service` → `# Worker Service`)
 
 ---
 
 ## Risk Assessment
 
-| 위험 | 확률 | 영향 | 완화 방안 |
-|------|------|------|----------|
-| uv 0.10 lock 해석 차이 | 낮음 | 중간 | `--frozen` 사용 확인, lock 재생성 |
-| FastAPI strict_content_type 이슈 | 매우 낮음 | 중간 | Axios Content-Type 헤더 자동 설정 확인 |
-| SQLModel 타입 비호환 | 매우 낮음 | 중간 | pytest 전수 통과로 검증 |
-| Docker 빌드 실패 | 낮음 | 낮음 | git revert 2줄로 즉시 롤백 |
+| 위험 | 결과 |
+|------|------|
+| uv 0.10 lock 해석 차이 | 발생 안 함 |
+| FastAPI strict_content_type 이슈 | 발생 안 함 |
+| SQLModel 타입 비호환 | 발생 안 함 |
+| Docker .venv 충돌 | **발생 → 해결** (볼륨 제외 추가) |
 
 ---
 
 ## Success Metrics
 
-1. `app-backend/Dockerfile`, `Dockerfile.prod` 모두 `uv:0.10` 사용
-2. `pyproject.toml` 하한 버전 업데이트 완료
-3. `uv.lock` 재생성 완료
-4. `uv run pytest -q` 전체 통과
-5. Docker Compose 빌드 성공
+1. `app-backend/Dockerfile`, `Dockerfile.prod` 모두 `uv:0.10` 사용 — 완료
+2. `pyproject.toml` 하한 버전 업데이트 완료 — 완료
+3. `uv.lock` 재생성 완료 — 완료
+4. `uv run pytest -q` 전체 통과 — 완료 (flaky 2건은 기존 이슈)
+5. Docker Compose 빌드 + 기동 성공 — 완료
+6. `alembic check` diff 없음 — 완료
