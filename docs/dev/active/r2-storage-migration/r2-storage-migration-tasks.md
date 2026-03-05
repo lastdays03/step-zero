@@ -89,7 +89,7 @@
   - 의존: 1-4
 
 - [ ] **1-9** 기존 테스트 통과 확인 `[S]`
-  - `cd app-backend && .venv/bin/pytest -q`
+  - `cd app-backend && uv run pytest -q`
   - AC: 모든 기존 테스트 통과 (0 failures)
   - 의존: 1-6, 1-7, 1-8
 
@@ -100,7 +100,7 @@
 - [ ] **2-1** `boto3` 의존성 추가 `[S]`
   - 파일: `app-backend/pyproject.toml`
   - `dependencies`에 `"boto3>=1.34.0"` 추가
-  - AC: `pip install -e .` 후 `import boto3` 성공
+  - AC: `uv sync` 후 `import boto3` 성공
 
 - [ ] **2-2** `R2StorageBackend` 구현 `[L]`
   - 새 파일: `app-backend/app/services/storage/r2.py`

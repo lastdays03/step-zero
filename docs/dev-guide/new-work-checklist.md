@@ -18,6 +18,6 @@
 
 ## 완료 시
 
-- [ ] Quality Gates 통과 (`pytest -q` / `npm run lint`)
+- [ ] Quality Gates 통과 (`uv run pytest -q` / `pnpm lint`)
 - [ ] `dev-status.md` 갱신 (상태, Next 3 Actions)
 - [ ] PR 작성 (한국어 제목/본문, Conventional Commits)

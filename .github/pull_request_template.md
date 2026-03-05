@@ -7,8 +7,8 @@
 - 항목 2
 
 ## 검증
-- [ ] backend: `cd app-backend && .venv/bin/pytest -q`
-- [ ] frontend: `cd app-frontend && npm run lint`
+- [ ] backend: `cd app-backend && uv run pytest -q`
+- [ ] frontend: `cd app-frontend && pnpm lint`
 
 
 ## 영향 범위

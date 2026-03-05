@@ -13,15 +13,14 @@ run_local() {
   echo "[bootstrap_actionkit] applying alembic migrations..."
   ./scripts/run_alembic.sh upgrade head
 
-  PYTHON_BIN=".venv/bin/python"
-  if [[ ! -x "$PYTHON_BIN" ]]; then
-    if command -v python3 >/dev/null 2>&1; then
-      PYTHON_BIN="python3"
-    else
-      echo "[bootstrap_actionkit] python executable not found"
-      echo "expected: .venv/bin/python or python3 in PATH"
-      exit 1
-    fi
+  if command -v uv >/dev/null 2>&1; then
+    PYTHON_BIN="uv run python"
+  elif command -v python3 >/dev/null 2>&1; then
+    PYTHON_BIN="python3"
+  else
+    echo "[bootstrap_actionkit] python executable not found"
+    echo "expected: uv or python3 in PATH"
+    exit 1
   fi
 
   echo "[bootstrap_actionkit] seeding actionkit data..."

@@ -11,7 +11,7 @@
     "test:watch": "jest --watch",
     "types:backend-openapi": "docker exec -i stepzero-backend bash -lc \"cd /app && python scripts/export_openapi.py\"",
     "types:generate": "node scripts/generate_api_types.mjs",
-    "types:sync": "npm run types:backend-openapi && npm run types:generate"
+    "types:sync": "pnpm types:backend-openapi && pnpm types:generate"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
@@ -46,7 +46,7 @@
     "@types/canvas-confetti": "^1.9.0",
     "@types/file-saver": "^2.0.7",
     "@types/jest": "^30.0.0",
-    "@types/node": "^20",
+    "@types/node": "^22",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "autoprefixer": "^10.0.1",

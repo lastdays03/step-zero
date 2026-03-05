@@ -1,6 +1,7 @@
 {
   "name": "stepzero-repo-tools",
   "private": true,
+  "packageManager": "pnpm@9.15.4",
   "scripts": {
     "prepare": "husky",
     "lint:commits": "commitlint --from HEAD~1 --to HEAD"

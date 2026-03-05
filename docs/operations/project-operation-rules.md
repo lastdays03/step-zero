@@ -41,7 +41,7 @@
 - 브랜치명 규칙(`branch-name`)
 - 커밋 메시지(`commitlint`)
 - backend 테스트(`pytest -q`)
-- frontend lint(`npm run lint`)
+- frontend lint(`pnpm lint`)
 - PR 본문 품질 검사는 현재 `warning only`로 운영한다.
 
 ## 6. 환경변수/시크릿 규칙
@@ -58,20 +58,20 @@
 - 새 기능 API는 `v2` 우선 구현, `v1`은 호환 유지한다.
 - DB 스키마 변경 시 Alembic 마이그레이션 필수.
 - 완료 전 최소 검증:
-- `cd app-backend && .venv/bin/pytest -q`
+- `cd app-backend && uv run pytest -q`
 - 설정 변경 시 필수 확인:
 - `app/core/config.py` 환경변수 우선순위/기본값/placeholder 정규화 동작
 
 ## 8. 프론트엔드 개발 규칙
-- 개발 서버: `npm run dev` (`next dev --webpack`)
+- 개발 서버: `pnpm dev` (`next dev --webpack`)
 - OpenAPI 타입 동기화:
-- `npm run types:sync`
+- `pnpm types:sync`
 - 상태/렌더링 규칙:
 - loading/error/empty 상태를 명시한다.
 - SSR 하이드레이션 충돌을 유발하는 초기 렌더 불일치를 금지한다.
 - 인증/권한 UI는 초기 서버 렌더와 클라이언트 렌더의 DOM 구조가 달라지지 않게 설계한다.
 - 완료 전 최소 검증:
-- `cd app-frontend && npm run lint`
+- `cd app-frontend && pnpm lint`
 
 ## 9. 테스트 및 품질 게이트
 - 기능 PR 최소 조건:

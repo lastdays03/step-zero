@@ -17,7 +17,7 @@
 - PR description should be concise and human-readable; do not paste raw terminal logs into PR body.
 
 ## Frontend Rules
-- Run frontend dev server with `npm run dev` (configured as `next dev --webpack`).
+- Run frontend dev server with `pnpm dev` (configured as `next dev --webpack`).
 - If `NEXT_PUBLIC_GOOGLE_CLIENT_ID` is empty, the app must still render (graceful fallback).
 - For UI data loading, always provide loading, error, and empty states.
 
@@ -33,8 +33,8 @@
 - Keep response schema compatibility for existing frontend clients unless a change is explicitly approved.
 
 ## Quality Gates
-- Before concluding backend changes, run `cd app-backend && .venv/bin/pytest -q`.
-- Before concluding frontend changes, run `cd app-frontend && npm run lint`.
+- Before concluding backend changes, run `cd app-backend && uv run pytest -q`.
+- Before concluding frontend changes, run `cd app-frontend && pnpm lint`.
 
 
 ## Security Rules
