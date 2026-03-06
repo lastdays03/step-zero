@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { LayoutDashboard, Map, Briefcase, Users, LogOut, Sparkles, ChevronRight, Shield } from 'lucide-react';
+import { LogOut, Sparkles, ChevronRight } from 'lucide-react';
 import { usePathname } from 'next/navigation';
 
 import { useAuth } from '@/providers/AuthProvider';
@@ -18,19 +18,15 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { getNavItems } from '../config/nav-config';
+import { Users } from 'lucide-react';
 
 export const Sidebar = () => {
     const pathname = usePathname();
     const { isLoggedIn, user, logout, canAccessOps } = useAuth();
     const [isAuthModalOpen, setIsAuthModalOpen] = React.useState(false);
 
-    const menuItems: { icon: typeof LayoutDashboard; label: string; caption: string; href: string; badge?: string }[] = [
-        { icon: LayoutDashboard, label: '대시보드', caption: '현재 진행 상황 한눈에', href: '/dashboard' },
-        { icon: Map, label: '나의 로드맵', caption: 'AI 맞춤 창업 단계', href: '/roadmap' },
-        { icon: Briefcase, label: '액션 키트', caption: '필요 서류 · 체크리스트', href: '/actionkit' },
-        { icon: Users, label: '그로스 클럽', caption: '창업자 커뮤니티', href: '/growth-club' },
-        ...(canAccessOps ? [{ icon: Shield, label: '운영 콘솔', caption: '관리자 전용', href: '/ops' }] : []),
-    ];
+    const menuItems = getNavItems(canAccessOps);
 
     return (
         <>

@@ -67,7 +67,7 @@ export const ProgressCard = ({ phase, daysLeft, nextTitle, endowedProgress, read
 
                 {readinessLabel && (
                     <div className="relative z-10 mb-4">
-                        <span className="inline-flex items-center rounded-full bg-[#36a4f2]/10 px-3 py-1 text-xs font-semibold text-[#36a4f2]">
+                        <span className="inline-flex items-center rounded-full bg-highlight/10 px-3 py-1 text-xs font-semibold text-highlight">
                             {readinessLabel}
                         </span>
                     </div>

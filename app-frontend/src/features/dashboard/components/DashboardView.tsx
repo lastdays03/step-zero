@@ -14,6 +14,7 @@ import { Clock, CheckSquare } from 'lucide-react';
 import type { RoadmapDetailResponse } from '@/features/roadmap/components/RoadmapExecutionView';
 
 const ACTIVE_ROADMAP_STORAGE_KEY = "stepzero_active_roadmap_id";
+const GLASS_CARD = "bg-white/90 backdrop-blur-sm border border-white/50 rounded-3xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]";
 
 export const DashboardView = () => {
     const [activeRoadmapId] = useState<string | null>(() => {
@@ -231,10 +232,10 @@ export const DashboardView = () => {
                 </div>
 
                 {/* 4. Action Kit / Documents (Span 2) */}
-                <Card className="md:col-span-2 lg:col-span-2 bg-white/90 backdrop-blur-sm border border-white/50 rounded-3xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]">
+                <Card className={`md:col-span-2 lg:col-span-2 ${GLASS_CARD}`}>
                     <CardContent className="p-8">
                         <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                            <span className="w-1 h-5 bg-[#36a4f2] rounded-full"></span>
+                            <span className="w-1 h-5 bg-highlight rounded-full"></span>
                             필요 서류
                         </h3>
                         <div className="space-y-3">
@@ -292,7 +293,7 @@ export const DashboardView = () => {
                 </Card>
 
                 {/* 5. Stat Card 1: Timer (Span 1) */}
-                <Card className="md:col-span-1 lg:col-span-1 bg-white/90 backdrop-blur-sm border border-white/50 rounded-3xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] text-center">
+                <Card className={`md:col-span-1 lg:col-span-1 ${GLASS_CARD} text-center`}>
                     <CardContent className="p-8 flex flex-col justify-center items-center h-full">
                         <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-4">
                             <Clock className="w-6 h-6" />
@@ -303,7 +304,7 @@ export const DashboardView = () => {
                 </Card>
 
                 {/* 6. Stat Card 2: Tasks (Span 1) */}
-                <Card className="md:col-span-1 lg:col-span-1 bg-white/90 backdrop-blur-sm border border-white/50 rounded-3xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] text-center">
+                <Card className={`md:col-span-1 lg:col-span-1 ${GLASS_CARD} text-center`}>
                     <CardContent className="p-8 flex flex-col justify-center items-center h-full">
                         <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center mb-4">
                             <CheckSquare className="w-6 h-6" />

@@ -64,6 +64,9 @@ const config: Config = {
     				DEFAULT: 'hsl(var(--card))',
     				foreground: 'hsl(var(--card-foreground))'
     			},
+    			highlight: {
+    				DEFAULT: 'hsl(var(--highlight))',
+    			},
     			chart: {
     				'1': 'hsl(var(--chart-1))',
     				'2': 'hsl(var(--chart-2))',
