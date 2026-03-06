@@ -1,11 +1,9 @@
-import sqlalchemy as sa
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.models.actionkit import (
     ActionKitCategory,
     ActionKitChecklist,
-    ActionKitFile,
     ActionKitItem,
     ActionKitItemHighlight,
     ActionKitRelatedLaw,
@@ -95,20 +93,6 @@ class ActionKitRepository:
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def list_current_files(self, *, item_ids: list[int]) -> list[ActionKitFile]:
-        if not item_ids:
-            return []
-        stmt = (
-            select(ActionKitFile)
-            .where(
-                ActionKitFile.item_id.in_(item_ids),
-                ActionKitFile.is_current.is_(True),
-            )
-            .order_by(ActionKitFile.version.desc(), ActionKitFile.id.desc())
-        )
-        result = await self.session.execute(stmt)
-        return list(result.scalars().all())
-
     async def get_item_with_category(
         self, *, item_id: int
     ) -> tuple[ActionKitItem, ActionKitCategory] | None:
@@ -122,47 +106,6 @@ class ActionKitRepository:
         if not row:
             return None
         return row[0], row[1]
-
-    async def get_next_file_version(self, *, item_id: int) -> int:
-        stmt = select(sa.func.max(ActionKitFile.version)).where(
-            ActionKitFile.item_id == item_id
-        )
-        result = await self.session.execute(stmt)
-        max_version = result.scalar_one_or_none() or 0
-        return int(max_version) + 1
-
-    async def clear_current_file_flags(self, *, item_id: int) -> None:
-        stmt = (
-            sa.update(ActionKitFile)
-            .where(ActionKitFile.item_id == item_id, ActionKitFile.is_current.is_(True))
-            .values(is_current=False)
-        )
-        await self.session.execute(stmt)
-
-    async def create_file_record(
-        self,
-        *,
-        item_id: int,
-        version: int,
-        object_key: str,
-        original_filename: str | None,
-        mime_type: str | None,
-        size_bytes: int | None,
-        checksum: str | None,
-    ) -> ActionKitFile:
-        record = ActionKitFile(
-            item_id=item_id,
-            version=version,
-            object_key=object_key,
-            original_filename=original_filename,
-            mime_type=mime_type,
-            size_bytes=size_bytes,
-            checksum=checksum,
-            is_current=True,
-        )
-        self.session.add(record)
-        await self.session.flush()
-        return record
 
     async def commit(self) -> None:
         await self.session.commit()

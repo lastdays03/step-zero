@@ -4,37 +4,35 @@
 
 ## Last Updated
 - Date: 2026-03-06
-- Branch: `develop` (clean, up-to-date)
+- Branch: `feature/0-legacy-file-cleanup-phase-b` (Phase B+C 구현 중)
 
 ## Sprint Focus
-- 다음 계획 착수 대기 (legacy-file-cleanup 또는 신규 계획)
+- legacy-file-cleanup Phase B+C 구현
 
 ## Current State
-- ops-file-manager: 전체 완료, PR #24 머지, done/ 아카이브
-- dashboard-enhance: 전체 완료 (Phase 1~4), PR #24 머지, done/ 아카이브
-- legacy-file-cleanup: 계획 수립 완료, A-2만 완료 (듀얼 라이트), 나머지 미착수
+- legacy-file-cleanup Phase A: 완료 (PR #25 머지 + A-1 DB 스크립트 실행 완료)
+- legacy-file-cleanup Phase B: 완료 (FK 재매핑 + Alembic 마이그레이션)
+- legacy-file-cleanup Phase C: 완료 (ActionKit/GrowthClub/Profile 코드 전환)
+- legacy-file-cleanup Phase D: 미착수
 
 ## Completed (최근)
-- Ops 파일 관리 콘솔 (PR #24)
-  - 백엔드: files API (목록/통계/삭제), 감사 로그 연동, 테스트 306줄
-  - 프론트엔드: OpsFilesView 543줄, 타입/API 모듈
-- Dashboard Enhance Phase 1~4 (PR #24)
-  - 거짓 정보 제거 (프로 플랜, 소셜 프루프, 하드코딩 아바타)
-  - 데이터 연동 (founders_online 실제 집계, roadmap_id, error 배너)
-  - 알림 SSE 전환 (Redis Pub/Sub + SSE 스트림 + useNotificationSSE 훅)
-  - 접근성 + 테스트 보강 (aria-label, sr-only, 키보드, safe-area)
-- 알림 링크 해시 라우팅 전환 + 미읽음 UX 개선
+- A-1 DB 스크립트 실행 (71건: ActionKit 67, GrowthClub 3, Profile 1)
+- B-1 FK 데이터 재매핑 (ID 매핑 67건, FK 대상 0건)
+- B-2 Alembic 마이그레이션 016 적용 (actionkit_files → files FK 변경)
+- C-1 ActionKit: FileRepository 전환, 레거시 메서드 4개 제거
+- C-2 GrowthClub: File 기반 attachment 생성/조회/삭제
+- C-3 Profile: File primary source, profile_img 컬럼 동기화 유지
 
 ## In Progress
-- 없음
+- PR 준비 (Phase B+C 커밋)
 
 ## Risks And Blockers
-- 없음
+- Phase D (레거시 테이블 DROP)는 별도 PR로 진행 권장
 
 ## Next 3 Actions
-1. legacy-file-cleanup 착수 여부 결정 (Phase A: 데이터 정합성 확보)
-2. 또는 신규 기능 계획 수립
-3. Docker 환경 통합 테스트 (ops-file-manager + dashboard-enhance 변경분)
+1. Phase B+C 커밋 → PR 생성 → develop 머지
+2. Phase D 착수: 레거시 테이블 DROP + 코드 정리
+3. 프론트엔드 types:sync + 통합 테스트
 
 ## Test Status
 - Backend pytest: 421 passed, 10 skipped

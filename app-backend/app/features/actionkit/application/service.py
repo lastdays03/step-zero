@@ -48,13 +48,16 @@ class ActionKitService:
         item_ids = [item.id for item in items if item.id is not None]
 
         highlights = await self.repository.list_item_highlights(item_ids=item_ids)
-        files = await self.repository.list_current_files(item_ids=item_ids)
+        file_repo = FileRepository(self.repository.session)
+        files = await file_repo.get_current_files(
+            owner_type="actionkit_item", owner_ids=item_ids
+        )
 
         highlights_map: dict[int, list[str]] = defaultdict(list)
         for highlight in highlights:
             highlights_map[highlight.item_id].append(highlight.content)
 
-        file_map = {file.item_id: file for file in files}
+        file_map = {file.owner_id: file for file in files}
 
         items_by_category: dict[int, list[dict]] = defaultdict(list)
         for item in items:
@@ -100,7 +103,10 @@ class ActionKitService:
         item_ids = [item.id for item in items if item.id is not None]
 
         related_laws = await self.repository.list_related_laws(item_ids=item_ids)
-        files = await self.repository.list_current_files(item_ids=item_ids)
+        file_repo = FileRepository(self.repository.session)
+        files = await file_repo.get_current_files(
+            owner_type="actionkit_item", owner_ids=item_ids
+        )
         highlights = await self.repository.list_item_highlights(item_ids=item_ids)
         checklists = await self.repository.list_checklists(item_ids=item_ids)
 
@@ -126,7 +132,7 @@ class ActionKitService:
         for cl in checklists:
             checklists_map[cl.item_id].append(cl.content)
 
-        file_map = {file.item_id: file for file in files}
+        file_map = {file.owner_id: file for file in files}
 
         items_by_category: dict[int, list[dict]] = defaultdict(list)
         for item in items:
@@ -193,7 +199,10 @@ class ActionKitService:
             raise ValueError("ActionKit item not found")
 
         item, category = item_and_category
-        next_version = await self.repository.get_next_file_version(item_id=item_id)
+        file_repo = FileRepository(self.repository.session)
+        next_version = await file_repo.get_next_version(
+            owner_type="actionkit_item", owner_id=item_id
+        )
         settings = get_settings()
         filename = upload_file.filename or f"item-{item_id}-v{next_version}.bin"
         object_key = build_object_key(
@@ -214,19 +223,6 @@ class ActionKitService:
         )
         size_bytes, checksum = result.size_bytes, result.checksum
 
-        await self.repository.clear_current_file_flags(item_id=item_id)
-        record = await self.repository.create_file_record(
-            item_id=item_id,
-            version=next_version,
-            object_key=object_key,
-            original_filename=filename,
-            mime_type=mime_type,
-            size_bytes=size_bytes,
-            checksum=checksum,
-        )
-
-        # 듀얼 라이트: File 모델에도 동일 레코드 생성 (4B-6)
-        file_repo = FileRepository(self.repository.session)
         new_file = await file_repo.create(
             file=File(
                 owner_type="actionkit_item",
@@ -251,19 +247,12 @@ class ActionKitService:
 
         return {
             "item_id": item_id,
-            "file_id": record.id,
-            "version": record.version,
-            "object_key": record.object_key,
-            "download_url": self._to_public_path(record.object_key),
-            "original_filename": record.original_filename,
-            "mime_type": record.mime_type,
-            "size_bytes": record.size_bytes,
-            "checksum": record.checksum,
+            "file_id": new_file.id,
+            "version": new_file.version,
+            "object_key": new_file.object_key,
+            "download_url": self._to_public_path(new_file.object_key),
+            "original_filename": new_file.original_filename,
+            "mime_type": new_file.mime_type,
+            "size_bytes": new_file.size_bytes,
+            "checksum": new_file.checksum,
         }
-
-
-# TODO(4B-6): ActionKitFile → File 모델 완전 전환 (별도 리팩터 단계)
-# - ActionKitRepository.list_current_files → FileRepository.get_current_files(owner_type="actionkit_item")
-# - ActionKitRepository.create_file_record → FileRepository.create(File(...))
-# - delete 로직에 FileRepository.delete_by_owner("actionkit_item", item_id) 추가
-# - 선행 조건: 4B-4 데이터 마이그레이션 + 4B-5 FK 재매핑 완료

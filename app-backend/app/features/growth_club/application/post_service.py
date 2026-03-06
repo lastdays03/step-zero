@@ -5,7 +5,6 @@ from typing import Optional
 
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
 from app.core.logging import get_logger
@@ -13,7 +12,6 @@ from app.models.file import File
 from app.repositories.file_repository import FileRepository
 from app.models.growth_club import (
     GrowthClubPost,
-    GrowthClubPostAttachment,
     GrowthClubTag,
 )
 from app.models.profile import UserProfile
@@ -70,8 +68,8 @@ class GrowthClubPostService:
         prepared_files: list[tuple[UploadFile, bytes]],
         tags: list[str] = [],
     ) -> int:
-        attachment_rows: list[GrowthClubPostAttachment] = []
         saved_object_keys: list[str] = []
+        file_records: list[dict] = []
 
         try:
             storage = get_storage_backend()
@@ -82,8 +80,8 @@ class GrowthClubPostService:
                     object_key, data, content_type=upload.content_type or "image/png"
                 )
                 saved_object_keys.append(object_key)
-                attachment_rows.append(
-                    GrowthClubPostAttachment(
+                file_records.append(
+                    dict(
                         kind="image",
                         object_key=object_key,
                         original_filename=upload.filename,
@@ -100,8 +98,8 @@ class GrowthClubPostService:
                     content_type=upload.content_type or "application/octet-stream",
                 )
                 saved_object_keys.append(object_key)
-                attachment_rows.append(
-                    GrowthClubPostAttachment(
+                file_records.append(
+                    dict(
                         kind="file",
                         object_key=object_key,
                         original_filename=upload.filename,
@@ -126,7 +124,6 @@ class GrowthClubPostService:
                 neighborhood=neighborhood,
                 industry=industry,
             )
-            db_post.attachments = attachment_rows
 
             # 태그 처리
             if tags:
@@ -150,20 +147,19 @@ class GrowthClubPostService:
             await self.session.flush()
             post_id = db_post.id
 
-            # Dual-write: File 레코드 생성 (같은 트랜잭션)
             file_repo = FileRepository(self.session)
-            for att in attachment_rows:
-                file_record = File(
+            for rec in file_records:
+                file_obj = File(
                     owner_type="growth_club_post",
                     owner_id=int(post_id),
-                    category="image" if att.kind == "image" else "document",
-                    object_key=att.object_key,
-                    original_filename=att.original_filename,
-                    mime_type=att.mime_type,
-                    size_bytes=att.size_bytes,
-                    kind=att.kind,
+                    category="image" if rec["kind"] == "image" else "document",
+                    object_key=rec["object_key"],
+                    original_filename=rec["original_filename"],
+                    mime_type=rec["mime_type"],
+                    size_bytes=rec["size_bytes"],
+                    kind=rec["kind"],
                 )
-                await file_repo.create(file=file_record)
+                await file_repo.create(file=file_obj)
 
             await self.session.commit()
             return int(post_id)
@@ -175,11 +171,7 @@ class GrowthClubPostService:
     async def delete_post(
         self, *, post_id: int, current_user: AuthenticatedUser
     ) -> None:
-        query = (
-            select(GrowthClubPost)
-            .where(GrowthClubPost.id == post_id)
-            .options(selectinload(GrowthClubPost.attachments))
-        )
+        query = select(GrowthClubPost).where(GrowthClubPost.id == post_id)
         result = await self.session.execute(query)
         db_post = result.scalar_one_or_none()
         if not db_post:
@@ -190,8 +182,11 @@ class GrowthClubPostService:
                 status_code=403, detail="Not authorized to delete this post"
             )
 
-        attachment_keys = [attachment.object_key for attachment in db_post.attachments]
         file_repo = FileRepository(self.session)
+        file_records = await file_repo.get_by_owner(
+            owner_type="growth_club_post", owner_id=post_id
+        )
+        attachment_keys = [f.object_key for f in file_records]
         await file_repo.delete_by_owner(owner_type="growth_club_post", owner_id=post_id)
         await self.session.delete(db_post)
         await self.session.commit()
