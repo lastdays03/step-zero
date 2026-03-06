@@ -24,6 +24,7 @@ from app.core.config import get_settings
 from app.core.db import get_session
 from app.features.growth_club.application.post_service import GrowthClubPostService
 from app.models.growth_club import (
+    GrowthClubAttachmentRead,
     GrowthClubComment,
     GrowthClubPost,
     GrowthClubPostLike,
@@ -32,6 +33,7 @@ from app.models.growth_club import (
 )
 from app.models.notification import Notification
 from app.models.user import AuthenticatedUser, User
+from app.repositories.file_repository import FileRepository
 
 router = APIRouter()
 settings = get_settings()
@@ -175,7 +177,6 @@ async def list_posts(
                 selectinload(GrowthClubPost.comments)
                 .selectinload(GrowthClubComment.author)
                 .selectinload(User.profile),
-                selectinload(GrowthClubPost.attachments),
             )
         )
     else:
@@ -190,7 +191,6 @@ async def list_posts(
                 selectinload(GrowthClubPost.comments)
                 .selectinload(GrowthClubComment.author)
                 .selectinload(User.profile),
-                selectinload(GrowthClubPost.attachments),
             )
         )
 
@@ -218,7 +218,39 @@ async def list_posts(
 
     # 가공하여 반환
     read_posts: list[GrowthClubPostRead] = []
-    for row in result.all():
+    rows = result.all()
+    post_ids = [row[0].id for row in rows if row[0].id is not None]
+
+    # File 기반 attachments 일괄 조회
+    file_repo = FileRepository(session)
+    attachments_map: dict[int, list[GrowthClubAttachmentRead]] = {}
+    if post_ids:
+        from app.models.file import File as FileModel
+        from sqlmodel import select as sm_select
+
+        att_stmt = (
+            sm_select(FileModel)
+            .where(
+                FileModel.owner_type == "growth_club_post",
+                FileModel.owner_id.in_(post_ids),
+            )
+            .order_by(FileModel.created_at.asc())
+        )
+        att_result = await session.execute(att_stmt)
+        for f in att_result.scalars().all():
+            attachments_map.setdefault(f.owner_id, []).append(
+                GrowthClubAttachmentRead(
+                    id=f.id,  # type: ignore[arg-type]
+                    kind=f.kind or ("image" if f.category == "image" else "file"),
+                    object_key=f.object_key,
+                    original_filename=f.original_filename,
+                    mime_type=f.mime_type,
+                    size_bytes=f.size_bytes,
+                    created_at=f.created_at,
+                )
+            )
+
+    for row in rows:
         post = row[0]
         likes_count = row[1] if len(row) > 1 else 0
         is_liked = bool(row[2]) if current_user and len(row) > 2 else False
@@ -226,6 +258,7 @@ async def list_posts(
         post_read = GrowthClubPostRead.model_validate(post)
         post_read.likes_count = int(likes_count or 0)
         post_read.is_liked = is_liked
+        post_read.attachments = attachments_map.get(post.id, [])
 
         # Filter blinded comments and apply privacy masking
         user_id = current_user.id if current_user else None
@@ -298,7 +331,6 @@ async def create_post(
             selectinload(GrowthClubPost.comments)
             .selectinload(GrowthClubComment.author)
             .selectinload(User.profile),
-            selectinload(GrowthClubPost.attachments),
         )
     )
     result = await session.execute(query)
@@ -308,6 +340,25 @@ async def create_post(
     post_read.author.mask_privacy(current_user.id)
     post_read.likes_count = 0
     post_read.is_liked = False
+
+    # File 기반 attachments 조회
+    file_repo = FileRepository(session)
+    file_records = await file_repo.get_by_owner(
+        owner_type="growth_club_post", owner_id=post_id
+    )
+    post_read.attachments = [
+        GrowthClubAttachmentRead(
+            id=f.id,  # type: ignore[arg-type]
+            kind=f.kind or ("image" if f.category == "image" else "file"),
+            object_key=f.object_key,
+            original_filename=f.original_filename,
+            mime_type=f.mime_type,
+            size_bytes=f.size_bytes,
+            created_at=f.created_at,
+        )
+        for f in file_records
+    ]
+
     return post_read
 
 

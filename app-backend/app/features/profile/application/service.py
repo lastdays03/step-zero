@@ -94,24 +94,24 @@ class ProfileService:
             object_key, content, content_type=file.content_type or "image/png"
         )
 
-        # Update profile
-        profile.profile_img = f"profile/{filename}"
-        profile.updated_at = utc_now()
-        self.session.add(profile)
-
-        # Dual-write: File 레코드 생성 (같은 트랜잭션)
+        # File 레코드 관리 (primary source)
         file_repo = FileRepository(self.session)
         await file_repo.delete_by_owner(owner_type="user_profile", owner_id=user_id)
         file_record = File(
             owner_type="user_profile",
             owner_id=user_id,
             category="profile_image",
-            object_key=f"profile/{filename}",
+            object_key=object_key,
             original_filename=file.filename,
             mime_type=file.content_type,
             size_bytes=len(content),
         )
         await file_repo.create(file=file_record)
+
+        # profile_img 컬럼 동기화 (AuthorRead 호환)
+        profile.profile_img = object_key
+        profile.updated_at = utc_now()
+        self.session.add(profile)
 
         await self.session.commit()
         await self.session.refresh(profile)

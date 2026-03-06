@@ -1,6 +1,6 @@
 # Context: 레거시 파일 테이블/모델 정리
 
-Last Updated: 2026-03-06
+Last Updated: 2026-03-06 (Phase B+C 완료)
 
 ## Key Files
 
@@ -23,9 +23,10 @@ Last Updated: 2026-03-06
 
 | 파일 | 현재 동작 | 목표 |
 |------|----------|------|
-| `app-backend/app/features/actionkit/application/service.py` | ActionKitFile + File 동시 기록, 조회는 레거시 | File만 사용 |
-| `app-backend/app/features/growth_club/application/post_service.py` | ~~Attachment만 기록~~ → **Attachment + File 듀얼 라이트 완료** (커밋 `f9d7ac8`), 삭제 시 `delete_by_owner`로 File 정리도 동작 | File만 사용 |
-| `app-backend/app/features/profile/application/service.py` | profile_img + File 동시 기록, 조회는 레거시 | File만 사용 |
+| `app-backend/app/features/actionkit/application/service.py` | ~~ActionKitFile + File 듀얼 라이트~~ → **File만 사용 (Phase C 완료)** | ✅ 완료 |
+| `app-backend/app/features/growth_club/application/post_service.py` | ~~Attachment + File 듀얼 라이트~~ → **File만 사용 (Phase C 완료)** | ✅ 완료 |
+| `app-backend/app/features/ops/application/actionkit/service.py` | File 삭제 추가 완료 (커밋 `3d3b718`, PR #25) | ✅ 완료 |
+| `app-backend/app/features/profile/application/service.py` | File primary, profile_img 컬럼 동기화 유지 (Phase C) | ✅ 완료 (컬럼 제거는 Phase D) |
 
 ### Ops 파일 관리 서비스 (ops-file-manager에서 구현 완료)
 
@@ -58,7 +59,7 @@ Last Updated: 2026-03-06
 
 | 파일 | 역할 | Phase |
 |------|------|-------|
-| `app-backend/scripts/migrate_files_table.py` | 레거시 → files 데이터 복사 + FK 재매핑 + 검증 (현재 `--dry-run`, `--verify`만 구현, `--migrate-only` 미구현) | A-1, B-1 |
+| `app-backend/scripts/migrate_files_table.py` | 레거시 → files 데이터 복사 + FK 재매핑 + 검증 (`--dry-run`, `--verify`, `--migrate-only` 모두 구현 완료, PR #25) | A-1, B-1 |
 | `app-backend/alembic/versions/003_actionkit.py` | ActionKit 테이블 생성 (actionkit_files 포함) | D-1 역참조 |
 | `app-backend/alembic/versions/004_growth_club.py` | GrowthClub 테이블 생성 (attachment 포함) | D-1 역참조 |
 | `app-backend/alembic/versions/014_files_table.py` | 통합 files 테이블 생성 | 참조만 |

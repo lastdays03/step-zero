@@ -12,6 +12,7 @@ from app.core.db import get_session
 from app.features.actionkit.application import ActionKitService
 from app.models.user import AuthenticatedUser
 from app.repositories.actionkit_repository import ActionKitRepository
+from app.repositories.file_repository import FileRepository
 from app.services.storage import get_storage_backend
 
 router = APIRouter()
@@ -112,8 +113,10 @@ document.getElementById('content').innerHTML = marked.parse({markdown_json});
 
 async def _resolve_file(item_id: int, session: AsyncSession):
     """Resolve item_id to (storage_key, current_file) or raise 404."""
-    repo = ActionKitRepository(session)
-    files = await repo.list_current_files(item_ids=[item_id])
+    file_repo = FileRepository(session)
+    files = await file_repo.get_current_files(
+        owner_type="actionkit_item", owner_ids=[item_id]
+    )
     if not files:
         raise HTTPException(status_code=404, detail="No file found for this item")
 

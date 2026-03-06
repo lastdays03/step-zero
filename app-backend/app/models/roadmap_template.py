@@ -75,7 +75,7 @@ class RoadmapTemplateAction(SQLModel, table=True):
         default=None, foreign_key="actionkit_items.id", ondelete="SET NULL"
     )
     actionkit_file_id: Optional[int] = Field(
-        default=None, foreign_key="actionkit_files.id", ondelete="SET NULL"
+        default=None, foreign_key="files.id", ondelete="SET NULL"
     )
     sort_order: int = Field(default=0)
     metadata_json: dict = Field(
