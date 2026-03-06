@@ -5,7 +5,7 @@
 - 항목 형식은 `날짜 | 결정 | 근거`를 유지한다.
 
 ## Entries
-- 2026-02-15 | Backend API HTTP 계층은 `app/api/v2/<feature>/<function>.py`로 운영 | API 모듈 경로 일관성 확보
+- 2026-02-15 | Backend API HTTP 계층은 `app/api/v1/<feature>/`로 운영 | 실제 라우터 구조와 문서 기준을 일치시켜 신규 구현 경로 혼선을 방지
 - 2026-02-15 | Backend 비즈니스 계층은 `app/features/<feature>/{domain,application}`에 배치 | 기능별 경계 명확화
 - 2026-02-15 | 운영콘솔 네이밍은 `ops`로 통일(`ops-console`, `ops_console` 금지) | 경로/용어 혼선 방지
 - 2026-02-15 | Frontend 피처는 public entry(`index.ts`) 유지, 서버 컴포넌트에서 hook export 직접 import 금지 | 레이어 의존성 규칙 유지
@@ -34,3 +34,7 @@
 - 2026-03-06 | 관리자 이메일을 `ADMIN_EMAILS` 환경변수로 관리 (쉼표 구분 → FrozenSet 변환) | 소스코드에서 개인정보 제거 + 배포 환경별 관리자 목록 독립 관리
 - 2026-03-06 | 프론트엔드 API URL fallback을 `src/lib/env.ts` 단일 유틸리티로 통합 | 4곳 분산 중복 제거 + localhost fallback 로직 단일 관리점 확보
 - 2026-03-06 | `ENABLE_SOCIAL_MOCK` 프로덕션 차단을 config validator + 런타임 이중 방어로 구현 | 설정 실수로 인한 프로덕션 Mock 인증 노출 방지
+- 2026-03-06 | Frontend production build는 `next build --webpack`을 사용 | Next 16 Turbopack build가 CSS/PostCSS 처리 중 panic을 재현해 품질 게이트 안정성이 더 중요
+- 2026-03-06 | refresh token rotation은 `_build_auth_result()`가 새 토큰 저장을 담당하고 `replaced_by`는 그 persisted row id를 참조 | 중복 insert를 제거하고 rotation 체인을 DB에서 일관되게 추적하기 위함
+- 2026-03-06 | Ops 확인 UX는 `src/features/ops/shared/confirm-dialog.tsx` 공통 Dialog 훅으로 통일 | 브라우저 `confirm()/alert()` 제거와 전수 전환 비용 감소를 동시에 달성
+- 2026-03-06 | Backend pytest는 `.temp/artifacts/pytest-cache`를 사용하고 `utcnow`/`AsyncMock` warning을 error로 승격 | 알려진 회귀 warning을 소음이 아니라 실패로 다뤄 품질 게이트 신호를 유지하기 위함

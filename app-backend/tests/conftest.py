@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel, select
 
 os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./tests/test.db")
-os.environ.setdefault("SECRET_KEY", "test-secret-key")
+os.environ.setdefault("SECRET_KEY", "test-secret-key-for-jwt-signing-0123456789")
 os.environ.setdefault("OPENAI_API_KEY", "sk-test-dummy-key-for-ci")
 
 

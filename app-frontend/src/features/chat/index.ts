@@ -18,8 +18,8 @@ export type {
 } from "./types";
 
 // SSE 유틸
+export { getApiBaseUrl } from "@/lib/env";
 export {
-  getApiBaseUrl,
   getAuthHeaders,
   tryRefreshToken,
   parseSSELine,

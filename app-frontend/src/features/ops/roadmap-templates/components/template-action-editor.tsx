@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useConfirmDialog } from "@/features/ops/shared/confirm-dialog";
 
 import {
   createTemplateAction,
@@ -33,6 +34,7 @@ export function TemplateActionEditor({
   editable,
   onActionChange,
 }: TemplateActionEditorProps) {
+  const { openConfirm, confirmDialog } = useConfirmDialog();
   const [isAdding, setIsAdding] = useState(false);
   const [addTitle, setAddTitle] = useState("");
   const [addDescription, setAddDescription] = useState("");
@@ -44,14 +46,22 @@ export function TemplateActionEditor({
   const [editDescription, setEditDescription] = useState("");
   const [editSourceUrl, setEditSourceUrl] = useState("");
 
-  const handleDelete = async (action: RoadmapTemplateAction) => {
-    if (!confirm(`"${action.title}" 액션을 삭제하시겠습니까?`)) return;
-    try {
-      await deleteTemplateAction(templateId, stepId, action.id);
-      onActionChange();
-    } catch {
-      toast.error("삭제에 실패했습니다.");
-    }
+  const handleDelete = (action: RoadmapTemplateAction) => {
+    openConfirm(
+      {
+        title: `"${action.title}" 액션을 삭제하시겠습니까?`,
+        confirmLabel: "삭제",
+        destructive: true,
+      },
+      async () => {
+        try {
+          await deleteTemplateAction(templateId, stepId, action.id);
+          onActionChange();
+        } catch {
+          toast.error("삭제에 실패했습니다.");
+        }
+      },
+    );
   };
 
   const handleAdd = async () => {
@@ -259,6 +269,7 @@ export function TemplateActionEditor({
           </div>
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

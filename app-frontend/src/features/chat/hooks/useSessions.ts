@@ -8,7 +8,10 @@ import {
   updateSessionTitle,
   deleteSession,
 } from "../utils/api";
-import { useChatProvider } from "../providers/ChatProvider";
+import {
+  useChatProvider,
+  type SessionPreview,
+} from "../providers/ChatProvider";
 
 // ------------------------------------------------------------------ //
 //  타입
@@ -24,18 +27,34 @@ export interface SessionGroup {
 // ------------------------------------------------------------------ //
 
 export function useSessions() {
-  const { currentSessionId, setCurrentSessionId } = useChatProvider();
+  const {
+    setCurrentSessionId,
+    sessionListVersion,
+    sessionPreview,
+    sessionPreviewVersion,
+  } = useChatProvider();
   const [sessions, setSessions] = useState<ChatSession[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const sessionPreviewRef = useRef<SessionPreview | null>(sessionPreview);
+  const sessionPreviewVersionRef = useRef(sessionPreviewVersion);
 
   // 세션 목록 로드
   const loadSessions = useCallback(async (limit = 50, offset = 0) => {
     setIsLoading(true);
     setError(null);
+    const previewVersionAtStart = sessionPreviewVersionRef.current;
     try {
       const res = await fetchSessions(limit, offset);
-      setSessions(res.sessions);
+      const latestPreview = sessionPreviewRef.current;
+      const previewChangedDuringLoad =
+        sessionPreviewVersionRef.current !== previewVersionAtStart;
+
+      setSessions(
+        previewChangedDuringLoad && latestPreview
+          ? upsertSession(res.sessions, latestPreview)
+          : res.sessions,
+      );
     } catch {
       setError("세션 목록을 불러오지 못했습니다.");
     } finally {
@@ -43,14 +62,20 @@ export function useSessions() {
     }
   }, []);
 
-  // 서버에서 새 세션 생성 시 (null→non-null) 목록 자동 갱신
-  const prevSessionIdRef = useRef<string | null>(currentSessionId);
   useEffect(() => {
-    if (prevSessionIdRef.current === null && currentSessionId !== null) {
-      loadSessions();
-    }
-    prevSessionIdRef.current = currentSessionId;
-  }, [currentSessionId, loadSessions]);
+    sessionPreviewRef.current = sessionPreview;
+    sessionPreviewVersionRef.current = sessionPreviewVersion;
+  }, [sessionPreview, sessionPreviewVersion]);
+
+  useEffect(() => {
+    if (sessionPreviewVersion === 0 || !sessionPreview) return;
+    setSessions((prev) => upsertSession(prev, sessionPreview));
+  }, [sessionPreview, sessionPreviewVersion]);
+
+  useEffect(() => {
+    if (sessionListVersion === 0) return;
+    void loadSessions();
+  }, [sessionListVersion, loadSessions]);
 
   // 새 세션 생성
   const handleCreateSession = useCallback(async () => {
@@ -142,4 +167,45 @@ export function isSameDay(a: Date, b: Date): boolean {
     a.getMonth() === b.getMonth() &&
     a.getDate() === b.getDate()
   );
+}
+
+function upsertSession(
+  sessions: ChatSession[],
+  preview: SessionPreview,
+): ChatSession[] {
+  const existing = sessions.find((session) => session.id === preview.id);
+
+  const nextSession: ChatSession = existing
+    ? {
+        ...existing,
+        title: existing.title ?? preview.title ?? null,
+        message_count: Math.max(
+          existing.message_count,
+          preview.message_count ?? existing.message_count,
+        ),
+        roadmap_id: existing.roadmap_id ?? preview.roadmap_id ?? null,
+        step_id: existing.step_id ?? preview.step_id ?? null,
+        created_at: existing.created_at,
+        updated_at: isAfter(preview.updated_at, existing.updated_at)
+          ? preview.updated_at
+          : existing.updated_at,
+      }
+    : {
+        id: preview.id,
+        title: preview.title ?? null,
+        message_count: preview.message_count ?? 0,
+        roadmap_id: preview.roadmap_id ?? null,
+        step_id: preview.step_id ?? null,
+        created_at: preview.created_at ?? preview.updated_at,
+        updated_at: preview.updated_at,
+      };
+
+  return [
+    nextSession,
+    ...sessions.filter((session) => session.id !== preview.id),
+  ];
+}
+
+function isAfter(left: string, right: string): boolean {
+  return new Date(left).getTime() > new Date(right).getTime();
 }

@@ -6,6 +6,7 @@ LLM calls are mocked to avoid API costs.
 
 from __future__ import annotations
 
+from contextlib import contextmanager
 import json
 from dataclasses import dataclass, field
 from typing import Any
@@ -13,6 +14,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import UUID, uuid4
 
 import pytest
+from sqlalchemy.exc import OperationalError
 
 from app.features.roadmaps.application.actionkit_matcher import (
     CATEGORY_TO_PHASE,
@@ -28,6 +30,7 @@ from app.features.roadmaps.application.roadmap_generation_service import (
     RoadmapGenerationService,
     StepDetail,
 )
+from app.features.roadmaps.application.template_resolver import TemplateResolver
 from app.models.actionkit import (
     ActionKitCategory,
     ActionKitItem,
@@ -172,6 +175,23 @@ def _mock_llm_response(phases: list[str]) -> str:
     return json.dumps(result, ensure_ascii=False)
 
 
+@contextmanager
+def _patch_template_resolution(
+    *,
+    template: Any | None = None,
+    should_create_auto_draft: bool = False,
+):
+    with (
+        patch.object(TemplateResolver, "resolve", AsyncMock(return_value=template)),
+        patch.object(
+            TemplateResolver,
+            "should_create_auto_draft",
+            AsyncMock(return_value=should_create_auto_draft),
+        ),
+    ):
+        yield
+
+
 # ------------------------------------------------------------------ #
 #  Test 1: Cafe + Seoul -> ActionKit mapping success
 # ------------------------------------------------------------------ #
@@ -234,6 +254,7 @@ async def test_cafe_seoul_actionkit_mapping_success():
 
     with (
         patch.object(RoadmapGenerationService, "__init__", lambda self, *a, **kw: None),
+        _patch_template_resolution(),
     ):
         service = RoadmapGenerationService.__new__(RoadmapGenerationService)
         service.session = mock_session
@@ -306,8 +327,9 @@ async def test_general_restaurant_gyeonggi_mapping_success():
         "description": "",
     }
 
-    with patch.object(
-        RoadmapGenerationService, "__init__", lambda self, *a, **kw: None
+    with (
+        patch.object(RoadmapGenerationService, "__init__", lambda self, *a, **kw: None),
+        _patch_template_resolution(),
     ):
         service = RoadmapGenerationService.__new__(RoadmapGenerationService)
         service.session = mock_session
@@ -393,8 +415,24 @@ async def test_zero_matches_fallback():
         side_effect=[master_json, detail_json, detail_json, detail_json]
     )
 
-    with patch.object(
-        RoadmapGenerationService, "__init__", lambda self, *a, **kw: None
+    with (
+        patch.object(RoadmapGenerationService, "__init__", lambda self, *a, **kw: None),
+        patch.object(
+            TemplateResolver,
+            "resolve",
+            AsyncMock(
+                side_effect=OperationalError(
+                    "SELECT 1",
+                    {},
+                    Exception("roadmap_templates table does not exist"),
+                )
+            ),
+        ),
+        patch.object(
+            TemplateResolver,
+            "should_create_auto_draft",
+            AsyncMock(return_value=False),
+        ),
     ):
         service = RoadmapGenerationService.__new__(RoadmapGenerationService)
         service.session = mock_session
@@ -473,8 +511,9 @@ async def test_small_match_count_uses_actionkit_rag():
         "description": "소프트웨어 개발",
     }
 
-    with patch.object(
-        RoadmapGenerationService, "__init__", lambda self, *a, **kw: None
+    with (
+        patch.object(RoadmapGenerationService, "__init__", lambda self, *a, **kw: None),
+        _patch_template_resolution(),
     ):
         service = RoadmapGenerationService.__new__(RoadmapGenerationService)
         service.session = mock_session
@@ -555,8 +594,9 @@ async def test_beauty_salon_busan_partial_mapping():
         "description": "헤어살롱 창업",
     }
 
-    with patch.object(
-        RoadmapGenerationService, "__init__", lambda self, *a, **kw: None
+    with (
+        patch.object(RoadmapGenerationService, "__init__", lambda self, *a, **kw: None),
+        _patch_template_resolution(),
     ):
         service = RoadmapGenerationService.__new__(RoadmapGenerationService)
         service.session = mock_session

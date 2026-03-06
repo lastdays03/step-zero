@@ -5,6 +5,7 @@ from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field, ValidationError
+from sqlalchemy.exc import OperationalError, ProgrammingError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.logging import get_logger
@@ -212,8 +213,15 @@ class RoadmapGenerationService:
                     startup_method=payload.startup_method,
                     startup_type=getattr(payload, "startup_type", None),
                 )
-            except Exception:
-                logger.debug("Template resolution skipped (table may not exist)")
+            except (OperationalError, ProgrammingError) as exc:
+                logger.warning(
+                    "Template resolution skipped: business_type=%s startup_method=%s startup_type=%s error_type=%s",
+                    payload.business_type,
+                    payload.startup_method,
+                    getattr(payload, "startup_type", None),
+                    type(exc).__name__,
+                    exc_info=True,
+                )
                 template = None
 
             if template:
@@ -325,8 +333,15 @@ class RoadmapGenerationService:
                             "Auto-DRAFT: will create template for btype=%s after roadmap persist",
                             payload.business_type,
                         )
-                except Exception:
-                    logger.warning("Auto-DRAFT check failed", exc_info=True)
+                except (OperationalError, ProgrammingError) as exc:
+                    logger.warning(
+                        "Auto-DRAFT check skipped: business_type=%s startup_method=%s startup_type=%s error_type=%s",
+                        payload.business_type,
+                        payload.startup_method,
+                        getattr(payload, "startup_type", None),
+                        type(exc).__name__,
+                        exc_info=True,
+                    )
                     should_draft = False
 
             # --- Step 3: Persist ---

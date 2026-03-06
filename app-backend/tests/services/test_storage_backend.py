@@ -18,7 +18,7 @@ def local_backend(tmp_path, monkeypatch):
     monkeypatch.setenv("STORAGE_BACKEND", "local")
     monkeypatch.setenv("STORAGE_LOCAL_ROOT", str(tmp_path))
     monkeypatch.setenv("DATABASE_URL", "sqlite+aiosqlite://")
-    monkeypatch.setenv("SECRET_KEY", "test-secret-key-for-tests")
+    monkeypatch.setenv("SECRET_KEY", "test-secret-key-for-jwt-signing-0123456789")
 
     # Clear cached settings and backend
     from app.core.config import get_settings
@@ -170,7 +170,7 @@ async def test_factory_local(monkeypatch, tmp_path):
     monkeypatch.setenv("STORAGE_BACKEND", "local")
     monkeypatch.setenv("STORAGE_LOCAL_ROOT", str(tmp_path))
     monkeypatch.setenv("DATABASE_URL", "sqlite+aiosqlite://")
-    monkeypatch.setenv("SECRET_KEY", "test-secret-key-for-tests")
+    monkeypatch.setenv("SECRET_KEY", "test-secret-key-for-jwt-signing-0123456789")
 
     from app.core.config import get_settings
     from app.services.storage.factory import get_storage_backend
@@ -191,7 +191,7 @@ async def test_factory_r2(monkeypatch, tmp_path):
     monkeypatch.setenv("STORAGE_BACKEND", "r2")
     monkeypatch.setenv("STORAGE_LOCAL_ROOT", str(tmp_path))
     monkeypatch.setenv("DATABASE_URL", "sqlite+aiosqlite://")
-    monkeypatch.setenv("SECRET_KEY", "test-secret-key-for-tests")
+    monkeypatch.setenv("SECRET_KEY", "test-secret-key-for-jwt-signing-0123456789")
     monkeypatch.setenv("R2_ACCOUNT_ID", "test-account")
     monkeypatch.setenv("R2_ACCESS_KEY_ID", "test-key")
     monkeypatch.setenv("R2_SECRET_ACCESS_KEY", "test-secret")

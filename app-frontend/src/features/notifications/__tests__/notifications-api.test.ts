@@ -1,16 +1,18 @@
-import { notificationsApi } from '../api/notifications';
+import { notificationsApi } from '../api';
 
 jest.mock('@/lib/api-client', () => ({
   apiClient: {
     get: jest.fn(),
-    put: jest.fn(),
+    post: jest.fn(),
+    delete: jest.fn(),
   },
 }));
 
 import { apiClient } from '@/lib/api-client';
 
 const mockGet = apiClient.get as jest.Mock;
-const mockPut = apiClient.put as jest.Mock;
+const mockPost = apiClient.post as jest.Mock;
+const mockDelete = apiClient.delete as jest.Mock;
 
 beforeEach(() => jest.clearAllMocks());
 
@@ -25,21 +27,27 @@ describe('notificationsApi', () => {
     });
   });
 
-  describe('markRead', () => {
+  describe('markAsRead', () => {
     it('개별 알림 읽음 처리', async () => {
-      const updated = { id: 1, is_read: true };
-      mockPut.mockResolvedValue({ data: updated });
-      const result = await notificationsApi.markRead(1);
-      expect(mockPut).toHaveBeenCalledWith('/notifications/1/read');
-      expect(result).toEqual(updated);
+      mockPost.mockResolvedValue({ data: { status: 'success' } });
+      await notificationsApi.markAsRead(1);
+      expect(mockPost).toHaveBeenCalledWith('/notifications/1/read');
     });
   });
 
-  describe('markAllRead', () => {
+  describe('readAllNotifications', () => {
     it('전체 알림 읽음 처리', async () => {
-      mockPut.mockResolvedValue({});
-      await notificationsApi.markAllRead();
-      expect(mockPut).toHaveBeenCalledWith('/notifications/read-all');
+      mockPost.mockResolvedValue({});
+      await notificationsApi.readAllNotifications();
+      expect(mockPost).toHaveBeenCalledWith('/notifications/read-all');
+    });
+  });
+
+  describe('deleteNotification', () => {
+    it('개별 알림 삭제', async () => {
+      mockDelete.mockResolvedValue({});
+      await notificationsApi.deleteNotification(1);
+      expect(mockDelete).toHaveBeenCalledWith('/notifications/1');
     });
   });
 });

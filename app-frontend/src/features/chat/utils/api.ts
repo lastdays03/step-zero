@@ -1,9 +1,10 @@
+import { getApiBaseUrl } from "@/lib/env";
 import type {
   ChatSession,
   MessageListResponse,
   SessionListResponse,
 } from "../types";
-import { getApiBaseUrl, getAuthHeaders, tryRefreshToken } from "./sse";
+import { getAuthHeaders, tryRefreshToken } from "./sse";
 
 // ------------------------------------------------------------------ //
 //  공통 fetch 래퍼 (401 시 silent refresh 1회 재시도)

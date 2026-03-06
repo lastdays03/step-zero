@@ -10,11 +10,18 @@ import { useChat } from '../hooks/useChat';
 // ---- Mocks ----
 
 const mockSetCurrentSessionId = jest.fn();
+const mockRefreshSessionList = jest.fn();
+const mockPublishSessionPreview = jest.fn();
 
 jest.mock('../providers/ChatProvider', () => ({
   useChatProvider: () => ({
     currentSessionId: null,
     setCurrentSessionId: mockSetCurrentSessionId,
+    refreshSessionList: mockRefreshSessionList,
+    sessionListVersion: 0,
+    publishSessionPreview: mockPublishSessionPreview,
+    sessionPreview: null,
+    sessionPreviewVersion: 0,
     roadmapContext: null,
   }),
 }));
@@ -23,8 +30,11 @@ jest.mock('../utils/api', () => ({
   fetchMessages: jest.fn(),
 }));
 
-jest.mock('../utils/sse', () => ({
+jest.mock('@/lib/env', () => ({
   getApiBaseUrl: () => 'http://localhost:8000/api/v1',
+}));
+
+jest.mock('../utils/sse', () => ({
   getAuthHeaders: () => ({ Authorization: 'Bearer test', 'Content-Type': 'application/json' }),
   parseSSELine: jest.fn(),
   tryRefreshToken: jest.fn(),
@@ -64,6 +74,8 @@ const originalFetch = global.fetch;
 beforeEach(() => {
   jest.clearAllMocks();
   mockSetCurrentSessionId.mockClear();
+  mockRefreshSessionList.mockClear();
+  mockPublishSessionPreview.mockClear();
 });
 
 afterEach(() => {
@@ -142,6 +154,14 @@ describe('useChat', () => {
     expect(result.current.messages[1].role).toBe('assistant');
     expect(result.current.isStreaming).toBe(false);
     expect(mockSetCurrentSessionId).toHaveBeenCalledWith('sess-new');
+    expect(mockPublishSessionPreview).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'sess-new',
+        title: '질문입니다',
+        message_count: 1,
+      }),
+    );
+    expect(mockRefreshSessionList).toHaveBeenCalledTimes(1);
   });
 
   it('sendMessage: 빈 메시지는 무시', async () => {
@@ -173,6 +193,7 @@ describe('useChat', () => {
     // 유저 메시지만 남고 빈 어시스턴트 플레이스홀더는 제거됨
     expect(result.current.messages).toHaveLength(1);
     expect(result.current.isStreaming).toBe(false);
+    expect(mockRefreshSessionList).not.toHaveBeenCalled();
   });
 
   it('sendMessage: 401 시 토큰 갱신 후 재시도', async () => {

@@ -6,10 +6,7 @@ export const ROADMAP_POLLING_CLEARED_EVENT = "roadmap-polling-cleared";
 const ROADMAP_JOB_STORAGE_KEY = "roadmap_polling_job_id";
 const PROACTIVE_REFRESH_MARGIN_MS = 5 * 60 * 1000; // 5 minutes before expiry
 
-const baseURL = getApiBaseUrl();
-
 export const apiClient = axios.create({
-    baseURL,
 });
 
 // --- Silent Refresh Infrastructure ---
@@ -47,6 +44,8 @@ apiClient.interceptors.request.use((config) => {
     if (typeof window === "undefined") {
         return config;
     }
+
+    config.baseURL = getApiBaseUrl();
 
     const token = localStorage.getItem("token");
     if (token) {
@@ -116,7 +115,7 @@ apiClient.interceptors.response.use(
 
             for (let attempt = 0; attempt < MAX_REFRESH_RETRIES; attempt++) {
                 try {
-                    const response = await axios.post(`${baseURL}/auth/refresh`, {
+                    const response = await axios.post(`${getApiBaseUrl()}/auth/refresh`, {
                         refresh_token: refreshToken,
                     });
 
@@ -192,7 +191,7 @@ function scheduleProactiveRefresh() {
         if (!refreshToken || isRefreshing) return;
 
         try {
-            const response = await axios.post(`${baseURL}/auth/refresh`, {
+            const response = await axios.post(`${getApiBaseUrl()}/auth/refresh`, {
                 refresh_token: refreshToken,
             });
             const { access_token, refresh_token: newRefreshToken } = response.data;

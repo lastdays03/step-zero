@@ -1,4 +1,5 @@
-import { getApiBaseUrl, getAuthHeaders, parseSSELine } from '../utils/sse';
+import { getApiBaseUrl } from '@/lib/env';
+import { getAuthHeaders, parseSSELine } from '../utils/sse';
 
 describe('getApiBaseUrl', () => {
   const originalEnv = process.env;

@@ -74,6 +74,11 @@ ignore_missing_imports = true
 asyncio_mode = "auto"
 testpaths = ["tests"]
 addopts = "--ignore=tests/eval"
+cache_dir = ".temp/artifacts/pytest-cache"
+filterwarnings = [
+    'error:datetime\.datetime\.utcnow\(\) is deprecated.*:DeprecationWarning',
+    "error:coroutine 'AsyncMockMixin\\._execute_mock_call' was never awaited:RuntimeWarning",
+]
 markers = [
     "requires_openai: tests that require OPENAI_API_KEY to be set",
     "eval: RAG evaluation tests (expensive, requires real OpenAI API + PostgreSQL)",

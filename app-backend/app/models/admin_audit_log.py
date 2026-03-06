@@ -4,6 +4,8 @@ from typing import Optional
 import sqlalchemy as sa
 from sqlmodel import Field, SQLModel
 
+from app.core.security import utc_now
+
 
 class AdminAuditLog(SQLModel, table=True):
     __tablename__ = "admin_audit_logs"
@@ -18,4 +20,4 @@ class AdminAuditLog(SQLModel, table=True):
         default_factory=dict,
         sa_column=sa.Column("meta", sa.JSON, nullable=False),
     )
-    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+    created_at: datetime = Field(default_factory=utc_now, index=True)

@@ -37,15 +37,12 @@ export const NotificationBell = () => {
         }
     }, [user]);
 
-    // Initial fetch — defer to microtask to avoid sync setState in effect
     useEffect(() => {
-        const controller = new AbortController();
-        queueMicrotask(() => {
-            if (!controller.signal.aborted) {
-                fetchNotifications();
-            }
-        });
-        return () => controller.abort();
+        const timeoutId = window.setTimeout(() => {
+            void fetchNotifications();
+        }, 0);
+
+        return () => window.clearTimeout(timeoutId);
     }, [fetchNotifications]);
 
     // SSE: re-fetch when new notification arrives
