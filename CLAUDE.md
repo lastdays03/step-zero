@@ -14,8 +14,7 @@ step-zero/
 ├── app-frontend/      # Next.js 16 frontend (React 18, port 3000)
 ├── docs/              # 기획/설계/컨텍스트 문서
 │   ├── context/       # 세션 운영 (상태/결정/핸드오프/규칙)
-│   ├── planning/      # 기획 문서 + 리서치 보고서 (PLAN-*.md, REPORT-*.md)
-│   ├── dev/           # 구현 계획 (How) — /dev-docs로 생성
+│   ├── plans/         # 기획 + 구현 통합 (active/, reports/, done/)
 │   ├── architecture/  # 시스템 아키텍처 설계
 │   ├── operations/    # 팀 협업 프로세스 규칙
 │   ├── dev-guide/     # 개발자 가이드/체크리스트
@@ -240,10 +239,12 @@ cd app-backend && RAG_BOOTSTRAP_MODE=docker ./scripts/bootstrap_rag.sh
 
 ## Document Management
 
-### 기획 vs 구현 구분
-- `docs/planning/` — 기획 (What/Why): 범위, 목표, 완료 기준. `PLAN-*.md`, `REPORT-*.md`
-- `docs/dev/` — 구현 (How): 상세 설계, 태스크 추적. `/dev-docs`로 3파일 세트 생성
-- 기획 문서에 구현 상세를 작성하지 않는다
+### 문서 구조
+- `docs/plans/active/{topic}/` — 기획(PLAN) + 구현(tasks/context)이 같은 폴더에 공존
+- `docs/plans/reports/` — 독립 리서치 보고서 (REPORT-*.md)
+- `docs/plans/done/` — 완료 아카이브 (폴더째 이동)
+- PLAN 파일에 구현 상세를 작성하지 않는다 (별도 tasks/context 파일 사용)
+- `/dev-docs` 커맨드로 `docs/plans/active/{topic}/` 하위에 3파일 세트 생성
 
 ### 네이밍 규칙
 - 계획: `PLAN-<topic>.md`, 보고서: `REPORT-<topic>.md`
