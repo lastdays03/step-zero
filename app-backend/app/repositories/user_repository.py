@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
+from app.core.config import get_settings
 from app.models.user import User
 
 
@@ -19,7 +20,7 @@ class UserRepository:
     async def create_google_user(
         self, email: str, full_name: str, hashed_password: str
     ) -> User:
-        is_superuser = email == "dojyu1928@gmail.com"
+        is_superuser = email.lower() in get_settings().admin_email_set
         user = User(
             email=email,
             full_name=full_name,

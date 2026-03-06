@@ -1,20 +1,6 @@
 import { AUTH_STORAGE_EVENT } from "@/lib/api-client";
+import { getApiBaseUrl } from "@/lib/env";
 import type { SSEEvent } from "../types";
-
-// ------------------------------------------------------------------ //
-//  API 베이스 URL
-// ------------------------------------------------------------------ //
-
-export function getApiBaseUrl(): string {
-  const explicit = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
-  return (
-    explicit ||
-    (apiUrl
-      ? `${apiUrl.replace(/\/$/, "")}/api/v1`
-      : "http://localhost:8000/api/v1")
-  );
-}
 
 // ------------------------------------------------------------------ //
 //  인증 헤더

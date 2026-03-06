@@ -1,6 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
-from typing import List
+from typing import FrozenSet, List
 
 from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -13,9 +13,7 @@ class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
 
     # CORS (환경변수에서는 쉼표로 구분된 문자열로 받음)
-    BACKEND_CORS_ORIGINS_STR: str = (
-        "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173"
-    )
+    BACKEND_CORS_ORIGINS_STR: str = "http://localhost:3000,http://127.0.0.1:3000"
 
     @property
     def BACKEND_CORS_ORIGINS(self) -> List[str]:
@@ -44,6 +42,17 @@ class Settings(BaseSettings):
 
     # Law API (국가법령정보센터 Open API)
     LAW_API_OC: str | None = None
+
+    # Admin
+    ADMIN_EMAILS: str = ""
+
+    @property
+    def admin_email_set(self) -> FrozenSet[str]:
+        return frozenset(
+            e.strip().lower()
+            for e in self.ADMIN_EMAILS.split(",")
+            if e.strip()
+        )
 
     # Feature Flags
     ENABLE_SOCIAL_MOCK: bool = False
@@ -100,6 +109,10 @@ class Settings(BaseSettings):
                     raise ValueError(
                         "SECRET_KEY must not use an insecure default value in production"
                     )
+            if self.ENABLE_SOCIAL_MOCK:
+                raise ValueError(
+                    "ENABLE_SOCIAL_MOCK must be disabled in production"
+                )
         self.OPENAI_API_KEY = self._normalize_optional_secret(self.OPENAI_API_KEY)
         self.GOOGLE_CLIENT_ID = self._normalize_optional_secret(self.GOOGLE_CLIENT_ID)
         self.LAW_API_OC = self._normalize_optional_secret(self.LAW_API_OC)

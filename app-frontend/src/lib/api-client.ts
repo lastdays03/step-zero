@@ -1,14 +1,12 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from "axios";
+import { getApiBaseUrl } from "./env";
 
-const explicitBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL?.trim();
-const apiUrl = process.env.NEXT_PUBLIC_API_URL?.trim();
 export const AUTH_STORAGE_EVENT = "auth-storage-changed";
 export const ROADMAP_POLLING_CLEARED_EVENT = "roadmap-polling-cleared";
 const ROADMAP_JOB_STORAGE_KEY = "roadmap_polling_job_id";
 const PROACTIVE_REFRESH_MARGIN_MS = 5 * 60 * 1000; // 5 minutes before expiry
 
-const baseURL = explicitBaseUrl
-    || (apiUrl ? `${apiUrl.replace(/\/$/, "")}/api/v1` : "http://localhost:8000/api/v1");
+const baseURL = getApiBaseUrl();
 
 export const apiClient = axios.create({
     baseURL,

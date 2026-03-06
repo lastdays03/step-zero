@@ -3,9 +3,8 @@
 import { useRouter } from "next/navigation";
 import { Search, Sparkles } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
+import { HERO_SUGGESTIONS } from "@/features/roadmap/components/roadmap-constants";
 import { useAuthModal } from "../providers/AuthModalProvider";
-
-const SUGGESTED_TAGS = ["카페 프랜차이즈", "SaaS 스타트업", "온라인 쇼핑몰", "샐러드 전문점"];
 
 export function ColdStartHero() {
   const { isLoggedIn } = useAuth();
@@ -73,7 +72,7 @@ export function ColdStartHero() {
         {/* Suggested Tags */}
         <div className="flex flex-wrap justify-center gap-3">
           <span className="text-sm font-semibold text-slate-400 mr-2 self-center">추천:</span>
-          {SUGGESTED_TAGS.map((tag) => (
+          {HERO_SUGGESTIONS.map((tag) => (
             <button
               key={tag}
               type="button"
