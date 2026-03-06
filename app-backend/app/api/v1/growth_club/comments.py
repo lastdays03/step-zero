@@ -8,6 +8,7 @@ from sqlmodel import select
 
 from app.api.deps import get_current_user
 from app.core.db import get_session
+from app.services.notification_pubsub import publish_notification
 from app.models.growth_club import (
     GrowthClubComment,
     GrowthClubCommentRead,
@@ -84,9 +85,26 @@ async def create_comment(
                 )
                 session.add(reply_notification)
 
+    # Collect notification user IDs for SSE push
+    _sse_targets: list[int] = []
+    if post.author_id != current_user.id:
+        _sse_targets.append(post.author_id)
+    if comment_in.parent_id:
+        parent_comment_obj = await session.get(GrowthClubComment, comment_in.parent_id)
+        if (
+            parent_comment_obj
+            and parent_comment_obj.author_id != current_user.id
+            and parent_comment_obj.author_id != post.author_id
+        ):
+            _sse_targets.append(parent_comment_obj.author_id)
+
     await session.flush()
     comment_id = comment.id
     await session.commit()
+
+    # Publish SSE events (fire-and-forget)
+    for uid in _sse_targets:
+        await publish_notification(uid, {"type": "new_notification"})
 
     # Refresh with author relationship to satisfy response model
     query = (

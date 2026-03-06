@@ -461,6 +461,11 @@ async def toggle_like_post(
 
     await session.commit()
 
+    # SSE push for like notification
+    if liked and db_post.author_id != current_user.id:
+        from app.services.notification_pubsub import publish_notification
+        await publish_notification(db_post.author_id, {"type": "new_notification"})
+
     # 최신 좋아요 수 조회
     count_query = (
         select(func.count())

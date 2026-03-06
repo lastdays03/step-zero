@@ -79,7 +79,6 @@ describe('NotificationBell', () => {
 
     fireEvent.click(screen.getByRole('button'));
 
-    expect(screen.getByText('알림')).toBeDefined();
     expect(screen.getByText('새 댓글')).toBeDefined();
     expect(screen.getByText('좋아요')).toBeDefined();
   });

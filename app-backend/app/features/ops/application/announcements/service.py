@@ -159,6 +159,11 @@ async def update_announcement_status(
         session.add_all(notifications)
         await session.flush()
 
+        # SSE push for announcement notifications (fire-and-forget)
+        from app.services.notification_pubsub import publish_notification
+        for uid in user_ids:
+            await publish_notification(uid, {"type": "new_notification"})
+
     # Delete notifications when status changes to 'archived'
     if status == "archived" and old_status != "archived":
         from app.models.notification import Notification

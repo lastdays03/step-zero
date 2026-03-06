@@ -31,7 +31,7 @@ export const DashboardView = () => {
         return () => window.removeEventListener("storage", syncActiveRoadmapId);
     }, [syncActiveRoadmapId]);
 
-    const { data, loading: isLoading } = useDashboard(activeRoadmapId);
+    const { data, loading: isLoading, error: dashboardError, reload } = useDashboard(activeRoadmapId);
     const [roadmapDetail, setRoadmapDetail] = useState<RoadmapDetailResponse | null>(null);
     const [documentsLoading, setDocumentsLoading] = useState(false);
     const [documentsError, setDocumentsError] = useState<string | null>(null);
@@ -216,6 +216,18 @@ export const DashboardView = () => {
 
     return (
         <div className="">
+            {dashboardError && (
+                <div className="mb-4 flex items-center justify-between rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 shadow-sm">
+                    <span>{dashboardError}</span>
+                    <button
+                        type="button"
+                        onClick={() => void reload()}
+                        className="ml-3 rounded-md bg-red-100 px-3 py-1 text-xs font-semibold text-red-700 hover:bg-red-200"
+                    >
+                        다시 시도
+                    </button>
+                </div>
+            )}
             {upgradeAlert && (
                 <div className="mb-4 flex items-center justify-between rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 shadow-sm">
                     <span>🎉 준비도가 &lsquo;{upgradeAlert.from}&rsquo; → &lsquo;{upgradeAlert.to}&rsquo;로 올라갔습니다!</span>
@@ -244,7 +256,7 @@ export const DashboardView = () => {
 
                 {/* 2. Growth Club (Span 1) */}
                 <div className="md:col-span-1 lg:col-span-1 h-full">
-                    <GrowthClubCard onlineCount={data.growth_club.founders_online} />
+                    <GrowthClubCard onlineCount={data.growth_club.founders_online} recentPosts={data.growth_club.recent_posts} />
                 </div>
 
                 {/* 3. Roadmap (Full Span 4) */}
@@ -320,7 +332,7 @@ export const DashboardView = () => {
                             <Clock className="w-6 h-6" />
                         </div>
                         <h4 className="text-2xl font-black text-slate-800">{data.stats.days_left}일</h4>
-                        <p className="text-xs font-bold text-slate-500 mt-1 uppercase">마감일까지 남은 기간</p>
+                        <p className="text-xs font-bold text-slate-500 mt-1 uppercase">창업 목표일까지</p>
                     </CardContent>
                 </Card>
 

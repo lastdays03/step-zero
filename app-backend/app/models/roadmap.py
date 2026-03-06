@@ -18,6 +18,7 @@ class Roadmap(SQLModel, table=True):
     open_timeline: str | None = None
     budget_range: str | None = None
     additional_notes: str = ""
+    goal_horizon_days: int = Field(default=30)
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None),
         index=True,

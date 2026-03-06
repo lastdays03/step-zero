@@ -111,6 +111,7 @@ class RoadmapRepository:
         open_timeline: str | None = None,
         budget_range: str | None = None,
         additional_notes: str = "",
+        goal_horizon_days: int = 30,
     ) -> Roadmap:
         roadmap = Roadmap(
             team_id=team_id,
@@ -123,6 +124,7 @@ class RoadmapRepository:
             open_timeline=open_timeline,
             budget_range=budget_range,
             additional_notes=additional_notes,
+            goal_horizon_days=goal_horizon_days,
             created_by=created_by,
             updated_by=created_by,
         )

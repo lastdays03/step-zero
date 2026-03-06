@@ -36,7 +36,7 @@ export const MobileNav = () => {
     ];
 
     return (
-        <nav className="fixed bottom-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-200/60 pb-8 pt-2 px-6 z-40 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+        <nav className="fixed bottom-0 w-full bg-white/95 backdrop-blur-xl border-t border-slate-200/60 pb-[max(2rem,env(safe-area-inset-bottom))] pt-2 px-6 z-40 md:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
             <ul className="flex justify-around items-center">
                 {navItems.map((item) => {
                     const isActive = item.href ? pathname === item.href : false;
@@ -65,7 +65,7 @@ export const MobileNav = () => {
                     return (
                         <li key={item.label}>
                             {item.href ? (
-                                <Link href={item.href}>{Content}</Link>
+                                <Link href={item.href} aria-label={item.label}>{Content}</Link>
                             ) : (
                                 <button onClick={'onClick' in item ? item.onClick : undefined} className="w-full focus:outline-none">
                                     {Content}

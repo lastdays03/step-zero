@@ -1,9 +1,13 @@
+from datetime import datetime, timedelta, timezone
+
 import pytest
 from httpx import AsyncClient
 from sqlmodel import select
 
 from app.core import db
-from app.models.roadmap import RoadmapStep, RoadmapStepDetail
+from app.models.roadmap import Roadmap, RoadmapStep, RoadmapStepDetail
+from app.models.team import Team, TeamMember
+from app.models.user import User
 
 
 async def _login_headers(client: AsyncClient) -> dict[str, str]:
@@ -168,3 +172,166 @@ async def test_dashboard_roadmap_items_are_phase_summary(client: AsyncClient):
         "current",
         "locked",
     ]
+
+
+# --- Phase 4 tests ---
+
+
+async def _get_test_user_and_team(session):
+    result = await session.execute(
+        select(User).where(User.email == "test@example.com")
+    )
+    user = result.scalar_one()
+    team_result = await session.execute(
+        select(Team)
+        .join(TeamMember, TeamMember.team_id == Team.id)
+        .where(TeamMember.user_id == user.id)
+    )
+    team = team_result.scalar_one()
+    return user, team
+
+
+@pytest.mark.asyncio
+async def test_guest_dashboard_returns_guest_status(client: AsyncClient):
+    """4.5 — Guest (no auth) should get status=GUEST."""
+    resp = await client.get("/api/v1/dashboard")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["current_phase"]["status"] == "GUEST"
+    assert data["user_name"] == "Guest"
+
+
+@pytest.mark.asyncio
+async def test_no_roadmap_returns_ready_status(client: AsyncClient):
+    """4.6 — Logged-in user with no roadmap should get status=READY."""
+    headers = await _login_headers(client)
+    # Soft-delete all existing roadmaps
+    async with db.async_session() as session:
+        user, team = await _get_test_user_and_team(session)
+        result = await session.execute(
+            select(Roadmap).where(
+                Roadmap.team_id == team.id, Roadmap.deleted_at.is_(None)
+            )
+        )
+        for roadmap in result.scalars().all():
+            roadmap.deleted_at = datetime.now(timezone.utc).replace(tzinfo=None)
+            session.add(roadmap)
+        await session.commit()
+
+    resp = await client.get("/api/v1/dashboard", headers=headers)
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["current_phase"]["status"] == "READY"
+    assert data["roadmap"] == []
+
+    # Restore roadmaps
+    async with db.async_session() as session:
+        user, team = await _get_test_user_and_team(session)
+        result = await session.execute(
+            select(Roadmap).where(Roadmap.team_id == team.id)
+        )
+        for roadmap in result.scalars().all():
+            roadmap.deleted_at = None
+            session.add(roadmap)
+        await session.commit()
+
+
+@pytest.mark.asyncio
+async def test_progress_calculation(client: AsyncClient):
+    """4.7 — 3 steps with 1 COMPLETED → progress=33."""
+    headers = await _login_headers(client)
+    async with db.async_session() as session:
+        user, team = await _get_test_user_and_team(session)
+        roadmap = Roadmap(
+            team_id=team.id,
+            title="Progress Test",
+            business_type="test",
+            location="test",
+            created_by=user.id,
+            updated_by=user.id,
+        )
+        session.add(roadmap)
+        await session.flush()
+        for i in range(3):
+            step = RoadmapStep(
+                roadmap_id=roadmap.id,
+                step_order=i + 1,
+                title=f"Step {i + 1}",
+                status="COMPLETED" if i == 0 else "PENDING",
+            )
+            session.add(step)
+        await session.commit()
+        roadmap_id = str(roadmap.id)
+
+    resp = await client.get(
+        "/api/v1/dashboard", headers=headers, params={"roadmap_id": roadmap_id}
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["current_phase"]["progress"] == 33
+
+    # Cleanup
+    async with db.async_session() as session:
+        result = await session.execute(
+            select(Roadmap).where(Roadmap.title == "Progress Test")
+        )
+        rm = result.scalar_one_or_none()
+        if rm:
+            rm.deleted_at = datetime.now(timezone.utc).replace(tzinfo=None)
+            session.add(rm)
+            await session.commit()
+
+
+@pytest.mark.asyncio
+async def test_days_left_zero_when_expired(client: AsyncClient):
+    """4.8 — Roadmap created 31 days ago (30-day horizon) → days_left=0."""
+    headers = await _login_headers(client)
+    async with db.async_session() as session:
+        user, team = await _get_test_user_and_team(session)
+        past = (datetime.now(timezone.utc) - timedelta(days=31)).replace(tzinfo=None)
+        roadmap = Roadmap(
+            team_id=team.id,
+            title="Expired Test",
+            business_type="test",
+            location="test",
+            goal_horizon_days=30,
+            created_at=past,
+            created_by=user.id,
+            updated_by=user.id,
+        )
+        session.add(roadmap)
+        await session.flush()
+        step = RoadmapStep(
+            roadmap_id=roadmap.id, step_order=1, title="Step 1", status="PENDING"
+        )
+        session.add(step)
+        await session.commit()
+        roadmap_id = str(roadmap.id)
+
+    resp = await client.get(
+        "/api/v1/dashboard", headers=headers, params={"roadmap_id": roadmap_id}
+    )
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["stats"]["days_left"] == 0
+
+    # Cleanup
+    async with db.async_session() as session:
+        result = await session.execute(
+            select(Roadmap).where(Roadmap.title == "Expired Test")
+        )
+        rm = result.scalar_one_or_none()
+        if rm:
+            rm.deleted_at = datetime.now(timezone.utc).replace(tzinfo=None)
+            session.add(rm)
+            await session.commit()
+
+
+@pytest.mark.asyncio
+async def test_invalid_roadmap_id_ignored(client: AsyncClient):
+    """4.9 — Invalid roadmap_id string should not cause error."""
+    headers = await _login_headers(client)
+    resp = await client.get(
+        "/api/v1/dashboard", headers=headers, params={"roadmap_id": "not-a-uuid"}
+    )
+    assert resp.status_code == 200

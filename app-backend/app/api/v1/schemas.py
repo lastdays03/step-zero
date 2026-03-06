@@ -41,8 +41,17 @@ class DashboardStats(BaseModel):
     total_tasks: int
 
 
+class RecentPost(BaseModel):
+    id: int
+    title: str
+    author_name: str
+    created_at: str
+    comment_count: int
+
+
 class GrowthClub(BaseModel):
     founders_online: int
+    recent_posts: list[RecentPost] = []
 
 
 class DashboardResponse(BaseModel):
@@ -51,6 +60,7 @@ class DashboardResponse(BaseModel):
     roadmap: list[RoadmapItem]
     stats: DashboardStats
     growth_club: GrowthClub
+    roadmap_id: str | None = None
 
 
 class RoadmapSummaryItem(BaseModel):

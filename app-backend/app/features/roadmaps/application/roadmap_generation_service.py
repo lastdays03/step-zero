@@ -341,6 +341,7 @@ class RoadmapGenerationService:
                 open_timeline=payload.open_timeline,
                 budget_range=payload.budget_range,
                 additional_notes=payload.additional_notes,
+                goal_horizon_days=payload.goal_horizon_days,
                 created_by=job.user_id,
             )
 

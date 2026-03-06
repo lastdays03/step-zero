@@ -147,7 +147,7 @@ describe('DashboardView', () => {
         render(<DashboardView />);
         await waitFor(() => {
             expect(screen.getByText(/LIVE: GROWTH CLUB/i)).toBeInTheDocument();
-            expect(screen.getByText(/12명의 동료 창업자와/i)).toBeInTheDocument();
+            expect(screen.getByText(/활성 창업자 12명/i)).toBeInTheDocument();
         });
     });
 

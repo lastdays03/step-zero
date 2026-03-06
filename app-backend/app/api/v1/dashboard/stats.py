@@ -42,7 +42,7 @@ async def get_dashboard_stats(
         except ValueError:
             pass
 
-    service = DashboardService(roadmap_repo=RoadmapRepository(session))
+    service = DashboardService(roadmap_repo=RoadmapRepository(session), session=session)
     if not current_user:
         result = await service.get_dashboard(
             team_id=UUID("00000000-0000-0000-0000-000000000000"),

@@ -1,19 +1,42 @@
 "use client";
 
 import React from 'react';
+import Link from 'next/link';
 import { Card, CardContent } from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+
+interface RecentPost {
+    id: number;
+    title: string;
+    author_name: string;
+    created_at: string;
+    comment_count: number;
+}
 
 interface GrowthClubCardProps {
     onlineCount: number;
+    recentPosts?: RecentPost[];
 }
 
-export const GrowthClubCard = ({ onlineCount }: GrowthClubCardProps) => {
+function timeAgo(dateStr: string): string {
+    if (!dateStr) return "";
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return "방금";
+    if (mins < 60) return `${mins}분 전`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}시간 전`;
+    const days = Math.floor(hours / 24);
+    return `${days}일 전`;
+}
+
+export const GrowthClubCard = ({ onlineCount, recentPosts }: GrowthClubCardProps) => {
+    const posts = recentPosts?.slice(0, 2) ?? [];
+
     return (
         <Card className="bg-slate-900 rounded-3xl shadow-sm text-white relative overflow-hidden group h-full transition-all hover:shadow-lg hover:shadow-slate-900/20 border-none">
             <CardContent className="p-6 h-full flex flex-col justify-between">
-                {/* Content Left */}
+                {/* Header */}
                 <div className="space-y-3 z-10">
                     <div className="flex items-center space-x-2">
                         <span className="relative flex h-2 w-2">
@@ -25,23 +48,31 @@ export const GrowthClubCard = ({ onlineCount }: GrowthClubCardProps) => {
                         </Badge>
                     </div>
                     <p className="text-base font-bold leading-snug tracking-tight text-white">
-                        {onlineCount}명의 동료 창업자와<br />실시간으로 소통하기
+                        활성 창업자 {onlineCount}명
                     </p>
                 </div>
 
-                {/* Avatar Pile Right */}
-                <div className="flex -space-x-3 relative z-10 mr-2">
-                    <Avatar className="w-10 h-10 border-2 border-slate-900 shadow-sm transition-transform hover:z-20 hover:scale-110">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=A`} />
-                        <AvatarFallback className="bg-pink-500 text-white text-xs font-bold">A</AvatarFallback>
-                    </Avatar>
-                    <Avatar className="w-10 h-10 border-2 border-slate-900 shadow-sm transition-transform hover:z-20 hover:scale-110">
-                        <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=B`} />
-                        <AvatarFallback className="bg-sky-400 text-white text-xs font-bold">B</AvatarFallback>
-                    </Avatar>
-                    <Avatar className="w-10 h-10 border-2 border-slate-900 shadow-sm transition-transform hover:z-20 hover:scale-110">
-                        <AvatarFallback className="bg-primary text-white text-[10px] font-bold">+{onlineCount}</AvatarFallback>
-                    </Avatar>
+                {/* Recent Posts Preview */}
+                <div className="mt-3 space-y-2 z-10">
+                    {posts.length > 0 ? (
+                        posts.map((post) => (
+                            <div key={post.id} className="rounded-lg bg-white/10 px-3 py-2">
+                                <p className="text-xs font-medium text-white line-clamp-1">{post.title}</p>
+                                <p className="text-[10px] text-slate-400 mt-0.5">
+                                    {post.author_name} &middot; {timeAgo(post.created_at)}
+                                    {post.comment_count > 0 && ` \u00B7 댓글 ${post.comment_count}`}
+                                </p>
+                            </div>
+                        ))
+                    ) : (
+                        <p className="text-xs text-slate-500">아직 게시글이 없습니다.</p>
+                    )}
+                    <Link
+                        href="/growth-club"
+                        className="inline-block text-[11px] font-semibold text-slate-400 hover:text-white transition-colors"
+                    >
+                        더 보기 &rarr;
+                    </Link>
                 </div>
             </CardContent>
         </Card>

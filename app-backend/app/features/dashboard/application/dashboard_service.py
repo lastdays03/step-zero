@@ -1,7 +1,12 @@
-from dataclasses import dataclass
-from datetime import datetime, timezone
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
+import sqlalchemy as sa
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.models.growth_club import GrowthClubPost
+from app.models.user import User
 from app.repositories.roadmap_repository import RoadmapRepository
 
 
@@ -20,8 +25,18 @@ class DashboardStatsResult:
 
 
 @dataclass
+class RecentPostResult:
+    id: int
+    title: str
+    author_name: str
+    created_at: str
+    comment_count: int
+
+
+@dataclass
 class GrowthClubResult:
     founders_online: int
+    recent_posts: list[RecentPostResult] = field(default_factory=list)
 
 
 @dataclass
@@ -38,11 +53,93 @@ class DashboardResult:
     roadmap: list[RoadmapItemResult]
     stats: DashboardStatsResult
     growth_club: GrowthClubResult
+    roadmap_id: str | None = None
 
 
 class DashboardService:
-    def __init__(self, roadmap_repo: RoadmapRepository):
+    def __init__(
+        self,
+        roadmap_repo: RoadmapRepository,
+        session: AsyncSession | None = None,
+    ):
         self.roadmap_repo = roadmap_repo
+        self.session = session
+
+    async def _get_growth_club(self) -> GrowthClubResult:
+        try:
+            return await self._query_growth_club()
+        except Exception:
+            return GrowthClubResult(founders_online=0)
+
+    async def _query_growth_club(self) -> GrowthClubResult:
+        if self.session is None:
+            return GrowthClubResult(founders_online=0)
+
+        seven_days_ago = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(
+            days=7
+        )
+
+        # Active founders: distinct authors in last 7 days
+        count_stmt = sa.select(
+            sa.func.count(sa.distinct(GrowthClubPost.author_id))
+        ).where(GrowthClubPost.created_at >= seven_days_ago)
+        count_result = await self.session.execute(count_stmt)
+        founders_online = count_result.scalar_one() or 0
+
+        # Recent 3 posts with comment count
+        try:
+            from app.models.growth_club import GrowthClubComment
+
+            comment_count_sub = (
+                sa.select(
+                    GrowthClubComment.post_id,
+                    sa.func.count().label("cnt"),
+                )
+                .group_by(GrowthClubComment.post_id)
+                .subquery()
+            )
+
+            posts_stmt = (
+                sa.select(
+                    GrowthClubPost.id,
+                    GrowthClubPost.title,
+                    GrowthClubPost.created_at,
+                    User.full_name,
+                    User.email,
+                    sa.func.coalesce(comment_count_sub.c.cnt, 0).label(
+                        "comment_count"
+                    ),
+                )
+                .join(User, User.id == GrowthClubPost.author_id)
+                .outerjoin(
+                    comment_count_sub,
+                    comment_count_sub.c.post_id == GrowthClubPost.id,
+                )
+                .order_by(GrowthClubPost.created_at.desc())
+                .limit(3)
+            )
+            posts_result = await self.session.execute(posts_stmt)
+            rows = posts_result.all()
+        except Exception:
+            rows = []
+
+        recent_posts: list[RecentPostResult] = []
+        for row in rows:
+            author_name = row.full_name or (row.email.split("@")[0] if row.email else "Unknown")
+            recent_posts.append(
+                RecentPostResult(
+                    id=row.id,
+                    title=row.title,
+                    author_name=author_name,
+                    created_at=row.created_at.isoformat() if row.created_at else "",
+                    comment_count=row.comment_count,
+                )
+            )
+
+        return GrowthClubResult(
+            founders_online=founders_online,
+            recent_posts=recent_posts,
+        )
 
     async def get_dashboard(
         self,
@@ -52,6 +149,8 @@ class DashboardService:
         is_guest: bool,
         roadmap_id: UUID | None = None,
     ) -> DashboardResult:
+        growth_club = await self._get_growth_club()
+
         if is_guest:
             return DashboardResult(
                 user_name="Guest",
@@ -66,7 +165,7 @@ class DashboardService:
                     RoadmapItemResult(title="Step 3: 비즈니스 계좌", status="locked", date="-"),
                 ],
                 stats=DashboardStatsResult(days_left=0, tasks_completed=0, total_tasks=0),
-                growth_club=GrowthClubResult(founders_online=1250),
+                growth_club=growth_club,
             )
 
         if roadmap_id:
@@ -85,7 +184,7 @@ class DashboardService:
                 ),
                 roadmap=[],
                 stats=DashboardStatsResult(days_left=0, tasks_completed=0, total_tasks=0),
-                growth_club=GrowthClubResult(founders_online=12),
+                growth_club=growth_club,
             )
 
         steps = await self.roadmap_repo.list_steps(latest_roadmap.id)
@@ -152,7 +251,8 @@ class DashboardService:
             if latest_roadmap.created_at.tzinfo is None
             else latest_roadmap.created_at
         )
-        days_left = max(0, 30 - (datetime.now(timezone.utc) - created_at).days)
+        horizon = getattr(latest_roadmap, "goal_horizon_days", 30) or 30
+        days_left = max(0, horizon - (datetime.now(timezone.utc) - created_at).days)
 
         return DashboardResult(
             user_name=user_name,
@@ -167,5 +267,6 @@ class DashboardService:
                 tasks_completed=tasks_completed,
                 total_tasks=total_tasks,
             ),
-            growth_club=GrowthClubResult(founders_online=12),
+            growth_club=growth_club,
+            roadmap_id=str(latest_roadmap.id),
         )

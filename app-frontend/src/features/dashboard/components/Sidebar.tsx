@@ -16,6 +16,7 @@ import {
 import { getNavItems } from '../config/nav-config';
 import { AccountMenu } from './AccountMenu';
 import { useAuthModal } from '../providers/AuthModalProvider';
+import { resolveUploadUrl } from '@/features/shared/file';
 
 export const Sidebar = () => {
     const pathname = usePathname();
@@ -70,19 +71,20 @@ export const Sidebar = () => {
                         <DropdownMenuTrigger asChild>
                             <button
                                 type="button"
+                                aria-label="계정 메뉴"
                                 className="w-full bg-white rounded-2xl p-4 flex items-center justify-between group cursor-pointer hover:bg-slate-50 transition-all border border-slate-100 shadow-sm text-left"
                             >
                                 <div className="flex items-center gap-3">
                                     <div className="relative">
                                         <Avatar className="w-10 h-10 border-2 border-white shadow-sm">
-                                            <AvatarImage src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'Guest'}`} />
+                                            <AvatarImage src={user?.profile_img ? resolveUploadUrl(user.profile_img) : `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'Guest'}`} />
                                             <AvatarFallback className="bg-primary/10 text-primary">{user?.username?.[0] || 'U'}</AvatarFallback>
                                         </Avatar>
                                         <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>
                                     </div>
                                     <div className="flex flex-col">
                                         <span className="text-sm font-bold text-slate-900 leading-none">{user?.username || '사용자'}</span>
-                                        <span className="text-[10px] text-slate-500 mt-1">프로 플랜</span>
+                                        <span className="text-[10px] text-slate-500 mt-1">{user?.email || ''}</span>
                                     </div>
                                 </div>
                                 <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-450 group-hover:translate-x-0.5 transition-all" />
@@ -93,6 +95,7 @@ export const Sidebar = () => {
                 ) : (
                     <Button
                         onClick={openAuthModal}
+                        aria-label="로그인"
                         className="w-full h-auto bg-slate-900 hover:bg-slate-800 text-white rounded-2xl p-4 flex items-center justify-between group transition-all shadow-lg shadow-slate-200 border-none"
                     >
                         <div className="flex items-center gap-3">

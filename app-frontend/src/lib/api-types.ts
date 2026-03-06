@@ -255,6 +255,7 @@ export type DashboardResponse = {
   "roadmap": RoadmapItem[];
   "stats": DashboardStats;
   "growth_club": GrowthClub;
+  "roadmap_id"?: string | null;
 };
 
 export type DashboardStats = {
@@ -280,6 +281,15 @@ export type GoogleLoginRequest = {
 
 export type GrowthClub = {
   "founders_online": number;
+  "recent_posts"?: RecentPost[];
+};
+
+export type RecentPost = {
+  "id": number;
+  "title": string;
+  "author_name": string;
+  "created_at": string;
+  "comment_count": number;
 };
 
 export type GrowthClubAttachmentRead = {
