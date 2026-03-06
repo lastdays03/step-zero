@@ -7,19 +7,23 @@
 - Branch: `develop` (clean, up-to-date)
 
 ## Sprint Focus
-- 다음 계획 착수 대기 (dashboard-enhance 또는 ops-file-manager)
+- 다음 계획 착수 대기 (legacy-file-cleanup 또는 신규 계획)
 
 ## Current State
-- dashboard-cleanup: 전체 완료, PR #23 머지, done/ 아카이브 완료
-- dashboard-enhance: 계획 수립 완료, 구현 미착수 (문서 미커밋 수정 2건)
-- ops-file-manager: 계획 수립 완료, 구현 미착수
+- ops-file-manager: 전체 완료, PR #24 머지, done/ 아카이브
+- dashboard-enhance: 전체 완료 (Phase 1~4), PR #24 머지, done/ 아카이브
+- legacy-file-cleanup: 계획 수립 완료, A-2만 완료 (듀얼 라이트), 나머지 미착수
 
 ## Completed (최근)
-- Dashboard Cleanup Phase 1~5 전체 (PR #23)
-  - 미사용 소스 삭제, 중복 코드 제거 (AccountMenu, nav-config, AuthModalProvider)
-  - P0 버그 (router.push, storage 동기화)
-  - UX 개선 (스켈레톤 UI, 인사말, ColdStartHero, md 그리드)
-  - 품질/보안 (typed dataclass, 게스트 단일화, URL 검증)
+- Ops 파일 관리 콘솔 (PR #24)
+  - 백엔드: files API (목록/통계/삭제), 감사 로그 연동, 테스트 306줄
+  - 프론트엔드: OpsFilesView 543줄, 타입/API 모듈
+- Dashboard Enhance Phase 1~4 (PR #24)
+  - 거짓 정보 제거 (프로 플랜, 소셜 프루프, 하드코딩 아바타)
+  - 데이터 연동 (founders_online 실제 집계, roadmap_id, error 배너)
+  - 알림 SSE 전환 (Redis Pub/Sub + SSE 스트림 + useNotificationSSE 훅)
+  - 접근성 + 테스트 보강 (aria-label, sr-only, 키보드, safe-area)
+- 알림 링크 해시 라우팅 전환 + 미읽음 UX 개선
 
 ## In Progress
 - 없음
@@ -28,11 +32,10 @@
 - 없음
 
 ## Next 3 Actions
-1. dashboard-enhance 또는 ops-file-manager 중 우선순위 결정
-2. feature 브랜치 생성 후 구현 착수
-3. 브라우저 반응형 테스트 (dashboard-cleanup 변경분)
+1. legacy-file-cleanup 착수 여부 결정 (Phase A: 데이터 정합성 확보)
+2. 또는 신규 기능 계획 수립
+3. Docker 환경 통합 테스트 (ops-file-manager + dashboard-enhance 변경분)
 
 ## Test Status
-- Backend pytest: 406 passed, 10 skipped
-- Frontend test: 133 passed (21 suites)
-- Frontend lint: 통과
+- Backend pytest: 421 passed, 10 skipped
+- Frontend lint: 통과 (warning 1건: ops/files img element)
