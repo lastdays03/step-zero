@@ -23,7 +23,7 @@ R2 스토리지 마이그레이션(PR #22)으로 도입된 통합 `files` 테이
 ### 핵심 문제점
 
 1. ~~**GrowthClub 생성 시 `files` 미기록**~~ → **해결됨** (ops-file-manager 커밋 `f9d7ac8`에서 듀얼 라이트 추가)
-2. **ActionKit 삭제 시 `files` 미정리** → 삭제된 파일이 Ops 콘솔에 잔존 (고아 레코드) — TODO 주석만 존재 (`service.py:268`)
+2. **ActionKit 삭제 시 `files` 미정리** → 삭제된 파일이 Ops 콘솔에 잔존 (고아 레코드) — TODO 주석만 존재 (`service.py:265`) ⚠️ **현행 버그: 지금도 고아 레코드가 누적 중**
 3. **FK 의존성:** `roadmap_template_actions.actionkit_file_id` → `actionkit_files.id`
 4. **모든 조회가 레거시 모델 사용** → File 모델 전환 불가 상태
 5. **[신규] Ops 콘솔 삭제 시 역방향 고아 레코드:** `OpsFilesService.delete_file()`이 `files` 테이블만 삭제, 레거시 테이블 미정리 → Phase C 전까지 주의 필요
@@ -56,17 +56,19 @@ After (목표):
 > **목표:** `files` 테이블이 모든 파일의 Single Source of Truth가 되도록 보장
 
 **A-1. 마이그레이션 스크립트 실행 및 검증** [Effort: S]
-- 스크립트에 `--migrate-only` 플래그 추가 (데이터 복사만 실행, FK 재매핑 스킵)
+- ⚠️ **선행 필수:** 스크립트에 `--migrate-only` 플래그 추가 (데이터 복사만 실행, FK 재매핑 스킵)
+  - 현재 `migrate_files_table.py`에는 `--dry-run`과 `--verify`만 존재, `--migrate-only`는 **미구현 상태**
+  - 플래그 추가 없이 본 실행하면 **Phase B(build_id_mapping + remap_fk)까지 의도치 않게 동시 실행됨**
 - `scripts/migrate_files_table.py --dry-run` → `--migrate-only` → `--verify` 순서로 실행
 - 레거시 3종의 레코드 수가 files 테이블과 일치하는지 확인
-- **주의:** 현재 스크립트는 본 실행 시 Phase B(FK 재매핑)까지 동시 실행됨 → `--migrate-only` 분리 필수
 
 **A-2. GrowthClub 듀얼 라이트 추가** [Effort: S]
 - `post_service.py:create_post()` 수정
 - `GrowthClubPostAttachment` 생성 후 `File` 레코드도 함께 생성
 - 기존 마이그레이션 스크립트로 과거 데이터 보정
 
-**A-3. ActionKit 삭제 시 File 정리 추가** [Effort: S]
+**A-3. ActionKit 삭제 시 File 정리 추가** [Effort: S] — ⚠️ **현행 버그 수정 (우선 처리 권장)**
+- `service.py:delete_item()` (233-239줄)에서 ActionKitItem만 삭제, File 레코드 삭제 누락 → **지금도 고아 레코드 누적 중**
 - ActionKitItem 삭제 로직에 `FileRepository.delete_by_owner("actionkit_item", item_id)` 추가
 
 ---
@@ -143,7 +145,7 @@ After (목표):
 | 4 | GrowthClub 기존 데이터 누락 | 중간 | 높음 | Phase A-1 스크립트로 과거 데이터 보정 |
 | 5 | profile_img 기본값 폴백 깨짐 | 중간 | 중간 | File 미존재 시 "default.png" 반환 로직 |
 | 6 | CASCADE 삭제 경로 변경 | 높음 | 중간 | Phase A-3에서 명시적 File 삭제 추가 |
-| 7 | Ops 콘솔 삭제 → 레거시 고아 레코드 | 중간 | 중간 | Phase C 전까지 Ops 삭제 주의 사용. Phase C 완료 시 자동 해소 |
+| 7 | Ops 콘솔 삭제 → 레거시 고아 레코드 | 중간 | 중간 | **Phase C 완료 전까지 Ops 콘솔 파일 삭제 자제.** 삭제 시 레거시 경로에서 스토리지 404 발생. Phase C 완료 시 자동 해소 |
 
 ---
 

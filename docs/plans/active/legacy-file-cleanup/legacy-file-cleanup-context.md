@@ -31,7 +31,7 @@ Last Updated: 2026-03-06
 
 | 파일 | 역할 | legacy-file-cleanup 영향 |
 |------|------|-------------------------|
-| `app-backend/app/features/ops/application/files/service.py` | 파일 목록/통계/삭제 (`files` 테이블 전용) | Phase C 전 삭제 시 레거시 테이블 고아 레코드 발생 가능 |
+| `app-backend/app/features/ops/application/files/service.py` | 파일 목록/통계/삭제 (`files` 테이블 전용, 178-253줄) | ⚠️ **Phase C 완료 전 삭제 시 레거시 테이블 고아 레코드 발생 + 레거시 경로 404** |
 | `app-backend/app/api/v1/ops/files.py` | REST API (4개 엔드포인트) | Phase C 이후에는 안전하게 사용 가능 |
 
 ### API 라우터 (수정 대상)
@@ -58,7 +58,7 @@ Last Updated: 2026-03-06
 
 | 파일 | 역할 | Phase |
 |------|------|-------|
-| `app-backend/scripts/migrate_files_table.py` | 레거시 → files 데이터 복사 + FK 재매핑 + 검증 | A-1, B-1 |
+| `app-backend/scripts/migrate_files_table.py` | 레거시 → files 데이터 복사 + FK 재매핑 + 검증 (현재 `--dry-run`, `--verify`만 구현, `--migrate-only` 미구현) | A-1, B-1 |
 | `app-backend/alembic/versions/003_actionkit.py` | ActionKit 테이블 생성 (actionkit_files 포함) | D-1 역참조 |
 | `app-backend/alembic/versions/004_growth_club.py` | GrowthClub 테이블 생성 (attachment 포함) | D-1 역참조 |
 | `app-backend/alembic/versions/014_files_table.py` | 통합 files 테이블 생성 | 참조만 |
@@ -126,7 +126,7 @@ Last Updated: 2026-03-06
 ## 기존 TODO 마커
 
 ```python
-# app/features/actionkit/application/service.py:265
+# app/features/actionkit/application/service.py:265 (검증 완료 2026-03-06)
 # TODO(4B-6): ActionKitFile → File 모델 완전 전환 (별도 리팩터 단계)
 # - ActionKitRepository.list_current_files → FileRepository.get_current_files(owner_type="actionkit_item")
 # - ActionKitRepository.create_file_record → FileRepository.create(File(...))

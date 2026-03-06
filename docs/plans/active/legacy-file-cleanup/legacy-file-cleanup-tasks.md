@@ -5,8 +5,9 @@ Last Updated: 2026-03-06
 ## Phase A: 데이터 정합성 확보
 
 ### A-1. 마이그레이션 스크립트 실행 및 검증 [Effort: S]
-- [ ] `migrate_files_table.py`에 `--migrate-only` 플래그 추가 (데이터 복사만, FK 재매핑 스킵)
-  - 현재 스크립트는 본 실행 시 Phase B(build_id_mapping + remap_fk)까지 동시 실행됨
+- [ ] ⚠️ **선행 필수:** `migrate_files_table.py`에 `--migrate-only` 플래그 구현 (데이터 복사만, FK 재매핑 스킵)
+  - 현재 `--dry-run`과 `--verify`만 존재, `--migrate-only`는 **미구현 상태**
+  - 플래그 없이 본 실행 시 Phase B(build_id_mapping + remap_fk)까지 의도치 않게 동시 실행됨
 - [ ] Docker 환경에서 `migrate_files_table.py --dry-run` 실행 → 대상 건수 확인
 - [ ] `migrate_files_table.py --migrate-only` 실행 (데이터 복사만)
 - [ ] `migrate_files_table.py --verify` 실행 → 3종 모두 OK 확인
@@ -21,8 +22,8 @@ Last Updated: 2026-03-06
 - **구현 커밋:** `f9d7ac8` (feature/0-ops-file-manager)
 - **Note:** 과거 데이터는 A-1 스크립트로 보정 필요
 
-### A-3. ActionKit 삭제 시 File 정리 추가 [Effort: S]
-- [ ] ActionKitItem 삭제 로직 탐색 (서비스 또는 라우터)
+### A-3. ActionKit 삭제 시 File 정리 추가 [Effort: S] — ⚠️ **현행 버그 수정 (우선 처리 권장)**
+- [ ] `service.py:delete_item()` (233-239줄) 확인 — 현재 ActionKitItem만 삭제, File 레코드 삭제 누락 → **고아 레코드 누적 중**
 - [ ] `FileRepository.delete_by_owner(owner_type="actionkit_item", owner_id=item_id)` 호출 추가
 - [ ] 기존 테스트 통과 확인
 - **AC:** ActionKitItem 삭제 시 `files` 테이블 고아 레코드 0건
