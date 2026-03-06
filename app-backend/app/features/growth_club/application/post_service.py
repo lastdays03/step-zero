@@ -11,6 +11,7 @@ from sqlmodel import select
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.repositories.file_repository import FileRepository
 from app.models.growth_club import (
     GrowthClubPost,
     GrowthClubPostAttachment,
@@ -173,6 +174,8 @@ class GrowthClubPostService:
             )
 
         attachment_keys = [attachment.object_key for attachment in db_post.attachments]
+        file_repo = FileRepository(self.session)
+        await file_repo.delete_by_owner(owner_type="growth_club_post", owner_id=post_id)
         await self.session.delete(db_post)
         await self.session.commit()
         try:

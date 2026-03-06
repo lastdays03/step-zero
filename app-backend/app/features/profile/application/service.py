@@ -10,9 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.core.config import get_settings
+from app.models.file import File
 from app.models.profile import UserProfile, UserProfileUpdate
 from app.models.roadmap import Roadmap
 from app.models.user import User
+from app.repositories.file_repository import FileRepository
 
 
 class ProfileService:
@@ -98,6 +100,21 @@ class ProfileService:
         profile.profile_img = f"profile/{filename}"
         profile.updated_at = utc_now()
         self.session.add(profile)
+
+        # Dual-write: File 레코드 생성 (같은 트랜잭션)
+        file_repo = FileRepository(self.session)
+        await file_repo.delete_by_owner(owner_type="user_profile", owner_id=user_id)
+        file_record = File(
+            owner_type="user_profile",
+            owner_id=user_id,
+            category="profile_image",
+            object_key=f"profile/{filename}",
+            original_filename=file.filename,
+            mime_type=file.content_type,
+            size_bytes=len(content),
+        )
+        await file_repo.create(file=file_record)
+
         await self.session.commit()
         await self.session.refresh(profile)
 
