@@ -4,20 +4,20 @@
 
 ## Phase 1: 순수 함수 & API 유틸 단위 테스트
 
-- [ ] 1-1. growth-club API 단위 테스트 (8개 메서드) [S]
-- [ ] 1-2. chat API 유틸 단위 테스트 (세션/메시지 CRUD) [S]
-- [ ] 1-3. chat SSE 파서 단위 테스트 [S]
-- [ ] 1-4. notifications API 단위 테스트 [S]
-- [ ] 1-5. shared 파일 유틸 단위 테스트 (`shared/file/utils/` — url, validation) [S]
-- [ ] 1-6. actionkit useActionKit 훅 단위 테스트 [S]
+- [x] 1-1. growth-club API 단위 테스트 (8개 메서드, 10건) [S]
+- [x] 1-2. chat API 유틸 단위 테스트 (세션/메시지 CRUD, 7건) [S]
+- [x] 1-3. chat SSE 파서 단위 테스트 (10건) [S]
+- [x] 1-4. notifications API 단위 테스트 (3건) [S]
+- [x] 1-5. shared 파일 유틸 단위 테스트 (resolveUploadUrl + validateFiles, 14건) [S]
+- [x] 1-6. actionkit useActionKit 훅 단위 테스트 (2건) [S]
 
 ## Phase 2: 커스텀 훅 테스트
 
-- [ ] 2-1. useRoadmapJob 훅 테스트 (폴링, 상태 전이) [M]
+- [x] 2-1. useRoadmapJob 훅 테스트 (startJob/fetchJob/fetchResult, 4건) [M]
 - [ ] 2-2. useRoadmapList / useActiveRoadmap 훅 테스트 [M]
-- [ ] 2-3. usePosts 훅 테스트 (CRUD, 좋아요) [M]
+- [x] 2-3. usePosts 훅 테스트 (fetch/refetch/error, 4건) [M]
 - [ ] 2-4. useChat 훅 테스트 (SSE 스트리밍) [L]
-- [ ] 2-5. useNotifications 훅 테스트 [S]
+- [x] 2-5. useNotifications 훅 테스트 (fetch/markRead/markAllRead, 3건) [S]
 
 ## Phase 3: 핵심 컴포넌트 렌더링 테스트
 
