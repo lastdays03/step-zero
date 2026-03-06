@@ -14,9 +14,9 @@
 ## Phase 2: 커스텀 훅 테스트
 
 - [x] 2-1. useRoadmapJob 훅 테스트 (startJob/fetchJob/fetchResult, 4건) [M]
-- [ ] 2-2. useRoadmapList / useActiveRoadmap 훅 테스트 [M]
+- [x] 2-2. useRoadmapList / useActiveRoadmap 훅 테스트 (10건) [M]
 - [x] 2-3. usePosts 훅 테스트 (fetch/refetch/error, 4건) [M]
-- [ ] 2-4. useChat 훅 테스트 (SSE 스트리밍) [L]
+- [x] 2-4. useChat 훅 테스트 (SSE 스트리밍, 8건) [L]
 - [x] 2-5. useNotifications 훅 테스트 (fetch/markRead/markAllRead, 3건) [S]
 
 ## Phase 3: 핵심 컴포넌트 렌더링 테스트
