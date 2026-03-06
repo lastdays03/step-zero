@@ -255,7 +255,9 @@ async def list_posts(
         likes_count = row[1] if len(row) > 1 else 0
         is_liked = bool(row[2]) if current_user and len(row) > 2 else False
 
-        post_read = GrowthClubPostRead.model_validate(post)
+        post_read = GrowthClubPostRead.model_validate(
+            post, update={"attachments": []}
+        )
         post_read.likes_count = int(likes_count or 0)
         post_read.is_liked = is_liked
         post_read.attachments = attachments_map.get(post.id, [])
@@ -336,7 +338,9 @@ async def create_post(
     result = await session.execute(query)
     post = result.scalar_one()
 
-    post_read = GrowthClubPostRead.model_validate(post)
+    post_read = GrowthClubPostRead.model_validate(
+        post, update={"attachments": []}
+    )
     post_read.author.mask_privacy(current_user.id)
     post_read.likes_count = 0
     post_read.is_liked = False

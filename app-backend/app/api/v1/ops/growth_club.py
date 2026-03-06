@@ -92,7 +92,9 @@ async def list_blinded_posts(session: AsyncSession = Depends(get_session)):
 
     read_posts = []
     for post, report_count, report_reason in rows:
-        post_read = GrowthClubPostRead.model_validate(post)
+        post_read = GrowthClubPostRead.model_validate(
+            post, update={"attachments": []}
+        )
         post_read.report_count = report_count
         post_read.report_reason = report_reason
         post_read.attachments = attachments_map.get(post.id, [])
