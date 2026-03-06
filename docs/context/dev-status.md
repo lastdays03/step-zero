@@ -23,16 +23,17 @@
 - 프론트엔드 테스트 Phase 3: 컴포넌트 렌더링 테스트 6개 파일 (35건)
 
 ## In Progress
-- PR 생성 대기: feature/0-r2-storage-migration → develop
-- R2 Phase 6: 마이그레이션 실행 + E2E 검증 (R2 환경 필요)
+- PR #22 오픈: feature/0-r2-storage-migration → develop
+- R2 Phase 6: 마이그레이션 완료 (74/74 파일), 잔여 2건 (DB정규화, 롤백문서)
 
 ## Risks And Blockers
-- R2 Phase 6은 실제 R2 자격증명 + Docker 환경 필요
+- R2 Public URL(r2.dev) 403: Cloudflare Bot Protection (1010) — User-Agent 필요, 브라우저 접속은 정상
+- Phase 6-1b: Ops ActionKit object_key DB 정규화 (Docker DB 접근 필요)
 
 ## Next 3 Actions
-1. PR 생성: feature/0-r2-storage-migration → develop
-2. PR 생성: `feature/0-r2-storage-migration` → `develop`
-3. R2 Phase 6 E2E 검증 (Docker + R2 환경)
+1. PR #22 리뷰 + develop 머지
+2. Phase 6-1b: object_key DB 정규화
+3. Phase 6-8: 롤백 절차 문서화
 
 ## Test Status
 - Backend pytest: 406 passed, 10 skipped
@@ -40,4 +41,4 @@
 - Frontend lint: 0 errors
 
 ## Sync Notes
-- 2026-03-06: R2 실전 통합 Phase 1-4 완료, 프론트엔드 테스트 Phase 1 완료
+- 2026-03-06: R2 마이그레이션 74/74 완료, E2E 6/6 통과, 프론트엔드 테스트 133건

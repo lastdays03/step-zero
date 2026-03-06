@@ -68,8 +68,8 @@
 - [x] **6-0** R2 버킷 연결 + CRUD 검증 `[S]` — 버킷 접근/put/get/delete/presigned 전체 통과
 - [x] **6-1** R2 환경변수 설정 (`.env.local`) `[S]` — STORAGE_BACKEND=r2 전환 완료
 - [ ] **6-1b** Ops ActionKit `object_key` DB 정규화 `[S]` — Docker DB 필요
-- [ ] **6-2** R2 마이그레이션 스크립트 실행 `[M]` — Docker DB 필요
-- [ ] **6-3** 마이그레이션 검증 `[S]` — Docker DB 필요
+- [x] **6-2** R2 마이그레이션 스크립트 실행 `[M]` — 74/74 파일 업로드 (DB 67 + 비추적 7)
+- [x] **6-3** 마이그레이션 검증 `[S]` — `--verify` PASS, 비추적 파일 사이즈 일치 확인
 - [x] **6-4** E2E: R2StorageBackend 실전 시나리오 `[M]` — 프로필/게시판/ActionKit/Presigned/병렬 6/6 통과
 - [x] **6-5** E2E: Growth Club 파일 흐름 (100KB 이미지 + PDF) `[M]` — 업로드 317ms, 다운로드 202ms
 - [x] **6-6** E2E: Profile 이미지 CRUD `[S]` — 업로드→다운로드→삭제 검증 완료
@@ -98,5 +98,5 @@
 | Phase 3 | 4 | 4 | 0 |
 | Phase 4 | 7 | 7 | 0 |
 | Phase 5 | 7 | 1 | 6 (deferred) |
-| Phase 6 | 10 | 6 | 4 (Docker DB 필요) |
-| **총합** | **41** | **31** | **10** |
+| Phase 6 | 10 | 8 | 2 (6-1b DB정규화, 6-8 롤백문서) |
+| **총합** | **41** | **33** | **8** |
