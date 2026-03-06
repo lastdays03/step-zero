@@ -18,8 +18,8 @@
 - Docker pytest 393 passed, alembic check diff 없음
 
 ## In Progress
-- Runtime Upgrade Phase 4: 커밋 + PR 생성 (docs/dev/active/runtime-upgrade/)
-- R2 Storage Migration (docs/dev/active/r2-storage-migration/)
+- Runtime Upgrade Phase 4: 커밋 + PR 생성 (docs/plans/done/runtime-upgrade/)
+- R2 Storage Migration (docs/plans/active/r2-integration/)
 
 ## Risks And Blockers
 - pytest flaky 2건: test_real_oos_lawsuit, test_real_oos_health (기존 이슈, OpenAI 임베딩 비결정성)

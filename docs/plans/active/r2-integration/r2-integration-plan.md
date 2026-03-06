@@ -1,7 +1,7 @@
 # R2 스토리지 실전 통합 - 종합 계획서
 
 > Last Updated: 2026-03-06
-> 선행 작업: `docs/dev/done/r2-storage-migration/` (인프라 계층 구축 완료)
+> 선행 작업: `docs/plans/done/r2-storage-migration/` (인프라 계층 구축 완료)
 
 ---
 

@@ -4,7 +4,7 @@
 
 ## Related Planning Doc
 
-- `docs/dev/active/test-performance-audit/REPORT-test-performance-audit.md` — 감사 보고서 (분석 원본)
+- `docs/plans/active/test-performance-audit/REPORT-test-performance-audit.md` — 감사 보고서 (분석 원본)
 
 ## Key Files
 

@@ -14,17 +14,17 @@
 ## Uncommitted Changes
 - `docker-compose.dev.yml` — backend/worker `.venv` 볼륨 제외 + worker 주석 수정
 - `docs/context/dev-status.md`, `docs/context/handoff.md` — 상태 갱신
-- `docs/dev/active/runtime-upgrade/*` — 3파일 태스크 완료 반영
+- `docs/plans/done/runtime-upgrade/*` — 3파일 태스크 완료 반영
 
 ## 다음 세션 시작점
 1. uncommitted 6파일 커밋 (`chore: ...`)
 2. PR 생성: `feature/5-pkg-manager-migration` → `develop`
-3. PR 머지 후 runtime-upgrade 문서 → `docs/dev/done/`으로 아카이브
-4. R2 Storage Migration 계속 (`docs/dev/active/r2-storage-migration/`)
+3. PR 머지 후 runtime-upgrade 문서 → 이미 `docs/plans/done/`으로 이동 완료
+4. R2 Storage Migration 계속 (`docs/plans/active/r2-integration/`)
 
 ## 참조 문서
-- Runtime Upgrade: `docs/dev/active/runtime-upgrade/`
-- R2 Migration: `docs/dev/active/r2-storage-migration/`
+- Runtime Upgrade: `docs/plans/done/runtime-upgrade/`
+- R2 Migration: `docs/plans/active/r2-integration/`
 
 ## 커밋 시 주의사항
 - subject는 소문자 시작 (commitlint subject-case 규칙)
