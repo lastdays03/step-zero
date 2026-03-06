@@ -87,13 +87,19 @@ export const NotificationBell = () => {
         if (!notif.is_read) {
             try {
                 await notificationsApi.markAsRead(notif.id);
-                setNotifications((prev: Notification[]) => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
+                setNotifications((prev: Notification[]) => {
+                    const updated = prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n);
+                    setHasUnread(updated.some(n => !n.is_read));
+                    return updated;
+                });
             } catch (error) {
                 console.error('Failed to mark as read:', error);
             }
         }
         if (notif.link) {
-            router.push(notif.link);
+            // /growth-club/123 → /growth-club#post-123 (legacy link migration)
+            const resolved = notif.link.replace(/^\/growth-club\/(\d+)$/, '/growth-club#post-$1');
+            router.push(resolved);
             setIsOpen(false);
         }
     };
@@ -165,14 +171,15 @@ export const NotificationBell = () => {
                                 {displayItems.map((notif) => (
                                     <div
                                         key={notif.id}
-                                        className={`group/item p-4 border-b border-zinc-50 hover:bg-zinc-50 transition-colors cursor-pointer relative ${!notif.is_read ? 'bg-blue-50/30' : ''}`}
+                                        className={`group/item p-4 border-b border-zinc-50 hover:bg-zinc-50 transition-colors cursor-pointer relative ${!notif.is_read ? 'bg-blue-50/50 border-l-[3px] border-l-blue-500' : ''}`}
                                         onClick={() => handleNotificationClick(notif)}
                                     >
                                         <div className="flex gap-3 pr-6">
                                             <div className="mt-1">{getIcon(notif.type)}</div>
                                             <div className="flex-1">
-                                                <p className="text-sm text-zinc-700 leading-tight mb-1">{notif.content}</p>
+                                                <p className={`text-sm leading-tight mb-1 ${!notif.is_read ? 'text-zinc-900 font-semibold' : 'text-zinc-600'}`}>{notif.content}</p>
                                                 <span className="text-[10px] text-zinc-400">
+                                                    {!notif.is_read && <span className="text-blue-500 font-bold mr-1">NEW</span>}
                                                     {formatTimeAgo(notif.created_at)}
                                                 </span>
                                             </div>

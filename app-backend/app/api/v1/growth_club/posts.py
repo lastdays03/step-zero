@@ -454,7 +454,7 @@ async def toggle_like_post(
                 user_id=db_post.author_id,
                 content=f"{current_user.full_name or current_user.email}님이 당신의 게시물을 좋아합니다.",
                 type="like",
-                link=f"/growth-club/{post_id}",
+                link=f"/growth-club#post-{post_id}",
                 resource_id=post_id,
             )
             session.add(like_notification)
