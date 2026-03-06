@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from typing import Any
 from uuid import UUID
 
@@ -48,7 +49,7 @@ async def get_dashboard_stats(
             user_name="Guest",
             is_guest=True,
         )
-        return result.__dict__
+        return asdict(result)
 
     current_team = await deps.get_current_team(
         current_user=current_user,
@@ -61,4 +62,4 @@ async def get_dashboard_stats(
         is_guest=False,
         roadmap_id=parsed_roadmap_id,
     )
-    return result.__dict__
+    return asdict(result)

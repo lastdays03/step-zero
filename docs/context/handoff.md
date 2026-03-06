@@ -4,28 +4,24 @@
 
 ## 마지막 업데이트
 - Date: 2026-03-06
-- Branch: `develop` (clean, uncommitted 없음)
+- Branch: `feature/0-dashboard-cleanup`
 
 ## 이번 세션 요약
-- 대시보드 정리 계획 문서 3파일 작성 + 코드 검증 (13개 항목)
-- primary 색상 불일치 발견: #257bf4 != #36a4f2 → 문서 반영
-- PR #22 충돌 해결 (files.py, dev-status, handoff — ours 유지) + 머지
-- feature/0-r2-storage-migration 브랜치 정리 완료
+- dashboard-cleanup Phase 1~5 전체 완료
+- 게스트 데이터 이중 정의 해소 (GUEST_DASHBOARD_DATA 삭제, BE API 단일화)
+- lint/test 전체 통과 확인 후 커밋 (2건)
 
-## Uncommitted Changes
-- 없음 (clean state)
+## 커밋 이력 (이번 세션)
+1. `refactor: 대시보드 Phase 2~5 부분 완료` — 코드 변경 18파일
+2. `docs: 신규 계획 문서 추가` — dashboard-enhance, ops-file-manager, report
+3. (예정) Phase 5.2 게스트 데이터 + 태스크 문서 갱신
 
 ## 다음 세션 시작점
-1. feature 브랜치 생성: `feature/dashboard-cleanup`
-2. Phase 1 실행: StatsGrid, dashboardMock, api/index, types/index 삭제
-3. Phase 2~5 순차 진행
-4. 계획 문서: `docs/plans/active/dashboard-cleanup/`
+1. 최종 커밋 후 `develop`으로 PR 생성
+2. dashboard-enhance 또는 ops-file-manager 구현 착수
+3. 브라우저 반응형 테스트 (sm/md/lg)
 
 ## 참조 문서
-- 대시보드 정리: `docs/plans/active/dashboard-cleanup/`
-- R2 Migration (완료): `docs/plans/done/r2-integration/`
-- 테스트 커버리지 (완료): `docs/plans/done/frontend-test-coverage/`
-
-## 커밋 시 주의사항
-- subject는 소문자 시작 (commitlint subject-case 규칙)
-- `Co-Authored-By: Claude Opus 4.6 <noreply@anthropic.com>` 포함
+- 대시보드 정리: `docs/plans/active/dashboard-cleanup/` (ALL PHASES COMPLETE)
+- 대시보드 보완: `docs/plans/active/dashboard-enhance/`
+- 파일 관리: `docs/plans/active/ops-file-manager/`

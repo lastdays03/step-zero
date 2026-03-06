@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient } from "@/lib/api-client";
 import { useDashboard } from '../hooks/useDashboard';
 import { ProgressCard } from './ProgressCard';
@@ -14,12 +14,22 @@ import { Clock, CheckSquare } from 'lucide-react';
 import type { RoadmapDetailResponse } from '@/features/roadmap/components/RoadmapExecutionView';
 
 const ACTIVE_ROADMAP_STORAGE_KEY = "stepzero_active_roadmap_id";
+const GLASS_CARD = "bg-white/90 backdrop-blur-sm border border-white/50 rounded-3xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]";
 
 export const DashboardView = () => {
-    const [activeRoadmapId] = useState<string | null>(() => {
+    const [activeRoadmapId, setActiveRoadmapId] = useState<string | null>(() => {
         if (typeof window === "undefined") return null;
         return localStorage.getItem(ACTIVE_ROADMAP_STORAGE_KEY);
     });
+
+    const syncActiveRoadmapId = useCallback(() => {
+        setActiveRoadmapId(localStorage.getItem(ACTIVE_ROADMAP_STORAGE_KEY));
+    }, []);
+
+    useEffect(() => {
+        window.addEventListener("storage", syncActiveRoadmapId);
+        return () => window.removeEventListener("storage", syncActiveRoadmapId);
+    }, [syncActiveRoadmapId]);
 
     const { data, loading: isLoading } = useDashboard(activeRoadmapId);
     const [roadmapDetail, setRoadmapDetail] = useState<RoadmapDetailResponse | null>(null);
@@ -168,8 +178,11 @@ export const DashboardView = () => {
                         || doc.source_url
                         || null;
                     if (raw) {
-                        const itemMatch = raw.match(/\/actionkits\/items\/(\d+)$/);
-                        viewUrl = itemMatch ? `${raw}/view` : raw;
+                        const isSafe = /^https?:\/\//.test(raw) || raw.startsWith("/api/") || raw.startsWith("/");
+                        if (isSafe) {
+                            const itemMatch = raw.match(/\/actionkits\/items\/(\d+)$/);
+                            viewUrl = itemMatch ? `${raw}/view` : raw;
+                        }
                     }
                 }
 
@@ -185,7 +198,16 @@ export const DashboardView = () => {
     }, [currentStep]);
 
     if (isLoading || !data) {
-        return <div className="p-8 text-center">Loading...</div>;
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-6 animate-pulse">
+                <div className="md:col-span-3 h-52 rounded-3xl bg-slate-100" />
+                <div className="md:col-span-1 h-52 rounded-3xl bg-slate-100" />
+                <div className="md:col-span-4 h-40 rounded-3xl bg-slate-100" />
+                <div className="md:col-span-2 h-48 rounded-3xl bg-slate-100" />
+                <div className="md:col-span-1 h-48 rounded-3xl bg-slate-100" />
+                <div className="md:col-span-1 h-48 rounded-3xl bg-slate-100" />
+            </div>
+        );
     }
 
     if (isRoadmapNotReady) {
@@ -207,7 +229,7 @@ export const DashboardView = () => {
                 </div>
             )}
             {/* Main Grid: 4 Columns */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-6">
 
                 {/* 1. Progress Card (Span 3) */}
                 <div className="md:col-span-3 lg:col-span-3 h-full">
@@ -226,15 +248,15 @@ export const DashboardView = () => {
                 </div>
 
                 {/* 3. Roadmap (Full Span 4) */}
-                <div className="md:col-span-3 lg:col-span-4">
+                <div className="md:col-span-4 lg:col-span-4">
                     <RoadmapStepper steps={data.roadmap} />
                 </div>
 
                 {/* 4. Action Kit / Documents (Span 2) */}
-                <Card className="md:col-span-2 lg:col-span-2 bg-white/90 backdrop-blur-sm border border-white/50 rounded-3xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]">
+                <Card className={`md:col-span-2 lg:col-span-2 ${GLASS_CARD}`}>
                     <CardContent className="p-8">
                         <h3 className="font-bold text-slate-800 mb-6 flex items-center gap-2">
-                            <span className="w-1 h-5 bg-[#36a4f2] rounded-full"></span>
+                            <span className="w-1 h-5 bg-highlight rounded-full"></span>
                             필요 서류
                         </h3>
                         <div className="space-y-3">
@@ -292,7 +314,7 @@ export const DashboardView = () => {
                 </Card>
 
                 {/* 5. Stat Card 1: Timer (Span 1) */}
-                <Card className="md:col-span-1 lg:col-span-1 bg-white/90 backdrop-blur-sm border border-white/50 rounded-3xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] text-center">
+                <Card className={`md:col-span-1 lg:col-span-1 ${GLASS_CARD} text-center`}>
                     <CardContent className="p-8 flex flex-col justify-center items-center h-full">
                         <div className="w-12 h-12 rounded-full bg-orange-100 text-orange-500 flex items-center justify-center mb-4">
                             <Clock className="w-6 h-6" />
@@ -303,7 +325,7 @@ export const DashboardView = () => {
                 </Card>
 
                 {/* 6. Stat Card 2: Tasks (Span 1) */}
-                <Card className="md:col-span-1 lg:col-span-1 bg-white/90 backdrop-blur-sm border border-white/50 rounded-3xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)] text-center">
+                <Card className={`md:col-span-1 lg:col-span-1 ${GLASS_CARD} text-center`}>
                     <CardContent className="p-8 flex flex-col justify-center items-center h-full">
                         <div className="w-12 h-12 rounded-full bg-purple-100 text-purple-500 flex items-center justify-center mb-4">
                             <CheckSquare className="w-6 h-6" />

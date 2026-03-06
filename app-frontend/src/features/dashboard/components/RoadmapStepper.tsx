@@ -67,7 +67,7 @@ export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
                         onClick={() => {
                             router.push("/roadmap");
                         }}
-                        className="text-sm text-[#36a4f2] font-medium hover:underline flex items-center"
+                        className="text-sm text-highlight font-medium hover:underline flex items-center"
                     >
                         전체 계획 보기
                     </button>
@@ -93,10 +93,10 @@ export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
                                 <div key={index} className={`flex flex-col items-start md:items-center text-left md:text-center relative z-10 w-[120px] flex-shrink-0 group transition-all duration-500 ${step.status === 'locked' ? 'opacity-50' : 'opacity-100'}`}>
                                     <div className="relative mb-3 w-full flex justify-start md:justify-center">
                                         {step.status === 'current' && (
-                                            <span className="absolute inline-flex h-12 w-12 rounded-full bg-[#36a4f2] opacity-25 animate-ping"></span>
+                                            <span className="absolute inline-flex h-12 w-12 rounded-full bg-highlight opacity-25 animate-ping"></span>
                                         )}
                                         <div className={`w-12 h-12 rounded-full flex items-center justify-center border-4 border-white shadow-xl relative z-10 transition-transform hover:scale-110 ${step.status === 'completed' ? 'bg-green-500 shadow-green-100' :
-                                            step.status === 'current' ? 'bg-[#36a4f2] shadow-blue-200' :
+                                            step.status === 'current' ? 'bg-highlight shadow-blue-200' :
                                                 'bg-slate-200 shadow-none'
                                             }`}>
                                             {step.status === 'completed' ? (
@@ -110,7 +110,7 @@ export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
                                     </div>
 
                                     <div className="w-full px-1">
-                                        <h4 className={`font-bold text-sm truncate ${step.status === 'current' ? 'text-[#36a4f2]' : 'text-slate-900'}`}>{step.title}</h4>
+                                        <h4 className={`font-bold text-sm truncate ${step.status === 'current' ? 'text-highlight' : 'text-slate-900'}`}>{step.title}</h4>
                                         <div className="mt-1">
                                             {step.status === 'current' ? (
                                                 <Badge className="bg-blue-50 text-blue-600 border-none font-bold text-[9px] hover:bg-blue-100 px-2 py-0">

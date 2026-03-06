@@ -5,26 +5,10 @@ import { AxiosError } from 'axios';
 
 export type DashboardData = DashboardResponse;
 
-const GUEST_DASHBOARD_DATA: DashboardData = {
-    user_name: 'Guest',
-    current_phase: {
-        title: '로드맵을 생성해 보세요',
-        progress: 0,
-        status: 'GUEST',
-    },
-    roadmap: [
-        { title: 'Step 1: 아이디어 검증', status: 'locked', date: '-' },
-        { title: 'Step 2: 법인 설립', status: 'locked', date: '-' },
-        { title: 'Step 3: 비즈니스 계좌', status: 'locked', date: '-' },
-    ],
-    stats: {
-        days_left: 0,
-        tasks_completed: 0,
-        total_tasks: 0,
-    },
-    growth_club: {
-        founders_online: 1250,
-    },
+const FALLBACK_CURRENT_PHASE = {
+    title: '로드맵을 생성해 보세요',
+    progress: 0,
+    status: 'GUEST' as const,
 };
 
 export const useDashboard = (roadmapId?: string | null) => {
@@ -36,14 +20,6 @@ export const useDashboard = (roadmapId?: string | null) => {
         setLoading(true);
         setError(null);
 
-        // If the user is not logged in, skip the API call entirely and
-        // show guest data.  This avoids a guaranteed 401 → refresh loop.
-        if (!localStorage.getItem('token')) {
-            setData(GUEST_DASHBOARD_DATA);
-            setLoading(false);
-            return;
-        }
-
         try {
             const params: Record<string, string> = {};
             if (roadmapId) params.roadmap_id = roadmapId;
@@ -54,12 +30,16 @@ export const useDashboard = (roadmapId?: string | null) => {
             const status = err instanceof AxiosError ? err.response?.status : undefined;
             if (status === 401) {
                 setError('로그인이 만료되었습니다. 다시 로그인해 주세요.');
-                setData(GUEST_DASHBOARD_DATA);
             } else {
                 setError('데이터를 불러오는 중 오류가 발생했습니다.');
-                // Keep previously loaded roadmap data on transient errors.
-                setData((prev) => prev ?? GUEST_DASHBOARD_DATA);
             }
+            setData((prev) => prev ?? {
+                user_name: 'Guest',
+                current_phase: FALLBACK_CURRENT_PHASE,
+                roadmap: [],
+                stats: { days_left: 0, tasks_completed: 0, total_tasks: 0 },
+                growth_club: { founders_online: 0 },
+            });
         } finally {
             setLoading(false);
         }
