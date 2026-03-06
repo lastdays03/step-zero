@@ -9,6 +9,7 @@ from sqlalchemy.orm import selectinload
 from sqlmodel import select
 
 from app.core.logging import get_logger
+from app.models.file import File
 from app.repositories.file_repository import FileRepository
 from app.models.growth_club import (
     GrowthClubPost,
@@ -148,6 +149,22 @@ class GrowthClubPostService:
             self.session.add(db_post)
             await self.session.flush()
             post_id = db_post.id
+
+            # Dual-write: File 레코드 생성 (같은 트랜잭션)
+            file_repo = FileRepository(self.session)
+            for att in attachment_rows:
+                file_record = File(
+                    owner_type="growth_club_post",
+                    owner_id=int(post_id),
+                    category="image" if att.kind == "image" else "document",
+                    object_key=att.object_key,
+                    original_filename=att.original_filename,
+                    mime_type=att.mime_type,
+                    size_bytes=att.size_bytes,
+                    kind=att.kind,
+                )
+                await file_repo.create(file=file_record)
+
             await self.session.commit()
             return int(post_id)
         except Exception:

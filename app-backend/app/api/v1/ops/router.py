@@ -5,6 +5,7 @@ from app.api.v1.ops import (
     actionkit,
     announcements,
     audit_logs,
+    files,
     growth_club,
     home,
     reports,
@@ -22,4 +23,5 @@ router.include_router(growth_club.router)
 router.include_router(actionkit.router)
 router.include_router(announcements.router)
 router.include_router(roadmap_templates.router)
+router.include_router(files.router)
 router.include_router(audit_logs.router)

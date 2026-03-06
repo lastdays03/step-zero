@@ -27,6 +27,9 @@ class AuditAction:
     TEMPLATE_ARCHIVED: Final[str] = "template.archived"
     TEMPLATE_DELETED: Final[str] = "template.deleted"
 
+    FILE_DELETED: Final[str] = "file.deleted"
+    FILE_BULK_DELETED: Final[str] = "file.bulk_deleted"
+
 
 class AuditTargetType:
     USER: Final[str] = "user"
@@ -34,6 +37,7 @@ class AuditTargetType:
     GROWTH_CLUB_POST: Final[str] = "growth_club_post"
     ACTIONKIT_ITEM: Final[str] = "actionkit_item"
     ROADMAP_TEMPLATE: Final[str] = "roadmap_template"
+    FILE: Final[str] = "file"
 
 
 ALLOWED_AUDIT_ACTIONS: set[str] = {
@@ -55,6 +59,8 @@ ALLOWED_AUDIT_ACTIONS: set[str] = {
     AuditAction.TEMPLATE_APPROVED,
     AuditAction.TEMPLATE_ARCHIVED,
     AuditAction.TEMPLATE_DELETED,
+    AuditAction.FILE_DELETED,
+    AuditAction.FILE_BULK_DELETED,
 }
 
 ALLOWED_AUDIT_TARGET_TYPES: set[str] = {
@@ -63,4 +69,5 @@ ALLOWED_AUDIT_TARGET_TYPES: set[str] = {
     AuditTargetType.GROWTH_CLUB_POST,
     AuditTargetType.ACTIONKIT_ITEM,
     AuditTargetType.ROADMAP_TEMPLATE,
+    AuditTargetType.FILE,
 }
