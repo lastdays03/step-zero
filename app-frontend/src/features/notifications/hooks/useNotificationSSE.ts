@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { getApiBaseUrl, getAuthHeaders, tryRefreshToken } from '@/features/chat/utils/sse';
+import { getApiBaseUrl } from '@/lib/env';
+import { getAuthHeaders, tryRefreshToken } from '@/features/chat/utils/sse';
 
 interface UseNotificationSSEOptions {
     enabled: boolean;
