@@ -16,6 +16,10 @@ from app.services.storage import get_storage_backend
 
 router = APIRouter()
 
+VIEWABLE_EXTENSIONS = frozenset(
+    {".md", ".markdown", ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg"}
+)
+
 
 def _service(session: AsyncSession) -> ActionKitService:
     return ActionKitService(ActionKitRepository(session))
@@ -69,6 +73,14 @@ _MD_HTML_TEMPLATE = """<!DOCTYPE html>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 <style>
   body {{ max-width: 800px; margin: 2rem auto; padding: 0 1.5rem; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; color: #1e293b; line-height: 1.7; }}
+  .doc-toolbar {{ position: sticky; top: 0; z-index: 10; display: flex; align-items: center; justify-content: space-between; padding: .75rem 1rem; margin: 0 -1.5rem 1.5rem; background: #fff; border-bottom: 1px solid #e2e8f0; box-shadow: 0 1px 3px rgba(0,0,0,.05); }}
+  .doc-toolbar h1 {{ font-size: 1rem; font-weight: 700; color: #1e293b; margin: 0; border: none; padding: 0; }}
+  .doc-toolbar .btn-group {{ display: flex; gap: .5rem; }}
+  .doc-toolbar .btn {{ display: inline-flex; align-items: center; gap: .35rem; padding: .4rem .85rem; border-radius: 6px; font-size: .8rem; font-weight: 600; text-decoration: none; border: 1px solid #e2e8f0; background: #fff; color: #475569; cursor: pointer; transition: background .15s; }}
+  .doc-toolbar .btn:hover {{ background: #f1f5f9; }}
+  .doc-toolbar .btn-primary {{ background: #36a4f2; color: #fff; border-color: #36a4f2; }}
+  .doc-toolbar .btn-primary:hover {{ background: #258bd1; }}
+  @media print {{ .doc-toolbar {{ display: none; }} }}
   h1 {{ border-bottom: 2px solid #e2e8f0; padding-bottom: .5rem; }}
   h2 {{ border-bottom: 1px solid #e2e8f0; padding-bottom: .3rem; margin-top: 2rem; }}
   h3 {{ margin-top: 1.5rem; }}
@@ -83,6 +95,13 @@ _MD_HTML_TEMPLATE = """<!DOCTYPE html>
 </style>
 </head>
 <body>
+<div class="doc-toolbar">
+  <h1>{title}</h1>
+  <div class="btn-group">
+    <a class="btn btn-primary" href="/api/v1/actionkits/items/{item_id}/download">원본 다운로드</a>
+    <button class="btn" onclick="window.print()">인쇄 / PDF 저장</button>
+  </div>
+</div>
 <div id="content"></div>
 <script>
 document.getElementById('content').innerHTML = marked.parse({markdown_json});
@@ -119,6 +138,13 @@ async def view_item_current_file(
     filename = current_file.original_filename or "file"
     ext = os.path.splitext(filename)[1].lower()
 
+    # Unsupported formats (HWP, PPTX, DOCX, ...) → redirect to download
+    if ext not in VIEWABLE_EXTENSIONS:
+        return RedirectResponse(
+            url=f"/api/v1/actionkits/items/{item_id}/download",
+            status_code=302,
+        )
+
     # R2 mode: PDF/images → redirect to public URL
     if settings.STORAGE_BACKEND == "r2" and ext == ".pdf":
         return RedirectResponse(
@@ -140,6 +166,7 @@ async def view_item_current_file(
         html = _MD_HTML_TEMPLATE.format(
             title=title,
             markdown_json=_json.dumps(md_content),
+            item_id=item_id,
         )
         return HTMLResponse(content=html)
 

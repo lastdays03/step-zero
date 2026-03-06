@@ -66,6 +66,7 @@ class ActionKitService:
             )
             items_by_category[item.category_id].append(
                 {
+                    "id": item.id,
                     "name": item.name,
                     "ext": item.ext or ".pdf",
                     "size": item.size_label or "",

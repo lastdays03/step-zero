@@ -9,7 +9,7 @@ import {
     FolderOpen,
     ArrowRight,
     MessageCircle,
-    Download,
+    ExternalLink,
 } from 'lucide-react';
 import { LawItem, ActionKitItem } from '../types';
 
@@ -42,7 +42,6 @@ interface LawDetailPopupProps {
     relatedKits: ActionKitItem[];
     onClose: () => void;
     onNavigateToKit?: (kitName: string) => void;
-    onDownload: (path: string, name: string) => void;
 }
 
 export const LawDetailPopup = ({
@@ -50,7 +49,6 @@ export const LawDetailPopup = ({
     relatedKits,
     onClose,
     onNavigateToKit,
-    onDownload,
 }: LawDetailPopupProps) => {
     const plainSummary = getPlainSummary(item.name);
 
@@ -179,14 +177,20 @@ export const LawDetailPopup = ({
                         >
                             닫기
                         </Button>
-                        <Button
+                        {item.id && <Button
                             size="sm"
                             className="rounded-full bg-[#36a4f2] hover:bg-[#258bd1] gap-1.5 h-8 text-xs px-4 shadow-md shadow-[#36a4f2]/20"
-                            onClick={() => onDownload(item.path, item.name)}
+                            asChild
                         >
-                            <Download className="w-3 h-3" />
-                            원문 다운로드
-                        </Button>
+                            <a
+                                href={`${process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? ""}/api/v1/actionkits/items/${item.id}/view`}
+                                target="_blank"
+                                rel="noreferrer"
+                            >
+                                <ExternalLink className="w-3 h-3" />
+                                문서 보기
+                            </a>
+                        </Button>}
                     </div>
                 </div>
             </div>
