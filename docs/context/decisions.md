@@ -31,3 +31,6 @@
 - 2026-03-04 | 작업 단위 변경 로깅(Work-Unit Change Logging)을 `ops-rules.md`에 정의 | 결정/상태/리스크 누락 방지를 위한 구조화된 기록 루틴
 - 2026-03-06 | Profile `profile_img` 컬럼은 Phase C에서 듀얼라이트 유지, Phase D에서 제거 | AuthorRead가 selectinload → profile_img 직접 참조하므로 즉시 제거 시 growth_club 깨짐
 - 2026-03-06 | GrowthClub attachments 조회를 selectinload 대신 File IN 쿼리로 전환 | relationship 유지하면서 File 기반 조회 가능, Phase D에서 relationship 삭제 시 자연 정리
+- 2026-03-06 | 관리자 이메일을 `ADMIN_EMAILS` 환경변수로 관리 (쉼표 구분 → FrozenSet 변환) | 소스코드에서 개인정보 제거 + 배포 환경별 관리자 목록 독립 관리
+- 2026-03-06 | 프론트엔드 API URL fallback을 `src/lib/env.ts` 단일 유틸리티로 통합 | 4곳 분산 중복 제거 + localhost fallback 로직 단일 관리점 확보
+- 2026-03-06 | `ENABLE_SOCIAL_MOCK` 프로덕션 차단을 config validator + 런타임 이중 방어로 구현 | 설정 실수로 인한 프로덕션 Mock 인증 노출 방지

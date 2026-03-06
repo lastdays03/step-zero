@@ -246,7 +246,7 @@ export function OpsActionKitView() {
       </div>
 
       {activeDomain === "stats" ? (
-        <OpsActionKitStatsDashboard items={items} summary={summary} />
+        <OpsActionKitStatsDashboard items={items} />
       ) : (
         <>
           {/* Category Tabs (Sub Level) */}

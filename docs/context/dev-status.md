@@ -4,33 +4,34 @@
 
 ## Last Updated
 - Date: 2026-03-06
-- Branch: `develop` (clean, PR #26 머지 완료)
+- Branch: `feature/0-hardcode-cleanup` (커밋 완료, PR 미생성)
 
 ## Sprint Focus
-- legacy-file-cleanup Phase D (레거시 테이블 제거)
+- hardcode-cleanup 전체 완료 → PR 생성 대기
 
 ## Current State
-- legacy-file-cleanup Phase A~C: 완료 (PR #25, #26 머지)
-- legacy-file-cleanup Phase D: 미착수
+- hardcode-cleanup Phase A~D: 전량 구현 완료 + 커밋 완료
+- legacy-file-cleanup: 전체 완료 (PR #25~#27 머지), done/ 아카이브 대기
 
 ## Completed (최근)
-- Phase B+C (PR #26): FK 재매핑 + 코드 전환
-  - Alembic 016 마이그레이션 (actionkit_files → files FK 변경)
-  - ActionKit/GrowthClub/Profile → FileRepository 전환
-  - ActionKitRepository 파일 메서드 4개 제거
-- Phase A (PR #25): 데이터 정합성 확보 + DB 스크립트 실행 (71건)
+- hardcode-cleanup (feature/0-hardcode-cleanup 브랜치):
+  - Phase A: ADMIN_EMAILS 환경변수 도입, SOCIAL_MOCK 프로덕션 차단
+  - Phase B: stats-dashboard 가짜 데이터 제거, growth_club 큐 실제 쿼리, 가짜 수치 제거
+  - Phase C: env.ts URL 유틸리티 추출 (4곳 교체), DiceBear 제거
+  - Phase D: utc_now(), alembic.ini, CORS 5173, 중복 상수
+- 상세 보고서: `docs/plans/reports/REPORT-hardcode-cleanup.md`
 
 ## In Progress
 - 없음
 
 ## Risks And Blockers
-- Phase D는 비가역 마이그레이션 (테이블 DROP) — 신중한 실행 필요
+- 배포 시 프로덕션 `.env`에 `ADMIN_EMAILS` 설정 필수
 
 ## Next 3 Actions
-1. Phase D 착수: 레거시 테이블 DROP + 모델/코드 정리
-2. 프론트엔드 types:sync + 통합 테스트
-3. legacy-file-cleanup 완료 후 done/ 아카이브
+1. `feature/0-hardcode-cleanup` → `develop` PR 생성 + 머지
+2. hardcode-cleanup docs → `done/` 아카이브
+3. legacy-file-cleanup docs → `done/` 아카이브 (미완료분)
 
 ## Test Status
 - Backend pytest: 421 passed, 10 skipped
-- Frontend lint: 통과 (warning 1건: ops/files img element)
+- Frontend lint: 0 errors (warning 1건: ops/files img element)
