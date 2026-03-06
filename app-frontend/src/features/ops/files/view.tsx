@@ -1,6 +1,8 @@
 "use client";
 
+import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import {
   AlertCircle,
@@ -26,6 +28,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { OpsAccessPlaceholder } from "@/features/ops/shared/ops-access-placeholder";
+import { useConfirmDialog } from "@/features/ops/shared/confirm-dialog";
 import { useOpsAccessGuard } from "@/features/ops/shared/use-ops-access-guard";
 
 import { deleteFile, deleteFiles, fetchFiles, fetchFileStats } from "./api";
@@ -94,6 +97,7 @@ const MIME_BADGE_COLORS: Record<string, string> = {
 
 export function OpsFilesView() {
   const { canRender, isAuthReady } = useOpsAccessGuard();
+  const { openConfirm, confirmDialog } = useConfirmDialog();
 
   const [files, setFiles] = useState<OpsFile[]>([]);
   const [stats, setStats] = useState<OpsFileStats | null>(null);
@@ -186,20 +190,29 @@ export function OpsFilesView() {
     }
   };
 
-  const handleDeleteSingle = async (id: number) => {
-    if (!confirm("이 파일을 삭제하시겠습니까?")) return;
-    try {
-      await deleteFile(id);
-      setSelectedIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-      void loadFiles();
-      void loadStats();
-    } catch {
-      alert("파일 삭제에 실패했습니다.");
-    }
+  const handleDeleteSingle = (id: number) => {
+    openConfirm(
+      {
+        title: "이 파일을 삭제하시겠습니까?",
+        confirmLabel: "삭제",
+        destructive: true,
+      },
+      async () => {
+        try {
+          await deleteFile(id);
+          setSelectedIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+          void loadFiles();
+          void loadStats();
+          toast.success("파일을 삭제했습니다.");
+        } catch {
+          toast.error("파일 삭제에 실패했습니다.");
+        }
+      },
+    );
   };
 
   const handleBatchDelete = async () => {
@@ -209,14 +222,14 @@ export function OpsFilesView() {
       setDeleteDialogOpen(false);
       setSelectedIds(new Set());
       if (result.failed > 0) {
-        alert(
-          `${result.deleted}개 삭제됨, ${result.failed}개 실패`,
-        );
+        toast.warning(`${result.deleted}개 삭제됨, ${result.failed}개 실패`);
+      } else {
+        toast.success(`${result.deleted}개 파일을 삭제했습니다.`);
       }
       void loadFiles();
       void loadStats();
     } catch {
-      alert("일괄 삭제에 실패했습니다.");
+      toast.error("일괄 삭제에 실패했습니다.");
     } finally {
       setIsDeleting(false);
     }
@@ -408,9 +421,12 @@ export function OpsFilesView() {
                         </td>
                         <td className="p-3">
                           {isImage ? (
-                            <img
+                            <Image
                               src={file.public_url}
-                              alt=""
+                              alt={file.original_filename ?? "업로드 파일 미리보기"}
+                              width={32}
+                              height={32}
+                              unoptimized
                               className="h-8 w-8 rounded object-cover"
                             />
                           ) : (
@@ -538,6 +554,7 @@ export function OpsFilesView() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      {confirmDialog}
     </section>
   );
 }

@@ -6,6 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useConfirmDialog } from "@/features/ops/shared/confirm-dialog";
 import { useOpsAccessGuard } from "@/features/ops/shared/use-ops-access-guard";
 import { OpsAccessPlaceholder } from "@/features/ops/shared/ops-access-placeholder";
 
@@ -54,6 +55,7 @@ const STAT_CARDS: {
 
 export function OpsRoadmapTemplatesView() {
   const { canRender, isAuthReady } = useOpsAccessGuard();
+  const { openConfirm, confirmDialog } = useConfirmDialog();
 
   const [templates, setTemplates] = useState<RoadmapTemplate[]>([]);
   const [summary, setSummary] = useState<TemplateSummary | null>(null);
@@ -109,19 +111,23 @@ export function OpsRoadmapTemplatesView() {
     return result;
   }, [templates, activeTab, businessTypeFilter, startupTypeFilter]);
 
-  const handleDelete = async (template: RoadmapTemplate) => {
-    if (
-      !confirm(
-        `"${template.title}" 템플릿을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`,
-      )
-    )
-      return;
-    try {
-      await deleteTemplate(template.id);
-      await load();
-    } catch {
-      toast.error("삭제에 실패했습니다.");
-    }
+  const handleDelete = (template: RoadmapTemplate) => {
+    openConfirm(
+      {
+        title: `"${template.title}" 템플릿을 삭제하시겠습니까?`,
+        description: "이 작업은 되돌릴 수 없습니다.",
+        confirmLabel: "삭제",
+        destructive: true,
+      },
+      async () => {
+        try {
+          await deleteTemplate(template.id);
+          await load();
+        } catch {
+          toast.error("삭제에 실패했습니다.");
+        }
+      },
+    );
   };
 
   if (!isAuthReady || !canRender) return <OpsAccessPlaceholder />;
@@ -249,6 +255,7 @@ export function OpsRoadmapTemplatesView() {
         onClose={() => setIsCreateDialogOpen(false)}
         onCreated={() => void load()}
       />
+      {confirmDialog}
     </div>
   );
 }

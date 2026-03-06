@@ -10,6 +10,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { OpsAccessPlaceholder } from "@/features/ops/shared/ops-access-placeholder";
+import { useConfirmDialog } from "@/features/ops/shared/confirm-dialog";
 import { useOpsAccessGuard } from "@/features/ops/shared/use-ops-access-guard";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -89,6 +90,7 @@ const TABS: { key: TabKey; label: string }[] = [
 
 export function OpsAnnouncementsView() {
   const { canRender, isAuthReady } = useOpsAccessGuard();
+  const { openConfirm, confirmDialog } = useConfirmDialog();
 
   const [announcements, setAnnouncements] = useState<OpsAnnouncement[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -167,24 +169,29 @@ export function OpsAnnouncementsView() {
     await load();
   };
 
-  const handleStatusToggle = async (announcement: OpsAnnouncement) => {
+  const handleStatusToggle = (announcement: OpsAnnouncement) => {
     const newStatus: OpsAnnouncementStatus =
       announcement.status === "published" ? "archived" : "published";
-    const msg =
-      newStatus === "published"
-        ? "이 공지를 게시하시겠습니까?"
-        : "이 공지를 내리시겠습니까?";
-    if (!confirm(msg)) return;
-
-    try {
-      await updateOpsAnnouncementStatus(announcement.id, { status: newStatus });
-      await load();
-    } catch (err) {
-      toast.error(
-        "상태 변경에 실패했습니다: " +
-        (err instanceof Error ? err.message : String(err)),
-      );
-    }
+    openConfirm(
+      {
+        title:
+          newStatus === "published"
+            ? "이 공지를 게시하시겠습니까?"
+            : "이 공지를 내리시겠습니까?",
+        confirmLabel: newStatus === "published" ? "게시" : "내리기",
+      },
+      async () => {
+        try {
+          await updateOpsAnnouncementStatus(announcement.id, { status: newStatus });
+          await load();
+        } catch (err) {
+          toast.error(
+            "상태 변경에 실패했습니다: " +
+            (err instanceof Error ? err.message : String(err)),
+          );
+        }
+      },
+    );
   };
 
   /* ---- guard ---- */
@@ -374,6 +381,7 @@ export function OpsAnnouncementsView() {
         onClose={() => setIsModalOpen(false)}
         onConfirm={handleSaveAnnouncement}
       />
+      {confirmDialog}
     </div>
   );
 }

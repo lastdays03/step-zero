@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from '@testing-library/react';
+import { act, renderHook, waitFor } from '@testing-library/react';
 import { usePosts } from '../hooks/usePosts';
 
 jest.mock('../api', () => ({
@@ -65,8 +65,9 @@ describe('usePosts', () => {
     await waitFor(() => expect(result.current.isLoading).toBe(false));
     expect(result.current.posts).toHaveLength(1);
 
-    mockGetPosts.mockResolvedValueOnce([{ id: 1 }, { id: 2 }]);
-    result.current.refetch();
+    await act(async () => {
+      await result.current.refetch();
+    });
 
     await waitFor(() => expect(result.current.posts).toHaveLength(2));
   });

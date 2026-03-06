@@ -10,8 +10,16 @@ jest.mock('@/lib/api-client', () => ({
 import { apiClient } from '@/lib/api-client';
 
 const mockGet = apiClient.get as jest.Mock;
+let consoleErrorSpy: jest.SpyInstance;
 
-beforeEach(() => jest.clearAllMocks());
+beforeEach(() => {
+  jest.clearAllMocks();
+  consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {});
+});
+
+afterEach(() => {
+  consoleErrorSpy.mockRestore();
+});
 
 describe('useActionKit', () => {
   it('성공 시 data 반환, loading false', async () => {
@@ -42,5 +50,9 @@ describe('useActionKit', () => {
 
     expect(result.current.data).toBeNull();
     expect(result.current.error).toBe('액션 키트 데이터를 불러오는 중 오류가 발생했습니다.');
+    expect(consoleErrorSpy).toHaveBeenCalledWith(
+      'Failed to load action kit data:',
+      expect.any(Error),
+    );
   });
 });

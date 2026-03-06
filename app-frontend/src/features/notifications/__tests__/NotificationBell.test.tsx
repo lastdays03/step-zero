@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { NotificationBell } from '../components/NotificationBell';
 
 // ---- Mocks ----
@@ -40,18 +40,36 @@ const sampleNotifications = [
 
 beforeEach(() => {
   jest.clearAllMocks();
+  jest.useFakeTimers();
   mockGetNotifications.mockResolvedValue(sampleNotifications);
   mockReadAll.mockResolvedValue(undefined);
   mockMarkAsRead.mockResolvedValue(undefined);
 });
 
+afterEach(() => {
+  jest.runOnlyPendingTimers();
+  jest.useRealTimers();
+});
+
+async function flushMicrotasks(count: number = 3) {
+  for (let index = 0; index < count; index += 1) {
+    await Promise.resolve();
+  }
+}
+
+async function renderNotificationBell() {
+  render(<NotificationBell />);
+
+  await act(async () => {
+    jest.runOnlyPendingTimers();
+    await flushMicrotasks();
+  });
+  expect(mockGetNotifications).toHaveBeenCalled();
+}
+
 describe('NotificationBell', () => {
   it('렌더링 시 벨 아이콘 표시', async () => {
-    render(<NotificationBell />);
-
-    await waitFor(() => {
-      expect(mockGetNotifications).toHaveBeenCalled();
-    });
+    await renderNotificationBell();
 
     // 벨 버튼이 있어야 함
     const button = screen.getByRole('button');
@@ -59,11 +77,7 @@ describe('NotificationBell', () => {
   });
 
   it('미읽은 알림이 있으면 인디케이터 표시', async () => {
-    render(<NotificationBell />);
-
-    await waitFor(() => {
-      expect(mockGetNotifications).toHaveBeenCalled();
-    });
+    await renderNotificationBell();
 
     // unread indicator (animate-pulse class)
     const indicator = document.querySelector('.animate-pulse');
@@ -71,11 +85,7 @@ describe('NotificationBell', () => {
   });
 
   it('클릭 시 드롭다운 열림 + 알림 목록 표시', async () => {
-    render(<NotificationBell />);
-
-    await waitFor(() => {
-      expect(mockGetNotifications).toHaveBeenCalled();
-    });
+    await renderNotificationBell();
 
     fireEvent.click(screen.getByRole('button'));
 
@@ -84,30 +94,23 @@ describe('NotificationBell', () => {
   });
 
   it('모두 읽음 버튼 클릭 시 readAllNotifications 호출', async () => {
-    render(<NotificationBell />);
-
-    await waitFor(() => {
-      expect(mockGetNotifications).toHaveBeenCalled();
-    });
+    await renderNotificationBell();
 
     fireEvent.click(screen.getByRole('button'));
 
     const readAllBtn = screen.getByText('모두 읽음');
-    fireEvent.click(readAllBtn);
-
-    await waitFor(() => {
-      expect(mockReadAll).toHaveBeenCalled();
+    await act(async () => {
+      fireEvent.click(readAllBtn);
+      await flushMicrotasks();
     });
+
+    expect(mockReadAll).toHaveBeenCalled();
   });
 
   it('알림 목록이 비어있으면 빈 상태 메시지 표시', async () => {
     mockGetNotifications.mockResolvedValue([]);
 
-    render(<NotificationBell />);
-
-    await waitFor(() => {
-      expect(mockGetNotifications).toHaveBeenCalled();
-    });
+    await renderNotificationBell();
 
     fireEvent.click(screen.getByRole('button'));
 

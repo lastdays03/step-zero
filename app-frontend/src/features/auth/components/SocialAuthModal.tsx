@@ -25,6 +25,7 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
     const { login } = useAuth();
     const [suspensionInfo, setSuspensionInfo] = React.useState<{ reason: string; suspended_until: string; status: string } | null>(null);
     const [isSuspensionOpen, setIsSuspensionOpen] = React.useState(false);
+    const hasGoogleClientId = (process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || '').trim().length > 0;
 
     const completeLogin = (payload: {
         access_token: string;
@@ -134,17 +135,35 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
 
                     <div className="flex flex-col gap-3 mt-6">
                         <div className="w-full flex justify-center py-2 text-slate-900">
-                            <GoogleLogin
-                                onSuccess={handleGoogleSuccess}
-                                onError={() => {
-                                    console.error('Google Login Failed');
-                                    toast.error('구글 로그인에 실패했습니다.');
-                                }}
-                                text="signin_with"
-                                shape="pill"
-                                size="large"
-                                width="320"
-                            />
+                            {hasGoogleClientId ? (
+                                <GoogleLogin
+                                    onSuccess={handleGoogleSuccess}
+                                    onError={() => {
+                                        console.error('Google Login Failed');
+                                        toast.error('구글 로그인에 실패했습니다.');
+                                    }}
+                                    text="signin_with"
+                                    shape="pill"
+                                    size="large"
+                                    width="320"
+                                />
+                            ) : (
+                                <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-slate-50 px-5 py-4 text-left">
+                                    <p className="text-sm font-semibold text-slate-800">
+                                        Google 로그인이 현재 비활성화되어 있습니다.
+                                    </p>
+                                    <p className="mt-2 text-sm leading-6 text-slate-500">
+                                        현재 환경에는 Google Client ID가 설정되지 않았습니다.
+                                        이메일 로그인으로 계속 진행해 주세요.
+                                    </p>
+                                    <a
+                                        href="/login"
+                                        className="mt-3 inline-flex text-sm font-medium text-sky-600 underline underline-offset-4"
+                                    >
+                                        이메일 로그인 페이지로 이동
+                                    </a>
+                                </div>
+                            )}
                         </div>
                     </div>
 

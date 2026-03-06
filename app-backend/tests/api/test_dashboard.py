@@ -4,16 +4,20 @@ import pytest
 from httpx import AsyncClient
 from sqlmodel import select
 
-from app.core import db
+from app.core import db, security
 from app.models.roadmap import Roadmap, RoadmapStep, RoadmapStepDetail
 from app.models.team import Team, TeamMember
 from app.models.user import User
 
 
-async def _login_headers(client: AsyncClient) -> dict[str, str]:
+async def _login_headers(
+    client: AsyncClient,
+    email: str = "test@example.com",
+    password: str = "password123",
+) -> dict[str, str]:
     login_response = await client.post(
         "/api/v1/auth/login",
-        data={"username": "test@example.com", "password": "password123"},
+        data={"username": email, "password": password},
         headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
     token = login_response.json()["access_token"]
@@ -187,7 +191,8 @@ async def _get_test_user_and_team(session):
         .join(TeamMember, TeamMember.team_id == Team.id)
         .where(TeamMember.user_id == user.id)
     )
-    team = team_result.scalar_one()
+    team = team_result.scalars().first()
+    assert team is not None
     return user, team
 
 
@@ -199,6 +204,73 @@ async def test_guest_dashboard_returns_guest_status(client: AsyncClient):
     data = resp.json()
     assert data["current_phase"]["status"] == "GUEST"
     assert data["user_name"] == "Guest"
+
+
+@pytest.mark.asyncio
+async def test_dashboard_without_x_team_id_uses_first_team_for_multi_team_user(
+    client: AsyncClient,
+):
+    user_id: int | None = None
+    team_ids: list = []
+
+    async with db.async_session() as session:
+        user = User(
+            email="multi-team-dashboard@example.com",
+            full_name="Multi Team Dashboard User",
+            hashed_password=security.get_password_hash("password123"),
+        )
+        session.add(user)
+        await session.flush()
+
+        primary_team = Team(
+            name="Multi Team Primary",
+            created_by=user.id,
+            updated_by=user.id,
+        )
+        secondary_team = Team(
+            name="Multi Team Secondary",
+            created_by=user.id,
+            updated_by=user.id,
+        )
+        session.add(primary_team)
+        session.add(secondary_team)
+        await session.flush()
+
+        session.add(
+            TeamMember(team_id=primary_team.id, user_id=user.id, role="owner")
+        )
+        session.add(
+            TeamMember(team_id=secondary_team.id, user_id=user.id, role="member")
+        )
+        await session.commit()
+
+        user_id = user.id
+        team_ids = [primary_team.id, secondary_team.id]
+
+    try:
+        headers = await _login_headers(client, email="multi-team-dashboard@example.com")
+        response = await client.get("/api/v1/dashboard", headers=headers)
+
+        assert response.status_code == 200
+        assert response.json()["user_name"] == "Multi Team Dashboard User"
+    finally:
+        if user_id is not None:
+            async with db.async_session() as session:
+                memberships = await session.execute(
+                    select(TeamMember).where(TeamMember.user_id == user_id)
+                )
+                for membership in memberships.scalars().all():
+                    await session.delete(membership)
+
+                teams = await session.execute(select(Team).where(Team.id.in_(team_ids)))
+                for team in teams.scalars().all():
+                    await session.delete(team)
+
+                user = await session.get(User, user_id)
+                if user is not None:
+                    await session.delete(user)
+
+                await session.commit()
 
 
 @pytest.mark.asyncio

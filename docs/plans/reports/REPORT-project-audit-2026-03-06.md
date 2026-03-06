@@ -3,7 +3,7 @@
 > **작성일:** 2026-03-06
 > **브랜치:** `feature/0-hardcode-cleanup`
 > **범위:** Backend, Frontend, 인증, 저장소 설정, CI, 운영 문서
-> **현황:** 분석 완료 / 수정 미착수
+> **현황:** 분석 완료 / 일부 수정 반영 (d4a622b, PR #28)
 
 ---
 
@@ -90,15 +90,17 @@ cd app-frontend && pnpm build
 
 **근거 파일**
 
-- `app-frontend/src/features/chat/hooks/useChat.ts:6`
+- `app-frontend/src/features/chat/hooks/useChat.ts:7`
 - `app-frontend/src/features/chat/utils/api.ts:6`
-- `app-frontend/src/features/notifications/hooks/useNotificationSSE.ts:4`
+- ~~`app-frontend/src/features/notifications/hooks/useNotificationSSE.ts:4`~~ — ✅ 수정 완료 (d4a622b)
 - `app-frontend/src/features/chat/utils/sse.ts:1-73`
 
 **원인**
 
 - `sse.ts`는 `getAuthHeaders`, `tryRefreshToken`, `parseSSELine`만 export한다.
-- 그러나 다른 모듈은 `getApiBaseUrl`도 여기서 export된다고 가정하고 import한다.
+- `getApiBaseUrl`은 `@/lib/env`에서 import하여 내부 사용만 하고 re-export하지 않는다.
+- `useChat.ts`, `api.ts`는 여전히 `sse.ts`에서 `getApiBaseUrl`을 import하여 빌드 실패 원인이 된다.
+- `useNotificationSSE.ts`는 d4a622b에서 `@/lib/env` 직접 import로 수정 완료.
 
 **영향**
 
@@ -108,7 +110,7 @@ cd app-frontend && pnpm build
 
 **권장 조치**
 
-1. `getApiBaseUrl` import 경로를 `@/lib/env`로 통일하거나 `sse.ts`에서 재-export
+1. `useChat.ts`, `api.ts`의 `getApiBaseUrl` import 경로를 `@/lib/env`로 수정 (useNotificationSSE.ts와 동일 패턴)
 2. chat/notifications 공용 네트워크 유틸 구조 정리
 3. `pnpm test`, `pnpm build`를 회귀 게이트에 추가
 

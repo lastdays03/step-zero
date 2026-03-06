@@ -2,6 +2,7 @@ import logging
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
+from uuid import UUID
 
 from fastapi import HTTPException, status
 from google.auth.transport import requests
@@ -31,6 +32,7 @@ class AuthResult:
     user: User
     current_team: Team
     teams: list[Team]
+    refresh_token_id: UUID | None = None
 
 
 class AuthService:
@@ -102,14 +104,11 @@ class AuthService:
         result = await self._build_auth_result(user)
 
         # Mark old token as replaced by the new one
-        settings = get_settings()
-        new_token_hash = security.hash_refresh_token(result.refresh_token)
-        new_stored = await self.refresh_token_repo.create(
-            user_id=user.id,
-            token_hash=new_token_hash,
-            expires_at=utc_now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
-        )
-        await self.refresh_token_repo.mark_replaced(stored.id, new_stored.id)
+        if result.refresh_token_id is None:
+            logger.error("Refresh token rotation created no persisted token for user %s", user.id)
+            return None
+
+        await self.refresh_token_repo.mark_replaced(stored.id, result.refresh_token_id)
 
         return result
 
@@ -216,7 +215,7 @@ class AuthService:
         # Store refresh token in DB and enforce per-user limit
         settings = get_settings()
         token_hash = security.hash_refresh_token(raw_refresh_token)
-        await self.refresh_token_repo.create(
+        stored_refresh_token = await self.refresh_token_repo.create(
             user_id=user.id,
             token_hash=token_hash,
             expires_at=utc_now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
@@ -230,4 +229,5 @@ class AuthService:
             user=user,
             current_team=current_team,
             teams=teams,
+            refresh_token_id=stored_refresh_token.id,
         )

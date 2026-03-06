@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
+import { useConfirmDialog } from "@/features/ops/shared/confirm-dialog";
 import { OpsAccessPlaceholder } from "@/features/ops/shared/ops-access-placeholder";
 import { useOpsAccessGuard } from "@/features/ops/shared/use-ops-access-guard";
 import { Post, Comment } from "@/features/growth-club/types";
@@ -185,6 +186,7 @@ function SuspensionModal({
 
 // ─── 메인 뷰 ─────────────────────────────────────────────────────────────────
 export function OpsGrowthClubView() {
+  const { openConfirm, confirmDialog } = useConfirmDialog();
   const { canRender, isAuthReady } = useOpsAccessGuard();
   const [activeTab, setActiveTab] = useState<"posts" | "comments">("posts");
   const [blindedPosts, setBlindedPosts] = useState<Post[]>([]);
@@ -282,37 +284,60 @@ export function OpsGrowthClubView() {
   }, [blindedComments, searchQuery, reasonFilter]);
 
   // ── 개별 핸들러 ──────────────────────────────────────────────────────────
-  const handleUnblindPost = async (postId: number) => {
-    if (!confirm("이 게시글의 블라인드 처리를 해제하시겠습니까? 다시 모든 유저에게 노출됩니다.")) return;
-    try {
-      await unblindPost(postId);
-      void loadData(true);
-    } catch {
-      toast.error("해제 중 오류가 발생했습니다.");
-    }
+  const handleUnblindPost = (postId: number) => {
+    openConfirm(
+      {
+        title: "이 게시글의 블라인드 처리를 해제하시겠습니까?",
+        description: "다시 모든 유저에게 노출됩니다.",
+        confirmLabel: "해제",
+      },
+      async () => {
+        try {
+          await unblindPost(postId);
+          void loadData(true);
+        } catch {
+          toast.error("해제 중 오류가 발생했습니다.");
+        }
+      },
+    );
   };
 
-  const handleUnblindComment = async (commentId: number) => {
-    if (!confirm("이 댓글의 블라인드 처리를 해제하시겠습니까? 다시 모든 유저에게 노출됩니다.")) return;
-    try {
-      await unblindComment(commentId);
-      void loadData(true);
-    } catch {
-      toast.error("해제 중 오류가 발생했습니다.");
-    }
+  const handleUnblindComment = (commentId: number) => {
+    openConfirm(
+      {
+        title: "이 댓글의 블라인드 처리를 해제하시겠습니까?",
+        description: "다시 모든 유저에게 노출됩니다.",
+        confirmLabel: "해제",
+      },
+      async () => {
+        try {
+          await unblindComment(commentId);
+          void loadData(true);
+        } catch {
+          toast.error("해제 중 오류가 발생했습니다.");
+        }
+      },
+    );
   };
 
   const handleSuspendUser = async (userId: number, isSuspended: boolean, targetType: "POST" | "COMMENT" = "POST", targetId: number = 0, username: string = "") => {
     if (isSuspended) {
-      if (!confirm("이 유저의 정지 처리를 해제하시겠습니까?")) return;
-      try {
-        await unsuspendUser(userId);
-        setSuspendedUsers((prev) => ({ ...prev, [userId]: false }));
-        toast.success("정지 해제 처리가 완료되었습니다.");
-        void loadData(true);
-      } catch {
-        toast.error("정지 해제 중 오류가 발생했습니다.");
-      }
+      openConfirm(
+        {
+          title: "이 유저의 정지 처리를 해제하시겠습니까?",
+          confirmLabel: "정지 해제",
+        },
+        async () => {
+          try {
+            await unsuspendUser(userId);
+            setSuspendedUsers((prev) => ({ ...prev, [userId]: false }));
+            toast.success("정지 해제 처리가 완료되었습니다.");
+            void loadData(true);
+          } catch {
+            toast.error("정지 해제 중 오류가 발생했습니다.");
+          }
+        },
+      );
     } else {
       setSuspensionTarget({ userId, username, targetType, targetId });
     }
@@ -336,69 +361,119 @@ export function OpsGrowthClubView() {
     }
   };
 
-  const handleDeletePost = async (postId: number) => {
-    if (!confirm("이 게시글을 영구적으로 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) return;
-    try {
-      await deletePost(postId);
-      void loadData(true);
-    } catch {
-      toast.error("삭제 중 오류가 발생했습니다.");
-    }
+  const handleDeletePost = (postId: number) => {
+    openConfirm(
+      {
+        title: "이 게시글을 영구적으로 삭제하시겠습니까?",
+        description: "이 작업은 되돌릴 수 없습니다.",
+        confirmLabel: "삭제",
+        destructive: true,
+      },
+      async () => {
+        try {
+          await deletePost(postId);
+          void loadData(true);
+        } catch {
+          toast.error("삭제 중 오류가 발생했습니다.");
+        }
+      },
+    );
   };
 
-  const handleDeleteComment = async (commentId: number) => {
-    if (!confirm("이 댓글을 영구적으로 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.")) return;
-    try {
-      await deleteComment(commentId);
-      void loadData(true);
-    } catch {
-      toast.error("삭제 중 오류가 발생했습니다.");
-    }
+  const handleDeleteComment = (commentId: number) => {
+    openConfirm(
+      {
+        title: "이 댓글을 영구적으로 삭제하시겠습니까?",
+        description: "이 작업은 되돌릴 수 없습니다.",
+        confirmLabel: "삭제",
+        destructive: true,
+      },
+      async () => {
+        try {
+          await deleteComment(commentId);
+          void loadData(true);
+        } catch {
+          toast.error("삭제 중 오류가 발생했습니다.");
+        }
+      },
+    );
   };
 
   // ── 일괄 처리 핸들러 ─────────────────────────────────────────────────────
-  const handleBulkDeletePosts = async () => {
+  const handleBulkDeletePosts = () => {
     if (selectedPostIds.size === 0) return;
-    if (!confirm(`선택한 게시글 ${selectedPostIds.size}개를 영구 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
-    try {
-      await Promise.all(Array.from(selectedPostIds).map((id) => deletePost(id)));
-      void loadData(true);
-    } catch {
-      toast.error("일괄 삭제 중 오류가 발생했습니다.");
-    }
+    openConfirm(
+      {
+        title: `선택한 게시글 ${selectedPostIds.size}개를 영구 삭제하시겠습니까?`,
+        description: "이 작업은 되돌릴 수 없습니다.",
+        confirmLabel: "일괄 삭제",
+        destructive: true,
+      },
+      async () => {
+        try {
+          await Promise.all(Array.from(selectedPostIds).map((id) => deletePost(id)));
+          void loadData(true);
+        } catch {
+          toast.error("일괄 삭제 중 오류가 발생했습니다.");
+        }
+      },
+    );
   };
 
-  const handleBulkUnblindPosts = async () => {
+  const handleBulkUnblindPosts = () => {
     if (selectedPostIds.size === 0) return;
-    if (!confirm(`선택한 게시글 ${selectedPostIds.size}개의 블라인드를 해제하시겠습니까?`)) return;
-    try {
-      await Promise.all(Array.from(selectedPostIds).map((id) => unblindPost(id)));
-      void loadData(true);
-    } catch {
-      toast.error("일괄 블라인드 해제 중 오류가 발생했습니다.");
-    }
+    openConfirm(
+      {
+        title: `선택한 게시글 ${selectedPostIds.size}개의 블라인드를 해제하시겠습니까?`,
+        confirmLabel: "일괄 해제",
+      },
+      async () => {
+        try {
+          await Promise.all(Array.from(selectedPostIds).map((id) => unblindPost(id)));
+          void loadData(true);
+        } catch {
+          toast.error("일괄 블라인드 해제 중 오류가 발생했습니다.");
+        }
+      },
+    );
   };
 
-  const handleBulkDeleteComments = async () => {
+  const handleBulkDeleteComments = () => {
     if (selectedCommentIds.size === 0) return;
-    if (!confirm(`선택한 댓글 ${selectedCommentIds.size}개를 영구 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
-    try {
-      await Promise.all(Array.from(selectedCommentIds).map((id) => deleteComment(id)));
-      void loadData(true);
-    } catch {
-      toast.error("일괄 삭제 중 오류가 발생했습니다.");
-    }
+    openConfirm(
+      {
+        title: `선택한 댓글 ${selectedCommentIds.size}개를 영구 삭제하시겠습니까?`,
+        description: "이 작업은 되돌릴 수 없습니다.",
+        confirmLabel: "일괄 삭제",
+        destructive: true,
+      },
+      async () => {
+        try {
+          await Promise.all(Array.from(selectedCommentIds).map((id) => deleteComment(id)));
+          void loadData(true);
+        } catch {
+          toast.error("일괄 삭제 중 오류가 발생했습니다.");
+        }
+      },
+    );
   };
 
-  const handleBulkUnblindComments = async () => {
+  const handleBulkUnblindComments = () => {
     if (selectedCommentIds.size === 0) return;
-    if (!confirm(`선택한 댓글 ${selectedCommentIds.size}개의 블라인드를 해제하시겠습니까?`)) return;
-    try {
-      await Promise.all(Array.from(selectedCommentIds).map((id) => unblindComment(id)));
-      void loadData(true);
-    } catch {
-      toast.error("일괄 블라인드 해제 중 오류가 발생했습니다.");
-    }
+    openConfirm(
+      {
+        title: `선택한 댓글 ${selectedCommentIds.size}개의 블라인드를 해제하시겠습니까?`,
+        confirmLabel: "일괄 해제",
+      },
+      async () => {
+        try {
+          await Promise.all(Array.from(selectedCommentIds).map((id) => unblindComment(id)));
+          void loadData(true);
+        } catch {
+          toast.error("일괄 블라인드 해제 중 오류가 발생했습니다.");
+        }
+      },
+    );
   };
 
   // ── 전체 선택 ────────────────────────────────────────────────────────────
@@ -451,6 +526,7 @@ export function OpsGrowthClubView() {
           onConfirm={confirmSuspension}
         />
       )}
+      {confirmDialog}
 
       <div className="space-y-6 pb-20 animate-in fade-in duration-500">
         {/* ── 상단 요약 통계 ── */}

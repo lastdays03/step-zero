@@ -308,10 +308,10 @@ export function OpsUsersView() {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex flex-col gap-1 text-[11px]">
-                            {/* [BLIND] Growth Club Report Link - 팀 회의 결정에 따라 블라인드 처리
+                            {/* [BLIND] Growth Club Report Link - 팀 회의 결정에 따라 비활성화
                             <a
                               href={`/ops/reports?user_id=${user.id}`}
-                              onClick={(e) => { e.preventDefault(); alert('관련 게시물 이동 (Placeholder)'); }}
+                              onClick={(e) => { e.preventDefault(); }}
                               className={`flex items-center gap-1 font-bold hover:underline cursor-pointer ${isHighReport ? 'text-red-600 bg-red-100/50 px-1.5 py-0.5 rounded w-fit' : 'text-blue-600'}`}
                             >
                               {isHighReport ? <AlertOctagon size={12} /> : <AlertCircle size={12} />}

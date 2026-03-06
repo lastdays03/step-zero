@@ -34,10 +34,25 @@ export interface RoadmapContext {
   stepTitle: string | null;
 }
 
+export interface SessionPreview {
+  id: string;
+  title?: string | null;
+  message_count?: number;
+  roadmap_id?: string | null;
+  step_id?: number | null;
+  created_at?: string;
+  updated_at: string;
+}
+
 export interface ChatProviderValue {
   /** 현재 활성 세션 ID */
   currentSessionId: string | null;
   setCurrentSessionId: (id: string | null) => void;
+  refreshSessionList: () => void;
+  sessionListVersion: number;
+  publishSessionPreview: (session: SessionPreview) => void;
+  sessionPreview: SessionPreview | null;
+  sessionPreviewVersion: number;
 
   /** 로드맵 컨텍스트 (활성 로드맵의 IN_PROGRESS 단계) */
   roadmapContext: RoadmapContext | null;
@@ -76,6 +91,11 @@ interface ChatProviderProps {
 
 export function ChatProvider({ children }: ChatProviderProps) {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [sessionListVersion, setSessionListVersion] = useState(0);
+  const [sessionPreview, setSessionPreview] = useState<SessionPreview | null>(
+    null,
+  );
+  const [sessionPreviewVersion, setSessionPreviewVersion] = useState(0);
   const [roadmapContext, setRoadmapContext] = useState<RoadmapContext | null>(
     null,
   );
@@ -164,12 +184,25 @@ export function ChatProvider({ children }: ChatProviderProps) {
   const openPanel = useCallback(() => setIsPanelOpen(true), []);
   const closePanel = useCallback(() => setIsPanelOpen(false), []);
   const togglePanel = useCallback(() => setIsPanelOpen((p) => !p), []);
+  const refreshSessionList = useCallback(
+    () => setSessionListVersion((prev) => prev + 1),
+    [],
+  );
+  const publishSessionPreview = useCallback((session: SessionPreview) => {
+    setSessionPreview(session);
+    setSessionPreviewVersion((prev) => prev + 1);
+  }, []);
 
   return (
     <ChatContext.Provider
       value={{
         currentSessionId,
         setCurrentSessionId,
+        refreshSessionList,
+        sessionListVersion,
+        publishSessionPreview,
+        sessionPreview,
+        sessionPreviewVersion,
         roadmapContext,
         hasRoadmapContext,
         isPanelOpen,

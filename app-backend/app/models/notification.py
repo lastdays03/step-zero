@@ -3,6 +3,7 @@ from typing import Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from app.core.security import utc_now
 from app.models.user import User
 
 
@@ -18,7 +19,7 @@ class NotificationBase(SQLModel):
 
 class Notification(NotificationBase, table=True):
     id: Optional[int] = Field(default=None, primary_key=True)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=utc_now)
 
     # Relationships
     user: User = Relationship()

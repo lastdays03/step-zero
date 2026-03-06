@@ -4,8 +4,28 @@ from datetime import datetime, timedelta, timezone
 
 import pytest
 from httpx import AsyncClient
+from sqlalchemy import func
+from sqlmodel import select
 
 from app.core import security
+from app.core import db
+from app.models.refresh_token import RefreshToken
+from app.models.user import User
+
+
+async def _get_test_user_id() -> int:
+    async with db.async_session() as session:
+        result = await session.execute(select(User).where(User.email == "test@example.com"))
+        user = result.scalar_one()
+        return user.id
+
+
+async def _count_refresh_tokens(user_id: int) -> int:
+    async with db.async_session() as session:
+        result = await session.execute(
+            select(func.count()).select_from(RefreshToken).where(RefreshToken.user_id == user_id)
+        )
+        return int(result.scalar_one())
 
 
 @pytest.mark.asyncio
@@ -76,6 +96,47 @@ async def test_refresh_token_rotation_old_token_revoked(client: AsyncClient):
         json={"refresh_token": old_refresh},
     )
     assert reuse_resp.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_refresh_token_rotation_creates_single_replacement_row(
+    client: AsyncClient,
+):
+    """Refresh rotation should create exactly one new DB row and link replaced_by."""
+    user_id = await _get_test_user_id()
+    count_before = await _count_refresh_tokens(user_id)
+
+    login_resp = await client.post(
+        "/api/v1/auth/login",
+        data={"username": "test@example.com", "password": "password123"},
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    assert login_resp.status_code == 200
+    old_refresh = login_resp.json()["refresh_token"]
+    old_hash = security.hash_refresh_token(old_refresh)
+    assert await _count_refresh_tokens(user_id) == count_before + 1
+
+    refresh_resp = await client.post(
+        "/api/v1/auth/refresh",
+        json={"refresh_token": old_refresh},
+    )
+    assert refresh_resp.status_code == 200
+    new_refresh = refresh_resp.json()["refresh_token"]
+    new_hash = security.hash_refresh_token(new_refresh)
+
+    assert await _count_refresh_tokens(user_id) == count_before + 2
+
+    async with db.async_session() as session:
+        result = await session.execute(
+            select(RefreshToken).where(RefreshToken.token_hash.in_([old_hash, new_hash]))
+        )
+        tokens = {token.token_hash: token for token in result.scalars().all()}
+
+    old_token = tokens[old_hash]
+    new_token = tokens[new_hash]
+    assert old_token.revoked is True
+    assert old_token.replaced_by == new_token.id
+    assert new_token.revoked is False
 
 
 @pytest.mark.asyncio

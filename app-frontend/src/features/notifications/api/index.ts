@@ -1,9 +1,11 @@
 import { apiClient } from '@/lib/api-client';
-import { Notification } from '../types';
+import type { Notification } from '../types';
+
+export type { Notification } from '../types';
 
 export const notificationsApi = {
     getNotifications: async (): Promise<Notification[]> => {
-        const response = await apiClient.get('/notifications');
+        const response = await apiClient.get<Notification[]>('/notifications');
         return response.data;
     },
 

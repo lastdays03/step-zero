@@ -18,14 +18,13 @@ const config: Config = {
     			'2xl': '1400px'
     		}
     	},
-    	extend: {
-    		fontFamily: {
-    			sans: [
-    				'Pretendard',
-    				'var(--font-sans)',
-    				'sans-serif'
-    			],
-    			display: [
+    		extend: {
+    			fontFamily: {
+    				sans: [
+    					'Pretendard',
+    					'sans-serif'
+    				],
+    				display: [
     				'Pretendard',
     				'sans-serif'
     			]

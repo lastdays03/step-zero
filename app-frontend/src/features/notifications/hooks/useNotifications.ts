@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { notificationsApi, Notification } from '../api/notifications';
+import { notificationsApi } from '../api';
+import type { Notification } from '../types';
 import { useAuth } from '@/providers/AuthProvider';
 import { useNotificationSSE } from './useNotificationSSE';
 
@@ -25,7 +26,7 @@ export const useNotifications = () => {
 
     const markRead = useCallback(async (id: number) => {
         try {
-            await notificationsApi.markRead(id);
+            await notificationsApi.markAsRead(id);
             setNotifications(prev =>
                 prev.map(n => n.id === id ? { ...n, is_read: true } : n)
             );
@@ -34,7 +35,7 @@ export const useNotifications = () => {
 
     const markAllRead = useCallback(async () => {
         try {
-            await notificationsApi.markAllRead();
+            await notificationsApi.readAllNotifications();
             setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
         } catch { /* ignore */ }
     }, []);

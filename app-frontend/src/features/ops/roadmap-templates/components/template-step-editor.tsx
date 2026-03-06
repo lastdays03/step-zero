@@ -19,6 +19,7 @@ import { toast } from "sonner";
 
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { useConfirmDialog } from "@/features/ops/shared/confirm-dialog";
 
 import {
   deleteTemplateStep,
@@ -103,6 +104,7 @@ export function TemplateStepEditor({
   onChange,
   dragHandleProps,
 }: TemplateStepEditorProps) {
+  const { openConfirm, confirmDialog } = useConfirmDialog();
   const [isOpen, setIsOpen] = useState(false);
   const [isEditingMeta, setIsEditingMeta] = useState(false);
   const [editObjective, setEditObjective] = useState(step.objective);
@@ -138,14 +140,23 @@ export function TemplateStepEditor({
     }
   };
 
-  const handleDeleteStep = async () => {
-    if (!confirm(`"${step.title}" 단계를 삭제하시겠습니까? 하위 액션도 함께 삭제됩니다.`)) return;
-    try {
-      await deleteTemplateStep(templateId, step.id);
-      onChange();
-    } catch {
-      toast.error("단계 삭제에 실패했습니다.");
-    }
+  const handleDeleteStep = () => {
+    openConfirm(
+      {
+        title: `"${step.title}" 단계를 삭제하시겠습니까?`,
+        description: "하위 액션도 함께 삭제됩니다.",
+        confirmLabel: "삭제",
+        destructive: true,
+      },
+      async () => {
+        try {
+          await deleteTemplateStep(templateId, step.id);
+          onChange();
+        } catch {
+          toast.error("단계 삭제에 실패했습니다.");
+        }
+      },
+    );
   };
 
   const addRiskNote = () => {
@@ -383,6 +394,7 @@ export function TemplateStepEditor({
             )}
         </div>
       )}
+      {confirmDialog}
     </div>
   );
 }

@@ -1,10 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getApiBaseUrl } from "@/lib/env";
 import type { ChatMessage, CitationSource, IntentCategory } from "../types";
 import { fetchMessages } from "../utils/api";
 import {
-  getApiBaseUrl,
   getAuthHeaders,
   parseSSELine,
   tryRefreshToken,
@@ -25,12 +25,28 @@ export interface UseChatReturn {
   startNewChat: () => void;
 }
 
+const AUTO_TITLE_MAX_LENGTH = 40;
+
+function buildAutoTitle(message: string): string {
+  const stripped = message.trim();
+  if (stripped.length <= AUTO_TITLE_MAX_LENGTH) {
+    return stripped;
+  }
+  return `${stripped.slice(0, AUTO_TITLE_MAX_LENGTH)}…`;
+}
+
 // ------------------------------------------------------------------ //
 //  Hook
 // ------------------------------------------------------------------ //
 
 export function useChat(): UseChatReturn {
-  const { currentSessionId, setCurrentSessionId, roadmapContext } = useChatProvider();
+  const {
+    currentSessionId,
+    setCurrentSessionId,
+    refreshSessionList,
+    publishSessionPreview,
+    roadmapContext,
+  } = useChatProvider();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -103,6 +119,7 @@ export function useChat(): UseChatReturn {
         content: text,
         created_at: new Date().toISOString(),
       };
+      const previewTimestamp = userMsg.created_at;
       setMessages((prev) => [...prev, userMsg]);
       setError(null);
       setIsStreaming(true);
@@ -115,6 +132,7 @@ export function useChat(): UseChatReturn {
 
       try {
         const baseUrl = getApiBaseUrl();
+        let shouldRefreshSessions = false;
         const body: Record<string, unknown> = { message: text };
         if (currentSessionId) {
           body.session_id = currentSessionId;
@@ -192,7 +210,20 @@ export function useChat(): UseChatReturn {
 
               case "meta": {
                 const sessionId = event.session_id as string;
-                if (sessionId) setCurrentSessionId(sessionId);
+                if (sessionId) {
+                  const isNewSession = currentSessionId === null;
+                  setCurrentSessionId(sessionId);
+                  publishSessionPreview({
+                    id: sessionId,
+                    title: isNewSession ? buildAutoTitle(text) : undefined,
+                    message_count: isNewSession ? 1 : undefined,
+                    roadmap_id: roadmapContext?.roadmapId ?? undefined,
+                    step_id: roadmapContext?.stepId ?? undefined,
+                    created_at: isNewSession ? previewTimestamp : undefined,
+                    updated_at: previewTimestamp ?? new Date().toISOString(),
+                  });
+                  shouldRefreshSessions = true;
+                }
                 if (event.message_id != null)
                   serverMessageId = event.message_id as number;
                 if (event.intent)
@@ -269,6 +300,9 @@ export function useChat(): UseChatReturn {
             ),
           );
         }
+        if (shouldRefreshSessions) {
+          refreshSessionList();
+        }
       } catch (err: unknown) {
         if (!mountedRef.current) return;
         if (err instanceof DOMException && err.name === "AbortError") return;
@@ -291,7 +325,13 @@ export function useChat(): UseChatReturn {
         }
       }
     },
-    [currentSessionId, setCurrentSessionId, roadmapContext],
+    [
+      currentSessionId,
+      publishSessionPreview,
+      refreshSessionList,
+      roadmapContext,
+      setCurrentSessionId,
+    ],
   );
 
   return {

@@ -3,8 +3,11 @@ import { fetchSessions, createSession, fetchMessages, updateSessionTitle, delete
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
-jest.mock('../utils/sse', () => ({
+jest.mock('@/lib/env', () => ({
   getApiBaseUrl: () => 'http://localhost:8000/api/v1',
+}));
+
+jest.mock('../utils/sse', () => ({
   getAuthHeaders: () => ({ 'Content-Type': 'application/json', Authorization: 'Bearer test-token' }),
   tryRefreshToken: jest.fn().mockResolvedValue(false),
 }));

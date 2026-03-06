@@ -108,7 +108,7 @@ async def get_current_team(
         .order_by(TeamMember.id.asc())
     )
     membership_result = await session.execute(membership_stmt)
-    team = membership_result.scalar_one_or_none()
+    team = membership_result.scalars().first()
     if not team:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

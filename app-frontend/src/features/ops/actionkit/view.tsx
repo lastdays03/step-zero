@@ -6,6 +6,7 @@ import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea
 
 import { fetchCategories, fetchCategoryItems, fetchSummary, updateItemOrders } from "./api";
 import type { ActionKitItem } from "@/features/actionkit/types";
+import { useConfirmDialog } from "@/features/ops/shared/confirm-dialog";
 
 interface OpsActionKitItem extends ActionKitItem {
   id: number;
@@ -31,6 +32,7 @@ import { apiClient } from "@/lib/api-client";
 
 export function OpsActionKitView() {
   const { canRender } = useOpsAccessGuard();
+  const { openConfirm, confirmDialog } = useConfirmDialog();
 
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<{ id: number; title: string; domain: string; slug: string; sort_order: number; is_active: boolean }[]>([]);
@@ -95,16 +97,25 @@ export function OpsActionKitView() {
     }
   };
 
-  const handleDelete = async (item: OpsActionKitItem) => {
-    if (!confirm(`\u0022${item.name}\u0022 항목을 정말 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`)) return;
-    try {
-      await apiClient.delete(`/ops/actionkit/items/${item.id}`);
-      if (activeCategory) loadItems(activeCategory);
-      fetchSummary().then(setSummary).catch(console.error);
-    } catch (error) {
-      console.error("Failed to delete item:", error);
-      toast.error("삭제 중 오류가 발생했습니다.");
-    }
+  const handleDelete = (item: OpsActionKitItem) => {
+    openConfirm(
+      {
+        title: `\u0022${item.name}\u0022 항목을 정말 삭제하시겠습니까?`,
+        description: "이 작업은 되돌릴 수 없습니다.",
+        confirmLabel: "삭제",
+        destructive: true,
+      },
+      async () => {
+        try {
+          await apiClient.delete(`/ops/actionkit/items/${item.id}`);
+          if (activeCategory) loadItems(activeCategory);
+          fetchSummary().then(setSummary).catch(console.error);
+        } catch (error) {
+          console.error("Failed to delete item:", error);
+          toast.error("삭제 중 오류가 발생했습니다.");
+        }
+      },
+    );
   };
 
   useEffect(() => {
@@ -444,6 +455,7 @@ export function OpsActionKitView() {
               activeDomain={activeDomain}
             />
           )}
+          {confirmDialog}
         </>
       )}
     </div>

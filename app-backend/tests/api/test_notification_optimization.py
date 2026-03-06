@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 
 import pytest
 from httpx import AsyncClient
@@ -6,6 +6,7 @@ from sqlmodel import select
 
 from app.api.v1.notifications import delete_notification, list_notifications
 from app.core import db
+from app.core.security import utc_now
 from app.features.ops.application.announcements.service import (
     create_announcement,
     update_announcement_status,
@@ -23,7 +24,7 @@ async def test_notification_age_filtering(client: AsyncClient):
         admin = await _get_admin_user(session)
 
         # 1. 오래된 알림 생성 (8일 전)
-        old_time = datetime.utcnow() - timedelta(days=8)
+        old_time = utc_now() - timedelta(days=8)
         old_notif = Notification(
             user_id=admin.id, content="오래된 알림", type="notice", created_at=old_time
         )
@@ -33,7 +34,7 @@ async def test_notification_age_filtering(client: AsyncClient):
             user_id=admin.id,
             content="최신 알림",
             type="notice",
-            created_at=datetime.utcnow(),
+            created_at=utc_now(),
         )
 
         session.add(old_notif)
