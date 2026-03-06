@@ -32,7 +32,7 @@ Last Updated: 2026-03-06
 
 ### Phase 1: 거짓 정보 제거/교정
 - "프로 플랜" → 제거 또는 "무료" 표시
-- ColdStartHero 소셜 프루프 → "Beta" 라벨로 교체
+- ColdStartHero 소셜 프루프 → 기능 설명 문구로 교체 ("AI 맞춤 로드맵", "법률/행정 가이드", "창업자 커뮤니티")
 - GrowthClubCard → 하드코딩 아바타 제거, 익명 아이콘 사용
 - Sidebar 아바타 → UserProfile.profile_img 연동 (있으면 실제 이미지, 없으면 dicebear 폴백)
 

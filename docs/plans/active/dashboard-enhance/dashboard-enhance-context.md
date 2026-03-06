@@ -10,7 +10,7 @@ Last Updated: 2026-03-06
 |------|----------|
 | `app-frontend/src/features/dashboard/components/Sidebar.tsx` | "프로 플랜" 제거, profile_img 연동 |
 | `app-frontend/src/features/dashboard/components/AccountMenu.tsx` | "프로 플랜 사용 중" 제거 |
-| `app-frontend/src/features/dashboard/components/ColdStartHero.tsx` | 소셜 프루프 수치 → "Beta" 라벨 |
+| `app-frontend/src/features/dashboard/components/ColdStartHero.tsx` | 소셜 프루프 수치 → 기능 설명 문구 ("AI 맞춤 로드맵", "법률/행정 가이드", "창업자 커뮤니티") |
 | `app-frontend/src/features/dashboard/components/GrowthClubCard.tsx` | seed=A/B 아바타 → 익명 아이콘 |
 
 ### Phase 2: 데이터 연동 보강
