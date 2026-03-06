@@ -67,6 +67,7 @@ export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
                         onClick={() => {
                             router.push("/roadmap");
                         }}
+                        aria-label="전체 로드맵 보기"
                         className="text-sm text-highlight font-medium hover:underline flex items-center"
                     >
                         전체 계획 보기
@@ -77,6 +78,15 @@ export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
                     {/* Horizontal Scroll Container */}
                     <div
                         ref={scrollRef}
+                        role="tablist"
+                        aria-label="로드맵 단계"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                            const container = scrollRef.current;
+                            if (!container) return;
+                            if (e.key === 'ArrowRight') { container.scrollBy({ left: 150, behavior: 'smooth' }); e.preventDefault(); }
+                            if (e.key === 'ArrowLeft') { container.scrollBy({ left: -150, behavior: 'smooth' }); e.preventDefault(); }
+                        }}
                         onPointerDown={handlePointerDown}
                         onPointerMove={handlePointerMove}
                         onPointerUp={handlePointerEnd}
@@ -90,7 +100,7 @@ export const RoadmapStepper = ({ steps }: RoadmapStepperProps) => {
                             <div className="absolute top-[24px] left-6 right-6 h-[2.5px] bg-slate-100 z-0" />
 
                             {normalizedSteps.map((step, index) => (
-                                <div key={index} className={`flex flex-col items-start md:items-center text-left md:text-center relative z-10 w-[120px] flex-shrink-0 group transition-all duration-500 ${step.status === 'locked' ? 'opacity-50' : 'opacity-100'}`}>
+                                <div key={index} role="tab" aria-selected={step.status === 'current'} aria-label={`${step.title} - ${step.status === 'completed' ? '완료' : step.status === 'current' ? '진행 중' : '대기'}`} className={`flex flex-col items-start md:items-center text-left md:text-center relative z-10 w-[120px] flex-shrink-0 group transition-all duration-500 ${step.status === 'locked' ? 'opacity-50' : 'opacity-100'}`}>
                                     <div className="relative mb-3 w-full flex justify-start md:justify-center">
                                         {step.status === 'current' && (
                                             <span className="absolute inline-flex h-12 w-12 rounded-full bg-highlight opacity-25 animate-ping"></span>

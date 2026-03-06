@@ -454,12 +454,17 @@ async def toggle_like_post(
                 user_id=db_post.author_id,
                 content=f"{current_user.full_name or current_user.email}님이 당신의 게시물을 좋아합니다.",
                 type="like",
-                link=f"/growth-club/{post_id}",
+                link=f"/growth-club#post-{post_id}",
                 resource_id=post_id,
             )
             session.add(like_notification)
 
     await session.commit()
+
+    # SSE push for like notification
+    if liked and db_post.author_id != current_user.id:
+        from app.services.notification_pubsub import publish_notification
+        await publish_notification(db_post.author_id, {"type": "new_notification"})
 
     # 최신 좋아요 수 조회
     count_query = (

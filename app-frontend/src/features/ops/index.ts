@@ -9,4 +9,5 @@ export * from "./growth-club";
 export * from "./actionkit";
 export * from "./announcements";
 export * from "./audit-logs";
+export * from "./files";
 export * from "./roadmap-templates";

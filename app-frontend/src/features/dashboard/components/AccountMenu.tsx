@@ -1,7 +1,7 @@
 "use client";
 
 import Link from 'next/link';
-import { LogOut, Sparkles, Users } from 'lucide-react';
+import { LogOut, Users } from 'lucide-react';
 import {
     DropdownMenuContent,
     DropdownMenuItem,
@@ -37,20 +37,6 @@ export function AccountMenu({ variant, onLogout }: AccountMenuProps) {
                     <div className="flex flex-col">
                         <span className="text-sm font-semibold text-slate-700">프로필 관리</span>
                         <span className="text-[10px] text-slate-400">신원 및 정보 수정</span>
-                    </div>
-                </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem
-                asChild
-                className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 cursor-pointer transition-colors group"
-            >
-                <Link href="/billing">
-                    <div className="w-8 h-8 rounded-lg bg-orange-50 flex items-center justify-center text-orange-600 group-hover:scale-110 transition-transform">
-                        <Sparkles className="w-4 h-4" />
-                    </div>
-                    <div className="flex flex-col">
-                        <span className="text-sm font-semibold text-slate-700">구독 플랜</span>
-                        <span className="text-[10px] text-slate-400">프로 플랜 사용 중</span>
                     </div>
                 </Link>
             </DropdownMenuItem>

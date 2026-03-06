@@ -85,21 +85,21 @@ export function ColdStartHero() {
           ))}
         </div>
 
-        {/* Social Proof */}
+        {/* Feature Highlights */}
         <div className="pt-12 flex items-center justify-center gap-8">
           <div className="flex flex-col items-center gap-1">
-            <span className="text-2xl font-bold text-slate-900">1,200+</span>
-            <span className="text-xs text-slate-500 font-medium uppercase">Roadmaps Created</span>
+            <span className="text-2xl">&#x1F5FA;&#xFE0F;</span>
+            <span className="text-xs text-slate-500 font-medium">AI 맞춤 로드맵</span>
           </div>
           <div className="w-px h-8 bg-slate-200" />
           <div className="flex flex-col items-center gap-1">
-            <span className="text-2xl font-bold text-slate-900">850+</span>
-            <span className="text-xs text-slate-500 font-medium uppercase">Active Builders</span>
+            <span className="text-2xl">&#x2696;&#xFE0F;</span>
+            <span className="text-xs text-slate-500 font-medium">법률/행정 가이드</span>
           </div>
           <div className="w-px h-8 bg-slate-200" />
           <div className="flex flex-col items-center gap-1">
-            <span className="text-2xl font-bold text-slate-900">4.9/5</span>
-            <span className="text-xs text-slate-500 font-medium uppercase">Satisfaction</span>
+            <span className="text-2xl">&#x1F465;</span>
+            <span className="text-xs text-slate-500 font-medium">창업자 커뮤니티</span>
           </div>
         </div>
       </div>

@@ -1,7 +1,9 @@
+import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import List
 
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import desc, or_, select
 
@@ -10,8 +12,38 @@ from app.core.db import get_session
 from app.models.announcement import Announcement
 from app.models.notification import Notification, NotificationRead
 from app.models.user import AuthenticatedUser
+from app.services.notification_pubsub import subscribe_notifications
 
 router = APIRouter()
+
+
+@router.get(
+    "/stream",
+    summary="알림 SSE 스트림",
+    description="Server-Sent Events로 실시간 알림을 수신합니다.",
+    response_description="text/event-stream SSE 응답",
+)
+async def notification_stream(
+    current_user: AuthenticatedUser = Depends(get_current_user),
+) -> StreamingResponse:
+    async def _event_generator():
+        # Send initial heartbeat
+        yield "data: {\"type\": \"connected\"}\n\n"
+        try:
+            async for message in subscribe_notifications(current_user.id):
+                yield f"data: {message}\n\n"
+        except asyncio.CancelledError:
+            return
+
+    return StreamingResponse(
+        _event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("", response_model=List[NotificationRead])

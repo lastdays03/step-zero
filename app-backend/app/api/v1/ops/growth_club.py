@@ -303,6 +303,11 @@ async def suspend_user(
     )
 
     await session.commit()
+
+    # SSE push for suspension notification
+    from app.services.notification_pubsub import publish_notification
+    await publish_notification(user_id, {"type": "new_notification"})
+
     # Z suffix를 붙여 프론트엔드가 UTC로 올바르게 파싱하도록 함
     suspended_at_iso = now_utc.strftime("%Y-%m-%dT%H:%M:%S.%f")[:-3] + "Z"
     return {

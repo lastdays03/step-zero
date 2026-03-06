@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Bell, Heart, MessageSquare, Reply, X, ChevronDown } from 'lucide-react';
 import { notificationsApi } from '../api';
 import { Notification } from '../types';
 import { formatTimeAgo } from '@/features/growth-club/hooks/useTimeAgo';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
+import { useNotificationSSE } from '../hooks/useNotificationSSE';
 
 export const NotificationBell = () => {
     const { user } = useAuth();
@@ -17,7 +18,7 @@ export const NotificationBell = () => {
     const [hasUnread, setHasUnread] = useState(false);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const fetchNotifications = async () => {
+    const fetchNotifications = useCallback(async () => {
         if (!user) {
             setNotifications([]);
             setHasUnread(false);
@@ -34,38 +35,24 @@ export const NotificationBell = () => {
                 console.error('Failed to fetch notifications:', error);
             }
         }
-    };
-
-    useEffect(() => {
-        const load = async () => {
-            if (!user) {
-                setNotifications([]);
-                setHasUnread(false);
-                return;
-            }
-            try {
-                const data = await notificationsApi.getNotifications();
-                setNotifications(data);
-                setHasUnread(data.some(n => !n.is_read));
-            } catch (error: unknown) {
-                const axiosErr = error as { response?: { status?: number } };
-                if (axiosErr?.response?.status !== 401) {
-                    console.error('Failed to fetch notifications:', error);
-                }
-            }
-        };
-        void load();
-
-        let interval: ReturnType<typeof setInterval> | null = null;
-        if (user) {
-            interval = setInterval(fetchNotifications, 60000);
-        }
-
-        return () => {
-            if (interval) clearInterval(interval);
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [user]);
+
+    // Initial fetch — defer to microtask to avoid sync setState in effect
+    useEffect(() => {
+        const controller = new AbortController();
+        queueMicrotask(() => {
+            if (!controller.signal.aborted) {
+                fetchNotifications();
+            }
+        });
+        return () => controller.abort();
+    }, [fetchNotifications]);
+
+    // SSE: re-fetch when new notification arrives
+    useNotificationSSE({
+        enabled: !!user,
+        onMessage: fetchNotifications,
+    });
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -100,13 +87,19 @@ export const NotificationBell = () => {
         if (!notif.is_read) {
             try {
                 await notificationsApi.markAsRead(notif.id);
-                setNotifications((prev: Notification[]) => prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n));
+                setNotifications((prev: Notification[]) => {
+                    const updated = prev.map(n => n.id === notif.id ? { ...n, is_read: true } : n);
+                    setHasUnread(updated.some(n => !n.is_read));
+                    return updated;
+                });
             } catch (error) {
                 console.error('Failed to mark as read:', error);
             }
         }
         if (notif.link) {
-            router.push(notif.link);
+            // /growth-club/123 → /growth-club#post-123 (legacy link migration)
+            const resolved = notif.link.replace(/^\/growth-club\/(\d+)$/, '/growth-club#post-$1');
+            router.push(resolved);
             setIsOpen(false);
         }
     };
@@ -142,9 +135,11 @@ export const NotificationBell = () => {
         <div className="relative" ref={dropdownRef}>
             <button
                 onClick={handleToggle}
+                aria-label="알림"
                 className="w-10 h-10 bg-white border border-zinc-100 flex items-center justify-center rounded-full text-zinc-400 hover:text-primary hover:border-primary/30 transition-all relative shadow-sm"
             >
                 <Bell className="w-5 h-5" />
+                <span className="sr-only">알림</span>
                 {hasUnread && (
                     <span className="absolute top-2.5 right-2.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white animate-pulse" />
                 )}
@@ -176,14 +171,15 @@ export const NotificationBell = () => {
                                 {displayItems.map((notif) => (
                                     <div
                                         key={notif.id}
-                                        className={`group/item p-4 border-b border-zinc-50 hover:bg-zinc-50 transition-colors cursor-pointer relative ${!notif.is_read ? 'bg-blue-50/30' : ''}`}
+                                        className={`group/item p-4 border-b border-zinc-50 hover:bg-zinc-50 transition-colors cursor-pointer relative ${!notif.is_read ? 'bg-blue-50/50 border-l-[3px] border-l-blue-500' : ''}`}
                                         onClick={() => handleNotificationClick(notif)}
                                     >
                                         <div className="flex gap-3 pr-6">
                                             <div className="mt-1">{getIcon(notif.type)}</div>
                                             <div className="flex-1">
-                                                <p className="text-sm text-zinc-700 leading-tight mb-1">{notif.content}</p>
+                                                <p className={`text-sm leading-tight mb-1 ${!notif.is_read ? 'text-zinc-900 font-semibold' : 'text-zinc-600'}`}>{notif.content}</p>
                                                 <span className="text-[10px] text-zinc-400">
+                                                    {!notif.is_read && <span className="text-blue-500 font-bold mr-1">NEW</span>}
                                                     {formatTimeAgo(notif.created_at)}
                                                 </span>
                                             </div>
@@ -192,7 +188,7 @@ export const NotificationBell = () => {
                                             onClick={(e) => handleDelete(e, notif.id)}
                                             className="absolute right-3 top-4 opacity-40 group-hover/item:opacity-100 p-1 hover:bg-zinc-200 rounded text-zinc-400 transition-all"
                                         >
-                                            <X size={14} />
+                                            <X size={14} /><span className="sr-only">삭제</span>
                                         </button>
                                     </div>
                                 ))}

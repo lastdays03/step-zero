@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { notificationsApi, Notification } from '../api/notifications';
 import { useAuth } from '@/providers/AuthProvider';
+import { useNotificationSSE } from './useNotificationSSE';
 
 export const useNotifications = () => {
     const { isLoggedIn } = useAuth();
@@ -38,13 +39,17 @@ export const useNotifications = () => {
         } catch { /* ignore */ }
     }, []);
 
-    // Poll every 30 seconds when logged in
+    // Initial fetch on login
     useEffect(() => {
         if (!isLoggedIn) return;
         fetchNotifications();
-        const interval = setInterval(fetchNotifications, 30_000);
-        return () => clearInterval(interval);
     }, [fetchNotifications, isLoggedIn]);
+
+    // SSE: re-fetch when a new notification event arrives
+    useNotificationSSE({
+        enabled: isLoggedIn,
+        onMessage: fetchNotifications,
+    });
 
     const unreadCount = notifications.filter(n => !n.is_read).length;
 
