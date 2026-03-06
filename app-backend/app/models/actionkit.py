@@ -46,9 +46,6 @@ class ActionKitItem(SQLModel, table=True):
     )
 
     category: ActionKitCategory = Relationship(back_populates="items")
-    files: list["ActionKitFile"] = Relationship(
-        back_populates="item", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
-    )
     highlights: list["ActionKitItemHighlight"] = Relationship(
         back_populates="item", sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
@@ -103,23 +100,3 @@ class ActionKitRelatedLaw(SQLModel, table=True):
     item: ActionKitItem = Relationship(back_populates="related_laws")
 
 
-class ActionKitFile(SQLModel, table=True):
-    __tablename__ = "actionkit_files"
-
-    id: Optional[int] = Field(default=None, primary_key=True)
-    item_id: int = Field(foreign_key="actionkit_items.id", index=True)
-    version: int = Field(default=1, index=True)
-    object_key: str
-    original_filename: str | None = None
-    mime_type: str | None = None
-    size_bytes: int | None = None
-    checksum: str | None = None
-    is_current: bool = Field(default=True, index=True)
-    uploaded_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
-    )
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
-    )
-
-    item: ActionKitItem = Relationship(back_populates="files")

@@ -1,7 +1,6 @@
 from app.models.actionkit import (
     ActionKitCategory,
     ActionKitChecklist,
-    ActionKitFile,
     ActionKitItem,
     ActionKitItemHighlight,
     ActionKitRelatedLaw,
@@ -16,7 +15,6 @@ from app.models.growth_club import (
     GrowthClubCommentRead,
     GrowthClubCommentReport,
     GrowthClubPost,
-    GrowthClubPostAttachment,
     GrowthClubPostLike,
     GrowthClubPostRead,
     GrowthClubPostReport,
@@ -45,7 +43,7 @@ from app.models.user_discipline_history import UserDisciplineHistory
 __all__ = [
     "ActionKitCategory",
     "ActionKitChecklist",
-    "ActionKitFile",
+
     "ActionKitItem",
     "ActionKitItemHighlight",
     "ActionKitRelatedLaw",
@@ -58,7 +56,7 @@ __all__ = [
     "GrowthClubComment",
     "GrowthClubCommentRead",
     "GrowthClubCommentReport",
-    "GrowthClubPostAttachment",
+
     "GrowthClubPost",
     "GrowthClubPostLike",
     "GrowthClubPostRead",

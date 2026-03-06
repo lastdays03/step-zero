@@ -11,7 +11,9 @@ from app.api.deps import get_current_user
 from app.core.db import get_session
 from app.features.ops.application.audit_logs.service import save_audit_log
 from app.features.ops.application.growth_club import get_queue_summary
+from app.models.file import File
 from app.models.growth_club import (
+    GrowthClubAttachmentRead,
     GrowthClubComment,
     GrowthClubCommentRead,
     GrowthClubCommentReport,
@@ -58,7 +60,6 @@ async def list_blinded_posts(session: AsyncSession = Depends(get_session)):
         .order_by(desc("report_count_val"))
         .options(
             selectinload(GrowthClubPost.author).selectinload(User.profile),
-            selectinload(GrowthClubPost.attachments),
             selectinload(GrowthClubPost.comments)
             .selectinload(GrowthClubComment.author)
             .selectinload(User.profile),
@@ -66,11 +67,35 @@ async def list_blinded_posts(session: AsyncSession = Depends(get_session)):
     )
     result = await session.execute(query)
 
+    rows = result.all()
+    post_ids = [post.id for post, _, _ in rows]
+
+    # Load attachments from unified File table
+    attachments_map: dict[int, list[GrowthClubAttachmentRead]] = {}
+    if post_ids:
+        file_stmt = select(File).where(
+            File.owner_type == "growth_club_post",
+            File.owner_id.in_(post_ids),
+        )
+        file_result = await session.execute(file_stmt)
+        for f in file_result.scalars().all():
+            att = GrowthClubAttachmentRead(
+                id=f.id,
+                kind=f.kind or "file",
+                object_key=f.object_key,
+                original_filename=f.original_filename,
+                mime_type=f.mime_type,
+                size_bytes=f.size_bytes,
+                created_at=f.created_at,
+            )
+            attachments_map.setdefault(f.owner_id, []).append(att)
+
     read_posts = []
-    for post, report_count, report_reason in result.all():
+    for post, report_count, report_reason in rows:
         post_read = GrowthClubPostRead.model_validate(post)
         post_read.report_count = report_count
         post_read.report_reason = report_reason
+        post_read.attachments = attachments_map.get(post.id, [])
         post_read.comments = []
         post_read.likes_count = 0
         post_read.is_liked = False

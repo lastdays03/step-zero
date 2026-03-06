@@ -46,10 +46,10 @@ from app.core.db import async_session
 from app.core.logging import get_logger
 from app.models.actionkit import (
     ActionKitCategory,
-    ActionKitFile,
     ActionKitItem,
     ActionKitItemHighlight,
 )
+from app.models.file import File
 from app.services.vector_store import VectorStoreService
 
 logger = get_logger("scripts.seed_rag_vectors")
@@ -363,7 +363,7 @@ async def _ensure_actionkit_items(
     """큐레이션 파일 목록으로부터 ActionKitCategory/Item/Highlight/File을 생성한다.
 
     이미 동일 name의 Item이 존재하면 건너뛴다 (멱등).
-    파일이 없는 기존 Item에 대해서는 ActionKitFile을 보강한다.
+    파일이 없는 기존 Item에 대해서는 File 레코드를 보강한다.
     반환: 새로 생성된 ActionKitItem 수.
     """
     created_count = 0
@@ -384,7 +384,10 @@ async def _ensure_actionkit_items(
 
         # 기존 파일 레코드 로드 (item_id → 존재 여부)
         file_result = await session.execute(
-            select(ActionKitFile.item_id).where(ActionKitFile.is_current.is_(True))
+            select(File.owner_id).where(
+                File.owner_type == "actionkit_item",
+                File.is_current.is_(True),
+            )
         )
         items_with_files: set[int] = {row[0] for row in file_result.fetchall()}
 
@@ -451,8 +454,10 @@ async def _ensure_actionkit_items(
                             chapter_slug=chapter_slug,
                         )
                         session.add(
-                            ActionKitFile(
-                                item_id=item_id,
+                            File(
+                                owner_type="actionkit_item",
+                                owner_id=item_id,
+                                category="document",
                                 version=1,
                                 object_key=object_key,
                                 original_filename=fpath.name,
@@ -499,15 +504,17 @@ async def _ensure_actionkit_items(
                         )
                     )
 
-                # 파일 복사 + ActionKitFile 레코드 생성
+                # 파일 복사 + File 레코드 생성
                 object_key, size_bytes, checksum = _copy_file_to_storage(
                     fpath,
                     item_id=item.id,
                     chapter_slug=chapter_slug,
                 )
                 session.add(
-                    ActionKitFile(
-                        item_id=item.id,
+                    File(
+                        owner_type="actionkit_item",
+                        owner_id=item.id,
+                        category="document",
                         version=1,
                         object_key=object_key,
                         original_filename=fpath.name,

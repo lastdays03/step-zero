@@ -475,7 +475,7 @@ class RoadmapEvaluator:
         from sqlmodel import select
 
         try:
-            from app.models.actionkit import ActionKitFile
+            from app.models.file import File
         except ImportError:
             return self._validate_docs_heuristic(document_actions)
 
@@ -497,9 +497,9 @@ class RoadmapEvaluator:
 
         existing_ids: set[int] = set()
         if file_ids:
-            stmt = select(ActionKitFile.id).where(
-                ActionKitFile.id.in_(file_ids),
-                ActionKitFile.is_current.is_(True),
+            stmt = select(File.id).where(
+                File.id.in_(file_ids),
+                File.is_current.is_(True),
             )
             result = await self.session.execute(stmt)
             existing_ids = set(result.scalars().all())

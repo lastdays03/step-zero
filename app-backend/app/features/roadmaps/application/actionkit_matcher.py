@@ -23,11 +23,11 @@ from app.core.logging import get_logger
 from app.features.rag.application.rag_service import RagService
 from app.models.actionkit import (
     ActionKitCategory,
-    ActionKitFile,
     ActionKitItem,
     ActionKitItemHighlight,
     ActionKitRelatedLaw,
 )
+from app.models.file import File
 
 logger = get_logger(__name__)
 
@@ -83,7 +83,7 @@ class MatchedActionKit:
     item: ActionKitItem
     highlights: list[ActionKitItemHighlight] = field(default_factory=list)
     related_laws: list[ActionKitRelatedLaw] = field(default_factory=list)
-    files: list[ActionKitFile] = field(default_factory=list)
+    files: list[File] = field(default_factory=list)
     phase_group: str = ""
     relevance_score: float = 0.0
 
@@ -334,15 +334,16 @@ class ActionKitMatcher:
         for law in law_result.scalars().all():
             laws_by_item.setdefault(law.item_id, []).append(law)
 
-        # Load files
-        file_stmt = select(ActionKitFile).where(
-            ActionKitFile.item_id.in_(item_ids),
-            ActionKitFile.is_current.is_(True),
+        # Load files from unified files table
+        file_stmt = select(File).where(
+            File.owner_type == "actionkit_item",
+            File.owner_id.in_(item_ids),
+            File.is_current.is_(True),
         )
         file_result = await session.execute(file_stmt)
-        files_by_item: dict[int, list[ActionKitFile]] = {}
+        files_by_item: dict[int, list[File]] = {}
         for f in file_result.scalars().all():
-            files_by_item.setdefault(f.item_id, []).append(f)
+            files_by_item.setdefault(f.owner_id, []).append(f)
 
         # Load categories for phase mapping
         category_ids = list({item.category_id for item in items})

@@ -4,6 +4,7 @@ import uuid
 from typing import TYPE_CHECKING, List, TypedDict
 
 from fastapi import UploadFile
+import sqlalchemy as sa
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -19,11 +20,11 @@ if TYPE_CHECKING:
 from app.models.actionkit import (
     ActionKitCategory,
     ActionKitChecklist,
-    ActionKitFile,
     ActionKitItem,
     ActionKitItemHighlight,
     ActionKitRelatedLaw,
 )
+from app.models.file import File
 from app.repositories.file_repository import FileRepository
 
 
@@ -42,8 +43,8 @@ async def get_summary(session: AsyncSession) -> ActionKitOpsSummary:
     total = len(all_items)
     inactive = sum(1 for i in all_items if not i.is_active)
 
-    # Items with at least one file
-    file_stmt = select(ActionKitFile.item_id).distinct()
+    # Items with at least one file (from unified files table)
+    file_stmt = select(File.owner_id).where(File.owner_type == "actionkit_item").distinct()
     file_result = await session.execute(file_stmt)
     items_with_files = len(list(file_result.scalars().all()))
 
@@ -110,6 +111,23 @@ async def delete_category(session: AsyncSession, category_id: int) -> bool:
     return True
 
 
+async def _attach_files(session: AsyncSession, items: list[ActionKitItem]) -> None:
+    """Load files from unified File table and attach to items."""
+    if not items:
+        return
+    item_ids = [item.id for item in items]
+    file_stmt = select(File).where(
+        File.owner_type == "actionkit_item",
+        File.owner_id.in_(item_ids),
+    )
+    file_result = await session.execute(file_stmt)
+    files_by_item: dict[int, list[File]] = {}
+    for f in file_result.scalars().all():
+        files_by_item.setdefault(f.owner_id, []).append(f)
+    for item in items:
+        object.__setattr__(item, "files", files_by_item.get(item.id, []))
+
+
 async def get_items_by_category(
     session: AsyncSession, category_id: int
 ) -> List[ActionKitItem]:
@@ -117,7 +135,6 @@ async def get_items_by_category(
         select(ActionKitItem)
         .where(ActionKitItem.category_id == category_id)
         .options(
-            selectinload(ActionKitItem.files),
             selectinload(ActionKitItem.highlights),
             selectinload(ActionKitItem.related_laws),
             selectinload(ActionKitItem.checklists),
@@ -125,7 +142,9 @@ async def get_items_by_category(
         .order_by(ActionKitItem.sort_order)
     )
     result = await session.execute(stmt)
-    return list(result.scalars().all())
+    items = list(result.scalars().all())
+    await _attach_files(session, items)
+    return items
 
 
 async def get_item_detail(session: AsyncSession, item_id: int) -> ActionKitItem | None:
@@ -133,14 +152,16 @@ async def get_item_detail(session: AsyncSession, item_id: int) -> ActionKitItem 
         select(ActionKitItem)
         .where(ActionKitItem.id == item_id)
         .options(
-            selectinload(ActionKitItem.files),
             selectinload(ActionKitItem.highlights),
             selectinload(ActionKitItem.related_laws),
             selectinload(ActionKitItem.checklists),
         )
     )
     result = await session.execute(stmt)
-    return result.scalar_one_or_none()
+    item = result.scalar_one_or_none()
+    if item:
+        await _attach_files(session, [item])
+    return item
 
 
 async def create_item(
@@ -186,7 +207,10 @@ async def upload_file_for_item(
 
     from app.services.storage import get_storage_backend
 
-    next_version = len(item.files) + 1 if item.files else 1
+    file_repo = FileRepository(session)
+    next_version = await file_repo.get_next_version(
+        owner_type="actionkit_item", owner_id=item_id
+    )
 
     unique_name = f"{uuid.uuid4()}_{file.filename}"
     object_key = unique_name
@@ -200,11 +224,22 @@ async def upload_file_for_item(
     )
     size_bytes = len(data)
 
-    for f in item.files:
-        f.is_current = False
+    # Clear is_current on all existing files for this item
+    clear_stmt = (
+        sa.update(File)
+        .where(
+            File.owner_type == "actionkit_item",
+            File.owner_id == item_id,
+            File.is_current.is_(True),
+        )
+        .values(is_current=False)
+    )
+    await session.execute(clear_stmt)
 
-    new_file = ActionKitFile(
-        item_id=item.id,
+    new_file = File(
+        owner_type="actionkit_item",
+        owner_id=item_id,
+        category="document",
         version=next_version,
         object_key=object_key,
         original_filename=file.filename,
@@ -212,7 +247,7 @@ async def upload_file_for_item(
         size_bytes=size_bytes,
         is_current=True,
     )
-    session.add(new_file)
+    await file_repo.create(file=new_file)
 
     ext = (
         file.filename.split(".")[-1].lower()
@@ -244,8 +279,8 @@ async def delete_item(session: AsyncSession, item_id: int) -> bool:
     return True
 
 
-async def get_file_by_id(session: AsyncSession, file_id: int) -> ActionKitFile | None:
-    stmt = select(ActionKitFile).where(ActionKitFile.id == file_id)
+async def get_file_by_id(session: AsyncSession, file_id: int) -> File | None:
+    stmt = select(File).where(File.id == file_id)
     result = await session.execute(stmt)
     return result.scalar_one_or_none()
 

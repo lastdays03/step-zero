@@ -141,29 +141,10 @@ class GrowthClubPost(GrowthClubPostBase, table=True):
     likes: list[GrowthClubPostLike] = Relationship(
         sa_relationship_kwargs={"cascade": "all, delete-orphan"}
     )
-    attachments: list["GrowthClubPostAttachment"] = Relationship(
-        back_populates="post",
-        sa_relationship_kwargs={"cascade": "all, delete-orphan"},
-    )
     tags: list[GrowthClubTag] = Relationship(
         back_populates="posts",
         link_model=GrowthClubPostTagLink,
     )
-
-
-class GrowthClubPostAttachment(SQLModel, table=True):
-    id: Optional[int] = Field(default=None, primary_key=True)
-    post_id: int = Field(foreign_key="growthclubpost.id", index=True)
-    kind: str = Field(default="file", index=True)  # image | file
-    object_key: str
-    original_filename: Optional[str] = None
-    mime_type: Optional[str] = None
-    size_bytes: Optional[int] = None
-    created_at: datetime = Field(
-        default_factory=lambda: datetime.now(timezone.utc).replace(tzinfo=None)
-    )
-
-    post: GrowthClubPost = Relationship(back_populates="attachments")
 
 
 class GrowthClubCommentBase(SQLModel):
