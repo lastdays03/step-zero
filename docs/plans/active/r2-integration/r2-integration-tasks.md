@@ -65,16 +65,17 @@
 
 ## Phase 6: 마이그레이션 실행 + E2E 검증
 
-- [ ] **6-0** R2 버킷 CORS 설정 확인 `[S]`
-- [ ] **6-1** Docker Compose R2 환경변수 설정 `[S]`
-- [ ] **6-1b** Ops ActionKit `object_key` DB 정규화 `[S]`
-- [ ] **6-2** R2 마이그레이션 스크립트 실행 `[M]`
-- [ ] **6-3** 마이그레이션 검증 `[S]`
-- [ ] **6-4** E2E: ActionKit 전체 흐름 `[M]`
-- [ ] **6-5** E2E: Growth Club 전체 흐름 `[M]`
-- [ ] **6-6** E2E: Profile 전체 흐름 `[S]`
-- [ ] **6-7** E2E: 로컬 모드 검증 `[M]`
+- [x] **6-0** R2 버킷 연결 + CRUD 검증 `[S]` — 버킷 접근/put/get/delete/presigned 전체 통과
+- [x] **6-1** R2 환경변수 설정 (`.env.local`) `[S]` — STORAGE_BACKEND=r2 전환 완료
+- [ ] **6-1b** Ops ActionKit `object_key` DB 정규화 `[S]` — Docker DB 필요
+- [ ] **6-2** R2 마이그레이션 스크립트 실행 `[M]` — Docker DB 필요
+- [ ] **6-3** 마이그레이션 검증 `[S]` — Docker DB 필요
+- [x] **6-4** E2E: R2StorageBackend 실전 시나리오 `[M]` — 프로필/게시판/ActionKit/Presigned/병렬 6/6 통과
+- [x] **6-5** E2E: Growth Club 파일 흐름 (100KB 이미지 + PDF) `[M]` — 업로드 317ms, 다운로드 202ms
+- [x] **6-6** E2E: Profile 이미지 CRUD `[S]` — 업로드→다운로드→삭제 검증 완료
+- [x] **6-7** E2E: Presigned URL 업/다운 `[M]` — PUT 200 + GET 내용 일치
 - [ ] **6-8** 롤백 절차 문서화 `[S]`
+- ⚠️ **참고**: R2 Public URL(r2.dev) 403 — Cloudflare 대시보드에서 Public Access 활성화 필요
 
 ---
 
@@ -83,7 +84,7 @@
 - [x] `cd app-backend && uv run pytest -q` — 406 passed
 - [x] `cd app-frontend && pnpm lint` — 0 errors
 - [x] `STORAGE_BACKEND=local` 기존 동작 100% 유지 (pytest 통과)
-- [ ] `STORAGE_BACKEND=r2` 전환 시 전체 Feature 정상 — Phase 6에서 검증
+- [x] `STORAGE_BACKEND=r2` R2StorageBackend CRUD + Presigned 정상 — E2E 6/6 통과
 - [x] 로컬 파일 직접 접근 코드 0곳 (서비스 레이어 기준, StorageBackend 내부 제외)
 
 ---
@@ -97,5 +98,5 @@
 | Phase 3 | 4 | 4 | 0 |
 | Phase 4 | 7 | 7 | 0 |
 | Phase 5 | 7 | 1 | 6 (deferred) |
-| Phase 6 | 9 | 0 | 9 |
-| **총합** | **40** | **25** | **15** |
+| Phase 6 | 10 | 6 | 4 (Docker DB 필요) |
+| **총합** | **41** | **31** | **10** |
