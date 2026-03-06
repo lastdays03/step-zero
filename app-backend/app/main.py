@@ -71,10 +71,11 @@ app.add_middleware(
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Serve user-uploaded files from the shared storage root.
-upload_dir = settings.STORAGE_ROOT_PATH
-upload_dir.mkdir(parents=True, exist_ok=True)
-app.mount("/api/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
+# Serve user-uploaded files from the shared storage root (local mode only).
+if settings.STORAGE_BACKEND != "r2":
+    upload_dir = settings.STORAGE_ROOT_PATH
+    upload_dir.mkdir(parents=True, exist_ok=True)
+    app.mount("/api/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
 
 
 # 1. 로깅 미들웨어 추가
@@ -129,14 +130,15 @@ class DecodingStaticFiles(StaticFiles):
         return await super().get_response(decoded, scope)
 
 
-actionkit_storage_dir = settings.ACTIONKIT_STORAGE_PATH
-actionkit_storage_dir.mkdir(parents=True, exist_ok=True)
-logger.info("ActionKit storage mounted at: %s", actionkit_storage_dir)
-app.mount(
-    "/api/v1/actionkits/files",
-    DecodingStaticFiles(directory=str(actionkit_storage_dir)),
-    name="actionkit-files",
-)
+if settings.STORAGE_BACKEND != "r2":
+    actionkit_storage_dir = settings.ACTIONKIT_STORAGE_PATH
+    actionkit_storage_dir.mkdir(parents=True, exist_ok=True)
+    logger.info("ActionKit storage mounted at: %s", actionkit_storage_dir)
+    app.mount(
+        "/api/v1/actionkits/files",
+        DecodingStaticFiles(directory=str(actionkit_storage_dir)),
+        name="actionkit-files",
+    )
 
 from app.api.v1.api import api_router as api_v1_router
 

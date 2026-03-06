@@ -78,19 +78,24 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
     const chapters = Object.entries(data);
     const currentChapter = data[activeChapter];
 
+    const resolveActionKitUrl = (path: string): string => {
+        if (path.startsWith('http://') || path.startsWith('https://')) return path;
+        const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL;
+        if (storageUrl) {
+            const normalized = path.replace(/^\/+/, '').replace(/^actionkits\/files\//, 'actionkit/');
+            return `${storageUrl.replace(/\/$/, '')}/${normalized}`;
+        }
+        let finalPath = path;
+        if (path.startsWith('library/resources/')) {
+            finalPath = path.replace('library/resources/', 'actionkits/files/');
+        }
+        const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+        return `${baseURL}/${finalPath}`;
+    };
+
     const handleDownload = (path: string, filename: string) => {
         try {
-            const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
-
-            // If path already starts with actionkits/files, just use it with baseURL
-            // If it starts with library/resources, swap it to the new structure
-            let finalPath = path;
-            if (path.startsWith('library/resources/')) {
-                finalPath = path.replace('library/resources/', 'actionkits/files/');
-            }
-
-            // Build absolute URL
-            const url = finalPath.startsWith('http') ? finalPath : `${baseURL}/${finalPath}`;
+            const url = resolveActionKitUrl(path);
 
             const link = document.createElement('a');
             link.href = url;

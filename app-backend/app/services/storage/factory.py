@@ -10,7 +10,7 @@ from .base import StorageBackend
 @lru_cache(maxsize=1)
 def get_storage_backend() -> StorageBackend:
     settings = get_settings()
-    backend = getattr(settings, "STORAGE_BACKEND", "local")
+    backend = settings.STORAGE_BACKEND
 
     if backend == "r2":
         from .r2 import R2StorageBackend

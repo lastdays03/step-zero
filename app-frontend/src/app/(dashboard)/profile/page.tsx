@@ -26,6 +26,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { getMyProfile, updateMyProfile, uploadProfileImage } from "@/features/profile/api";
 import { UserProfile, UserProfileUpdate } from "@/features/profile/types";
 import { useAuth } from "@/providers/AuthProvider";
+import { resolveUploadUrl } from "@/features/shared/file";
 
 export default function ProfilePage() {
     const { user: authUser, updateUser } = useAuth();
@@ -37,7 +38,6 @@ export default function ProfilePage() {
     const [error, setError] = useState<string | null>(null);
     const [currentTime, setCurrentTime] = useState(new Date());
     const [isAutoFilled, setIsAutoFilled] = useState(false);
-    const apiHost = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000").replace(/\/$/, "");
 
     useEffect(() => {
         const timer = setInterval(() => {
@@ -230,7 +230,7 @@ export default function ProfilePage() {
                                 accept="image/*"
                             />
                             <Avatar className="h-24 w-24 border-4 border-slate-700 shadow-2xl transition-transform group-hover:scale-105 md:h-32 md:w-32">
-                                <AvatarImage src={profile?.profile_img ? `${apiHost}/api/uploads/${profile.profile_img}` : ""} />
+                                <AvatarImage src={resolveUploadUrl(profile?.profile_img)} />
                                 <AvatarFallback className="bg-slate-700 text-2xl font-bold">{profile?.full_name?.[0]}</AvatarFallback>
                             </Avatar>
                             <button

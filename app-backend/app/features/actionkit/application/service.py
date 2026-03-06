@@ -1,5 +1,4 @@
 from collections import defaultdict
-from pathlib import Path
 
 from fastapi import UploadFile
 
@@ -7,11 +6,11 @@ from app.core.config import get_settings
 from app.models.file import File
 from app.repositories.actionkit_repository import ActionKitRepository
 from app.repositories.file_repository import FileRepository
+from app.services.storage import get_storage_backend
 
 from .file_pipeline import (
     build_object_key,
     detect_mime_type,
-    save_upload_to_path,
 )
 
 
@@ -23,6 +22,10 @@ class ActionKitService:
     def _to_public_path(object_key: str | None) -> str:
         if not object_key:
             return ""
+        settings = get_settings()
+        if settings.STORAGE_BACKEND == "r2":
+            storage = get_storage_backend()
+            return storage.get_public_url(f"actionkit/{object_key}")
         return f"actionkits/files/{object_key.lstrip('/')}"
 
     @staticmethod
@@ -202,11 +205,13 @@ class ActionKitService:
             filename=filename,
         )
 
-        destination = Path(settings.ACTIONKIT_STORAGE_PATH) / object_key
-        size_bytes, checksum = await save_upload_to_path(
-            upload_file, destination=destination
-        )
         mime_type = detect_mime_type(filename, fallback=upload_file.content_type)
+        storage = get_storage_backend()
+        data = await upload_file.read()
+        result = await storage.put(
+            f"actionkit/{object_key}", data, content_type=mime_type
+        )
+        size_bytes, checksum = result.size_bytes, result.checksum
 
         await self.repository.clear_current_file_flags(item_id=item_id)
         record = await self.repository.create_file_record(

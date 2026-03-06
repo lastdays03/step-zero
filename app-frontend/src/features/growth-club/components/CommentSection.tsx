@@ -7,7 +7,7 @@ import { Comment } from '../types';
 import { useAuth } from '@/providers/AuthProvider';
 import { growthClubApi } from '../api';
 import { CornerDownRight, AlertCircle } from 'lucide-react';
-import { resolveUploadUrl } from '../utils/upload-url';
+import { resolveUploadUrl } from '@/features/shared/file';
 import { useTimeAgo } from '../hooks/useTimeAgo';
 
 interface CommentSectionProps {

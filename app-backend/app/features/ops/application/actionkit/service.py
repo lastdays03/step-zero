@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-import shutil
 import uuid
 from typing import TYPE_CHECKING, List, TypedDict
 
@@ -185,15 +183,21 @@ async def upload_file_for_item(
     if not item:
         return None
 
+    from app.services.storage import get_storage_backend
+
     next_version = len(item.files) + 1 if item.files else 1
-    upload_dir = "data/uploads/actionkit"
-    os.makedirs(upload_dir, exist_ok=True)
 
     unique_name = f"{uuid.uuid4()}_{file.filename}"
-    file_path = os.path.join(upload_dir, unique_name)
+    object_key = unique_name
 
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    storage = get_storage_backend()
+    data = await file.read()
+    await storage.put(
+        f"actionkit/{object_key}",
+        data,
+        content_type=file.content_type or "application/octet-stream",
+    )
+    size_bytes = len(data)
 
     for f in item.files:
         f.is_current = False
@@ -201,10 +205,10 @@ async def upload_file_for_item(
     new_file = ActionKitFile(
         item_id=item.id,
         version=next_version,
-        object_key=file_path,
+        object_key=object_key,
         original_filename=file.filename,
         mime_type=file.content_type,
-        size_bytes=os.path.getsize(file_path),
+        size_bytes=size_bytes,
         is_current=True,
     )
     session.add(new_file)
@@ -217,11 +221,9 @@ async def upload_file_for_item(
     item.file_type = file.content_type
     item.ext = ext
 
-    size_mb = os.path.getsize(file_path) / (1024 * 1024)
+    size_mb = size_bytes / (1024 * 1024)
     item.size_label = (
-        f"{size_mb:.1f}MB"
-        if size_mb >= 0.1
-        else f"{os.path.getsize(file_path) / 1024:.0f}KB"
+        f"{size_mb:.1f}MB" if size_mb >= 0.1 else f"{size_bytes / 1024:.0f}KB"
     )
 
     await session.commit()

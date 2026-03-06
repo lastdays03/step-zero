@@ -9,7 +9,7 @@
 
 이전 단계에서 `StorageBackend` 추상화, `R2StorageBackend`, `File` 모델, `FileRepository`, 프론트엔드 공통 모듈(`useFileUpload`, `useFileDownload`, `resolveUploadUrl`)을 **구현했지만, 실제 Feature 코드에 연결하지 않았다.** 본 계획은 이 "마지막 1마일"을 완성한다.
 
-**현재 상태:** 인프라 계층만 존재, Feature 코드는 여전히 로컬 파일시스템 직접 접근(12곳)
+**현재 상태:** 인프라 계층만 존재, Feature 코드는 여전히 로컬 파일시스템 직접 접근(13곳)
 **목표:** 모든 파일 I/O를 `StorageBackend` 추상화를 통해 처리, `STORAGE_BACKEND=r2` 전환 시 즉시 동작
 
 ---
@@ -24,6 +24,7 @@
 | 2 | **storage 라우터 미등록** — presign 엔드포인트 호출 불가 | `app/api/v1/api.py` | 전체 |
 | 3 | **`.env.example`에 R2 변수 없음** | `.env.example` | 33-39 |
 | 4 | ActionKit `upload_item_file()` — 로컬 저장 | `actionkit/service.py` | 205-208 |
+| 4b | **Ops ActionKit `upload_file_for_item()` — 로컬 저장 + 절대경로 object_key** | `ops/actionkit/service.py` | 193-224 |
 | 5 | ActionKit `_resolve_file()` — 로컬 읽기 | `actionkit/files.py` | 93-107 |
 | 6 | ActionKit `view` — `open(file_path)` | `actionkit/files.py` | 128, 144 |
 | 7 | ActionKit `download` — `FileResponse(path=)` | `actionkit/files.py` | 163 |
@@ -32,6 +33,7 @@
 | 10 | Profile `save_profile_image()` — `open(filepath, "wb")` | `profile/service.py` | 95-97 |
 | 11 | `main.py` StaticFiles — 항상 마운트 | `main.py` | 74-77, 132-139 |
 | 12 | `file_pipeline.py` — `save_upload_to_path()` 로컬 전용 | `file_pipeline.py` | 42-49 |
+| 13 | Ops ActionKit `shutil.copyfileobj()` — 로컬 파일 쓰기 | `ops/actionkit/service.py` | 196 |
 
 ### 1.2 프론트엔드 미완성 항목
 
@@ -123,7 +125,7 @@
 | **1-2** | `api.py`에 storage 라우터 등록 | S | - |
 | **1-3** | `app-backend/.env.example` R2 변수 추가 | S | 1-1 |
 | **1-4** | `app-frontend/.env.example`에 `NEXT_PUBLIC_STORAGE_URL` 추가 | S | - |
-| **1-5** | `factory.py`에서 `getattr` 제거, `settings.STORAGE_BACKEND` 직접 사용 | S | 1-1 |
+| ~~**1-5**~~ | ~~`factory.py`에서 `getattr` 제거~~ — `getattr(settings, "STORAGE_BACKEND", "local")` 사용 중이나, **Phase 1-1에서 `config.py`에 속성 추가하면 자동 해결** | - | 1-1 |
 
 **완료 기준:** `POST /api/v1/storage/presign`이 R2 모드에서 200 응답, 로컬 모드에서 422 응답.
 
@@ -136,6 +138,7 @@
 | 태스크 | 내용 | Effort | 의존 |
 |--------|------|--------|------|
 | **2-1** | ActionKit `service.py` — `save_upload_to_path()` → `storage.put()` | M | 1-1 |
+| **2-1b** | **Ops ActionKit `service.py` — `upload_file_for_item()` → `storage.put()` 전환 + `object_key` 정규화** (절대경로 `data/uploads/actionkit/{uuid}_{name}` → 상대경로 `actionkit/{uuid}_{name}` 패턴 통일) | M | 1-1 |
 | **2-2** | ActionKit `file_pipeline.py` — `save_upload_to_path()` 리팩터 (StorageBackend 위임) | S | 2-1 |
 | **2-3** | GrowthClub `post_service.py` — `create_post()` 파일 저장 → `storage.put()` | M | 1-1 |
 | **2-4** | GrowthClub `post_service.py` — `_remove_saved_files()` → `storage.delete()` | S | 2-3 |
@@ -143,7 +146,7 @@
 | **2-6** | `main.py` StaticFiles 조건부 마운트 (로컬일 때만) | S | 1-1 |
 | **2-7** | 기존 테스트 통과 확인 (`uv run pytest -q`) | S | 2-1~2-6 |
 
-**완료 기준:** `STORAGE_BACKEND=local`로 pytest 전체 통과. `Path.write_bytes()`, `open()`, `unlink()` 직접 호출 0곳.
+**완료 기준:** `STORAGE_BACKEND=local`로 pytest 전체 통과. `Path.write_bytes()`, `open()`, `unlink()`, `shutil.copyfileobj()` 직접 호출 0곳.
 
 **상세 변경:**
 
@@ -183,6 +186,23 @@ async def _remove_saved_files(object_keys: list[str]) -> None:
     storage = get_storage_backend()
     for key in object_keys:
         await storage.delete(key)
+```
+
+```python
+# 2-1b: ops/actionkit/service.py (before)
+upload_dir = "data/uploads/actionkit"
+os.makedirs(upload_dir, exist_ok=True)
+file_path = os.path.join(upload_dir, unique_name)
+with open(file_path, "wb") as buffer:
+    shutil.copyfileobj(file.file, buffer)
+new_file = ActionKitFile(object_key=file_path, ...)  # 절대경로!
+
+# 2-1b: ops/actionkit/service.py (after)
+storage = get_storage_backend()
+data = await file.read()
+object_key = f"actionkit/{unique_name}"  # 상대경로로 통일
+await storage.put(object_key, data, content_type=file.content_type or "application/octet-stream")
+new_file = ActionKitFile(object_key=unique_name, ...)  # prefix 제외한 상대경로
 ```
 
 ```python
@@ -277,10 +297,14 @@ return RedirectResponse(storage.get_public_url(storage_key), status_code=307)
 | **5-3** | `profile/page.tsx` — R2 모드: `useFileUpload` → presigned upload → 메타데이터 API | M | 1-2 |
 | **5-4** | presign 엔드포인트에 `actionkit` kind 추가 | S | 5-2 |
 | **5-5** | Profile 메타데이터 등록 API (R2 모드용 — key만 받아 DB 업데이트) | M | 5-3 |
+| **5-6** | Growth Club `POST /posts/r2` 백엔드 엔드포인트 생성 (JSON body: title, content, category, attachment_keys) | M | 2-3 |
+| **5-7** | 프론트엔드 `growthClubApi.createPostR2()` API 함수 생성 | S | 5-6 |
 
 **완료 기준:** R2 모드에서 Growth Club 게시글 작성, ActionKit 파일 업로드, 프로필 이미지 변경이 Presigned URL로 동작.
 
 **주의:** 로컬 모드에서는 기존 FormData 업로드 유지 (분기 처리).
+
+**CORS 필수 설정:** R2 버킷 CORS에 `PUT` 메서드 + `Content-Type` 헤더 허용 필요 (presigned URL 업로드용).
 
 ---
 
@@ -290,6 +314,7 @@ return RedirectResponse(storage.get_public_url(storage_key), status_code=307)
 
 | 태스크 | 내용 | Effort | 의존 |
 |--------|------|--------|------|
+| **6-0** | R2 버킷 CORS 설정 (`PUT` 메서드 + `Content-Type` 헤더 허용) | S | - |
 | **6-1** | Docker Compose R2 환경변수 설정 | S | 1-1 |
 | **6-2** | R2 마이그레이션 스크립트 실행 (`scripts/migrate_to_r2.py`) | M | Phase 2-3 |
 | **6-3** | R2 마이그레이션 검증 (`--verify`) | S | 6-2 |
@@ -309,6 +334,7 @@ return RedirectResponse(storage.get_public_url(storage_key), status_code=307)
 |--------|--------|------|
 | `_remove_saved_files()` 동기→비동기 전환 시 호출부 수정 누락 | 높음 | 2-4에서 모든 호출부 확인 (delete_post 내 try/except 구조 유지) |
 | ActionKit `actionkit/` prefix 불일치 | 높음 | object_key에 prefix 추가 시 기존 DB 레코드와 일치 여부 검증 |
+| **Ops ActionKit `object_key` 절대경로 저장** — `data/uploads/actionkit/{uuid}_{name}` 형태가 DB에 존재, 일반 서비스와 패턴 불일치 | 높음 | 2-1b에서 상대경로로 통일 + 마이그레이션 스크립트에서 기존 ops 레코드 정규화 |
 | presign 엔드포인트 인증 없이 호출 가능한 보안 이슈 | 중간 | 이미 `get_current_user` 의존성 적용됨 — 확인만 |
 | R2 업로드 실패 시 DB 트랜잭션 불일치 | 중간 | presigned URL 방식은 프론트에서 업로드 → 백엔드 DB만 기록이므로 안전 |
 | `DecodingStaticFiles` 한국어 인코딩 R2 전환 시 깨짐 | 낮음 | R2는 UTF-8 key 네이티브 지원, 인코딩 처리 불필요 |
@@ -317,7 +343,7 @@ return RedirectResponse(storage.get_public_url(storage_key), status_code=307)
 
 ## 5. Success Metrics
 
-1. **로컬 직접 접근 0곳**: `Path.write_bytes()`, `open(file, "wb")`, `unlink()`, `FileResponse(path=)` 사용 0건
+1. **로컬 직접 접근 0곳**: `Path.write_bytes()`, `open(file, "wb")`, `unlink()`, `FileResponse(path=)`, `shutil.copyfileobj()` 사용 0건
 2. **pytest 통과**: 로컬 모드에서 기존 테스트 전체 통과
 3. **ESLint 통과**: 프론트엔드 0 errors
 4. **R2 E2E**: ActionKit + Growth Club + Profile 전체 흐름 동작
@@ -336,7 +362,6 @@ return RedirectResponse(storage.get_public_url(storage_key), status_code=307)
 - 데이터 마이그레이션 완료 (67건)
 - `app/api/v1/storage.py` (presign 엔드포인트 코드)
 - `app-frontend/src/features/shared/file/` (hooks, utils)
-- Growth Club `POST /posts/r2` 엔드포인트 + `createPostR2()` API
 
 ### 추가 필요 패키지
 
@@ -348,10 +373,10 @@ return RedirectResponse(storage.get_public_url(storage_key), status_code=307)
 
 | Phase | 태스크 수 | Effort |
 |-------|----------|--------|
-| Phase 1: 인프라 연결 | 5 | S×5 |
-| Phase 2: 백엔드 전환 | 7 | M×3 + S×4 |
+| Phase 1: 인프라 연결 | 4 | S×4 (1-5 완료) |
+| Phase 2: 백엔드 전환 | 8 | M×4 + S×4 |
 | Phase 3: ActionKit R2 | 4 | M×2 + S×2 |
 | Phase 4: 프론트엔드 전환 | 7 | M×1 + S×6 |
-| Phase 5: R2 업로드 | 5 | M×4 + S×1 |
-| Phase 6: 마이그레이션+E2E | 8 | M×4 + S×4 |
-| **총합** | **36** | |
+| Phase 5: R2 업로드 | 7 | M×5 + S×2 |
+| Phase 6: 마이그레이션+E2E | 9 | M×4 + S×5 |
+| **총합** | **39** | |

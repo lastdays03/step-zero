@@ -15,7 +15,7 @@ from app.services.storage import get_storage_backend
 
 router = APIRouter()
 
-ALLOWED_KINDS = {"growth-club/image", "growth-club/file", "profile"}
+ALLOWED_KINDS = {"growth-club/image", "growth-club/file", "profile", "actionkit"}
 
 
 class PresignRequest(BaseModel):
@@ -45,6 +45,8 @@ def _build_key(kind: str, filename: str) -> str:
         return f"growth-club/image/{now.year}/{now.month:02d}/{uuid4().hex}_image{ext}"
     elif kind == "growth-club/file":
         return f"growth-club/file/{now.year}/{now.month:02d}/{uuid4().hex}_file{ext}"
+    elif kind == "actionkit":
+        return f"actionkit/{uuid4().hex}{ext}"
     else:  # profile
         return f"profile/{uuid4()}{ext}"
 

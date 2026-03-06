@@ -12,6 +12,7 @@ from app.core.db import get_session
 from app.features.actionkit.application import ActionKitService
 from app.models.user import AuthenticatedUser
 from app.repositories.actionkit_repository import ActionKitRepository
+from app.services.storage import get_storage_backend
 
 router = APIRouter()
 
@@ -91,20 +92,15 @@ document.getElementById('content').innerHTML = marked.parse({markdown_json});
 
 
 async def _resolve_file(item_id: int, session: AsyncSession):
-    """Resolve item_id to (file_path, current_file) or raise 404."""
+    """Resolve item_id to (storage_key, current_file) or raise 404."""
     repo = ActionKitRepository(session)
     files = await repo.list_current_files(item_ids=[item_id])
     if not files:
         raise HTTPException(status_code=404, detail="No file found for this item")
 
     current_file = files[0]
-    settings = get_settings()
-    file_path = os.path.join(settings.ACTIONKIT_STORAGE_PATH, current_file.object_key)
-
-    if not os.path.exists(file_path):
-        raise HTTPException(status_code=404, detail="File not found on disk")
-
-    return file_path, current_file
+    storage_key = f"actionkit/{current_file.object_key}"
+    return storage_key, current_file
 
 
 @router.get(
@@ -117,16 +113,29 @@ async def view_item_current_file(
     item_id: int = Path(description="아이템 ID"),
     session: AsyncSession = Depends(get_session),
 ):
-    file_path, current_file = await _resolve_file(item_id, session)
+    storage_key, current_file = await _resolve_file(item_id, session)
+    storage = get_storage_backend()
+    settings = get_settings()
     filename = current_file.original_filename or "file"
     ext = os.path.splitext(filename)[1].lower()
+
+    # R2 mode: PDF/images → redirect to public URL
+    if settings.STORAGE_BACKEND == "r2" and ext == ".pdf":
+        return RedirectResponse(
+            storage.get_public_url(storage_key), status_code=307
+        )
+
+    # Fetch file content (works for both local and R2)
+    try:
+        content = await storage.get(storage_key)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="File not found")
 
     # Markdown → HTML viewer (rendered client-side via marked.js)
     if ext in (".md", ".markdown"):
         import json as _json
 
-        with open(file_path, "r", encoding="utf-8") as f:
-            md_content = f.read()
+        md_content = content.decode("utf-8")
         title = os.path.splitext(filename)[0]
         html = _MD_HTML_TEMPLATE.format(
             title=title,
@@ -141,7 +150,7 @@ async def view_item_current_file(
 
     encoded_filename = quote(filename)
     return Response(
-        content=open(file_path, "rb").read(),
+        content=content,
         media_type=mime,
         headers={
             "Content-Disposition": f"inline; filename*=UTF-8''{encoded_filename}",
@@ -158,10 +167,39 @@ async def download_item_current_file(
     item_id: int = Path(description="다운로드할 아이템 ID"),
     session: AsyncSession = Depends(get_session),
 ):
-    file_path, current_file = await _resolve_file(item_id, session)
+    storage_key, current_file = await _resolve_file(item_id, session)
+    storage = get_storage_backend()
+    settings = get_settings()
 
-    return FileResponse(
-        path=file_path,
-        filename=current_file.original_filename or "download",
+    # R2 mode: redirect to public URL
+    if settings.STORAGE_BACKEND == "r2":
+        return RedirectResponse(
+            storage.get_public_url(storage_key), status_code=307
+        )
+
+    # Local mode: serve file directly
+    from app.services.storage.local import LocalStorageBackend
+
+    if isinstance(storage, LocalStorageBackend):
+        local_path = storage.get_local_path(storage_key)
+        if not local_path.exists():
+            raise HTTPException(status_code=404, detail="File not found on disk")
+        return FileResponse(
+            path=str(local_path),
+            filename=current_file.original_filename or "download",
+            media_type=current_file.mime_type or "application/octet-stream",
+        )
+
+    # Fallback: read bytes and return
+    try:
+        content = await storage.get(storage_key)
+    except FileNotFoundError:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    return Response(
+        content=content,
         media_type=current_file.mime_type or "application/octet-stream",
+        headers={
+            "Content-Disposition": f'attachment; filename*=UTF-8\'\'{quote(current_file.original_filename or "download")}',
+        },
     )
