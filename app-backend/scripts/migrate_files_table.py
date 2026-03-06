@@ -267,6 +267,11 @@ async def main():
         "--dry-run", action="store_true", help="실행하지 않고 대상만 확인"
     )
     parser.add_argument(
+        "--migrate-only",
+        action="store_true",
+        help="데이터 복사만 실행 (FK 재매핑 스킵)",
+    )
+    parser.add_argument(
         "--verify", action="store_true", help="마이그레이션 결과 검증"
     )
     args = parser.parse_args()
@@ -293,9 +298,12 @@ async def main():
         print(f"\n총 {total}건 대상")
 
         if not args.dry_run:
-            print("\n=== ID 매핑 + FK 재매핑 ===")
-            await build_id_mapping(session, args.dry_run)
-            await remap_fk(session, args.dry_run)
+            if not args.migrate_only:
+                print("\n=== ID 매핑 + FK 재매핑 ===")
+                await build_id_mapping(session, args.dry_run)
+                await remap_fk(session, args.dry_run)
+            else:
+                print("\n[migrate-only] FK 재매핑 스킵")
             await session.commit()
             print("\n마이그레이션 완료!")
 
