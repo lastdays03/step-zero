@@ -16,4 +16,4 @@
 
 ## Phase 3: P2 — 중기 인프라 (Backlog)
 
-- [ ] 3-1. 프론트엔드 테스트 커버리지 확대 계획 수립 [XL] (별도 계획)
+- [x] 3-1. 프론트엔드 테스트 커버리지 확대 계획 수립 [XL] → `docs/plans/active/frontend-test-coverage/`로 분리
