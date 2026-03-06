@@ -3,28 +3,28 @@
 > **크기 가이드**: 이 문서는 40줄 이내로 유지한다.
 
 ## 마지막 업데이트
-- Date: 2026-03-05
-- Branch: `feature/5-pkg-manager-migration` (uncommitted 6 files)
+- Date: 2026-03-06
+- Branch: `develop` (clean, uncommitted 없음)
 
 ## 이번 세션 요약
-- Runtime Upgrade 전체 검증 완료 (Docker 빌드 + pytest 393p + alembic check OK)
-- Docker `.venv` 충돌 발견 → docker-compose.dev.yml에 볼륨 제외 추가로 해결
-- Docker 불필요 리소스 정리 (~1.67GB 회수)
+- 대시보드 정리 계획 문서 3파일 작성 + 코드 검증 (13개 항목)
+- primary 색상 불일치 발견: #257bf4 != #36a4f2 → 문서 반영
+- PR #22 충돌 해결 (files.py, dev-status, handoff — ours 유지) + 머지
+- feature/0-r2-storage-migration 브랜치 정리 완료
 
 ## Uncommitted Changes
-- `docker-compose.dev.yml` — backend/worker `.venv` 볼륨 제외 + worker 주석 수정
-- `docs/context/dev-status.md`, `docs/context/handoff.md` — 상태 갱신
-- `docs/plans/done/runtime-upgrade/*` — 3파일 태스크 완료 반영
+- 없음 (clean state)
 
 ## 다음 세션 시작점
-1. uncommitted 6파일 커밋 (`chore: ...`)
-2. PR 생성: `feature/5-pkg-manager-migration` → `develop`
-3. PR 머지 후 runtime-upgrade 문서 → 이미 `docs/plans/done/`으로 이동 완료
-4. R2 Storage Migration 계속 (`docs/plans/active/r2-integration/`)
+1. feature 브랜치 생성: `feature/dashboard-cleanup`
+2. Phase 1 실행: StatsGrid, dashboardMock, api/index, types/index 삭제
+3. Phase 2~5 순차 진행
+4. 계획 문서: `docs/plans/active/dashboard-cleanup/`
 
 ## 참조 문서
-- Runtime Upgrade: `docs/plans/done/runtime-upgrade/`
-- R2 Migration: `docs/plans/active/r2-integration/`
+- 대시보드 정리: `docs/plans/active/dashboard-cleanup/`
+- R2 Migration (완료): `docs/plans/done/r2-integration/`
+- 테스트 커버리지 (완료): `docs/plans/done/frontend-test-coverage/`
 
 ## 커밋 시 주의사항
 - subject는 소문자 시작 (commitlint subject-case 규칙)
