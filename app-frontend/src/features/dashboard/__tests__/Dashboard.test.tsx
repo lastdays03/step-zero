@@ -55,10 +55,10 @@ const mockData = {
         status: "IN_PROGRESS"
     },
     roadmap: [
-        { title: "Idea Validation", status: "COMPLETED", date: "Jan 12" },
-        { title: "Sign Lease", status: "COMPLETED", date: "Jan 24" },
-        { title: "Tax Registration", status: "CURRENT", date: "Current Task" },
-        { title: "Bank Account", status: "LOCKED", date: "Estimated Feb 10" }
+        { title: "Idea Validation", status: "completed", date: "Jan 12" },
+        { title: "Sign Lease", status: "completed", date: "Jan 24" },
+        { title: "Tax Registration", status: "current", date: "Current Task" },
+        { title: "Bank Account", status: "locked", date: "Estimated Feb 10" }
     ],
     stats: {
         days_left: 3,

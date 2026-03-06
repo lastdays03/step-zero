@@ -4,37 +4,39 @@
 
 ## Last Updated
 - Date: 2026-03-06
-- Branch: `develop`
+- Branch: `feature/0-dashboard-cleanup` (uncommitted 12 modified + 3 untracked)
 
 ## Sprint Focus
 - 메인 대시보드 정리 및 품질 개선
 
 ## Current State
-- R2 스토리지 마이그레이션: PR #22 머지 완료
-- 프론트엔드 테스트: 133건 (21 suites)
-- 대시보드 정리: 계획 수립 완료, 구현 미착수
+- 대시보드 정리: Phase 1 완료, Phase 2~5 부분 완료 (코드 변경 완료, 검증 미실행)
+- 신규 계획 2건: dashboard-enhance, ops-file-manager (구현 미착수)
 
 ## Completed (최근)
-- R2 Phase 1-4: StorageBackend 추상화, 전체 서비스 전환, 프론트 통합
-- 프론트엔드 테스트 Phase 1-3: 순수함수/훅/컴포넌트 133건
-- 통합 문서 뷰어: /view 엔드포인트, MD 툴바, 포맷별 분기
-- 대시보드 정리 계획 문서 수립 (코드 검증 완료)
+- Phase 2: AccountMenu 추출, nav-config 공유, AuthModalProvider 단일화, GLASS_CARD 상수
+- Phase 3: router.push 전환, activeRoadmapId storage 동기화
+- Phase 4.1: Header 시간대 인사말
+- Phase 5.1: DashboardResult typed dataclass + asdict()
+- Phase 5.3: 테스트 mock status 소문자 통일
 
 ## In Progress
-- 대시보드 정리 5-Phase 계획 (docs/plans/active/dashboard-cleanup/)
+- 대시보드 정리 5-Phase 계획 — 검증(lint/test) 미실행
+- dashboard-enhance, ops-file-manager: 계획 수립만 완료
 
 ## Risks And Blockers
 - primary 색상 불일치: #257bf4 (tailwind) != #36a4f2 (하드코딩) — 디자인 의도 확인 필요
+- 12개 파일 uncommitted — 커밋 전 반드시 lint/test 통과 확인 필요
 
 ## Next 3 Actions
-1. 대시보드 정리 Phase 1: 미사용 파일 4개 삭제
-2. 대시보드 정리 Phase 2: 중복 코드 제거 (SocialAuthModal, 드롭다운, 색상)
-3. 대시보드 정리 Phase 3: P0 버그 수정 (window.location.href, activeRoadmapId)
+1. `pnpm lint` + `pnpm test` 실행하여 현재 변경 검증
+2. 검증 통과 시 커밋 (Phase 2~5 부분 완료분)
+3. Phase 2.1 (#36a4f2 색상) 디자인 결정 후 토큰화, Phase 4.2~4.4 UX 작업
 
 ## Test Status
-- Backend pytest: 406 passed, 10 skipped
-- Frontend test: 133 passed (21 suites)
-- Frontend lint: 0 errors
+- Backend pytest: 406 passed, 10 skipped (변경 후 미확인)
+- Frontend test: 133 passed (변경 후 미확인)
+- Frontend lint: 미확인
 
 ## Sync Notes
-- 2026-03-06: PR #22 머지, feature/0-r2-storage-migration 브랜치 삭제, develop 전환
+- 2026-03-06: feature/0-dashboard-cleanup 브랜치에서 Phase 2~5 부분 구현 (미커밋)

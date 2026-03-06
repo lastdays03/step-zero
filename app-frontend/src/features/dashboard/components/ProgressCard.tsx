@@ -1,6 +1,7 @@
 "use client";
 
 import React from 'react';
+import { useRouter } from 'next/navigation';
 import { DashboardData } from '../hooks/useDashboard';
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,6 +17,7 @@ interface ProgressCardProps {
 }
 
 export const ProgressCard = ({ phase, daysLeft, nextTitle, endowedProgress, readinessLabel }: ProgressCardProps) => {
+    const router = useRouter();
     const displayProgress = endowedProgress ?? phase.progress;
     return (
         <Card className="bg-white rounded-3xl shadow-sm border border-slate-100 relative overflow-hidden group h-full transition-all hover:shadow-md">
@@ -84,7 +86,7 @@ export const ProgressCard = ({ phase, daysLeft, nextTitle, endowedProgress, read
 
                 <Button
                     onClick={() => {
-                        window.location.href = "/roadmap";
+                        router.push("/roadmap");
                     }}
                     className="w-full bg-slate-900 text-white py-6 rounded-2xl font-bold text-sm flex items-center justify-center hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 active:scale-[0.98] group/btn"
                 >

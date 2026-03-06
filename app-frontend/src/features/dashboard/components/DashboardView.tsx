@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { apiClient } from "@/lib/api-client";
 import { useDashboard } from '../hooks/useDashboard';
 import { ProgressCard } from './ProgressCard';
@@ -17,10 +17,19 @@ const ACTIVE_ROADMAP_STORAGE_KEY = "stepzero_active_roadmap_id";
 const GLASS_CARD = "bg-white/90 backdrop-blur-sm border border-white/50 rounded-3xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]";
 
 export const DashboardView = () => {
-    const [activeRoadmapId] = useState<string | null>(() => {
+    const [activeRoadmapId, setActiveRoadmapId] = useState<string | null>(() => {
         if (typeof window === "undefined") return null;
         return localStorage.getItem(ACTIVE_ROADMAP_STORAGE_KEY);
     });
+
+    const syncActiveRoadmapId = useCallback(() => {
+        setActiveRoadmapId(localStorage.getItem(ACTIVE_ROADMAP_STORAGE_KEY));
+    }, []);
+
+    useEffect(() => {
+        window.addEventListener("storage", syncActiveRoadmapId);
+        return () => window.removeEventListener("storage", syncActiveRoadmapId);
+    }, [syncActiveRoadmapId]);
 
     const { data, loading: isLoading } = useDashboard(activeRoadmapId);
     const [roadmapDetail, setRoadmapDetail] = useState<RoadmapDetailResponse | null>(null);
@@ -169,8 +178,11 @@ export const DashboardView = () => {
                         || doc.source_url
                         || null;
                     if (raw) {
-                        const itemMatch = raw.match(/\/actionkits\/items\/(\d+)$/);
-                        viewUrl = itemMatch ? `${raw}/view` : raw;
+                        const isSafe = /^https?:\/\//.test(raw) || raw.startsWith("/api/") || raw.startsWith("/");
+                        if (isSafe) {
+                            const itemMatch = raw.match(/\/actionkits\/items\/(\d+)$/);
+                            viewUrl = itemMatch ? `${raw}/view` : raw;
+                        }
                     }
                 }
 
@@ -186,7 +198,16 @@ export const DashboardView = () => {
     }, [currentStep]);
 
     if (isLoading || !data) {
-        return <div className="p-8 text-center">Loading...</div>;
+        return (
+            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-6 animate-pulse">
+                <div className="md:col-span-3 h-52 rounded-3xl bg-slate-100" />
+                <div className="md:col-span-1 h-52 rounded-3xl bg-slate-100" />
+                <div className="md:col-span-4 h-40 rounded-3xl bg-slate-100" />
+                <div className="md:col-span-2 h-48 rounded-3xl bg-slate-100" />
+                <div className="md:col-span-1 h-48 rounded-3xl bg-slate-100" />
+                <div className="md:col-span-1 h-48 rounded-3xl bg-slate-100" />
+            </div>
+        );
     }
 
     if (isRoadmapNotReady) {
@@ -208,7 +229,7 @@ export const DashboardView = () => {
                 </div>
             )}
             {/* Main Grid: 4 Columns */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-4 gap-6">
 
                 {/* 1. Progress Card (Span 3) */}
                 <div className="md:col-span-3 lg:col-span-3 h-full">
@@ -227,7 +248,7 @@ export const DashboardView = () => {
                 </div>
 
                 {/* 3. Roadmap (Full Span 4) */}
-                <div className="md:col-span-3 lg:col-span-4">
+                <div className="md:col-span-4 lg:col-span-4">
                     <RoadmapStepper steps={data.roadmap} />
                 </div>
 

@@ -6,12 +6,38 @@ from app.repositories.roadmap_repository import RoadmapRepository
 
 
 @dataclass
+class CurrentPhaseResult:
+    title: str
+    progress: int
+    status: str
+
+
+@dataclass
+class DashboardStatsResult:
+    days_left: int
+    tasks_completed: int
+    total_tasks: int
+
+
+@dataclass
+class GrowthClubResult:
+    founders_online: int
+
+
+@dataclass
+class RoadmapItemResult:
+    title: str
+    status: str
+    date: str
+
+
+@dataclass
 class DashboardResult:
     user_name: str
-    current_phase: dict
-    roadmap: list[dict]
-    stats: dict
-    growth_club: dict
+    current_phase: CurrentPhaseResult
+    roadmap: list[RoadmapItemResult]
+    stats: DashboardStatsResult
+    growth_club: GrowthClubResult
 
 
 class DashboardService:
@@ -29,18 +55,18 @@ class DashboardService:
         if is_guest:
             return DashboardResult(
                 user_name="Guest",
-                current_phase={
-                    "title": "로드맵을 생성해 보세요",
-                    "progress": 0,
-                    "status": "GUEST",
-                },
+                current_phase=CurrentPhaseResult(
+                    title="로드맵을 생성해 보세요",
+                    progress=0,
+                    status="GUEST",
+                ),
                 roadmap=[
-                    {"title": "Step 1: 아이디어 검증", "status": "locked", "date": "-"},
-                    {"title": "Step 2: 법인 설립", "status": "locked", "date": "-"},
-                    {"title": "Step 3: 비즈니스 계좌", "status": "locked", "date": "-"},
+                    RoadmapItemResult(title="Step 1: 아이디어 검증", status="locked", date="-"),
+                    RoadmapItemResult(title="Step 2: 법인 설립", status="locked", date="-"),
+                    RoadmapItemResult(title="Step 3: 비즈니스 계좌", status="locked", date="-"),
                 ],
-                stats={"days_left": 0, "tasks_completed": 0, "total_tasks": 0},
-                growth_club={"founders_online": 1250},
+                stats=DashboardStatsResult(days_left=0, tasks_completed=0, total_tasks=0),
+                growth_club=GrowthClubResult(founders_online=1250),
             )
 
         if roadmap_id:
@@ -52,14 +78,14 @@ class DashboardService:
         if not latest_roadmap:
             return DashboardResult(
                 user_name=user_name,
-                current_phase={
-                    "title": "로드맵을 생성해 보세요",
-                    "progress": 0,
-                    "status": "READY",
-                },
+                current_phase=CurrentPhaseResult(
+                    title="로드맵을 생성해 보세요",
+                    progress=0,
+                    status="READY",
+                ),
                 roadmap=[],
-                stats={"days_left": 0, "tasks_completed": 0, "total_tasks": 0},
-                growth_club={"founders_online": 12},
+                stats=DashboardStatsResult(days_left=0, tasks_completed=0, total_tasks=0),
+                growth_club=GrowthClubResult(founders_online=12),
             )
 
         steps = await self.roadmap_repo.list_steps(latest_roadmap.id)
@@ -119,7 +145,7 @@ class DashboardService:
             else:
                 status = "locked"
                 date = "-"
-            roadmap_items.append({"title": phase_name, "status": status, "date": date})
+            roadmap_items.append(RoadmapItemResult(title=phase_name, status=status, date=date))
 
         created_at = (
             latest_roadmap.created_at.replace(tzinfo=timezone.utc)
@@ -130,16 +156,16 @@ class DashboardService:
 
         return DashboardResult(
             user_name=user_name,
-            current_phase={
-                "title": phase_title,
-                "progress": progress,
-                "status": phase_status,
-            },
+            current_phase=CurrentPhaseResult(
+                title=phase_title,
+                progress=progress,
+                status=phase_status,
+            ),
             roadmap=roadmap_items,
-            stats={
-                "days_left": days_left,
-                "tasks_completed": tasks_completed,
-                "total_tasks": total_tasks,
-            },
-            growth_club={"founders_online": 12},
+            stats=DashboardStatsResult(
+                days_left=days_left,
+                tasks_completed=tasks_completed,
+                total_tasks=total_tasks,
+            ),
+            growth_club=GrowthClubResult(founders_online=12),
         )
