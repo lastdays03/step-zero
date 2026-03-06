@@ -24,6 +24,7 @@ from app.models.actionkit import (
     ActionKitItemHighlight,
     ActionKitRelatedLaw,
 )
+from app.repositories.file_repository import FileRepository
 
 
 class ActionKitOpsSummary(TypedDict):
@@ -234,6 +235,10 @@ async def delete_item(session: AsyncSession, item_id: int) -> bool:
     item = await get_item_detail(session, item_id)
     if not item:
         return False
+    file_repo = FileRepository(session)
+    await file_repo.delete_by_owner(
+        owner_type="actionkit_item", owner_id=item_id
+    )
     await session.delete(item)
     await session.commit()
     return True
