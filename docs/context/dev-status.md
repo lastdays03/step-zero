@@ -4,22 +4,22 @@
 
 ## Last Updated
 - Date: 2026-03-06
-- Branch: `feature/0-hardcode-cleanup` (커밋 완료, PR 미생성)
+- Branch: `develop` (최신)
 
 ## Sprint Focus
-- hardcode-cleanup 전체 완료 → PR 생성 대기
+- 활성 작업 없음 — 다음 작업 선정 대기
 
 ## Current State
-- hardcode-cleanup Phase A~D: 전량 구현 완료 + 커밋 완료
-- legacy-file-cleanup: 전체 완료 (PR #25~#27 머지), done/ 아카이브 대기
+- 모든 계획 작업 완료, `docs/plans/active/` 비어있음
+- hardcode-cleanup: PR #28 머지 완료, `done/` 아카이브 완료
+- legacy-file-cleanup: PR #25~#27 머지 완료, `done/` 아카이브 완료
 
 ## Completed (최근)
-- hardcode-cleanup (feature/0-hardcode-cleanup 브랜치):
-  - Phase A: ADMIN_EMAILS 환경변수 도입, SOCIAL_MOCK 프로덕션 차단
-  - Phase B: stats-dashboard 가짜 데이터 제거, growth_club 큐 실제 쿼리, 가짜 수치 제거
-  - Phase C: env.ts URL 유틸리티 추출 (4곳 교체), DiceBear 제거
+- hardcode-cleanup (PR #28):
+  - Phase A: ADMIN_EMAILS 환경변수, SOCIAL_MOCK 프로덕션 차단
+  - Phase B: stats-dashboard 실데이터 전환, growth_club 큐 실쿼리
+  - Phase C: env.ts URL 유틸리티, DiceBear 제거
   - Phase D: utc_now(), alembic.ini, CORS 5173, 중복 상수
-- 상세 보고서: `docs/plans/reports/REPORT-hardcode-cleanup.md`
 
 ## In Progress
 - 없음
@@ -28,9 +28,9 @@
 - 배포 시 프로덕션 `.env`에 `ADMIN_EMAILS` 설정 필수
 
 ## Next 3 Actions
-1. `feature/0-hardcode-cleanup` → `develop` PR 생성 + 머지
-2. hardcode-cleanup docs → `done/` 아카이브
-3. legacy-file-cleanup docs → `done/` 아카이브 (미완료분)
+1. 프로젝트 감사 리포트 기반 다음 작업 선정
+2. `REPORT-project-audit-2026-03-06.md` 참조
+3. (사용자 결정 대기)
 
 ## Test Status
 - Backend pytest: 421 passed, 10 skipped
