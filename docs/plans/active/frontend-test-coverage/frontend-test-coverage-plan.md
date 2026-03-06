@@ -4,7 +4,7 @@
 
 ## Executive Summary
 
-프론트엔드 8개 feature 중 3개(auth, dashboard, roadmap)만 테스트가 존재하며, 총 22개 테스트만 있다.
+프론트엔드 11개 feature 중 3개(auth, dashboard, roadmap)만 테스트가 존재하며, 총 22개 테스트만 있다.
 핵심 사용자 플로우(로드맵 생성, AI 채팅, 액션킷)의 프론트엔드 테스트가 부재하여 회귀 감지가 불가능하다.
 
 순수 함수/유틸 → 훅 → 컴포넌트 순으로 테스트를 확대하여 핵심 비즈니스 로직의 커버리지를 확보한다.
@@ -15,7 +15,7 @@
 |------|------|
 | 테스트 파일 | 3개 |
 | 테스트 케이스 | 22개 |
-| feature 커버리지 | 3/8 (37.5%) |
+| feature 커버리지 | 3/11 (27.3%) |
 | 실행 시간 | 2.8초 |
 | 테스트 종류 | 유틸 함수 14, 컴포넌트 8 |
 
@@ -27,21 +27,25 @@
 | dashboard | O | DashboardView (6건) |
 | roadmap | O | 유틸 함수만 (14건), 컴포넌트 미테스트 |
 | chat | **X** | 핵심 기능, SSE 스트리밍 |
-| actionkit | **X** | 법률 행정 키트 |
-| growth-club | **X** | 커뮤니티 게시판 |
-| notifications | **X** | 알림 벨 |
+| actionkit | **X** | useActionKit 훅에 테스트 가능 로직 존재 (API 모듈은 빈 파일) |
+| growth-club | **X** | 커뮤니티 게시판, API 8개 메서드 |
+| notifications | **X** | 알림 벨, API 3개 메서드 |
+| announcements | **X** | 공지사항 |
 | ops | **X** | 관리자 콘솔 (낮은 우선순위) |
 | profile | **X** | 프로필 (구조만 존재) |
-| shared | **X** | 파일 업/다운로드 훅 |
+| shared | **X** | 파일 업/다운로드 훅 + 유틸 (`shared/file/utils/`) |
 
 ## Proposed Future State
 
 | 지표 | 목표 |
 |------|------|
-| 테스트 파일 | ~15개 |
-| 테스트 케이스 | ~80개 |
-| feature 커버리지 | 7/8 (87.5%, ops 제외) |
+| 테스트 파일 | ~17개 |
+| 테스트 케이스 | ~90개 |
+| feature 커버리지 | 8/11 (72.7%) |
 | 실행 시간 | <10초 |
+
+> **커버리지 기준**: feature 폴더에 `__tests__/` 디렉토리와 통과하는 테스트 1개 이상 존재.
+> **제외 대상**: ops(관리자 전용, 모킹 복잡도), profile(실질 로직 미미), announcements(단순 목록 조회).
 
 ---
 
@@ -72,9 +76,16 @@
 - **파일**: `features/notifications/__tests__/notifications-api.test.ts`
 - **Effort**: S
 
-### 1-5. shared 유틸 단위 테스트
-- `url.ts`, `validation.ts` 유틸 함수 테스트
-- **파일**: `features/shared/__tests__/utils.test.ts`
+### 1-5. shared 파일 유틸 단위 테스트
+- `shared/file/utils/url.ts`의 `resolveUploadUrl()` — R2/로컬 스토리지 URL 판별
+- `shared/file/utils/validation.ts`의 `validateFiles()` — 확장자, 크기, 개수 검증
+- **파일**: `features/shared/__tests__/file-utils.test.ts`
+- **Effort**: S
+
+### 1-6. actionkit useActionKit 훅 단위 테스트
+- API 호출 로직, 상태 관리, 에러 처리 검증
+- `apiClient` mock (actionkit/api/index.ts는 빈 파일이므로 훅 내부 직접 호출 패턴 확인)
+- **파일**: `features/actionkit/__tests__/useActionKit.test.ts`
 - **Effort**: S
 
 ---
@@ -164,7 +175,8 @@
 
 ## Success Metrics
 
-- feature 커버리지 7/8 이상
-- 테스트 케이스 80개 이상
+- feature 커버리지 8/11 이상 (테스트 `__tests__/` 폴더 + 통과 테스트 1개 이상 기준)
+- 테스트 케이스 90개 이상
 - 모든 테스트 `pnpm test` 통과
 - 실행 시간 10초 이내 유지
+- Phase 1~3 완료 시 미테스트 feature: ops, profile, announcements만 남음

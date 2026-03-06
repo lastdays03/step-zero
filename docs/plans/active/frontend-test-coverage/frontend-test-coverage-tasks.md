@@ -8,7 +8,8 @@
 - [ ] 1-2. chat API 유틸 단위 테스트 (세션/메시지 CRUD) [S]
 - [ ] 1-3. chat SSE 파서 단위 테스트 [S]
 - [ ] 1-4. notifications API 단위 테스트 [S]
-- [ ] 1-5. shared 유틸 단위 테스트 (url, validation) [S]
+- [ ] 1-5. shared 파일 유틸 단위 테스트 (`shared/file/utils/` — url, validation) [S]
+- [ ] 1-6. actionkit useActionKit 훅 단위 테스트 [S]
 
 ## Phase 2: 커스텀 훅 테스트
 
