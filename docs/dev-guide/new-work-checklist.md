@@ -6,7 +6,7 @@
 
 - [ ] `docs/context/` 4개 파일 읽기 (dev-status → decisions → handoff → ops-rules)
 - [ ] `dev-status.md`의 `Next 3 Actions`에서 작업 선택
-- [ ] 관련 계획 문서 확인 (`docs/planning/` 또는 `dev/active/`)
+- [ ] 관련 계획 문서 확인 (`docs/plans/active/`)
 - [ ] 작업 브랜치 확인/생성 (`feature/<issue-number>-<slug>`)
 - [ ] `git fetch origin && git pull --rebase` 동기화
 

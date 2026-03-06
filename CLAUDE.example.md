@@ -77,8 +77,7 @@ curl -fsSL https://raw.githubusercontent.com/lastdays03/team-standards/main/scri
   settings.json # Hook bindings & permissions
 docs/
   context/      # 세션 운영 (상태/결정/핸드오프/규칙)
-  planning/     # 기획 문서 + 리서치 보고서 (PLAN-*.md, REPORT-*.md)
-  dev/          # 구현 계획 (How) — /dev-docs로 생성
+  plans/        # 기획 + 구현 통합 (active/, reports/, done/)
   architecture/ # 시스템 아키텍처
   operations/   # 팀 협업 프로세스
   dev-guide/    # 개발자 가이드
@@ -103,7 +102,7 @@ scripts/        # install-claude-env.sh (설정만 타 프로젝트에 이식)
 
 ### Slash Commands
 
-- `/dev-docs <설명>` — `docs/dev/active/{task-name}/`에 plan/context/tasks 문서 구조 생성
+- `/dev-docs <설명>` — `docs/plans/active/{task-name}/`에 plan/context/tasks 문서 구조 생성
 - `/dev-docs-update` — 컨텍스트 컴팩션 전 진행 상태 업데이트, 완료 작업 아카이브. docs/context 연동하여 세션 상태 동기화
 - `/route-research-for-testing` — 편집된 라우트 자동 감지 후 auth-route-tester로 테스트
 
@@ -125,10 +124,11 @@ scripts/        # install-claude-env.sh (설정만 타 프로젝트에 이식)
 
 ## Document Management
 
-### 기획 vs 구현 구분
-- `docs/planning/` — 기획 (What/Why): 범위, 목표, 완료 기준. 단일 `PLAN-*.md`
-- `docs/dev/` — 구현 (How): 상세 설계, 태스크 추적. `/dev-docs`로 3파일 세트 생성
-- 기획 문서에 구현 상세를 작성하지 않는다
+### 문서 구조
+- `docs/plans/active/{topic}/` — 기획(PLAN) + 구현(tasks/context)이 같은 폴더에 공존
+- `docs/plans/reports/` — 독립 리서치 보고서 (REPORT-*.md)
+- `docs/plans/done/` — 완료 아카이브 (폴더째 이동)
+- PLAN 파일에 구현 상세를 작성하지 않는다 (별도 tasks/context 파일 사용)
 
 ### 세션 체크리스트
 - **시작**: `docs/context/` 4개 파일 순서대로 읽기 (dev-status → decisions → handoff → ops-rules)

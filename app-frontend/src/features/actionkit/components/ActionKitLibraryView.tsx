@@ -159,6 +159,21 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
         localStorage.setItem('actionkit_bookmarks', JSON.stringify(newBookmarks));
     };
 
+    const resolveActionKitUrl = (path: string): string => {
+        if (path.startsWith('http://') || path.startsWith('https://')) return path;
+        const storageUrl = process.env.NEXT_PUBLIC_STORAGE_URL;
+        if (storageUrl) {
+            const normalized = path.replace(/^\/+/, '').replace(/^actionkits\/files\//, 'actionkit/');
+            return `${storageUrl.replace(/\/$/, '')}/${normalized}`;
+        }
+        let finalPath = path;
+        if (path.startsWith('library/resources/')) {
+            finalPath = path.replace('library/resources/', 'actionkits/files/');
+        }
+        const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+        return `${baseURL}/${finalPath}`;
+    };
+
     const handleBulkDownload = async () => {
         setIsZipping(true);
         try {
@@ -179,18 +194,9 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
                 }
 
                 if (!blob && item.path) {
-                    let finalPath = item.path;
-                    if (finalPath.startsWith('library/resources/')) {
-                        finalPath = finalPath.replace('library/resources/', 'actionkits/files/');
-                    }
-                    if (finalPath.startsWith('http')) {
-                        const res = await fetch(finalPath);
-                        blob = await res.blob();
-                    } else {
-                        const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
-                        const res = await fetch(`${baseURL}/${finalPath}`);
-                        blob = await res.blob();
-                    }
+                    const url = resolveActionKitUrl(item.path);
+                    const res = await fetch(url);
+                    blob = await res.blob();
                 }
 
                 if (blob) {

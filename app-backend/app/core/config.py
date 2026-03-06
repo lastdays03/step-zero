@@ -50,8 +50,16 @@ class Settings(BaseSettings):
     OPENAI_CHAT_MODEL: str = "gpt-4o-mini"
     OPENAI_EMBED_MODEL: str = "text-embedding-3-small"
 
-    # Storage (local only for now)
+    # Storage
+    STORAGE_BACKEND: str = "local"
     STORAGE_LOCAL_ROOT: str | None = None
+
+    # R2 (STORAGE_BACKEND=r2 시 필수)
+    R2_ACCOUNT_ID: str = ""
+    R2_ACCESS_KEY_ID: str = ""
+    R2_SECRET_ACCESS_KEY: str = ""
+    R2_BUCKET_NAME: str = "stepzero-uploads"
+    R2_PUBLIC_URL: str = ""
     GROWTH_CLUB_MAX_IMAGE_MB: int = 20
     GROWTH_CLUB_MAX_FILE_MB: int = 50
     GROWTH_CLUB_MAX_TOTAL_MB: int = 200

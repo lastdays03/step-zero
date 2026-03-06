@@ -51,7 +51,7 @@
 - 트리거: 아키텍처/운영/품질/API 설계 기준 변경 시
 - 실행 순서:
 1. 변경된 규칙을 `AGENTS.md` 또는 `CLAUDE.md`에서 확인
-2. 프로젝트 영향 항목을 L1 문서(`docs/context/*`, `docs/planning/*`)에 반영
+2. 프로젝트 영향 항목을 L1 문서(`docs/context/*`, `docs/plans/*`)에 반영
 3. 반영 결과를 `docs/context/dev-status.md`의 `Sync Notes`에 1줄 기록
 4. 구조적 결정이면 `decisions.md`에 근거 포함 기록
 

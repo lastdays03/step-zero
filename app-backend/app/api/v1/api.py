@@ -11,6 +11,7 @@ from app.api.v1.ops import router as ops_router
 from app.api.v1.profile import router as profile_router
 from app.api.v1.rag import router as rag_router
 from app.api.v1.roadmaps import router as roadmaps_router
+from app.api.v1.storage import router as storage_router
 
 api_router = APIRouter()
 api_router.include_router(auth_router, prefix="/auth", tags=["auth"])
@@ -32,3 +33,4 @@ api_router.include_router(
     user_announcements_router, prefix="/announcements", tags=["announcements"]
 )
 api_router.include_router(ops_router, prefix="/ops", tags=["ops"])
+api_router.include_router(storage_router, prefix="/storage", tags=["storage"])

@@ -12,6 +12,18 @@ os.environ.setdefault("DATABASE_URL", "sqlite+aiosqlite:///./tests/test.db")
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 os.environ.setdefault("OPENAI_API_KEY", "sk-test-dummy-key-for-ci")
 
+
+def pytest_collection_modifyitems(config, items):
+    """requires_openai 마커가 있는 테스트를 더미 키 환경에서 자동 skip."""
+    api_key = os.environ.get("OPENAI_API_KEY", "")
+    if not api_key or api_key.startswith("sk-test"):
+        skip_marker = pytest.mark.skip(
+            reason="requires real OPENAI_API_KEY (current key is dummy)"
+        )
+        for item in items:
+            if "requires_openai" in item.keywords:
+                item.add_marker(skip_marker)
+
 from app.core import db, security
 from app.core.rate_limit import limiter
 from app.main import app

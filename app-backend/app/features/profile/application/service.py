@@ -1,26 +1,24 @@
 import uuid
-from datetime import datetime
+from pathlib import Path
 
 from app.core.security import utc_now
-from pathlib import Path
 
 from fastapi import UploadFile
 from sqlalchemy import desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
-from app.core.config import get_settings
+from app.models.file import File
 from app.models.profile import UserProfile, UserProfileUpdate
 from app.models.roadmap import Roadmap
 from app.models.user import User
+from app.repositories.file_repository import FileRepository
+from app.services.storage import get_storage_backend
 
 
 class ProfileService:
     def __init__(self, session: AsyncSession):
         self.session = session
-        settings = get_settings()
-        self.upload_dir = settings.STORAGE_ROOT_PATH / "profile"
-        self.upload_dir.mkdir(parents=True, exist_ok=True)
 
     async def get_profile(self, user_id: int) -> UserProfile:
         statement = select(UserProfile).where(UserProfile.user_id == user_id)
@@ -87,17 +85,34 @@ class ProfileService:
         # Generate unique filename
         ext = Path(file.filename or "").suffix or ".png"
         filename = f"{uuid.uuid4()}{ext}"
-        filepath = self.upload_dir / filename
+        object_key = f"profile/{filename}"
 
-        # Save file
-        with open(filepath, "wb") as buffer:
-            content = await file.read()
-            buffer.write(content)
+        # Save file via storage backend
+        storage = get_storage_backend()
+        content = await file.read()
+        await storage.put(
+            object_key, content, content_type=file.content_type or "image/png"
+        )
 
         # Update profile
         profile.profile_img = f"profile/{filename}"
         profile.updated_at = utc_now()
         self.session.add(profile)
+
+        # Dual-write: File 레코드 생성 (같은 트랜잭션)
+        file_repo = FileRepository(self.session)
+        await file_repo.delete_by_owner(owner_type="user_profile", owner_id=user_id)
+        file_record = File(
+            owner_type="user_profile",
+            owner_id=user_id,
+            category="profile_image",
+            object_key=f"profile/{filename}",
+            original_filename=file.filename,
+            mime_type=file.content_type,
+            size_bytes=len(content),
+        )
+        await file_repo.create(file=file_record)
+
         await self.session.commit()
         await self.session.refresh(profile)
 

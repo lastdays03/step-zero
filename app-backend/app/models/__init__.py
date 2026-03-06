@@ -9,6 +9,7 @@ from app.models.actionkit import (
 from app.models.admin_audit_log import AdminAuditLog
 from app.models.announcement import Announcement
 from app.models.audit_log import AuditLog
+from app.models.file import File
 from app.models.growth_club import (
     GrowthClubAttachmentRead,
     GrowthClubComment,
@@ -51,6 +52,7 @@ __all__ = [
     "AdminAuditLog",
     "Announcement",
     "AuditLog",
+    "File",
     "AuthenticatedUser",
     "GrowthClubAttachmentRead",
     "GrowthClubComment",

@@ -9,7 +9,7 @@ import { MessageSquare, ThumbsUp, Trash2, AlertCircle, Paperclip } from 'lucide-
 import { useAuth } from '@/providers/AuthProvider';
 import { growthClubApi } from '../api';
 import { CommentSection } from './CommentSection';
-import { resolveUploadUrl } from '../utils/upload-url';
+import { resolveUploadUrl } from '@/features/shared/file';
 import { useTimeAgo } from '../hooks/useTimeAgo';
 
 interface PostCardProps {
