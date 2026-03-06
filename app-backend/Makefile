@@ -1,4 +1,4 @@
-.PHONY: setup run worker test migrate-up migrate-revision migrate-verify migrate-status rag-bootstrap
+.PHONY: setup run worker test test-eval test-eval-t2 test-eval-t3 migrate-up migrate-revision migrate-verify migrate-status rag-bootstrap
 
 setup:
 	@./scripts/setup_dev.sh
@@ -11,6 +11,15 @@ worker:
 
 test:
 	@uv run pytest -q
+
+test-eval:
+	@uv run pytest tests/eval -v -s
+
+test-eval-t2:
+	@uv run pytest tests/eval/test_tier2_metrics.py -v -s
+
+test-eval-t3:
+	@uv run pytest tests/eval/test_tier3_full.py -v -s
 
 migrate-up:
 	@./scripts/run_alembic.sh upgrade head

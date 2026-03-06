@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { DashboardView } from '../components/DashboardView';
 import { useDashboard } from '../hooks/useDashboard';
@@ -129,33 +129,43 @@ describe('DashboardView', () => {
         });
     });
 
-    it('renders current phase title', () => {
+    it('renders current phase title', async () => {
         render(<DashboardView />);
-        expect(screen.getByText(/Business Registration/i)).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText(/Business Registration/i)).toBeInTheDocument();
+        });
     });
 
-    it('renders current task progress card', () => {
+    it('renders current task progress card', async () => {
         render(<DashboardView />);
-        expect(screen.getByText(/현재 진행 단계/i)).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText(/현재 진행 단계/i)).toBeInTheDocument();
+        });
     });
 
-    it('renders growth club section', () => {
+    it('renders growth club section', async () => {
         render(<DashboardView />);
-        expect(screen.getByText(/LIVE: GROWTH CLUB/i)).toBeInTheDocument();
-        expect(screen.getByText(/12명의 동료 창업자와/i)).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText(/LIVE: GROWTH CLUB/i)).toBeInTheDocument();
+            expect(screen.getByText(/12명의 동료 창업자와/i)).toBeInTheDocument();
+        });
     });
 
-    it('renders roadmap stepper', () => {
+    it('renders roadmap stepper', async () => {
         render(<DashboardView />);
-        expect(screen.getByText(/나의 로드맵/i)).toBeInTheDocument();
-        expect(screen.getByText(/Idea Validation/i)).toBeInTheDocument();
-        expect(screen.getByText(/Tax Registration/i)).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText(/나의 로드맵/i)).toBeInTheDocument();
+            expect(screen.getByText(/Idea Validation/i)).toBeInTheDocument();
+            expect(screen.getByText(/Tax Registration/i)).toBeInTheDocument();
+        });
     });
 
-    it('renders stats', () => {
+    it('renders stats', async () => {
         render(<DashboardView />);
-        expect(screen.getByText(/D-3/i)).toBeInTheDocument();
-        expect(screen.getByText(/8\/12/i)).toBeInTheDocument();
+        await waitFor(() => {
+            expect(screen.getByText(/D-3/i)).toBeInTheDocument();
+            expect(screen.getByText(/8\/12/i)).toBeInTheDocument();
+        });
     });
 
     it('shows only current-step documents in dashboard card', async () => {

@@ -7,12 +7,12 @@
 - [x] 1-1. `pyproject.toml`에 `addopts = "--ignore=tests/eval"` + 마커 등록 [S]
 - [x] 1-2. `conftest.py`에 `pytest_collection_modifyitems` requires_openai 자동 skip [S]
 - [x] 1-3. `tests/eval/README.md` 수동 실행 가이드 생성 [S]
-- [ ] 1-4. Makefile에 `test-eval`, `test-eval-t2`, `test-eval-t3` 타겟 추가 [S]
-- [ ] 1-5. CLAUDE.md Quick Commands에 eval 테스트 명령 갱신 [S]
+- [x] 1-4. Makefile에 `test-eval`, `test-eval-t2`, `test-eval-t3` 타겟 추가 [S]
+- [x] 1-5. CLAUDE.md Quick Commands에 eval 테스트 명령 갱신 [S]
 
 ## Phase 2: P1 — 테스트 품질 개선 (단기)
 
-- [ ] 2-1. Dashboard.test.tsx act() 경고 제거 (`waitFor` 패턴 적용) [S]
+- [x] 2-1. Dashboard.test.tsx act() 경고 제거 (`waitFor` 패턴 적용) [S]
 
 ## Phase 3: P2 — 중기 인프라 (Backlog)
 

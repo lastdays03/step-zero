@@ -35,7 +35,10 @@ step-zero/
 make setup            # 개발환경 초기화 (uv sync + .env)
 make run              # uv run uvicorn app.main:app --reload --port 8000
 make worker           # ARQ 비동기 워커 (로드맵 생성용)
-make test             # uv run pytest -q
+make test             # uv run pytest -q (eval 제외, ~30초)
+make test-eval        # RAG 평가 전체 (OpenAI API + PostgreSQL 필요)
+make test-eval-t2     # Tier 2 평가만 (~5분, ~$2-5)
+make test-eval-t3     # Tier 3 전체 평가 (~15분, ~$15-25)
 make migrate-up       # alembic upgrade head
 make migrate-revision m="description"  # 새 마이그레이션 생성
 make migrate-verify   # 모델 ↔ DB 스키마 diff 검증
