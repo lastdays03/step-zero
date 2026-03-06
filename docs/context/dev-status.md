@@ -11,7 +11,7 @@
 
 ## Current State
 - R2 통합 Phase 1-4: 코드 구현 완료, Phase 6 (E2E 검증) 대기
-- 프론트엔드 테스트 Phase 1-2: 완료 (22 → 98 테스트)
+- 프론트엔드 테스트 Phase 1-3: 진행 중 (22 → 115 테스트)
 
 ## Completed (최근)
 - R2 Phase 1: config.py 환경변수, storage 라우터 등록, .env.example
@@ -35,7 +35,7 @@
 
 ## Test Status
 - Backend pytest: 406 passed, 10 skipped
-- Frontend test: 98 passed (15 suites)
+- Frontend test: 115 passed (18 suites)
 - Frontend lint: 0 errors
 
 ## Sync Notes

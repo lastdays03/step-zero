@@ -21,11 +21,11 @@
 
 ## Phase 3: 핵심 컴포넌트 렌더링 테스트
 
-- [ ] 3-1. NotificationBell 컴포넌트 테스트 [S]
+- [x] 3-1. NotificationBell 컴포넌트 테스트 (5건) [S]
 - [ ] 3-2. RoadmapSwitcher 컴포넌트 테스트 [M]
 - [ ] 3-3. PostCard / CreatePostForm 컴포넌트 테스트 [M]
-- [ ] 3-4. ChatInput 컴포넌트 테스트 [S]
-- [ ] 3-5. ReadinessTracker 컴포넌트 테스트 [M]
+- [x] 3-4. ChatInput 컴포넌트 테스트 (7건) [S]
+- [x] 3-5. ReadinessTracker 컴포넌트 테스트 (5건) [M]
 
 ## Phase 4: 통합 테스트 (Backlog)
 

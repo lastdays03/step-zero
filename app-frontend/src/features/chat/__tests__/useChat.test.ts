@@ -145,6 +145,8 @@ describe('useChat', () => {
   });
 
   it('sendMessage: 빈 메시지는 무시', async () => {
+    global.fetch = jest.fn();
+
     const { result } = renderHook(() => useChat());
 
     await act(async () => {
