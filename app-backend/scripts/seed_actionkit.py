@@ -29,11 +29,11 @@ def file_checksum(path: Path) -> str:
 
 from app.models.actionkit import (
     ActionKitCategory,
-    ActionKitFile,
     ActionKitItem,
     ActionKitItemHighlight,
     ActionKitRelatedLaw,
 )
+from app.models.file import File
 from scripts.seeds.actionkit_seed_source import ACTION_KIT_DATA, LAW_DATA
 
 
@@ -168,8 +168,10 @@ async def seed() -> None:
                 mime_type = detect_mime_type(filename)
 
                 session.add(
-                    ActionKitFile(
-                        item_id=item.id,
+                    File(
+                        owner_type="actionkit_item",
+                        owner_id=item.id,
+                        category="document",
                         version=1,
                         object_key=object_key,
                         original_filename=filename,
@@ -245,8 +247,10 @@ async def seed() -> None:
                 mime_type = detect_mime_type(filename)
 
                 session.add(
-                    ActionKitFile(
-                        item_id=item.id,
+                    File(
+                        owner_type="actionkit_item",
+                        owner_id=item.id,
+                        category="document",
                         version=1,
                         object_key=object_key,
                         original_filename=filename,

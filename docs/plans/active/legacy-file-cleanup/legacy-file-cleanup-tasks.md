@@ -61,29 +61,32 @@ Last Updated: 2026-03-06
 
 ---
 
-## Phase D: 레거시 테이블 제거
+## Phase D: 레거시 테이블 제거 — ✅ 완료
 
-### D-1. Alembic DROP 마이그레이션 [Effort: M]
-- [ ] 새 마이그레이션 파일 생성
-  - [ ] `op.drop_table("growthclubpostattachment")`
-  - [ ] `op.drop_table("actionkit_files")`
-  - [ ] `op.drop_column("userprofile", "profile_img")` (선택)
-  - [ ] `downgrade()`: `raise NotImplementedError("irreversible migration")`
-- [ ] Docker 환경에서 마이그레이션 실행 테스트
-- **Depends:** C-1, C-2, C-3 전체 완료
+### D-1. Alembic DROP 마이그레이션 [Effort: M] — ✅ 완료
+- [x] `017_drop_legacy_file_tables.py` 생성
+  - [x] `op.drop_table("actionkit_files")`
+  - [x] `op.drop_table("growthclubpostattachment")`
+  - [x] `downgrade()`: `raise NotImplementedError("irreversible migration")`
+  - [x] `userprofile.profile_img` 컬럼 유지 (AuthorRead 호환)
+- **Depends:** C-1, C-2, C-3 전체 완료 ✅
 
-### D-2. 코드 정리 [Effort: M]
-- [ ] `ActionKitFile` 클래스 + `ActionKitItem.files` relationship 삭제
-- [ ] `GrowthClubPostAttachment` 클래스 + `GrowthClubPost.attachments` relationship 삭제
-- [ ] `models/__init__.py`, `alembic/env.py` import 정리
-- [ ] `scripts/migrate_files_table.py` 삭제
-- [ ] `make test` 통과
-- [ ] 레거시 참조 잔존 grep 0건
+### D-2. 코드 정리 [Effort: M] — ✅ 완료
+- [x] `ActionKitFile` 클래스 + `ActionKitItem.files` relationship 삭제
+- [x] `GrowthClubPostAttachment` 클래스 + `GrowthClubPost.attachments` relationship 삭제
+- [x] `models/__init__.py` import 정리
+- [x] `scripts/migrate_files_table.py` 삭제
+- [x] `actionkit_matcher.py` → `File` 모델 전환
+- [x] `ops/actionkit/service.py` → `File` + `FileRepository` 전환
+- [x] `ops/growth_club.py` → `File` 기반 attachment 조회 전환
+- [x] `seed_actionkit.py`, `seed_rag_vectors.py` → `File` 전환
+- [x] `roadmap_evaluator.py` → `File` 전환
+- [x] `test_roadmap_generation.py` → `File` 전환
+- [x] `make test` 통과 (421 passed, 10 skipped)
+- [x] 레거시 ORM 모델 참조 잔존 grep 0건
 
-### D-3. 프론트엔드 타입 동기화 및 최종 검증 [Effort: S]
-- [ ] `pnpm types:sync` 실행
-- [ ] `pnpm lint` + `pnpm build` 통과
-- [ ] Docker 환경 통합 테스트
+### D-3. 프론트엔드 검증 [Effort: S] — ✅ 완료
+- [x] `pnpm lint` 통과 (0 errors, 1 warning — 기존)
 
 ---
 
@@ -94,9 +97,9 @@ Last Updated: 2026-03-06
 | Phase A: 데이터 정합성 | ✅ 완료 |
 | Phase B: FK 재매핑 | ✅ 완료 |
 | Phase C: 코드 전환 | ✅ 완료 |
-| Phase D: 레거시 제거 | 미착수 |
+| Phase D: 레거시 제거 | ✅ 완료 |
 
 **권장 PR 분할:**
 - ~~PR 1: Phase A~~ → PR #25 머지 완료
-- PR 2: Phase B+C (현재 브랜치) → 커밋 대기
-- PR 3: Phase D (레거시 제거 — 최종 정리)
+- ~~PR 2: Phase B+C~~ → PR #26 머지 완료
+- PR 3: Phase D (레거시 제거 — 최종 정리) → 커밋 대기

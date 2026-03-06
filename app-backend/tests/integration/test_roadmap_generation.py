@@ -30,11 +30,11 @@ from app.features.roadmaps.application.roadmap_generation_service import (
 )
 from app.models.actionkit import (
     ActionKitCategory,
-    ActionKitFile,
     ActionKitItem,
     ActionKitItemHighlight,
     ActionKitRelatedLaw,
 )
+from app.models.file import File
 
 # ------------------------------------------------------------------ #
 #  Helpers: build mock ActionKit data
@@ -87,9 +87,11 @@ def _make_file(
     object_key: str,
     file_id: int = 1,
     original_filename: str = "test.pdf",
-) -> ActionKitFile:
-    f = ActionKitFile(
-        item_id=item_id,
+) -> File:
+    f = File(
+        owner_type="actionkit_item",
+        owner_id=item_id,
+        category="document",
         object_key=object_key,
         original_filename=original_filename,
         is_current=True,

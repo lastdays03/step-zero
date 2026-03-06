@@ -4,35 +4,32 @@
 
 ## Last Updated
 - Date: 2026-03-06
-- Branch: `feature/0-legacy-file-cleanup-phase-b` (Phase B+C 구현 중)
+- Branch: `develop` (clean, PR #26 머지 완료)
 
 ## Sprint Focus
-- legacy-file-cleanup Phase B+C 구현
+- legacy-file-cleanup Phase D (레거시 테이블 제거)
 
 ## Current State
-- legacy-file-cleanup Phase A: 완료 (PR #25 머지 + A-1 DB 스크립트 실행 완료)
-- legacy-file-cleanup Phase B: 완료 (FK 재매핑 + Alembic 마이그레이션)
-- legacy-file-cleanup Phase C: 완료 (ActionKit/GrowthClub/Profile 코드 전환)
+- legacy-file-cleanup Phase A~C: 완료 (PR #25, #26 머지)
 - legacy-file-cleanup Phase D: 미착수
 
 ## Completed (최근)
-- A-1 DB 스크립트 실행 (71건: ActionKit 67, GrowthClub 3, Profile 1)
-- B-1 FK 데이터 재매핑 (ID 매핑 67건, FK 대상 0건)
-- B-2 Alembic 마이그레이션 016 적용 (actionkit_files → files FK 변경)
-- C-1 ActionKit: FileRepository 전환, 레거시 메서드 4개 제거
-- C-2 GrowthClub: File 기반 attachment 생성/조회/삭제
-- C-3 Profile: File primary source, profile_img 컬럼 동기화 유지
+- Phase B+C (PR #26): FK 재매핑 + 코드 전환
+  - Alembic 016 마이그레이션 (actionkit_files → files FK 변경)
+  - ActionKit/GrowthClub/Profile → FileRepository 전환
+  - ActionKitRepository 파일 메서드 4개 제거
+- Phase A (PR #25): 데이터 정합성 확보 + DB 스크립트 실행 (71건)
 
 ## In Progress
-- PR 준비 (Phase B+C 커밋)
+- 없음
 
 ## Risks And Blockers
-- Phase D (레거시 테이블 DROP)는 별도 PR로 진행 권장
+- Phase D는 비가역 마이그레이션 (테이블 DROP) — 신중한 실행 필요
 
 ## Next 3 Actions
-1. Phase B+C 커밋 → PR 생성 → develop 머지
-2. Phase D 착수: 레거시 테이블 DROP + 코드 정리
-3. 프론트엔드 types:sync + 통합 테스트
+1. Phase D 착수: 레거시 테이블 DROP + 모델/코드 정리
+2. 프론트엔드 types:sync + 통합 테스트
+3. legacy-file-cleanup 완료 후 done/ 아카이브
 
 ## Test Status
 - Backend pytest: 421 passed, 10 skipped
