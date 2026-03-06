@@ -77,7 +77,7 @@ export const Sidebar = () => {
                                 <div className="flex items-center gap-3">
                                     <div className="relative">
                                         <Avatar className="w-10 h-10 border-2 border-white shadow-sm">
-                                            <AvatarImage src={user?.profile_img ? resolveUploadUrl(user.profile_img) : `https://api.dicebear.com/7.x/avataaars/svg?seed=${user?.username || 'Guest'}`} />
+                                            <AvatarImage src={user?.profile_img ? resolveUploadUrl(user.profile_img) : undefined} />
                                             <AvatarFallback className="bg-primary/10 text-primary">{user?.username?.[0] || 'U'}</AvatarFallback>
                                         </Avatar>
                                         <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></div>

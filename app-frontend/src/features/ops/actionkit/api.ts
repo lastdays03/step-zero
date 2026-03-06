@@ -2,7 +2,10 @@ import { apiClient } from "@/lib/api-client";
 
 export interface ActionKitOpsSummary {
     total_items: number;
-    pending_reviews: number;
+    items_with_files: number;
+    inactive_items: number;
+    total_related_laws: number;
+    total_highlights: number;
 }
 
 export const fetchSummary = async () => {

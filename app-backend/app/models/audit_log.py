@@ -3,6 +3,8 @@ from typing import TYPE_CHECKING, Optional
 
 from sqlmodel import Field, Relationship, SQLModel
 
+from app.core.security import utc_now
+
 if TYPE_CHECKING:
     from app.models.user import User
 
@@ -15,7 +17,7 @@ class AuditLog(SQLModel, table=True):
     target_id: str = Field(index=True)
     target_author: Optional[str] = None
     details: Optional[str] = None
-    created_at: datetime = Field(default_factory=lambda: datetime.now())
+    created_at: datetime = Field(default_factory=utc_now)
 
     user: "User" = Relationship()
 

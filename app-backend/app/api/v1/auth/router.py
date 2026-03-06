@@ -170,7 +170,7 @@ async def login_google(
             status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token"
         )
     except GoogleAuthError:
-        if settings.ENABLE_SOCIAL_MOCK:
+        if settings.ENABLE_SOCIAL_MOCK and settings.ENVIRONMENT.lower() != "production":
             return await _login_social_mock_user("google", session)
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

@@ -33,8 +33,10 @@ router = APIRouter(prefix="/growth-club")
     description="신고 게시글/댓글 처리 대기 건수 요약을 조회합니다.",
     response_description="모더레이션 큐 요약을 반환합니다.",
 )
-async def get_growth_club_queue_summary() -> dict[str, int]:
-    return get_queue_summary()
+async def get_growth_club_queue_summary(
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, int]:
+    return await get_queue_summary(session)
 
 
 @router.get(
@@ -133,8 +135,7 @@ async def unblind_post(
     target_author = author.email if author else None
 
     # 기존 블라인드 감사 로그가 있는지 확인하고, 있으면 업데이트
-    from datetime import datetime
-
+    from app.core.security import utc_now
     from app.models.audit_log import AuditLog
 
     old_log_query = await session.execute(
@@ -152,7 +153,7 @@ async def unblind_post(
         old_log.action = "growth_club.post.unblind"
         old_log.user_id = current_user.id
         old_log.details = f"게시글 '{post.title[:20]}...' 블라인드 해제"
-        old_log.created_at = datetime.now()
+        old_log.created_at = utc_now()
     else:
         # 감사 로그 기록
         await save_audit_log(
@@ -237,9 +238,8 @@ async def unblind_comment(
     target_author = author.email if author else None
 
     # 기존 블라인드 감사 로그가 있는지 확인하고, 있으면 업데이트
-    from datetime import datetime
-
-    from app.models.audit_log import AuditLog
+    from app.core.security import utc_now  # noqa: F811
+    from app.models.audit_log import AuditLog  # noqa: F811
 
     old_log_query = await session.execute(
         select(AuditLog)
@@ -256,7 +256,7 @@ async def unblind_comment(
         old_log.action = "growth_club.comment.unblind"
         old_log.user_id = current_user.id
         old_log.details = f"댓글 '{comment.content[:20]}...' 블라인드 해제"
-        old_log.created_at = datetime.now()
+        old_log.created_at = utc_now()
     else:
         # 감사 로그 기록
         await save_audit_log(

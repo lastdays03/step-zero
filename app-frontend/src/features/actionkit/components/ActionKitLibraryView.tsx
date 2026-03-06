@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { toast } from "sonner";
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
+import { getApiBaseUrl } from "@/lib/env";
 import { useActionKit } from '../hooks/useActionKit';
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -170,7 +171,7 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
         if (path.startsWith('library/resources/')) {
             finalPath = path.replace('library/resources/', 'actionkits/files/');
         }
-        const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8000/api/v1";
+        const baseURL = getApiBaseUrl();
         return `${baseURL}/${finalPath}`;
     };
 
