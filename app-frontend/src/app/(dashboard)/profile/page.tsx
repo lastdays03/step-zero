@@ -230,7 +230,7 @@ export default function ProfilePage() {
                                 accept="image/*"
                             />
                             <Avatar className="h-24 w-24 border-4 border-slate-700 shadow-2xl transition-transform group-hover:scale-105 md:h-32 md:w-32">
-                                <AvatarImage src={resolveUploadUrl(profile?.profile_img)} />
+                                <AvatarImage src={resolveUploadUrl(profile?.profile_img ?? undefined)} />
                                 <AvatarFallback className="bg-slate-700 text-2xl font-bold">{profile?.full_name?.[0]}</AvatarFallback>
                             </Avatar>
                             <button
