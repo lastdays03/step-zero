@@ -80,13 +80,13 @@ apiClient.interceptors.response.use(
         // Prevent infinite retry loop
         if (originalRequest._retry) {
             clearAuthState();
-            return Promise.reject(error);
+            return new Promise(() => {}); // swallow — SessionExpiredBanner handles UX
         }
 
         const refreshToken = localStorage.getItem("refresh_token");
         if (!refreshToken) {
             clearAuthState();
-            return Promise.reject(error);
+            return new Promise(() => {});
         }
 
         // If already refreshing, queue this request
@@ -145,7 +145,7 @@ apiClient.interceptors.response.use(
             // All retries exhausted or server rejected — log out
             processQueue(lastError, null);
             clearAuthState();
-            return Promise.reject(lastError);
+            return new Promise(() => {}); // swallow — SessionExpiredBanner handles UX
         } finally {
             isRefreshing = false;
         }

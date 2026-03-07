@@ -83,15 +83,13 @@ async def _login_social_mock_user(
     current_team = teams[0]
 
     # Store refresh token for fallback path
-    from datetime import timedelta
-
     from app.core.security import utc_now
 
     refresh_repo = RefreshTokenRepository(session)
     await refresh_repo.create(
         user_id=user.id,
         token_hash=security.hash_refresh_token(raw_refresh),
-        expires_at=utc_now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+        expires_at=utc_now() + settings.refresh_token_ttl,
     )
 
     return {

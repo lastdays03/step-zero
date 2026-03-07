@@ -218,7 +218,7 @@ class AuthService:
         stored_refresh_token = await self.refresh_token_repo.create(
             user_id=user.id,
             token_hash=token_hash,
-            expires_at=utc_now() + timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
+            expires_at=utc_now() + settings.refresh_token_ttl,
         )
         await self.refresh_token_repo.evict_oldest_for_user(user.id, max_active=5)
 

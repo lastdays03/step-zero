@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7
+    REFRESH_TOKEN_EXPIRE_MINUTES: int | None = None  # 테스트용: 설정 시 DAYS보다 우선
     SQL_ECHO: bool = False
 
     # OpenAI
@@ -117,6 +118,13 @@ class Settings(BaseSettings):
         self.GOOGLE_CLIENT_ID = self._normalize_optional_secret(self.GOOGLE_CLIENT_ID)
         self.LAW_API_OC = self._normalize_optional_secret(self.LAW_API_OC)
         return self
+
+    @property
+    def refresh_token_ttl(self) -> "timedelta":
+        from datetime import timedelta
+        if self.REFRESH_TOKEN_EXPIRE_MINUTES is not None:
+            return timedelta(minutes=self.REFRESH_TOKEN_EXPIRE_MINUTES)
+        return timedelta(days=self.REFRESH_TOKEN_EXPIRE_DAYS)
 
     @property
     def STORAGE_ROOT_PATH(self) -> Path:
