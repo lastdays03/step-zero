@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { LawGuideView } from './LawGuideView';
 import { ActionKitLibraryView } from './ActionKitLibraryView';
 import { cn } from "@/lib/utils";
@@ -26,7 +26,7 @@ export const ActionKitContainer = () => {
     };
 
     return (
-        <div className="p-8 pb-32">
+        <div className="p-8">
             {/* Tab Header */}
             <div className="flex p-1 bg-slate-100 rounded-2xl w-full max-w-md mx-auto mb-12 shadow-inner">
                 <button

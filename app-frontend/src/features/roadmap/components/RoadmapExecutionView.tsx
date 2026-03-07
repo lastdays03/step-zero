@@ -53,10 +53,9 @@ export const RoadmapExecutionView = ({
 
         // Delay to ensure layout is settled
         const timer = setTimeout(() => {
-            const containerRect = container.getBoundingClientRect();
             const elementRect = currentEl.getBoundingClientRect();
-            const offset = elementRect.top - containerRect.top + container.scrollTop - 16;
-            container.scrollTo({ top: offset, behavior: "smooth" });
+            const offset = elementRect.top + window.scrollY - 16;
+            window.scrollTo({ top: offset, behavior: "smooth" });
             setHasScrolled(true);
         }, 100);
         return () => clearTimeout(timer);
@@ -71,9 +70,9 @@ export const RoadmapExecutionView = ({
                 />
             )}
 
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative lg:h-[calc(100vh-220px)]">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 relative">
                 {/* Timeline Section */}
-                <div ref={timelineRef} className="lg:col-span-8 lg:overflow-y-auto lg:pr-2 scrollbar-thin">
+                <div ref={timelineRef} className="lg:col-span-8">
                     <div className="space-y-8 relative pl-0">
                         {/* Vertical timeline line */}
                         <div
@@ -98,7 +97,7 @@ export const RoadmapExecutionView = ({
                 </div>
 
                 {/* Right Sidebar */}
-                <div className="lg:col-span-4 lg:overflow-y-auto lg:pr-2 scrollbar-thin">
+                <div className="lg:col-span-4 lg:sticky lg:top-6 lg:self-start">
                     <RoadmapSidebar
                         createdAt={data.created_at}
                         steps={data.steps}

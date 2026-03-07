@@ -11,13 +11,13 @@ export function ReadinessTracker({ progressPercent }: ReadinessTrackerProps) {
     const current = computeReadinessLevel(progressPercent);
 
     return (
-        <div className="flex items-center gap-1 sm:gap-2 overflow-x-auto">
+        <div className="flex items-center gap-1 sm:gap-2 overflow-hidden">
             {READINESS_LEVELS.map((level, idx) => {
                 const isPast = level.level < current.level;
                 const isCurrent = level.level === current.level;
 
                 return (
-                    <div key={level.level} className="flex items-center gap-1 sm:gap-2 shrink-0">
+                    <div key={level.level} className="flex items-center gap-1 sm:gap-2 min-w-0">
                         {idx > 0 && (
                             <div
                                 className={`w-3 sm:w-5 h-px ${
