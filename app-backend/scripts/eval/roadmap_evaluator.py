@@ -427,7 +427,7 @@ class RoadmapEvaluator:
         """Check if DOCUMENT actions have valid file references.
 
         When a DB session is available, verifies that ``actionkit_file_id``
-        exists in the ``actionkit_files`` table. Otherwise, checks that
+        exists in the ``files`` table. Otherwise, checks that
         ``file_url`` / ``actionkit_file_id`` field is non-empty.
         """
         total = len(document_actions)
@@ -471,7 +471,7 @@ class RoadmapEvaluator:
         self,
         document_actions: list[dict],
     ) -> tuple[float, dict]:
-        """DB-backed document validity check using actionkit_files table."""
+        """DB-backed document validity check using files table."""
         from sqlmodel import select
 
         try:
