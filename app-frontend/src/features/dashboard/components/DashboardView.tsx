@@ -6,12 +6,11 @@ import { useDashboard } from '../hooks/useDashboard';
 import { ProgressCard } from './ProgressCard';
 import { RoadmapStepper } from './RoadmapStepper';
 import { GrowthClubCard } from './GrowthClubCard';
-import { computeEndowedProgress, computeReadinessLevel } from '@/features/roadmap/components';
-import { fetchRoadmapDetail } from '@/features/roadmap/api';
+import { computeEndowedProgress, computeReadinessLevel, fetchRoadmapDetail } from '@/features/roadmap';
+import type { RoadmapDetailResponse } from '@/features/roadmap';
 import { ColdStartHero } from './ColdStartHero';
 import { Card, CardContent } from "@/components/ui/card";
 import { Clock, CheckSquare } from 'lucide-react';
-import type { RoadmapDetailResponse } from '@/features/roadmap/components/RoadmapExecutionView';
 
 const ACTIVE_ROADMAP_STORAGE_KEY = "stepzero_active_roadmap_id";
 const GLASS_CARD = "bg-white/90 backdrop-blur-sm border border-white/50 rounded-3xl shadow-[0_4px_20px_-2px_rgba(0,0,0,0.05)]";

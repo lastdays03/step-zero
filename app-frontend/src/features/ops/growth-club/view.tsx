@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useConfirmDialog } from "@/features/ops/shared/confirm-dialog";
 import { OpsAccessPlaceholder } from "@/features/ops/shared/ops-access-placeholder";
 import { useOpsAccessGuard } from "@/features/ops/shared/use-ops-access-guard";
-import { Post, Comment } from "@/features/growth-club/types";
+import type { Post, Comment } from "@/features/growth-club";
 import {
   fetchBlindedPosts,
   unblindPost,

@@ -13,7 +13,18 @@ const nextConfig = {
     turbopack: {
         root: __dirname,
     },
-    // Add image domains etc if needed
+    images: {
+        remotePatterns: [
+            ...(process.env.NEXT_PUBLIC_API_URL ? [{
+                protocol: new URL(process.env.NEXT_PUBLIC_API_URL).protocol.replace(':', ''),
+                hostname: new URL(process.env.NEXT_PUBLIC_API_URL).hostname,
+            }] : []),
+            ...(process.env.NEXT_PUBLIC_STORAGE_URL ? [{
+                protocol: new URL(process.env.NEXT_PUBLIC_STORAGE_URL).protocol.replace(':', ''),
+                hostname: new URL(process.env.NEXT_PUBLIC_STORAGE_URL).hostname,
+            }] : []),
+        ],
+    },
 };
 
 export default nextConfig;

@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Search, Sparkles } from "lucide-react";
 import { useAuth } from "@/providers/AuthProvider";
-import { HERO_SUGGESTIONS } from "@/features/roadmap/components/roadmap-constants";
+import { HERO_SUGGESTIONS } from "@/features/roadmap";
 import { useAuthModal } from "../providers/AuthModalProvider";
 
 export function ColdStartHero() {

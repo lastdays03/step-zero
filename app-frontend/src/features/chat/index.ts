@@ -19,11 +19,8 @@ export type {
 
 // SSE 유틸
 export { getApiBaseUrl } from "@/lib/env";
-export {
-  getAuthHeaders,
-  tryRefreshToken,
-  parseSSELine,
-} from "./utils/sse";
+export { getAuthHeaders, tryRefreshToken } from "@/lib/sse-auth";
+export { parseSSELine } from "./utils/sse";
 
 // Provider
 export { ChatProvider, useChatProvider } from "./providers/ChatProvider";

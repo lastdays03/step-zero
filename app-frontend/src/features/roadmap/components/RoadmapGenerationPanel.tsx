@@ -6,7 +6,7 @@ import { RoadmapChatIntake, type RoadmapRawInput, type RoadmapValidationResult }
 import { mapJobFailureMessage, VALIDATE_FALLBACK_MESSAGE } from "./roadmap-constants";
 import { useRoadmapJob } from "@/features/roadmap/hooks";
 import type { RoadmapIntakePayload } from "@/features/roadmap/hooks/useRoadmapJob";
-import { SocialAuthModal } from "@/features/auth/components/SocialAuthModal";
+import { SocialAuthModal } from "@/features/auth";
 
 interface RoadmapInputValidateResponse {
     valid: boolean;

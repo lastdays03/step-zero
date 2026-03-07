@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useCallback, useContext, useState } from "react";
-import { SocialAuthModal } from "@/features/auth/components/SocialAuthModal";
+import { SocialAuthModal } from "@/features/auth";
 
 interface AuthModalContextValue {
     openAuthModal: () => void;

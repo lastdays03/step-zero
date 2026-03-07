@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/api-client";
-import { Post, Comment } from "@/features/growth-club/types";
+import type { Post, Comment } from "@/features/growth-club";
 
 export const fetchBlindedPosts = async (): Promise<Post[]> => {
     const response = await apiClient.get<Post[]>("/ops/growth-club/posts/blinded");

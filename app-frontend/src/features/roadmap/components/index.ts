@@ -10,5 +10,7 @@ export { RoadmapSwitcher } from "./RoadmapSwitcher";
 export { RoadmapDeleteDialog } from "./RoadmapDeleteDialog";
 export { RoadmapRenameDialog } from "./RoadmapRenameDialog";
 export { MilestoneCelebration } from "./MilestoneCelebration";
-export { computeEndowedProgress, computeReadinessLevel } from "./roadmap-utils";
+export { computeEndowedProgress, computeReadinessLevel, derivePhaseGroups } from "./roadmap-utils";
+export type { RoadmapDetailResponse } from "./roadmap-utils";
+export { HERO_SUGGESTIONS } from "./roadmap-constants";
 export { ReadinessTracker } from "./ReadinessTracker";

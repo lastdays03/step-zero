@@ -115,7 +115,6 @@ export const CommentSection: React.FC<CommentSectionProps> = ({ postId, initialC
                                 height={28}
                                 className="w-full h-full object-cover"
                                 onError={() => setImgError(true)}
-                                unoptimized
                             />
                         ) : (
                             comment.author?.username?.[0] || '?'

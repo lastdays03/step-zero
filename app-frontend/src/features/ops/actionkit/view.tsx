@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
 import { fetchCategories, fetchCategoryItems, fetchSummary, updateItemOrders } from "./api";
-import type { ActionKitItem } from "@/features/actionkit/types";
+import type { ActionKitItem } from "@/features/actionkit";
 import { useConfirmDialog } from "@/features/ops/shared/confirm-dialog";
 
 interface OpsActionKitItem extends ActionKitItem {

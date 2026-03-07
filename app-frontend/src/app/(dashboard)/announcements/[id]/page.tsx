@@ -3,9 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import { toast } from "sonner";
 import { useParams } from 'next/navigation';
-import { AnnouncementDetailView } from '@/features/announcements/components/AnnouncementDetailView';
-import { announcementsApi } from '@/features/announcements/api';
-import { OpsAnnouncement } from '@/features/ops/announcements/types';
+import { AnnouncementDetailView, announcementsApi } from '@/features/announcements';
+import type { OpsAnnouncement } from '@/features/ops';
 
 export default function AnnouncementDetailPage() {
     const params = useParams();

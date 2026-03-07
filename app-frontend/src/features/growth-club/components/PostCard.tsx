@@ -119,7 +119,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
                                 height={40}
                                 className="w-full h-full object-cover"
                                 onError={() => setProfileImgError(true)}
-                                unoptimized
                             />
                         ) : (
                             post.author.username[0] || '?'
@@ -168,7 +167,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, onDeleteSuccess, onRep
                                 fill
                                 className="object-cover"
                                 sizes="(max-width: 640px) 100vw, 50vw"
-                                unoptimized
                             />
                         </div>
                     ))}

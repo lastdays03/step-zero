@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { Bell, Heart, MessageSquare, Reply, X, ChevronDown } from 'lucide-react';
 import { notificationsApi } from '../api';
 import { Notification } from '../types';
-import { formatTimeAgo } from '@/features/growth-club/hooks/useTimeAgo';
+import { formatTimeAgo } from '@/lib/format';
 import { useAuth } from '@/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { useNotificationSSE } from '../hooks/useNotificationSSE';
@@ -111,8 +111,11 @@ export const NotificationBell = () => {
         }
     };
 
-    const sortedNotifications = [...notifications].sort((a, b) =>
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+    const sortedNotifications = useMemo(
+        () => [...notifications].sort((a, b) =>
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        ),
+        [notifications]
     );
 
     const displayItems = showAll ? sortedNotifications : sortedNotifications.slice(0, 5);

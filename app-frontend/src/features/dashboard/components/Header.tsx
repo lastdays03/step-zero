@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useAuth } from '@/providers/AuthProvider';
-import { NotificationBell } from '@/features/notifications/components/NotificationBell';
+import { NotificationBell } from '@/features/notifications';
 
 function getGreeting(): string {
     const hour = new Date().getHours();

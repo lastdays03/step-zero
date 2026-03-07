@@ -426,7 +426,6 @@ export function OpsFilesView() {
                               alt={file.original_filename ?? "업로드 파일 미리보기"}
                               width={32}
                               height={32}
-                              unoptimized
                               className="h-8 w-8 rounded object-cover"
                             />
                           ) : (

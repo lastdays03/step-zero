@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { getApiBaseUrl } from '@/lib/env';
-import { getAuthHeaders, tryRefreshToken } from '@/features/chat/utils/sse';
+import { getAuthHeaders, tryRefreshToken } from '@/lib/sse-auth';
 
 interface UseNotificationSSEOptions {
     enabled: boolean;

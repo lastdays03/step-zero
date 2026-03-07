@@ -23,8 +23,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { getMyProfile, updateMyProfile, uploadProfileImage } from "@/features/profile/api";
-import { UserProfile, UserProfileUpdate } from "@/features/profile/types";
+import { getMyProfile, updateMyProfile, uploadProfileImage } from "@/features/profile";
+import type { UserProfile, UserProfileUpdate } from "@/features/profile";
 import { useAuth } from "@/providers/AuthProvider";
 import { resolveUploadUrl } from "@/features/shared/file";
 

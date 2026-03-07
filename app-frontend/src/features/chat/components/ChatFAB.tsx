@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/providers/AuthProvider";
-import { SocialAuthModal } from "@/features/auth/components/SocialAuthModal";
+import { SocialAuthModal } from "@/features/auth";
 import { Sparkles } from "lucide-react";
 import { useChatProvider } from "../providers/ChatProvider";
 

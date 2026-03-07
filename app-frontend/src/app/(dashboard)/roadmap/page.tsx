@@ -3,13 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import { apiClient } from "@/lib/api-client";
-import { RoadmapExecutionView } from "@/features/roadmap/components/RoadmapExecutionView";
-import { RoadmapGenerationPanel } from "@/features/roadmap/components";
-import { RoadmapHeader } from "@/features/roadmap/components/RoadmapHeader";
-import { RoadmapSwitcher } from "@/features/roadmap/components/RoadmapSwitcher";
-import { useActiveRoadmap } from "@/features/roadmap/hooks/useActiveRoadmap";
-import { useRoadmapList } from "@/features/roadmap/hooks/useRoadmapList";
-import { derivePhaseGroups } from "@/features/roadmap/components/roadmap-utils";
+import {
+    RoadmapExecutionView,
+    RoadmapGenerationPanel,
+    RoadmapHeader,
+    RoadmapSwitcher,
+    useActiveRoadmap,
+    useRoadmapList,
+    derivePhaseGroups,
+} from "@/features/roadmap";
 import { useAuth } from "@/providers/AuthProvider";
 import { Button } from "@/components/ui/button";
 
