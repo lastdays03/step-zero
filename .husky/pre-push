@@ -19,8 +19,20 @@ if [ -n "$branch" ]; then
   fi
 fi
 
-echo "[pre-push] backend tests"
-cd app-backend && uv run pytest -q -m "not slow and not requires_openai" || exit 1
+echo "[pre-push] running backend tests + frontend lint in parallel"
 
-echo "[pre-push] frontend lint"
-cd ../app-frontend && pnpm lint || exit 1
+(cd app-backend && uv run pytest -q -m "not slow and not requires_openai") &
+pid_backend=$!
+
+(cd app-frontend && pnpm lint) &
+pid_frontend=$!
+
+fail=0
+wait $pid_backend || { echo "[pre-push] backend tests failed"; fail=1; }
+wait $pid_frontend || { echo "[pre-push] frontend lint failed"; fail=1; }
+
+if [ "$fail" -ne 0 ]; then
+  exit 1
+fi
+
+echo "[pre-push] all checks passed"
