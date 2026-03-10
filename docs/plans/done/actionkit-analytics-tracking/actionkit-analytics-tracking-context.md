@@ -77,6 +77,19 @@
 - 현재: 현재 카테고리 아이템만 전달 → 노후 감지 불완전
 - 수정: 전체 카테고리 아이템 로드
 
+### D8: KPI "이용 건수"에 view 포함
+- 프론트엔드 모든 다운로드/보기 버튼이 `/view` 엔드포인트 사용
+- view 이벤트 제외 시 KPI 0건 → `["view", "download", "bulk_download"]` 전부 포함
+
+### D9: session.commit() 필수 (flush 아님)
+- `get_session()` 컨텍스트가 auto-commit하지 않음
+- `session.flush()`만 하면 컨텍스트 종료 시 rollback → 이벤트 미저장
+
+### D10: KPI 3번째 지표 = per_user (인당 이용 건수)
+- conversion_rate → daily_average → per_user 순으로 반복 개선
+- daily_average는 첫 번째 KPI의 단순 나눗셈이라 무의미
+- per_user = downloads / active_users (활성 유저당 평균 이용 횟수)
+
 ---
 
 ## Dependencies

@@ -38,3 +38,8 @@
 - 2026-03-06 | refresh token rotation은 `_build_auth_result()`가 새 토큰 저장을 담당하고 `replaced_by`는 그 persisted row id를 참조 | 중복 insert를 제거하고 rotation 체인을 DB에서 일관되게 추적하기 위함
 - 2026-03-06 | Ops 확인 UX는 `src/features/ops/shared/confirm-dialog.tsx` 공통 Dialog 훅으로 통일 | 브라우저 `confirm()/alert()` 제거와 전수 전환 비용 감소를 동시에 달성
 - 2026-03-06 | Backend pytest는 `.temp/artifacts/pytest-cache`를 사용하고 `utcnow`/`AsyncMock` warning을 error로 승격 | 알려진 회귀 warning을 소음이 아니라 실패로 다뤄 품질 게이트 신호를 유지하기 위함
+- 2026-03-10 | ActionKit 이벤트 추적은 PostgreSQL 단독 (Redis 하이브리드 미채택) | 현재 사용자 규모(수백~수천명)에서 Redis는 오버엔지니어링
+- 2026-03-10 | ActionKit KPI "이용 건수"에 view+download+bulk_download 모두 포함 | 프론트엔드 모든 버튼이 /view 엔드포인트를 사용하므로 view를 제외하면 0건 문제 발생
+- 2026-03-10 | ZIP 일괄 다운로드 시 개별 download 이벤트 중복 방지는 `?source=bulk` 쿼리 파라미터로 처리 | 클라이언트가 bulk 표시 → 서버가 개별 download 이벤트 스킵
+- 2026-03-10 | ActionKit KPI 3번째 지표는 `per_user` (인당 이용 건수 = downloads / active_users) | daily_average(총건수/일수)는 첫 번째 KPI의 단순 나눗셈이라 무의미
+- 2026-03-10 | 서버사이드 이벤트 추적 시 `session.commit()` 명시 사용 (flush 아님) | `get_session()` 컨텍스트가 auto-commit하지 않으므로 flush만으로는 rollback됨

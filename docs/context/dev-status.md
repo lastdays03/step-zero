@@ -3,38 +3,40 @@
 > **크기 가이드**: 이 문서는 50줄 이내로 유지한다.
 
 ## Last Updated
-- Date: 2026-03-07
-- Branch: `develop` (PR #29 머지, 아카이브 완료)
+- Date: 2026-03-10
+- Branch: `develop` (PR #30 머지, feature 브랜치 삭제)
 
 ## Sprint Focus
-- 다음 작업 선정 대기
+- actionkit-analytics-tracking 완료 → 다음 작업 선정 대기
 
 ## Current State
-- `docs/plans/active/` 비어있음 — 모든 활성 계획 완료/아카이브
-- Backend: 423 passed, Frontend: lint/test/build 모두 통과
+- `docs/plans/active/` 비어있음 (actionkit-analytics-tracking → done/ 아카이브 예정)
+- Backend: 436 passed, Frontend: lint 0 errors
+- 개발서버 마이그레이션 대기: `018_add_actionkit_events`
 
 ## Completed (최근)
-- **project-audit-fixes (PR #29)**: Phase 1~4 전체 완료, done/ 아카이브
-  - Phase 1: chat import/export 정리, notifications API 단일화, frontend build 복구
-  - Phase 2: refresh token 중복 저장 제거, Google OAuth graceful fallback
-  - Phase 3: ops confirm/alert → ConfirmDialog 전환, 멀티팀 안전화, warning 정리
-  - Phase 4: CI frontend test/build 추가, 문서 v1 정합성, 예외 범위 축소
+- **actionkit-analytics-tracking (PR #30)**: Phase 1~4 완료
+  - ActionKitEvent 모델 + 018 마이그레이션
+  - 서버사이드 view/download 자동 추적 + 클라이언트 트래킹 API
+  - 통계 집계 서비스 (KPI 3종, 인기 서류 TOP5, 검색어, 인사이트)
+  - 관리자 대시보드 하드코딩 → 실데이터 전환
+  - ARQ cron 90일 이벤트 정리
+  - 테스트 13건 추가
+- project-audit-fixes (PR #29): done/ 아카이브 완료
 - hardcode-cleanup (PR #28): done/ 아카이브 완료
-- legacy-file-cleanup (PR #25~#27): done/ 아카이브 완료
 
 ## In Progress
 - 없음
 
 ## Risks And Blockers
 - 배포 시 프로덕션 `.env`에 `ADMIN_EMAILS` 설정 필수
+- **개발서버 마이그레이션 미적용**: `docker compose exec app-backend uv run alembic upgrade head`
 
 ## Next 3 Actions
-1. 다음 작업 선정 (신규 기능/개선 검토)
-2. 컨텍스트 문서 갱신 커밋/푸시
-3. (선정 후) 계획 문서 생성 → 구현
+1. 개발서버 마이그레이션 적용 (018_add_actionkit_events)
+2. actionkit-analytics-tracking docs → done/ 아카이브 커밋
+3. 다음 작업 선정
 
 ## Test Status
 - Frontend lint: 0 errors, 0 warnings
-- Frontend test: 139 passed
-- Frontend build: next build --webpack 통과
-- Backend pytest: 423 passed, 10 skipped, warning 0
+- Backend pytest: 436 passed, 10 skipped
