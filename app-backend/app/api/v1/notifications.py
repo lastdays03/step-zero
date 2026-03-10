@@ -2,13 +2,14 @@ import asyncio
 from datetime import datetime, timedelta, timezone
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import desc, or_, select
 
 from app.api.deps import get_current_user
 from app.core.db import get_session
+from app.core.exceptions import NotificationNotFoundError
 from app.models.announcement import Announcement
 from app.models.notification import Notification, NotificationRead
 from app.models.user import AuthenticatedUser
@@ -101,7 +102,7 @@ async def mark_as_read(
     """특정 알림을 읽음 처리합니다."""
     notification = await session.get(Notification, notification_id)
     if not notification or notification.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Notification not found")
+        raise NotificationNotFoundError()
 
     notification.is_read = True
     session.add(notification)
@@ -118,7 +119,7 @@ async def delete_notification(
     """특정 알림을 삭제(숨김) 처리합니다."""
     notification = await session.get(Notification, notification_id)
     if not notification or notification.user_id != current_user.id:
-        raise HTTPException(status_code=404, detail="Notification not found")
+        raise NotificationNotFoundError()
 
     notification.is_deleted = True
     session.add(notification)

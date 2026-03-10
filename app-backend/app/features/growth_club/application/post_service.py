@@ -3,10 +3,11 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from fastapi import HTTPException, UploadFile
+from fastapi import UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
+from app.core.exceptions import PostNotFoundError, ResourceOwnershipError
 from app.core.logging import get_logger
 from app.models.file import File
 from app.repositories.file_repository import FileRepository
@@ -175,12 +176,10 @@ class GrowthClubPostService:
         result = await self.session.execute(query)
         db_post = result.scalar_one_or_none()
         if not db_post:
-            raise HTTPException(status_code=404, detail="Post not found")
+            raise PostNotFoundError()
 
         if db_post.author_id != current_user.id and not current_user.is_superuser:
-            raise HTTPException(
-                status_code=403, detail="Not authorized to delete this post"
-            )
+            raise ResourceOwnershipError("Not authorized to delete this post")
 
         file_repo = FileRepository(self.session)
         file_records = await file_repo.get_by_owner(

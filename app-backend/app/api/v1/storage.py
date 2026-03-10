@@ -5,11 +5,12 @@ import re
 from datetime import datetime, timezone
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, field_validator
 
 from app.api.deps import get_current_user
 from app.core.config import get_settings
+from app.core.exceptions import AppValidationError
 from app.models.user import AuthenticatedUser
 from app.services.storage import get_storage_backend
 
@@ -63,15 +64,11 @@ async def create_presigned_url(
 ):
     settings = get_settings()
     if settings.STORAGE_BACKEND != "r2":
-        raise HTTPException(
-            status_code=422,
-            detail="Presigned URL은 R2 모드에서만 지원됩니다",
-        )
+        raise AppValidationError("Presigned URL은 R2 모드에서만 지원됩니다")
 
     if body.kind not in ALLOWED_KINDS:
-        raise HTTPException(
-            status_code=400,
-            detail=f"Invalid kind: {body.kind}. Allowed: {sorted(ALLOWED_KINDS)}",
+        raise AppValidationError(
+            f"Invalid kind: {body.kind}. Allowed: {sorted(ALLOWED_KINDS)}"
         )
 
     storage = get_storage_backend()

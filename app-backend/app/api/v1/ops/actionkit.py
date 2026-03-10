@@ -3,7 +3,7 @@ from datetime import datetime
 from app.core.security import utc_now
 from typing import List
 
-from fastapi import APIRouter, Depends, File, HTTPException, Path, UploadFile
+from fastapi import APIRouter, Depends, File, Path, UploadFile
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from pydantic import BaseModel as PydanticBaseModel
@@ -22,6 +22,11 @@ from app.api.v1.ops.schemas import (
     ActionKitStatsResponse,
 )
 from app.core.db import get_session
+from app.core.exceptions import (
+    ActionKitItemNotFoundError,
+    AppFileNotFoundError,
+    NotFoundError,
+)
 from app.features.ops.application.actionkit.stats_service import ActionKitStatsService
 from app.features.ops.application.actionkit import (
     add_checklist,
@@ -113,7 +118,7 @@ async def patch_category(
 ):
     category = await update_category(session, category_id, data)
     if not category:
-        raise HTTPException(status_code=404, detail="Category not found")
+        raise NotFoundError("Category not found")
     return category
 
 
@@ -126,7 +131,7 @@ async def remove_category(
 ):
     success = await delete_category(session, category_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Category not found")
+        raise NotFoundError("Category not found")
     return {"message": "Category deleted successfully"}
 
 
@@ -173,7 +178,7 @@ async def get_actionkit_item(
 ):
     item = await get_item_detail(session, item_id)
     if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise ActionKitItemNotFoundError()
     return item
 
 
@@ -189,7 +194,7 @@ async def patch_actionkit_item(
 ):
     item = await update_item(session, item_id, data)
     if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise ActionKitItemNotFoundError()
     return item
 
 
@@ -213,7 +218,7 @@ async def update_actionkit_item_status(
     stmt = select(ActionKitItem).where(ActionKitItem.id == item_id)
     item = (await session.execute(stmt)).scalar_one_or_none()
     if not item:
-        raise HTTPException(status_code=404, detail="ActionKit item not found")
+        raise ActionKitItemNotFoundError()
 
     before_is_active = bool(item.is_active)
     after_is_active = bool(payload.is_active)
@@ -257,7 +262,7 @@ async def upload_actionkit_item_file(
 ):
     item = await upload_file_for_item(session, item_id, file)
     if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise ActionKitItemNotFoundError()
     return item
 
 
@@ -270,7 +275,7 @@ async def delete_actionkit_item(
 ):
     success = await delete_item(session, item_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise ActionKitItemNotFoundError()
     return {"ok": True}
 
 
@@ -283,12 +288,12 @@ async def download_actionkit_file(
 ):
     file_record = await get_file_by_id(session, file_id)
     if not file_record:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise AppFileNotFoundError()
 
     import os
 
     if not os.path.exists(file_record.object_key):
-        raise HTTPException(status_code=404, detail="File not found on disk")
+        raise AppFileNotFoundError("File not found on disk")
 
     return FileResponse(
         path=file_record.object_key,
@@ -316,7 +321,7 @@ async def add_actionkit_related_law(
 ):
     item = await add_related_law(session, item_id, data.law_name, data.law_summary)
     if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise ActionKitItemNotFoundError()
     return item
 
 
@@ -329,7 +334,7 @@ async def remove_actionkit_related_law(
 ):
     success = await delete_related_law(session, law_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Law not found")
+        raise NotFoundError("Law not found")
     return {"ok": True}
 
 
@@ -343,7 +348,7 @@ async def add_actionkit_highlight(
 ):
     item = await add_highlight(session, item_id, data.content)
     if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise ActionKitItemNotFoundError()
     return item
 
 
@@ -356,7 +361,7 @@ async def remove_actionkit_highlight(
 ):
     success = await delete_highlight(session, highlight_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Highlight not found")
+        raise NotFoundError("Highlight not found")
     return {"ok": True}
 
 
@@ -374,7 +379,7 @@ async def add_actionkit_checklist(
 ):
     item = await add_checklist(session, item_id, data.content)
     if not item:
-        raise HTTPException(status_code=404, detail="Item not found")
+        raise ActionKitItemNotFoundError()
     return item
 
 
@@ -387,5 +392,5 @@ async def remove_actionkit_checklist(
 ):
     success = await delete_checklist(session, checklist_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Checklist not found")
+        raise NotFoundError("Checklist not found")
     return {"ok": True}

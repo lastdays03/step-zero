@@ -26,11 +26,12 @@ export const LoginForm = () => {
             const status = axiosErr?.response?.status;
             const data = axiosErr?.response?.data;
 
-            if (status === 403 && data?.code === 'ACCOUNT_RESTRICTED') {
+            if (status === 403 && data?.error_code === 'ACCOUNT_RESTRICTED') {
+                const ext = (data as Record<string, unknown>)?.extensions as Record<string, string> | undefined;
                 setSuspensionInfo({
-                    reason: data.reason || '운영 정책 위반으로 계정이 제한되었습니다.',
-                    suspended_until: data.suspended_until || '영구',
-                    status: data.status || 'suspended'
+                    reason: ext?.reason || '운영 정책 위반으로 계정이 제한되었습니다.',
+                    suspended_until: ext?.suspended_until || '영구',
+                    status: ext?.status || 'suspended'
                 });
                 setIsSuspensionOpen(true);
                 return;

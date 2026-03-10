@@ -1,7 +1,7 @@
 import os
 from urllib.parse import quote
 
-from fastapi import APIRouter, Depends, File, HTTPException, Path, UploadFile
+from fastapi import APIRouter, Depends, File, Path, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +9,7 @@ from app.api.deps import get_optional_current_user, require_platform_admin
 from app.api.v1.actionkit.schemas import ActionKitFileUploadResponse
 from app.core.config import get_settings
 from app.core.db import get_session
+from app.core.exceptions import ActionKitItemNotFoundError, AppFileNotFoundError, AppValidationError
 from app.core.logging import get_logger
 from app.features.actionkit.application import ActionKitService
 from app.models.actionkit_event import ActionKitEvent
@@ -44,7 +45,7 @@ async def upload_actionkit_file(
     session: AsyncSession = Depends(get_session),
 ):
     if not upload.filename:
-        raise HTTPException(status_code=400, detail="Filename is required")
+        raise AppValidationError("Filename is required")
 
     try:
         payload = await _service(session).upload_item_file(
@@ -53,7 +54,7 @@ async def upload_actionkit_file(
         )
         return ActionKitFileUploadResponse(**payload)
     except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
+        raise ActionKitItemNotFoundError(str(exc)) from exc
 
 
 @router.get(
@@ -122,7 +123,7 @@ async def _resolve_file(item_id: int, session: AsyncSession):
         owner_type="actionkit_item", owner_ids=[item_id]
     )
     if not files:
-        raise HTTPException(status_code=404, detail="No file found for this item")
+        raise AppFileNotFoundError("No file found for this item")
 
     current_file = files[0]
     storage_key = f"actionkit/{current_file.object_key}"
@@ -174,7 +175,7 @@ async def view_item_current_file(
     try:
         content = await storage.get(storage_key)
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise AppFileNotFoundError()
 
     # Markdown → HTML viewer (rendered client-side via marked.js)
     if ext in (".md", ".markdown"):
@@ -243,7 +244,7 @@ async def download_item_current_file(
     if isinstance(storage, LocalStorageBackend):
         local_path = storage.get_local_path(storage_key)
         if not local_path.exists():
-            raise HTTPException(status_code=404, detail="File not found on disk")
+            raise AppFileNotFoundError("File not found on disk")
         return FileResponse(
             path=str(local_path),
             filename=current_file.original_filename or "download",
@@ -254,7 +255,7 @@ async def download_item_current_file(
     try:
         content = await storage.get(storage_key)
     except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="File not found")
+        raise AppFileNotFoundError()
 
     return Response(
         content=content,

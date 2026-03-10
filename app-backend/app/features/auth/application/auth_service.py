@@ -1,18 +1,17 @@
-import logging
 import secrets
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
-from fastapi import HTTPException, status
 from google.auth.transport import requests
 from google.oauth2 import id_token
-from sqlalchemy import desc
 from sqlmodel import select
 from starlette.concurrency import run_in_threadpool
 
 from app.core import security
 from app.core.config import get_settings
+from app.core.exceptions import AccountRestrictedError
+from app.core.logging import get_logger
 from app.core.security import utc_now
 from app.models.team import Team
 from app.models.user import User
@@ -21,7 +20,7 @@ from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.team_repository import TeamRepository
 from app.repositories.user_repository import UserRepository
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 
 
 @dataclass
@@ -165,7 +164,7 @@ class AuthService:
         await self.user_repo.session.refresh(user)
 
     async def _raise_suspension_error(self, user: User) -> None:
-        """정지/차단된 유저에 대해 403 에러 발생 및 사유 전달"""
+        """정지/차단된 유저에 대해 AccountRestrictedError 발생 및 사유 전달"""
         reason = user.audit_log_reason
         try:
             latest_reason = await self.user_repo.get_latest_discipline_reason(user.id)
@@ -189,15 +188,11 @@ class AuthService:
             suspended_until_str = kst_time.strftime("%Y.%m.%d")
             expiry_iso = user.suspended_until.replace(tzinfo=timezone.utc).isoformat()
 
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail={
-                "code": "ACCOUNT_RESTRICTED",
-                "status": user.status,
-                "reason": reason,
-                "suspended_until": suspended_until_str,
-                "expiry_iso": expiry_iso,
-            },
+        raise AccountRestrictedError(
+            status=user.status,
+            reason=reason,
+            suspended_until=suspended_until_str,
+            expiry_iso=expiry_iso,
         )
 
     async def _build_auth_result(self, user: User) -> AuthResult:

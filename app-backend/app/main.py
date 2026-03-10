@@ -1,7 +1,7 @@
-import time
 from contextlib import asynccontextmanager
 from urllib.parse import unquote
 
+import sentry_sdk
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
@@ -12,20 +12,27 @@ from starlette.responses import Response
 from starlette.types import Scope
 
 from app.api.problem import (
+    app_exception_to_problem,
     http_exception_to_problem,
     problem_response,
     validation_exception_to_problem,
 )
 from app.core import config
+from app.core.exceptions import AppException
 from app.core.logging import get_logger, setup_logging
 from app.core.rate_limit import limiter
+from app.core.sentry import setup_sentry
 from app.features.rag.application.deps import get_rag_service
-
-# 로깅 설정 초기화
-setup_logging()
-logger = get_logger("app.main")
+from app.middleware.logging import RequestContextMiddleware
 
 settings = config.get_settings()
+
+# structlog 설정 초기화
+setup_logging(json_output=settings.LOG_JSON_OUTPUT)
+logger = get_logger("app.main")
+
+# Sentry/GlitchTip 초기화
+setup_sentry(settings)
 
 
 @asynccontextmanager
@@ -77,45 +84,30 @@ if settings.STORAGE_BACKEND != "r2":
     upload_dir.mkdir(parents=True, exist_ok=True)
     app.mount("/api/uploads", StaticFiles(directory=str(upload_dir)), name="uploads")
 
+# 요청 컨텍스트 미들웨어 (request_id, structlog, Sentry 태깅)
+app.add_middleware(RequestContextMiddleware)
 
-# 1. 로깅 미들웨어 추가
-@app.middleware("http")
-async def log_request_response(request: Request, call_next):
-    start_time = time.time()
-
-    # 요청 정보 로깅
-    auth_header = request.headers.get("Authorization")
-    logger.info(
-        f"Request: {request.method} {request.url.path} | Auth: {'Present' if auth_header else 'Missing'}"
-    )
-
-    response = await call_next(request)
-
-    # 응답 시간 및 상태 코드 로깅
-    process_time = time.time() - start_time
-    logger.info(
-        f"Response: {request.method} {request.url.path} "
-        f"Status: {response.status_code} "
-        f"Elapsed: {process_time:.4f}s"
-    )
-
-    return response
-
-
-# RFC7807-style error responses
-app.add_exception_handler(HTTPException, http_exception_to_problem)
+# ── 예외 핸들러 체인 (우선순위 순서대로) ──────────────────────────────
+# 1. AppException → RFC 9457 (마이그레이션된 코드)
+app.add_exception_handler(AppException, app_exception_to_problem)
+# 2. RequestValidationError → problem+json
 app.add_exception_handler(RequestValidationError, validation_exception_to_problem)
+# 3. HTTPException → problem+json (레거시 호환, 마이그레이션 기간 유지)
+app.add_exception_handler(HTTPException, http_exception_to_problem)
 
 
+# 4. 전역 Exception → 500 + Sentry 캡처
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
-    logger.error(f"Unhandled error: {str(exc)}", exc_info=True)
+    logger.error("unhandled_error", error=str(exc), exc_info=True)
+    sentry_sdk.capture_exception(exc)
     return problem_response(
         request=request,
         status_code=500,
         title="Internal Server Error",
         detail="서버 내부 오류가 발생했습니다. 관리자에게 문의하세요.",
         type_uri="https://stepzero.dev/problems/internal-error",
+        error_code="INTERNAL_ERROR",
     )
 
 

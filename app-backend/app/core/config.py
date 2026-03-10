@@ -76,6 +76,12 @@ class Settings(BaseSettings):
     GROWTH_CLUB_MAX_IMAGE_COUNT: int = 10
     GROWTH_CLUB_MAX_FILE_COUNT: int = 10
 
+    # Error Tracking (GlitchTip — Sentry SDK 호환, 빈 문자열이면 비활성화)
+    SENTRY_DSN: str = ""
+
+    # Logging
+    LOG_JSON_OUTPUT: bool = True
+
     @staticmethod
     def _normalize_optional_secret(value: str | None) -> str | None:
         if value is None:

@@ -8,8 +8,7 @@ from __future__ import annotations
 from typing import Optional
 from uuid import UUID
 
-from fastapi import HTTPException
-
+from app.core.exceptions import ChatSessionNotFoundError, ResourceOwnershipError
 from app.core.logging import get_logger
 from app.models.roadmap_chat import RoadmapChatMessage, RoadmapChatThread
 from app.repositories.roadmap_chat_repository import RoadmapChatRepository
@@ -131,8 +130,9 @@ class SessionService:
     def _verify_ownership(
         thread: RoadmapChatThread | None, user_id: int
     ) -> None:
-        """세션 존재 + 소유권 확인. 실패 시 HTTPException."""
+        """세션 존재 + 소유권 확인. 실패 시 도메인 Exception."""
         if thread is None or thread.is_deleted:
-            raise HTTPException(status_code=404, detail="세션을 찾을 수 없습니다.")
+            raise ChatSessionNotFoundError()
         if thread.user_id != user_id:
-            raise HTTPException(status_code=404, detail="세션을 찾을 수 없습니다.")
+            # 소유권 오류이지만 리소스 존재를 노출하지 않기 위해 404 메시지 사용
+            raise ResourceOwnershipError("세션을 찾을 수 없습니다.")

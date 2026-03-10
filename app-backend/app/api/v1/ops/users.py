@@ -1,11 +1,11 @@
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi import status as http_status
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
 from app.core.db import get_session
+from app.core.exceptions import UserNotFoundError
 from app.features.ops.application.audit_logs import (
     AuditAction,
     AuditTargetType,
@@ -107,10 +107,7 @@ async def update_ops_user_status(
     )
 
     if not result:
-        raise HTTPException(
-            status_code=http_status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
+        raise UserNotFoundError()
 
     user, prev_status = result
 

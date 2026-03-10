@@ -1,7 +1,7 @@
 from typing import Any
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
@@ -18,8 +18,11 @@ from app.api.v1.schemas import (
     RoadmapUpdateRequest,
 )
 from app.core.db import get_session
+from app.core.exceptions import (
+    AppException,
+    RoadmapNotFoundError,
+)
 from app.features.roadmaps.application.roadmap_progress_service import (
-    InvalidRoadmapStepStatusError,
     RoadmapProgressService,
 )
 from app.models.roadmap import Roadmap
@@ -106,9 +109,7 @@ async def delete_roadmap(
     repo = RoadmapRepository(session)
     deleted = await repo.soft_delete(roadmap_id, current_team.id)
     if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found"
-        )
+        raise RoadmapNotFoundError()
     await repo.commit()
 
 
@@ -128,9 +129,7 @@ async def update_roadmap(
     repo = RoadmapRepository(session)
     roadmap = await repo.update_title(roadmap_id, current_team.id, request.title)
     if not roadmap:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found"
-        )
+        raise RoadmapNotFoundError()
     await repo.commit()
 
     steps = await repo.list_steps(roadmap.id)
@@ -164,9 +163,7 @@ async def get_latest_roadmap_detail(
     repo = RoadmapRepository(session)
     roadmap = await repo.get_latest_for_team(current_team.id)
     if not roadmap:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found"
-        )
+        raise RoadmapNotFoundError()
     return await _serialize_roadmap_detail(repo=repo, roadmap=roadmap)
 
 
@@ -185,9 +182,7 @@ async def get_roadmap(
     repo = RoadmapRepository(session)
     roadmap = await repo.get_by_id_for_team(roadmap_id, current_team.id)
     if not roadmap:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found"
-        )
+        raise RoadmapNotFoundError()
     steps = await repo.list_steps(roadmap.id)
     return {
         "roadmap_id": roadmap.id,
@@ -214,9 +209,7 @@ async def get_roadmap_detail(
     repo = RoadmapRepository(session)
     roadmap = await repo.get_by_id_for_team(roadmap_id, current_team.id)
     if not roadmap:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Roadmap not found"
-        )
+        raise RoadmapNotFoundError()
     return await _serialize_roadmap_detail(repo=repo, roadmap=roadmap)
 
 
@@ -235,23 +228,14 @@ async def update_roadmap_step_status(
 ) -> Any:
     repo = RoadmapRepository(session)
     service = RoadmapProgressService(repo)
-    try:
-        step = await service.update_step_status(
-            team_id=current_team.id,
-            step_id=step_id,
-            new_status=request.status,
-        )
-    except InvalidRoadmapStepStatusError as exc:
-        message = str(exc)
-        if message == "Roadmap step not found":
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+    step = await service.update_step_status(
+        team_id=current_team.id,
+        step_id=step_id,
+        new_status=request.status,
+    )
 
     if step.id is None:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Roadmap step update failed",
-        )
+        raise AppException("Roadmap step update failed")
     return RoadmapStepResponse(id=step.id, title=step.title, status=step.status)
 
 
@@ -271,18 +255,12 @@ async def update_roadmap_step_action(
 ) -> Any:
     repo = RoadmapRepository(session)
     service = RoadmapProgressService(repo)
-    try:
-        action = await service.update_action_completion(
-            team_id=current_team.id,
-            step_id=step_id,
-            action_id=action_id,
-            completed=request.completed,
-        )
-    except InvalidRoadmapStepStatusError as exc:
-        message = str(exc)
-        if message == "Roadmap step action not found":
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
+    action = await service.update_action_completion(
+        team_id=current_team.id,
+        step_id=step_id,
+        action_id=action_id,
+        completed=request.completed,
+    )
 
     return RoadmapStepActionResponse(
         id=action.id,

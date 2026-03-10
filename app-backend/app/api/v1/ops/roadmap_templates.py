@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -20,6 +20,11 @@ from app.api.v1.ops.roadmap_template_schemas import (
     RoadmapTemplateUpdateRequest,
 )
 from app.core.db import get_session
+from app.core.exceptions import (
+    AppValidationError,
+    NotFoundError,
+    TemplateNotFoundError,
+)
 from app.features.ops.application.roadmap_templates import (
     create_template_action,
     create_template_from_roadmap,
@@ -168,7 +173,7 @@ async def get_template_detail_endpoint(
 ):
     template = await get_template_detail(session, template_id)
     if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise TemplateNotFoundError()
     return _serialize_detail(template)
 
 
@@ -187,7 +192,7 @@ async def create_from_roadmap_endpoint(
             session, roadmap_id=data.roadmap_id, user_id=admin_user.id
         )
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        raise NotFoundError(str(e))
     return template
 
 
@@ -206,9 +211,9 @@ async def update_template_endpoint(
             session, template_id, data.model_dump(exclude_unset=True)
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppValidationError(str(e))
     if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise TemplateNotFoundError()
     return template
 
 
@@ -232,9 +237,9 @@ async def update_template_status_endpoint(
             reason=data.reason,
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppValidationError(str(e))
     if not template:
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise TemplateNotFoundError()
     return template
 
 
@@ -249,9 +254,9 @@ async def delete_template_endpoint(
     try:
         success = await delete_template(session, template_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppValidationError(str(e))
     if not success:
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise TemplateNotFoundError()
     return {"ok": True}
 
 
@@ -271,9 +276,9 @@ async def create_step_endpoint(
     try:
         step = await create_template_step(session, template_id, data.model_dump())
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppValidationError(str(e))
     if not step:
-        raise HTTPException(status_code=404, detail="Template not found")
+        raise TemplateNotFoundError()
     return _serialize_step(step)
 
 
@@ -290,7 +295,7 @@ async def reorder_steps_endpoint(
     try:
         steps = await reorder_template_steps(session, template_id, data.step_ids)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppValidationError(str(e))
     return [_serialize_step(s) for s in steps]
 
 
@@ -310,9 +315,9 @@ async def update_step_endpoint(
             session, step_id, data.model_dump(exclude_unset=True)
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppValidationError(str(e))
     if not step:
-        raise HTTPException(status_code=404, detail="Step not found")
+        raise NotFoundError("Step not found")
     return _serialize_step(step)
 
 
@@ -328,9 +333,9 @@ async def delete_step_endpoint(
     try:
         success = await delete_template_step(session, step_id)
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppValidationError(str(e))
     if not success:
-        raise HTTPException(status_code=404, detail="Step not found")
+        raise NotFoundError("Step not found")
     return {"ok": True}
 
 
@@ -351,9 +356,9 @@ async def create_action_endpoint(
     try:
         action = await create_template_action(session, step_id, data.model_dump())
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppValidationError(str(e))
     if not action:
-        raise HTTPException(status_code=404, detail="Step not found")
+        raise NotFoundError("Step not found")
     return action
 
 
@@ -374,9 +379,9 @@ async def update_action_endpoint(
             session, action_id, data.model_dump(exclude_unset=True)
         )
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise AppValidationError(str(e))
     if not action:
-        raise HTTPException(status_code=404, detail="Action not found")
+        raise NotFoundError("Action not found")
     return action
 
 
@@ -392,5 +397,5 @@ async def delete_action_endpoint(
 ):
     success = await delete_template_action(session, action_id)
     if not success:
-        raise HTTPException(status_code=404, detail="Action not found")
+        raise NotFoundError("Action not found")
     return {"ok": True}
