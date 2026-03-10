@@ -47,3 +47,49 @@ export const updateItemOrders = async (items: { id: number, sort_order: number }
     const { data } = await apiClient.patch('/ops/actionkit/items/reorder', { items });
     return data;
 };
+
+// ── ActionKit Stats ──
+
+export interface ActionKitKPI {
+    downloads: number;
+    downloads_delta: number | null;
+    active_users: number;
+    active_users_delta: number | null;
+    per_user: number;
+    per_user_delta: number | null;
+}
+
+export interface PopularItem {
+    item_id: number;
+    count: number;
+    trend: number | null;
+}
+
+export interface SearchKeyword {
+    keyword: string;
+    count: number;
+}
+
+export interface ActionKitStatsResponse {
+    kpi: ActionKitKPI;
+    popular_items: PopularItem[];
+    search_keywords: SearchKeyword[];
+    insight: string | null;
+    range_days: number;
+    generated_at: string;
+}
+
+export const fetchStats = async (rangeDays: number = 30): Promise<ActionKitStatsResponse> => {
+    const { data } = await apiClient.get(`/ops/actionkit/stats?range_days=${rangeDays}`);
+    return data;
+};
+
+// ── User Tracking ──
+
+export const trackEvent = (payload: {
+    event_type: string;
+    item_id?: number;
+    search_query?: string;
+}) => {
+    apiClient.post('/actionkits/track', payload).catch(() => {});
+};

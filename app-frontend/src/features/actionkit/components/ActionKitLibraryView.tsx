@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { toast } from "sonner";
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
@@ -34,6 +34,7 @@ import {
 import { ActionKitItem, RelatedLaw } from '../types';
 import { apiClient } from '@/lib/api-client';
 import { ActionKitDetailModal } from './ActionKitDetailModal';
+import { trackEvent } from '@/features/ops/actionkit/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
 
@@ -101,8 +102,16 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
     const [isHistoryOpen, setIsHistoryOpen] = useState(false);
 
 
+    const searchTrackTimer = useRef<ReturnType<typeof setTimeout>>();
     useEffect(() => {
         setSelectedTag("all");
+        if (searchQuery.length >= 2) {
+            clearTimeout(searchTrackTimer.current);
+            searchTrackTimer.current = setTimeout(() => {
+                trackEvent({ event_type: "search", search_query: searchQuery });
+            }, 1000);
+        }
+        return () => clearTimeout(searchTrackTimer.current);
     }, [selectedCategory, searchQuery, activeStarterPack]);
 
     const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
@@ -139,6 +148,7 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
 
     const handleItemClick = (item: ActionKitItem) => {
         setDetailItem(item);
+        if (item.id) trackEvent({ event_type: "detail_view", item_id: item.id });
         setRecentItems(prev => {
             const filtered = prev.filter(i => i.name !== item.name);
             const next = [item, ...filtered].slice(0, 5); // Keep up to 5 items
@@ -155,6 +165,7 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
             delete newBookmarks[identifier];
         } else {
             newBookmarks[identifier] = kit;
+            if (kit.id) trackEvent({ event_type: "bookmark", item_id: kit.id });
         }
         setBookmarkedItems(newBookmarks);
         localStorage.setItem('actionkit_bookmarks', JSON.stringify(newBookmarks));
@@ -177,16 +188,19 @@ export const ActionKitLibraryView = ({ initialSearch = "", onNavigateToLaw }: Ac
 
     const handleBulkDownload = async () => {
         setIsZipping(true);
+        const items = Object.values(bookmarkedItems);
+        items.forEach(item => {
+            if (item.id) trackEvent({ event_type: "bulk_download", item_id: item.id });
+        });
         try {
             const zip = new JSZip();
-            const items = Object.values(bookmarkedItems);
 
             await Promise.all(items.map(async (item) => {
                 const itemId = item.id;
                 let blob: Blob | null = null;
                 if (itemId) {
                     try {
-                        const res = await apiClient.get(`/actionkits/items/${itemId}/download`, { responseType: 'blob' });
+                        const res = await apiClient.get(`/actionkits/items/${itemId}/download?source=bulk`, { responseType: 'blob' });
                         blob = new Blob([res.data]);
                     } catch (apiErr: unknown) {
                         const err = apiErr as { response?: { status?: number } };

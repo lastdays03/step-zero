@@ -19,8 +19,10 @@ from app.api.v1.ops.schemas import (
     ActionKitItemReorderRequest,
     ActionKitItemResponse,
     ActionKitItemUpdateRequest,
+    ActionKitStatsResponse,
 )
 from app.core.db import get_session
+from app.features.ops.application.actionkit.stats_service import ActionKitStatsService
 from app.features.ops.application.actionkit import (
     add_checklist,
     add_highlight,
@@ -62,6 +64,21 @@ async def get_actionkit_summary(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, int]:
     return await get_summary(session)
+
+
+@router.get(
+    "/stats",
+    response_model=ActionKitStatsResponse,
+    summary="액션키트 통계 조회",
+    description="액션키트 이벤트 기반 통계(KPI, 인기서류, 검색어, 인사이트)를 조회합니다.",
+)
+async def get_actionkit_stats(
+    range_days: int = 30,
+    session: AsyncSession = Depends(get_session),
+    _: AuthenticatedUser = Depends(deps.require_platform_admin),
+):
+    service = ActionKitStatsService(session)
+    return await service.get_stats(range_days)
 
 
 @router.get(

@@ -5,15 +5,19 @@ from fastapi import APIRouter, Depends, File, HTTPException, Path, UploadFile
 from fastapi.responses import FileResponse, HTMLResponse, RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import require_platform_admin
+from app.api.deps import get_optional_current_user, require_platform_admin
 from app.api.v1.actionkit.schemas import ActionKitFileUploadResponse
 from app.core.config import get_settings
 from app.core.db import get_session
+from app.core.logging import get_logger
 from app.features.actionkit.application import ActionKitService
+from app.models.actionkit_event import ActionKitEvent
 from app.models.user import AuthenticatedUser
 from app.repositories.actionkit_repository import ActionKitRepository
 from app.repositories.file_repository import FileRepository
 from app.services.storage import get_storage_backend
+
+logger = get_logger(__name__)
 
 router = APIRouter()
 
@@ -134,7 +138,19 @@ async def _resolve_file(item_id: int, session: AsyncSession):
 async def view_item_current_file(
     item_id: int = Path(description="아이템 ID"),
     session: AsyncSession = Depends(get_session),
+    current_user: AuthenticatedUser | None = Depends(get_optional_current_user),
 ):
+    try:
+        event = ActionKitEvent(
+            event_type="view",
+            item_id=item_id,
+            user_id=current_user.id if current_user else None,
+        )
+        session.add(event)
+        await session.commit()
+    except Exception:
+        logger.warning("Failed to track view event for item %s", item_id)
+
     storage_key, current_file = await _resolve_file(item_id, session)
     storage = get_storage_backend()
     settings = get_settings()
@@ -195,8 +211,22 @@ async def view_item_current_file(
 )
 async def download_item_current_file(
     item_id: int = Path(description="다운로드할 아이템 ID"),
+    source: str | None = None,
     session: AsyncSession = Depends(get_session),
+    current_user: AuthenticatedUser | None = Depends(get_optional_current_user),
 ):
+    if source != "bulk":
+        try:
+            event = ActionKitEvent(
+                event_type="download",
+                item_id=item_id,
+                user_id=current_user.id if current_user else None,
+            )
+            session.add(event)
+            await session.commit()
+        except Exception:
+            logger.warning("Failed to track download event for item %s", item_id)
+
     storage_key, current_file = await _resolve_file(item_id, session)
     storage = get_storage_backend()
     settings = get_settings()

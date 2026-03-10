@@ -10,6 +10,7 @@ from app.core.db import async_session
 from app.features.roadmaps.application.roadmap_generation_service import (
     RoadmapGenerationService,
 )
+from app.models.actionkit_event import ActionKitEvent
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 
 logger = logging.getLogger(__name__)
@@ -30,10 +31,26 @@ async def cleanup_expired_refresh_tokens(ctx: dict) -> None:
             logger.info("Cleaned up %d expired/revoked refresh tokens", deleted)
 
 
+async def cleanup_old_actionkit_events(ctx: dict) -> None:
+    """Delete actionkit events older than 90 days."""
+    from datetime import datetime, timedelta, timezone
+
+    from sqlalchemy import delete
+
+    cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=90)
+    async with async_session() as session:
+        stmt = delete(ActionKitEvent).where(ActionKitEvent.created_at < cutoff)
+        result = await session.execute(stmt)
+        await session.commit()
+        if result.rowcount:
+            logger.info("Cleaned up %d old actionkit events", result.rowcount)
+
+
 class WorkerSettings:
     settings = get_settings()
     redis_settings = RedisSettings.from_dsn(settings.REDIS_URL)
     functions = [process_roadmap_job]
     cron_jobs = [
         cron(cleanup_expired_refresh_tokens, hour=3, minute=0),  # daily at 03:00 UTC
+        cron(cleanup_old_actionkit_events, hour=4, minute=0),  # daily at 04:00 UTC
     ]

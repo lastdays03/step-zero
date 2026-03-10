@@ -50,6 +50,7 @@ export function OpsActionKitView() {
   } | null>(null);
   const [activeDomain, setActiveDomain] = useState<"kits" | "laws" | "stats">("kits");
 
+  const [allItems, setAllItems] = useState<OpsActionKitItem[]>([]);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<{ id: number; title: string; domain: string; slug: string; sort_order: number; is_active: boolean } | null>(null);
 
@@ -133,6 +134,19 @@ export function OpsActionKitView() {
       })
       .catch(console.error);
     fetchSummary().then(setSummary).catch(console.error);
+    // Load all items for stats tab outdated detection
+    fetchCategories()
+      .then(async (cats: { id: number; domain: string }[]) => {
+        const allItemsResult: OpsActionKitItem[] = [];
+        for (const cat of cats) {
+          try {
+            const catItems = await fetchCategoryItems(cat.id);
+            allItemsResult.push(...catItems.map((i: OpsActionKitItem) => ({ ...i, domain: cat.domain })));
+          } catch { /* skip */ }
+        }
+        setAllItems(allItemsResult);
+      })
+      .catch(console.error);
   }, [canRender]);
 
   useEffect(() => {
@@ -257,7 +271,7 @@ export function OpsActionKitView() {
       </div>
 
       {activeDomain === "stats" ? (
-        <OpsActionKitStatsDashboard items={items} />
+        <OpsActionKitStatsDashboard items={allItems} />
       ) : (
         <>
           {/* Category Tabs (Sub Level) */}

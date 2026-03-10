@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useLawGuide } from '../hooks/useLawGuide';
 import { Disclaimer } from '@/components/ui/Disclaimer';
 import { Card, CardContent } from "@/components/ui/card";
@@ -19,6 +19,7 @@ import {
 import { LawItem, RelatedLaw } from '../types';
 import { useActionKit } from '../hooks/useActionKit';
 import { LawDetailPopup } from './LawDetailPopup';
+import { trackEvent } from '@/features/ops/actionkit/api';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "";
 
@@ -38,6 +39,17 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
     // Manage completed/read status (in-memory for demo, would be localStorage/DB in real app)
     const [completedItems, setCompletedItems] = useState<Set<string>>(new Set());
     const [selectedLaw, setSelectedLaw] = useState<LawItem | null>(null);
+
+    const searchTrackTimer = useRef<ReturnType<typeof setTimeout>>();
+    useEffect(() => {
+        if (searchQuery.length >= 2) {
+            clearTimeout(searchTrackTimer.current);
+            searchTrackTimer.current = setTimeout(() => {
+                trackEvent({ event_type: "search", search_query: searchQuery });
+            }, 1000);
+        }
+        return () => clearTimeout(searchTrackTimer.current);
+    }, [searchQuery]);
 
     const toggleItemCompletion = (e: React.MouseEvent, itemName: string) => {
         e.stopPropagation();
@@ -139,7 +151,7 @@ export const LawGuideView = ({ initialSearch = "", onNavigateToKit }: LawGuideVi
                             key={`${item.name}-${index}`}
                             className={`group transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer flex flex-col justify-between ${isCompleted ? 'bg-slate-50/50 border-emerald-500/30' : 'hover:border-[#36a4f2]'
                                 }`}
-                            onClick={() => setSelectedLaw(item)}
+                            onClick={() => { setSelectedLaw(item); if (item.id) trackEvent({ event_type: "detail_view", item_id: item.id }); }}
                         >
                             <CardContent className="p-6">
                                 <div className="flex justify-between items-start mb-4">
