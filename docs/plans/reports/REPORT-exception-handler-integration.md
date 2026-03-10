@@ -24,7 +24,7 @@
 
 ## 1. Executive Summary
 
-Step Zero 백엔드는 RFC 7807 기반의 에러 응답 구조를 갖추고 있으나, **커스텀 Exception이 2개뿐이고 125+ 위치에서 HTTPException을 직접 raise**하며, **Sentry 미연동·구조화 로깅 부재**라는 구조적 한계를 가진다.
+Step Zero 백엔드는 RFC 7807 기반의 에러 응답 구조를 갖추고 있으나, **커스텀 Exception이 2개뿐이고 117개 위치(21개 파일)에서 HTTPException을 직접 raise**하며, **Sentry 미연동·구조화 로깅 부재**라는 구조적 한계를 가진다.
 
 본 보고서는 최신 트렌드(RFC 9457, DDD Exception Hierarchy, Structured Logging, Sentry v8)를 반영한 **Exception Handler 통합 구현 계획**을 제시하고, 현 프로젝트에 대한 **적용 가능성을 8개 축으로 평가**한다.
 
@@ -59,7 +59,7 @@ Step Zero 백엔드는 RFC 7807 기반의 에러 응답 구조를 갖추고 있�
 ├─────────────────────────────────────────────────────────┤
 │  API Routers (try/except → HTTPException 변환)           │
 │  ├── ValueError → 400/404                                │
-│  ├── InvalidRoadmapStepStatusError → 400/404 (문자열 비교)│
+│  ├── InvalidRoadmapStepStatusError → 400/404 (문자열 일치 비교)│
 │  └── Exception → 500 (일부만)                            │
 ├─────────────────────────────────────────────────────────┤
 │  Service Layer (ValueError/HTTPException 혼재)           │
@@ -77,10 +77,10 @@ Step Zero 백엔드는 RFC 7807 기반의 에러 응답 구조를 갖추고 있�
 
 | 지표 | 수치 | 비고 |
 |------|------|------|
-| HTTPException raise 위치 | **125+** | 14개 라우터 파일에 분산 |
-| ValueError raise 위치 | **22+** | 서비스/설정 레이어 |
+| HTTPException raise 위치 | **117** | 21개 파일에 분산 (API 라우터 18개 + 서비스 3개) |
+| ValueError raise 위치 | **20** | 서비스/설정 레이어 (roadmap_templates/service.py가 11개로 최다) |
 | 커스텀 Exception 클래스 | **2개** | `LawApiError`, `InvalidRoadmapStepStatusError` |
-| try/except 블록 | **45+** | bare `Exception` catch 25+ |
+| try/except 블록 | **71** | bare `except Exception` 41개 (57.7%) |
 | 서비스 레이어 HTTPException | **5곳** | auth_service, chat_session_service, post_service |
 | IntegrityError 처리 | **1곳** | roadmap_chat_repository만 |
 | Sentry/에러 트래킹 | **0** | 미연동 |
@@ -95,16 +95,16 @@ Step Zero 백엔드는 RFC 7807 기반의 에러 응답 구조를 갖추고 있�
 ```python
 except InvalidRoadmapStepStatusError as exc:
     message = str(exc)
-    if "not found" in message:
-        raise HTTPException(status_code=404, detail=message)
-    raise HTTPException(status_code=400, detail=message)
+    if message == "Roadmap step not found":
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=message)
+    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=message)
 ```
 
-**위험:** 에러 메시지 변경 시 HTTP 상태 코드 매핑이 깨짐. 타입 안전하지 않음.
+**위험:** 에러 메시지 문자열 정확 일치(`==`)로 HTTP 상태 코드를 분기. 메시지 변경 시 매핑이 깨짐. 타입 안전하지 않음.
 
 #### 문제 2: 서비스-API 레이어 경계 위반
 
-**파일:** `app/features/auth/application/auth_service.py:193-202`
+**파일:** `app/features/auth/application/auth_service.py:192-201`
 
 ```python
 # 서비스 레이어에서 HTTPException 직접 raise — 프레임워크 종속
@@ -134,11 +134,11 @@ title = "HTTP Error"  # 모든 HTTPException에 동일한 title
 
 ```python
 # 한국어
-raise HTTPException(400, "자신의 게시글은 신고할 수 없습니다.")  # growth_club/posts.py:116
+raise HTTPException(400, "자신의 게시물은 신고할 수 없습니다.")  # growth_club/posts.py:421-424
 # 영문
-raise HTTPException(401, "Could not validate credentials")  # deps.py:28
+raise HTTPException(401, "Could not validate credentials")  # deps.py:27-31
 # 혼합
-raise HTTPException(404, "Post not found")  # growth_club/posts.py:82
+raise HTTPException(404, "Post not found")  # growth_club/posts.py:419
 ```
 
 **영향:** 프론트엔드 에러 표시 불일관, i18n 대응 불가.
@@ -410,7 +410,7 @@ class DuplicateResourceError(BusinessRuleError):
 class SelfReportError(BusinessRuleError):
     error_code = "SELF_REPORT"
     def __init__(self, resource: str):
-        super().__init__(f"자신의 {resource}은(는) 신고할 수 없습니다.")
+        super().__init__(f"자신의 {resource}은 신고할 수 없습니다.")
 
 
 class AlreadyReportedError(BusinessRuleError):
@@ -814,12 +814,12 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 
 | 현재 코드 (파일:라인) | 현재 예외 | 변환 대상 |
 |----------------------|----------|----------|
-| `auth/router.py:138` | `HTTPException(401, "Incorrect email or password")` | `InvalidCredentialsError()` |
-| `auth/router.py:132` | `HTTPException(503, "Authentication backend unavailable")` | `DatabaseUnavailableError()` |
-| `auth/router.py:169` | `HTTPException(401, "Invalid Google token")` | `InvalidTokenError()` |
-| `auth/router.py:175` | `HTTPException(503, "Google authentication service unavailable")` | `ExternalServiceError("Google OAuth")` |
-| `auth_service.py:193` | `HTTPException(403, dict(...))` | `AccountRestrictedError(status, reason, suspended_until)` |
-| `auth/router.py:256` | `HTTPException(401, "Refresh token reuse detected...")` | `TokenReuseDetectedError()` |
+| `auth/router.py:136-138` | `HTTPException(401, "Incorrect email or password")` | `InvalidCredentialsError()` |
+| `auth/router.py:130-133` | `HTTPException(503, "Authentication backend unavailable")` | `DatabaseUnavailableError()` |
+| `auth/router.py:167-168` | `HTTPException(401, "Invalid Google token")` | `InvalidTokenError()` |
+| `auth/router.py:173-175` | `HTTPException(503, "Google authentication service unavailable")` | `ExternalServiceError("Google OAuth")` |
+| `auth_service.py:192-201` | `HTTPException(403, dict(...))` | `AccountRestrictedError(status, reason, suspended_until)` |
+| `auth/router.py:254-257` | `HTTPException(401, "Refresh token reuse detected...")` | `TokenReuseDetectedError()` |
 
 #### Roadmaps Feature
 
@@ -834,10 +834,10 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 
 | 현재 코드 (파일:라인) | 현재 예외 | 변환 대상 |
 |----------------------|----------|----------|
-| `posts.py:82` | `HTTPException(404, "Post not found")` | `PostNotFoundError(post_id)` |
-| `posts.py:95` | `HTTPException(403, "Not authorized to update this post")` | `ResourceOwnershipError("게시글")` |
-| `posts.py:116` | `HTTPException(400, "자신의 게시글은 신고할 수 없습니다.")` | `SelfReportError("게시글")` |
-| `posts.py:122` | `HTTPException(400, "이미 신고한 게시물입니다.")` | `AlreadyReportedError("게시글")` |
+| `posts.py:419` | `HTTPException(404, "Post not found")` | `PostNotFoundError(post_id)` |
+| `post_service.py:178,181` | `HTTPException(404/403, "Post not found"/"Not authorized to delete this post")` | `PostNotFoundError` / `ResourceOwnershipError("게시글")` |
+| `posts.py:421-424` | `HTTPException(400, "자신의 게시물은 신고할 수 없습니다.")` | `SelfReportError("게시물")` |
+| `posts.py:433` | `HTTPException(400, "이미 신고한 게시물입니다.")` | `AlreadyReportedError("게시물")` |
 | `comments.py:138` | `HTTPException(403, "Not authorized")` | `ResourceOwnershipError("댓글")` |
 
 #### ActionKit Feature
@@ -853,9 +853,16 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 | 현재 코드 (파일:라인) | 현재 예외 | 변환 대상 |
 |----------------------|----------|----------|
 | `deps.py:27-31` | `HTTPException(401, "Could not validate credentials")` | `AuthenticationError()` |
-| `deps.py:64-66` | `HTTPException(403, "Inactive user")` | `AccountRestrictedError("inactive")` |
+| `deps.py:64-65` | `HTTPException(403, "Inactive user")` | `AccountRestrictedError("inactive")` |
 | `deps.py:99-101` | `HTTPException(403, "Team access denied")` | `TeamAccessDeniedError()` |
-| `deps.py:215-218` | `HTTPException(403, "Platform admin access denied")` | `AdminRequiredError()` |
+| `deps.py:214-218` | `HTTPException(403, "Platform admin access denied")` | `AdminRequiredError()` |
+
+#### Chat Feature
+
+| 현재 코드 (파일:라인) | 현재 예외 | 변환 대상 |
+|----------------------|----------|----------|
+| `session_service.py:136` | `HTTPException(404, "세션을 찾을 수 없습니다.")` | `NotFoundError("채팅 세션", session_id)` |
+| `session_service.py:138` | `HTTPException(404, "세션을 찾을 수 없습니다.")` | `ResourceOwnershipError("채팅 세션")` |
 
 #### Ops Feature (roadmap_templates/service.py)
 
@@ -1000,7 +1007,7 @@ if (error.response?.data?.error_code === "POST_NOT_FOUND") { ... }
 | **프론트엔드 호환** | 5/5 | RFC 9457은 JSON 응답, error_code 추가만 |
 | **성능 영향** | 5/5 | Exception 생성 비용 무시 가능, structlog lazy eval |
 | **운영 안정성** | 4/5 | Sentry는 opt-in (DSN 빈 문자열이면 비활성화) |
-| **코드 품질 향상** | 5/5 | 125+ HTTPException → 타입 안전 도메인 Exception |
+| **코드 품질 향상** | 5/5 | 117 HTTPException → 타입 안전 도메인 Exception |
 
 **종합 점수: 36/40 (90%) — 적용 강력 권장**
 
@@ -1210,7 +1217,7 @@ app.add_exception_handler(HTTPException, http_exception_to_problem)
 
 ### 10.1 결론
 
-Step Zero 백엔드는 **RFC 7807 기반의 에러 응답 구조를 이미 갖추고 있어**, 통합 Exception Handler 도입의 기술적 장벽이 매우 낮다. 현재 125+ HTTPException이 14개 파일에 분산된 상황은 **DDD 기반 Exception 계층 + 글로벌 핸들러**로 체계화할 수 있으며, **Sentry 연동과 structlog 전환**으로 프로덕션 운영 가시성을 확보할 수 있다.
+Step Zero 백엔드는 **RFC 7807 기반의 에러 응답 구조를 이미 갖추고 있어**, 통합 Exception Handler 도입의 기술적 장벽이 매우 낮다. 현재 117개 HTTPException이 21개 파일에 분산된 상황은 **DDD 기반 Exception 계층 + 글로벌 핸들러**로 체계화할 수 있으며, **Sentry 연동과 structlog 전환**으로 프로덕션 운영 가시성을 확보할 수 있다.
 
 ### 10.2 권장 우선순위
 
