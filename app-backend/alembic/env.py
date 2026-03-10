@@ -8,6 +8,7 @@ from alembic import context
 from app.core.config import get_settings
 from app.models import (  # noqa: F401
     actionkit,
+    actionkit_event,
     admin_audit_log,
     announcement,
     audit_log,

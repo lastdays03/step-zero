@@ -5,6 +5,7 @@ from app.models.actionkit import (
     ActionKitItemHighlight,
     ActionKitRelatedLaw,
 )
+from app.models.actionkit_event import ActionKitEvent
 from app.models.admin_audit_log import AdminAuditLog
 from app.models.announcement import Announcement
 from app.models.audit_log import AuditLog
@@ -46,6 +47,7 @@ __all__ = [
 
     "ActionKitItem",
     "ActionKitItemHighlight",
+    "ActionKitEvent",
     "ActionKitRelatedLaw",
     "AdminAuditLog",
     "Announcement",

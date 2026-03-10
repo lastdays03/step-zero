@@ -125,3 +125,35 @@ class ActionKitItemOrderUpdate(BaseModel):
 
 class ActionKitItemReorderRequest(BaseModel):
     items: List[ActionKitItemOrderUpdate]
+
+
+# ── ActionKit Stats ──
+
+
+class ActionKitKPI(BaseModel):
+    downloads: int
+    downloads_delta: float | None
+    active_users: int
+    active_users_delta: float | None
+    per_user: float
+    per_user_delta: float | None
+
+
+class PopularItem(BaseModel):
+    item_id: int
+    count: int
+    trend: float | None
+
+
+class SearchKeyword(BaseModel):
+    keyword: str
+    count: int
+
+
+class ActionKitStatsResponse(BaseModel):
+    kpi: ActionKitKPI
+    popular_items: List[PopularItem]
+    search_keywords: List[SearchKeyword]
+    insight: str | None
+    range_days: int
+    generated_at: str
