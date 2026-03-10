@@ -43,3 +43,9 @@
 - 2026-03-10 | ZIP 일괄 다운로드 시 개별 download 이벤트 중복 방지는 `?source=bulk` 쿼리 파라미터로 처리 | 클라이언트가 bulk 표시 → 서버가 개별 download 이벤트 스킵
 - 2026-03-10 | ActionKit KPI 3번째 지표는 `per_user` (인당 이용 건수 = downloads / active_users) | daily_average(총건수/일수)는 첫 번째 KPI의 단순 나눗셈이라 무의미
 - 2026-03-10 | 서버사이드 이벤트 추적 시 `session.commit()` 명시 사용 (flush 아님) | `get_session()` 컨텍스트가 auto-commit하지 않으므로 flush만으로는 rollback됨
+- 2026-03-10 | DDD 기반 도메인 Exception 계층 (`AppException` → 6개 중간 클래스 → 30+ 구체 클래스) 채택 | HTTPException 직접 raise 대신 도메인 의미를 가진 Exception으로 에러 표현력 향상
+- 2026-03-10 | RFC 9457 Problem Details 에러 응답 형식 전면 채택 (error_code, timestamp, extensions) | 클라이언트가 error_code 기반으로 에러를 구분할 수 있어 문자열 비교 불필요
+- 2026-03-10 | Sentry SDK (GlitchTip 호환) 에러 트래킹 — `_before_send`에서 4xx 필터링 | 4xx는 클라이언트 에러이므로 모니터링 노이즈 제거, 5xx만 알림
+- 2026-03-10 | structlog 구조화 로깅 전환 (개발: ConsoleRenderer, 프로덕션: JSONRenderer) | ELK/CloudWatch 등 로그 수집기 호환성 + 개발 가독성 동시 확보
+- 2026-03-10 | 순수 ASGI 미들웨어 사용 (BaseHTTPMiddleware 미사용) | SSE 스트리밍 호환 문제 방지
+- 2026-03-10 | HTTPException 핸들러 유지 (마이그레이션 기간) — 잔여 4개 (413 Payload Too Large 2개 + Mock 엔드포인트 2개) | 점진적 전환 지원, 전용 Exception 없는 HTTP 상태 코드용

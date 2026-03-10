@@ -7,26 +7,26 @@
 - Branch: `develop` (clean)
 
 ## 이번 세션 요약
-- `actionkit-analytics-tracking` 전체 구현 (Phase 1~4)
-- PR #30 생성 → 머지, feature 브랜치 삭제 (원격+로컬)
-- KPI 3번째 지표 반복 개선: conversion_rate → daily_average → per_user (인당 이용 건수)
-- files.py 추적: flush→commit 버그 수정, view 이벤트 KPI 포함
-- stats-dashboard 용어 통일: "다운로드" → "이용"
+- `exception-handler-integration` Phase A~D 전체 구현 + 코드 리뷰 + 수정
+- PR #31 머지, feature 브랜치 삭제 (원격+로컬)
+- GlitchTip 실서버 연동 검증 완료 (이벤트 전송/필터링 확인)
+- 코드 리뷰에서 3건 수정: actionkit/detail.py 구체 Exception, problem_response error_code/timestamp 일관성
+- pre-push 훅 백엔드+프론트엔드 병렬 실행 개선
+- setup_sentry에 try/except 추가 (잘못된 DSN으로 앱 크래시 방지)
 
 ## Uncommitted Changes
-- `docs/context/dev-status.md`, `handoff.md`, `decisions.md` — 세션 반영 갱신
-- `docs/plans/active/actionkit-analytics-tracking/` — done/ 아카이브 이동 필요
+- 없음 (모두 커밋/푸시 완료)
 
 ## 다음 세션 시작점
 1. 개발서버 마이그레이션: `docker compose exec app-backend uv run alembic upgrade head`
-2. docs 아카이브 커밋 (actionkit-analytics-tracking → done/)
-3. 다음 작업 선정 — `docs/plans/active/` 비어있음
+2. 다음 작업 선정 — `docs/plans/active/` 비어있음
+3. (선택) 프로덕션 SENTRY_DSN 설정
 
 ## 핵심 주의사항
-- 프로덕션 배포 시 `ADMIN_EMAILS` 환경변수 설정 필수
+- 프로덕션 배포 시 `ADMIN_EMAILS`, `SENTRY_DSN` 환경변수 설정 필수
 - `pnpm build`는 `next build --webpack` 사용 (Turbopack CSS panic 회피)
 - 루트 `.gitignore`에 `test_*.py` 패턴 → 새 테스트 파일은 `git add -f` 필요
 - `get_session()` auto-commit 안됨 → 명시적 `session.commit()` 필수
 
 ## 참조 문서
-- 완료: `docs/plans/done/actionkit-analytics-tracking/` (아카이브 이동 후)
+- 완료: `docs/plans/done/exception-handler-integration/`
