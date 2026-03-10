@@ -1,4 +1,3 @@
-import logging
 from typing import Any
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
@@ -11,14 +10,23 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.api.v1.schemas import RefreshTokenRequest, TeamRead, TokenWithTeams
 from app.core import config, security
 from app.core.db import get_session
+from app.core.exceptions import (
+    DatabaseUnavailableError,
+    ExternalServiceError,
+    InvalidCredentialsError,
+    InvalidTokenError,
+    TokenReuseDetectedError,
+)
+from app.core.logging import get_logger
 from app.core.rate_limit import limiter
+from app.core.sentry import set_user_context
 from app.features.auth.application.auth_service import AuthService
 from app.models.user import User, UserRead
 from app.repositories.refresh_token_repository import RefreshTokenRepository
 from app.repositories.team_repository import TeamRepository
 from app.repositories.user_repository import UserRepository
 
-logger = logging.getLogger(__name__)
+logger = get_logger(__name__)
 router = APIRouter()
 settings = config.get_settings()
 
@@ -118,25 +126,22 @@ async def login_access_token(
     form_data: OAuth2PasswordRequestForm = Depends(),
     session: AsyncSession = Depends(get_session),
 ) -> Any:
+    from app.core.exceptions import AppException
+
     service = _auth_service(session)
     try:
         result = await service.login_with_password(
             form_data.username, form_data.password
         )
-    except HTTPException:
+    except AppException:
         raise
     except Exception as error:
         if _is_backend_unavailable_error(error):
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Authentication backend unavailable",
-            )
+            raise DatabaseUnavailableError()
         raise
     if not result:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password",
-        )
+        raise InvalidCredentialsError("Incorrect email or password")
+    set_user_context(str(result.user.id), result.user.email)
     return _serialize_auth_result(result)
 
 
@@ -154,51 +159,33 @@ async def login_google(
     session: AsyncSession = Depends(get_session),
 ) -> Any:
     if not settings.GOOGLE_CLIENT_ID:
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Google login is not configured",
-        )
+        raise ExternalServiceError("Google login is not configured")
     service = _auth_service(session)
     try:
         result = await service.login_with_google(
             settings.GOOGLE_CLIENT_ID, request_data.id_token
         )
     except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token"
-        )
+        raise InvalidTokenError("Invalid Google token")
     except GoogleAuthError:
         if settings.ENABLE_SOCIAL_MOCK and settings.ENVIRONMENT.lower() != "production":
             return await _login_social_mock_user("google", session)
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Google authentication service unavailable",
-        )
-    except HTTPException:
+        raise ExternalServiceError("Google authentication service unavailable")
+    except (HTTPException, ExternalServiceError, InvalidTokenError):
         raise
     except Exception as error:
         logger.error(
-            f"Google login error: {type(error).__name__}: {str(error)}", exc_info=True
+            "google_login_error",
+            error_type=type(error).__name__,
+            error=str(error),
+            exc_info=True,
         )
         if _is_backend_unavailable_error(error):
-            logger.error(
-                f"Social login failed due to backend unavailability: {str(error)}",
-                exc_info=True,
-            )
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Authentication backend unavailable",
-            )
-        logger.error(
-            f"Social login failed with unexpected error: {str(error)}", exc_info=True
-        )
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail="Login failed"
-        )
+            raise DatabaseUnavailableError()
+        raise
     if not result:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid Google token"
-        )
+        raise InvalidTokenError("Invalid Google token")
+    set_user_context(str(result.user.id), result.user.email)
     return _serialize_auth_result(result)
 
 
@@ -226,10 +213,7 @@ async def login_social(
         raise
     except Exception as error:
         if _is_backend_unavailable_error(error):
-            raise HTTPException(
-                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-                detail="Authentication backend unavailable",
-            )
+            raise DatabaseUnavailableError()
         raise
 
 
@@ -251,17 +235,11 @@ async def refresh_token(
     # Check for token reuse (possible theft)
     reuse_detected = await service.detect_refresh_token_reuse(body.refresh_token)
     if reuse_detected:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Refresh token reuse detected. All sessions revoked.",
-        )
+        raise TokenReuseDetectedError()
 
     result = await service.refresh_access_token(body.refresh_token)
     if not result:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired refresh token",
-        )
+        raise InvalidTokenError("Invalid or expired refresh token")
     return _serialize_auth_result(result)
 
 

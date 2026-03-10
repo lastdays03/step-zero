@@ -1,9 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, Path
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
 from app.core.db import get_session
+from app.core.exceptions import AnnouncementNotFoundError
 from app.features.ops.application.announcements import (
     AnnouncementCreate,
     AnnouncementItem,
@@ -94,7 +95,7 @@ async def update_ops_announcement(
         actor_id=admin_user.id,
     )
     if not row:
-        raise HTTPException(status_code=404, detail="Announcement not found")
+        raise AnnouncementNotFoundError()
 
     await record_admin_audit_log(
         session,
@@ -131,7 +132,7 @@ async def update_ops_announcement_status(
         actor_id=admin_user.id,
     )
     if not row:
-        raise HTTPException(status_code=404, detail="Announcement not found")
+        raise AnnouncementNotFoundError()
 
     action_code = {
         "draft": AuditAction.ANNOUNCEMENT_DRAFTED,

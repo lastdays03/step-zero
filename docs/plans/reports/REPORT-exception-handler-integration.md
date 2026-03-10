@@ -1,6 +1,7 @@
 # REPORT: Exception Handler 통합 구현 계획 보고서
 
 > **작성일:** 2026-03-06
+> **수정일:** 2026-03-10 (코드 검증 기반 2차 수정 — 수치 보정, 매핑 보완, SSE 전략, FE 전수 조사)
 > **대상:** Step Zero Backend (`app-backend/`)
 > **범위:** 에러 처리 체계 전면 개선 — 커스텀 Exception 계층, RFC 9457 업그레이드, Sentry 연동, 구조화 로깅
 > **현황:** 분석 완료 / 구현 미착수
@@ -26,7 +27,7 @@
 
 Step Zero 백엔드는 RFC 7807 기반의 에러 응답 구조를 갖추고 있으나, **커스텀 Exception이 2개뿐이고 117개 위치(21개 파일)에서 HTTPException을 직접 raise**하며, **Sentry 미연동·구조화 로깅 부재**라는 구조적 한계를 가진다.
 
-본 보고서는 최신 트렌드(RFC 9457, DDD Exception Hierarchy, Structured Logging, Sentry v8)를 반영한 **Exception Handler 통합 구현 계획**을 제시하고, 현 프로젝트에 대한 **적용 가능성을 8개 축으로 평가**한다.
+본 보고서는 최신 트렌드(RFC 9457, DDD Exception Hierarchy, Structured Logging, Sentry SDK v2+)를 반영한 **Exception Handler 통합 구현 계획**을 제시하고, 현 프로젝트에 대한 **적용 가능성을 8개 축으로 평가**한다.
 
 ### 핵심 제안 요약
 
@@ -34,7 +35,7 @@ Step Zero 백엔드는 RFC 7807 기반의 에러 응답 구조를 갖추고 있�
 |------|------|------|------------|
 | Exception 계층 | 커스텀 2개 + ValueError | DDD 기반 도메인 Exception 트리 | **높음** — 점진적 마이그레이션 가능 |
 | 에러 응답 표준 | RFC 7807 (부분 준수) | RFC 9457 (완전 준수) | **높음** — 하위 호환 |
-| 에러 트래킹 | 없음 (로깅만) | Sentry v8 + Performance | **높음** — SDK 자동 통합 |
+| 에러 트래킹 | 없음 (로깅만) | Sentry SDK v2+ + Performance | **높음** — SDK 자동 통합 |
 | 로깅 | 표준 logging (텍스트) | structlog (JSON 구조화) | **중간** — 기존 코드 수정 필요 |
 | 서비스-API 경계 | 혼재 (서비스에서 HTTPException) | 명확 분리 (서비스는 도메인 Exception만) | **중간** — 리팩토링 범위 큼 |
 | Worker 에러 처리 | 서비스 레이어 의존 | 전용 에러 핸들링 + 재시도 정책 | **높음** — ARQ 설정만 |
@@ -80,7 +81,7 @@ Step Zero 백엔드는 RFC 7807 기반의 에러 응답 구조를 갖추고 있�
 | HTTPException raise 위치 | **117** | 21개 파일에 분산 (API 라우터 18개 + 서비스 3개) |
 | ValueError raise 위치 | **20** | 서비스/설정 레이어 (roadmap_templates/service.py가 11개로 최다) |
 | 커스텀 Exception 클래스 | **2개** | `LawApiError`, `InvalidRoadmapStepStatusError` |
-| try/except 블록 | **71** | bare `except Exception` 41개 (57.7%) |
+| try/except 블록 | **71** | bare `except Exception` 33개 (46.5%) |
 | 서비스 레이어 HTTPException | **5곳** | auth_service, chat_session_service, post_service |
 | IntegrityError 처리 | **1곳** | roadmap_chat_repository만 |
 | Sentry/에러 트래킹 | **0** | 미연동 |
@@ -221,9 +222,9 @@ logger.error("unhandled_error", exc_info=True,
 - Sentry breadcrumb 자동 연동
 - 성능: 표준 logging 대비 동등 (lazy evaluation)
 
-### 3.4 Sentry v8 FastAPI 통합
+### 3.4 Sentry SDK v2+ FastAPI 통합
 
-Sentry SDK v2+ (2025-2026)는 FastAPI 자동 통합 제공:
+Sentry Python SDK v2+ (2025-2026)는 FastAPI 자동 통합 제공:
 
 ```python
 import sentry_sdk
@@ -331,7 +332,7 @@ class AppException(Exception):
     status_code: int = 500
     error_code: str = "INTERNAL_ERROR"
     detail: str = "서버 내부 오류가 발생했습니다."
-    type_uri: str = "https://stepzero.dev/problems/internal-error"
+    type_uri: str = "https://api.stepzero.kr/problems/internal-error"
 
     def __init__(self, detail: str | None = None, **extra):
         self.detail = detail or self.__class__.detail
@@ -344,7 +345,7 @@ class AppException(Exception):
 class NotFoundError(AppException):
     status_code = 404
     error_code = "NOT_FOUND"
-    type_uri = "https://stepzero.dev/problems/not-found"
+    type_uri = "https://api.stepzero.kr/problems/not-found"
 
     def __init__(self, resource: str, identifier: Any = None):
         detail = f"{resource}을(를) 찾을 수 없습니다."
@@ -369,7 +370,7 @@ class PostNotFoundError(NotFoundError):
         super().__init__("게시글", post_id)
 
 
-class FileNotFoundError_(NotFoundError):
+class AppFileNotFoundError(NotFoundError):
     error_code = "FILE_NOT_FOUND"
     def __init__(self, file_id=None):
         super().__init__("파일", file_id)
@@ -380,7 +381,7 @@ class FileNotFoundError_(NotFoundError):
 class BusinessRuleError(AppException):
     status_code = 400
     error_code = "BUSINESS_RULE_VIOLATION"
-    type_uri = "https://stepzero.dev/problems/business-rule"
+    type_uri = "https://api.stepzero.kr/problems/business-rule"
 
 
 class StepOrderViolationError(BusinessRuleError):
@@ -401,7 +402,7 @@ class InvalidStatusTransitionError(BusinessRuleError):
 class DuplicateResourceError(BusinessRuleError):
     status_code = 409
     error_code = "DUPLICATE_RESOURCE"
-    type_uri = "https://stepzero.dev/problems/duplicate"
+    type_uri = "https://api.stepzero.kr/problems/duplicate"
     def __init__(self, resource: str, field: str = None):
         detail = f"이미 존재하는 {resource}입니다."
         super().__init__(detail, resource=resource, field=field)
@@ -424,7 +425,7 @@ class AlreadyReportedError(BusinessRuleError):
 class AuthenticationError(AppException):
     status_code = 401
     error_code = "AUTHENTICATION_FAILED"
-    type_uri = "https://stepzero.dev/problems/authentication"
+    type_uri = "https://api.stepzero.kr/problems/authentication"
     detail = "인증에 실패했습니다."
 
 
@@ -450,14 +451,14 @@ class TokenReuseDetectedError(AuthenticationError):
 
 # ── 403 계열: 권한 ──
 
-class PermissionError_(AppException):
+class AppPermissionError(AppException):
     status_code = 403
     error_code = "PERMISSION_DENIED"
-    type_uri = "https://stepzero.dev/problems/permission"
+    type_uri = "https://api.stepzero.kr/problems/permission"
     detail = "접근 권한이 없습니다."
 
 
-class AccountRestrictedError(PermissionError_):
+class AccountRestrictedError(AppPermissionError):
     error_code = "ACCOUNT_RESTRICTED"
     def __init__(self, user_status: str, reason: str = None,
                  suspended_until: str = None):
@@ -466,17 +467,22 @@ class AccountRestrictedError(PermissionError_):
                         suspended_until=suspended_until)
 
 
-class TeamAccessDeniedError(PermissionError_):
+class SuspendedUserError(AppPermissionError):
+    error_code = "USER_SUSPENDED"
+    detail = "이용이 정지된 사용자입니다."
+
+
+class TeamAccessDeniedError(AppPermissionError):
     error_code = "TEAM_ACCESS_DENIED"
     detail = "팀 접근이 거부되었습니다."
 
 
-class AdminRequiredError(PermissionError_):
+class AdminRequiredError(AppPermissionError):
     error_code = "ADMIN_REQUIRED"
     detail = "관리자 권한이 필요합니다."
 
 
-class ResourceOwnershipError(PermissionError_):
+class ResourceOwnershipError(AppPermissionError):
     error_code = "NOT_RESOURCE_OWNER"
     def __init__(self, resource: str):
         super().__init__(f"이 {resource}에 대한 권한이 없습니다.")
@@ -484,10 +490,10 @@ class ResourceOwnershipError(PermissionError_):
 
 # ── 422 계열: 입력 검증 ──
 
-class ValidationError_(AppException):
+class AppValidationError(AppException):
     status_code = 422
     error_code = "VALIDATION_FAILED"
-    type_uri = "https://stepzero.dev/problems/validation"
+    type_uri = "https://api.stepzero.kr/problems/validation"
     detail = "입력값이 유효하지 않습니다."
 
 
@@ -496,7 +502,7 @@ class ValidationError_(AppException):
 class ExternalServiceError(AppException):
     status_code = 503
     error_code = "EXTERNAL_SERVICE_UNAVAILABLE"
-    type_uri = "https://stepzero.dev/problems/external-service"
+    type_uri = "https://api.stepzero.kr/problems/external-service"
 
     def __init__(self, service_name: str, reason: str = None):
         detail = f"{service_name} 서비스를 사용할 수 없습니다."
@@ -515,7 +521,7 @@ class RagServiceUnavailableError(ExternalServiceError):
         super().__init__("RAG", reason)
 
 
-class LawApiError_(ExternalServiceError):
+class AppLawApiError(ExternalServiceError):
     error_code = "LAW_API_ERROR"
     def __init__(self, reason: str = None):
         super().__init__("국가법령정보센터 API", reason)
@@ -548,7 +554,7 @@ async def app_exception_to_problem(request: Request, exc: AppException) -> JSONR
         "detail": exc.detail,
         "instance": str(request.url.path),
         "error_code": exc.error_code,        # RFC 9457 확장 필드
-        "timestamp": datetime.utcnow().isoformat() + "Z",  # RFC 9457 확장
+        "timestamp": datetime.now(timezone.utc).isoformat(),  # RFC 9457 확장
     }
     if exc.extra:
         payload["extensions"] = exc.extra     # RFC 9457 확장 네임스페이스
@@ -563,7 +569,7 @@ async def app_exception_to_problem(request: Request, exc: AppException) -> JSONR
 
 ```json
 {
-    "type": "https://stepzero.dev/problems/not-found",
+    "type": "https://api.stepzero.kr/problems/not-found",
     "title": "Not Found",
     "status": 404,
     "detail": "로드맵을(를) 찾을 수 없습니다.",
@@ -608,7 +614,7 @@ async def global_exception_handler(request, exc):
 
 ## 5. 세부 구현 명세
 
-### 5.1 Sentry v8 연동
+### 5.1 Sentry SDK v2+ 연동
 
 #### 설치 및 초기화
 
@@ -667,11 +673,15 @@ def setup_sentry(settings) -> None:
 
 def _before_send(event, hint):
     """민감 정보 필터링 + 불필요 이벤트 제거."""
-    # AppException 중 4xx는 이벤트로 보내지 않음 (로그만)
     exc_info = hint.get("exc_info")
     if exc_info:
         exc_type, exc_value, _ = exc_info
+        # 새 도메인 예외: 4xx는 이벤트로 보내지 않음 (로그만)
         if isinstance(exc_value, AppException) and exc_value.status_code < 500:
+            return None
+        # 마이그레이션 기간: 레거시 HTTPException 4xx도 필터링
+        # → Phase D 완료 후 이 블록 제거
+        if isinstance(exc_value, HTTPException) and exc_value.status_code < 500:
             return None
     return event
 
@@ -778,17 +788,55 @@ def get_logger(name: str) -> structlog.stdlib.BoundLogger:
     return structlog.get_logger(name)
 ```
 
-#### 요청 컨텍스트 미들웨어
+#### uvicorn 로깅 통합
+
+> **중요:** structlog의 `root.handlers.clear()`가 uvicorn 자체 핸들러를 제거하므로,
+> uvicorn 실행 시 자체 로깅 설정을 비활성화해야 한다.
+
+```bash
+# Makefile / Docker CMD — uvicorn 로깅을 structlog에 위임
+uvicorn app.main:app --reload --port 8000 --log-config=""
+```
 
 ```python
-# app/middleware/logging.py (신규)
+# 또는 프로그래밍 방식으로 (app/main.py)
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000,
+                log_config=None)  # uvicorn 자체 로깅 비활성화
+```
+
+`setup_logging()`은 `app/main.py` 모듈 로드 시 호출되므로, uvicorn 핸들러보다 **후순위**로
+실행되어 structlog 핸들러가 최종 적용된다. `log_config=None`을 명시하면 충돌을 확실히 방지.
+
+#### 요청 컨텍스트 미들웨어
+
+> **주의:** `BaseHTTPMiddleware`는 SSE 스트리밍 응답과 호환 문제가 있으므로,
+> 순수 ASGI 미들웨어 방식을 사용한다. 기존 `log_request_response` 미들웨어(main.py)는
+> 이 미들웨어로 **교체**한다 (요청 로깅 기능을 structlog 컨텍스트로 통합).
+
+```python
+# app/middleware/logging.py (신규 — 순수 ASGI 미들웨어)
 
 import uuid
 import structlog
-from starlette.middleware.base import BaseHTTPMiddleware
+import sentry_sdk
+from starlette.types import ASGIApp, Receive, Scope, Send
 
-class RequestContextMiddleware(BaseHTTPMiddleware):
-    async def dispatch(self, request, call_next):
+
+class RequestContextMiddleware:
+    """순수 ASGI 미들웨어 — SSE 스트리밍과 호환."""
+
+    def __init__(self, app: ASGIApp):
+        self.app = app
+
+    async def __call__(self, scope: Scope, receive: Receive, send: Send):
+        if scope["type"] not in ("http", "websocket"):
+            await self.app(scope, receive, send)
+            return
+
+        from starlette.requests import Request
+        request = Request(scope)
         request_id = request.headers.get("X-Request-ID", str(uuid.uuid4()))
 
         structlog.contextvars.clear_contextvars()
@@ -801,9 +849,15 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
         # Sentry에도 request_id 태깅
         sentry_sdk.set_tag("request_id", request_id)
 
-        response = await call_next(request)
-        response.headers["X-Request-ID"] = request_id
-        return response
+        # X-Request-ID 응답 헤더 주입
+        async def send_with_request_id(message):
+            if message["type"] == "http.response.start":
+                headers = list(message.get("headers", []))
+                headers.append((b"x-request-id", request_id.encode()))
+                message["headers"] = headers
+            await send(message)
+
+        await self.app(scope, receive, send_with_request_id)
 ```
 
 ### 5.3 Feature별 마이그레이션 매핑
@@ -828,7 +882,7 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 | `roadmaps/get.py:109` | `HTTPException(404, message)` | `RoadmapNotFoundError(roadmap_id)` |
 | `roadmap_progress_service.py:42` | `InvalidRoadmapStepStatusError("Previous steps...")` | `StepOrderViolationError()` |
 | `roadmap_progress_service.py:28` | `InvalidRoadmapStepStatusError("Unsupported status")` | `InvalidStatusTransitionError(current, target)` |
-| `roadmaps/jobs.py:75` | `HTTPException(422, ...)` | `ValidationError_(detail)` |
+| `roadmaps/jobs.py:75` | `HTTPException(422, ...)` | `AppValidationError(detail)` |
 
 #### Growth Club Feature
 
@@ -836,16 +890,20 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 |----------------------|----------|----------|
 | `posts.py:419` | `HTTPException(404, "Post not found")` | `PostNotFoundError(post_id)` |
 | `post_service.py:178,181` | `HTTPException(404/403, "Post not found"/"Not authorized to delete this post")` | `PostNotFoundError` / `ResourceOwnershipError("게시글")` |
+| `posts.py:300` | `HTTPException(403, "이용이 정지된 사용자입니다")` | `SuspendedUserError()` |
 | `posts.py:421-424` | `HTTPException(400, "자신의 게시물은 신고할 수 없습니다.")` | `SelfReportError("게시물")` |
 | `posts.py:433` | `HTTPException(400, "이미 신고한 게시물입니다.")` | `AlreadyReportedError("게시물")` |
+| `comments.py:47` | `HTTPException(403, "이용이 정지된 사용자입니다")` | `SuspendedUserError()` |
 | `comments.py:138` | `HTTPException(403, "Not authorized")` | `ResourceOwnershipError("댓글")` |
+| `comments.py:163` | `HTTPException(400, "자신의 댓글은 신고할 수 없습니다.")` | `SelfReportError("댓글")` |
+| `comments.py:172` | `HTTPException(400, "이미 신고한 댓글입니다.")` | `AlreadyReportedError("댓글")` |
 
 #### ActionKit Feature
 
 | 현재 코드 (파일:라인) | 현재 예외 | 변환 대상 |
 |----------------------|----------|----------|
-| `files.py:121` | `HTTPException(404, "No file found for this item")` | `FileNotFoundError_(item_id)` |
-| `files.py:43` | `HTTPException(400, "Filename is required")` | `ValidationError_("파일명은 필수입니다.")` |
+| `files.py:121` | `HTTPException(404, "No file found for this item")` | `AppFileNotFoundError(item_id)` |
+| `files.py:43` | `HTTPException(400, "Filename is required")` | `AppValidationError("파일명은 필수입니다.")` |
 | `service.py:199` | `ValueError("ActionKit item not found")` | `NotFoundError("액션키트 아이템", item_id)` |
 
 #### Deps (인증/권한)
@@ -864,13 +922,36 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
 | `session_service.py:136` | `HTTPException(404, "세션을 찾을 수 없습니다.")` | `NotFoundError("채팅 세션", session_id)` |
 | `session_service.py:138` | `HTTPException(404, "세션을 찾을 수 없습니다.")` | `ResourceOwnershipError("채팅 세션")` |
 
-#### Ops Feature (roadmap_templates/service.py)
+#### Ops Feature
+
+**서비스 레이어 (roadmap_templates/service.py):**
 
 | 현재 코드 (파일:라인) | 현재 예외 | 변환 대상 |
 |----------------------|----------|----------|
 | `service.py:119` | `ValueError("Roadmap ... not found")` | `RoadmapNotFoundError(roadmap_id)` |
 | `service.py:212` | `ValueError("Cannot edit template in ... status")` | `InvalidStatusTransitionError(current, "editable")` |
 | `service.py:295` | `ValueError("Cannot add steps to non-editable template")` | `BusinessRuleError("편집 불가능한 템플릿에 단계를 추가할 수 없습니다.")` |
+
+**API 라우터 (HTTPException 47개, 5파일):**
+
+| 파일 | HTTPException 수 | 주요 패턴 | 변환 방향 |
+|------|-----------------|----------|----------|
+| `ops/roadmap_templates.py` | 20 | 404 (템플릿/단계 미발견), 400 (상태 전환 불가), 403 (권한) | `NotFoundError`, `InvalidStatusTransitionError`, `AdminRequiredError` |
+| `ops/actionkit.py` | 15 | 404 (카테고리/아이템 미발견), 400 (검증 실패) | `NotFoundError`, `AppValidationError` |
+| `ops/growth_club.py` | 8 | 404 (게시글/댓글 미발견), 400 (상태 변경) | `PostNotFoundError`, `BusinessRuleError` |
+| `ops/announcements.py` | 2 | 404 (공지 미발견) | `NotFoundError("공지", id)` |
+| `ops/users.py` | 1 | 404 (사용자 미발견) | `NotFoundError("사용자", user_id)` |
+| `ops/files.py` | 1 | 404 (파일 미발견) | `AppFileNotFoundError(file_id)` |
+
+> **Note:** Ops 라우터는 전체 HTTPException의 40%(47/117)를 차지하므로 Phase C의 작업량에 유의.
+
+#### Notifications / Storage / Announcements
+
+| 현재 코드 (파일) | HTTPException 수 | 변환 대상 |
+|-----------------|-----------------|----------|
+| `notifications.py` | 2 | `NotFoundError("알림", id)` |
+| `storage.py` | 2 | `AppFileNotFoundError`, `AppValidationError` |
+| `announcements.py` (사용자 측) | 1 | `NotFoundError("공지", id)` |
 
 ### 5.4 Worker 에러 처리 강화
 
@@ -953,7 +1034,55 @@ class PostService:
             raise
 ```
 
-### 5.6 프론트엔드 에러 타입 자동 생성
+### 5.6 SSE 스트리밍 에러 처리 전략
+
+SSE 스트리밍 엔드포인트(2개)는 이미 200 응답이 시작된 후이므로, **글로벌 Exception Handler가 적용되지 않는다**.
+별도 전략이 필요하다.
+
+#### 대상 엔드포인트
+
+| 엔드포인트 | 현재 에러 처리 | 개선 방향 |
+|-----------|--------------|----------|
+| `POST /api/v1/chat/stream` | SSE error 이벤트 (`_sse_event("error", {...})`) | error code를 Exception 계층과 정렬 |
+| `GET /api/v1/notifications/stream` | `CancelledError`만 처리, 기타 미처리 | try/except + SSE error 이벤트 추가 |
+
+#### SSE 에러 이벤트 표준화
+
+```python
+# ChatService에서 SSE 에러 코드를 Exception error_code와 정렬
+# 현재: {"code": "LLM_ERROR", "message": "..."}
+# 개선: {"error_code": "LLM_UNAVAILABLE", "detail": "..."}
+
+async def _emit_sse_error(self, error_code: str, detail: str):
+    """SSE error 이벤트 — RFC 9457 error_code와 동일 체계."""
+    sentry_sdk.capture_message(f"SSE error: {error_code}", level="warning")
+    yield _sse_event("error", {"error_code": error_code, "detail": detail})
+```
+
+#### Notification SSE 에러 처리 보완
+
+```python
+# subscribe_notifications() — 현재 미처리 에러에 except 추가
+async def event_generator():
+    try:
+        async for event in pubsub.listen():
+            yield format_sse(event)
+    except asyncio.CancelledError:
+        pass  # 정상 종료
+    except Exception as exc:
+        sentry_sdk.capture_exception(exc)
+        logger.error("notification_sse_error", error=str(exc))
+        yield _sse_event("error", {"error_code": "INTERNAL_ERROR",
+                                    "detail": "알림 스트림에 오류가 발생했습니다."})
+```
+
+#### Sentry 캡처
+
+SSE 스트리밍 중 에러는 글로벌 핸들러를 거치지 않으므로, **각 SSE except 블록에서
+`sentry_sdk.capture_exception()` 명시 호출이 필요**. Phase B (ChatService) 및
+Phase C (Notifications) 마이그레이션 시 적용.
+
+### 5.7 프론트엔드 에러 타입 자동 생성
 
 ```typescript
 // app-frontend/src/lib/api-errors.ts (자동 생성 대상)
@@ -992,6 +1121,48 @@ if (error.response?.data?.detail === "Post not found") { ... }
 if (error.response?.data?.error_code === "POST_NOT_FOUND") { ... }
 ```
 
+**Breaking Change 1 — ACCOUNT_RESTRICTED 응답 구조 변경:**
+
+현재 `auth_service.py`는 `detail`에 dict를 넣어 보내고, 프론트엔드 3곳에서 이를 직접 참조:
+
+```typescript
+// 현재 프론트엔드 (LoginForm.tsx:29, SocialAuthModal.tsx:67,97)
+data?.code === 'ACCOUNT_RESTRICTED'
+data.status, data.reason
+
+// RFC 9457 전환 후 — 수정 필요
+data?.error_code === 'ACCOUNT_RESTRICTED'
+data.extensions?.status, data.extensions?.reason
+```
+
+> **주의 — `status` 필드 충돌 버그:** 현재 `http_exception_to_problem`에서 `payload.update(extra)` 시
+> ACCOUNT_RESTRICTED dict의 `"status": "suspended"`가 RFC 7807의 `"status": 403`을 덮어쓴다.
+> 프론트엔드가 `data.status`를 user status로 읽고 있어 현재는 "동작"하지만 RFC 7807 위반.
+> RFC 9457 전환 시 `extensions` 하위로 분리하면 이 충돌이 해결된다.
+
+**Breaking Change 2 — 에러 메시지 문자열 비교:**
+
+```typescript
+// SocialAuthModal.tsx:83 — 영문 에러 메시지 정확 일치 비교
+data?.detail === 'Authentication backend unavailable'
+
+// RFC 9457 전환 후 — error_code 기반으로 수정 필요
+data?.error_code === 'DATABASE_UNAVAILABLE'
+```
+
+**프론트엔드 수정 필요 파일 전체 목록:**
+
+| 파일 | 수정 대상 | 변경 내용 |
+|------|----------|----------|
+| `LoginForm.tsx:29` | `data?.code` | → `data?.error_code` |
+| `SocialAuthModal.tsx:67,97` | `data?.code` | → `data?.error_code` |
+| `SocialAuthModal.tsx:69-71,99-101` | `data.status`, `data.reason` | → `data.extensions?.status`, `data.extensions?.reason` |
+| `SocialAuthModal.tsx:83` | `data?.detail === '...'` | → `data?.error_code === 'DATABASE_UNAVAILABLE'` |
+
+> **Phase D에서 반드시 프론트엔드 코드 동시 수정 필요.** 백엔드 전환 시점에 맞춰
+> `LoginForm.tsx`, `SocialAuthModal.tsx`의 에러 파싱 로직을 업데이트해야 한다.
+> `CommentSection.tsx`, `PostCard.tsx`의 `data?.detail` 접근은 RFC 9457 하위호환으로 수정 불요.
+
 ---
 
 ## 6. 현 프로젝트 적용 가능성 평가
@@ -1004,7 +1175,7 @@ if (error.response?.data?.error_code === "POST_NOT_FOUND") { ... }
 | **마이그레이션 용이성** | 4/5 | 점진적 적용 가능, 기존 HTTPException과 공존 |
 | **팀 학습 비용** | 4/5 | Exception 계층은 직관적, structlog은 약간의 학습 필요 |
 | **테스트 영향** | 4/5 | SQLite 테스트 환경 유지, Exception 타입 assert 가능 |
-| **프론트엔드 호환** | 5/5 | RFC 9457은 JSON 응답, error_code 추가만 |
+| **프론트엔드 호환** | 5/5 | RFC 9457 하위 호환, breaking change 4곳 식별 완료 + Phase D 마이그레이션 계획 포함 |
 | **성능 영향** | 5/5 | Exception 생성 비용 무시 가능, structlog lazy eval |
 | **운영 안정성** | 4/5 | Sentry는 opt-in (DSN 빈 문자열이면 비활성화) |
 | **코드 품질 향상** | 5/5 | 117 HTTPException → 타입 안전 도메인 Exception |
@@ -1103,19 +1274,31 @@ Phase B: 핵심 Feature 마이그레이션 (예상 작업량: 대)
   ├── app/features/auth/ → 전환
   ├── app/features/roadmaps/ → 전환 (InvalidRoadmapStepStatusError 대체)
   ├── app/features/actionkit/ → 전환
-  └── app/workers/ → 에러 처리 강화
+  ├── app/workers/ → 에러 처리 강화 + SSE Sentry 캡처 추가
+  └── **테스트 assertion 전환** (detail 문자열 → error_code 기반, 2곳)
+      ├── test_roadmap_task_status.py:92 — 영문 detail → error_code
+      └── test_roadmap_jobs_validate.py:136 — 한국어 detail → error_code
 
-Phase C: 나머지 Feature 마이그레이션 (예상 작업량: 중)
+Phase C: 나머지 Feature 마이그레이션 (예상 작업량: **대** — ops 라우터 47개 HTTPException 포함)
   ├── app/features/growth_club/ → 전환
-  ├── app/features/chat/ → 전환
+  ├── app/features/chat/ → 전환 + **SSE error 코드 정렬 + Sentry 캡처**
   ├── app/features/rag/ → 전환
-  ├── app/features/ops/ → 전환
+  ├── app/features/ops/ → 전환 (**라우터 5파일, 47개 HTTPException**)
   ├── app/features/dashboard/ → 전환
+  ├── app/api/v1/notifications.py → 전환 (2개) + **SSE 에러 미처리 보완**
+  ├── app/api/v1/storage.py → 전환 (2개)
+  ├── app/api/v1/announcements.py → 전환 (1개)
   └── app/services/ (law_api_client 등) → 전환
 
-Phase D: 마무리 및 검증 (예상 작업량: 소)
+Phase D: 마무리 및 검증 (예상 작업량: 중)
   ├── 레거시 Exception 클래스 제거 (LawApiError, InvalidRoadmapStepStatusError)
-  ├── 전체 테스트 통과 확인
+  ├── **프론트엔드 에러 파싱 수정** (4곳):
+  │   ├── LoginForm.tsx:29 — `data?.code` → `data?.error_code`
+  │   ├── SocialAuthModal.tsx:67,97 — `data?.code` → `data?.error_code`
+  │   ├── SocialAuthModal.tsx:69-71,99-101 — `data.status/reason` → `data.extensions?.status/reason`
+  │   └── SocialAuthModal.tsx:83 — `data?.detail === '...'` → `data?.error_code === 'DATABASE_UNAVAILABLE'`
+  ├── Sentry `_before_send`에서 HTTPException 4xx 필터링 라인 제거
+  ├── 전체 테스트 통과 확인 (백엔드 + 프론트엔드)
   ├── error_code 기반 프론트엔드 에러 처리 가이드 작성
   └── Sentry 알림 규칙 설정
 ```
@@ -1182,9 +1365,9 @@ app.add_exception_handler(HTTPException, http_exception_to_problem)
 |-------|------------|------------|--------|
 | A (기반 구축) | 4 | 3 | 중 |
 | B (핵심 Feature) | ~12 | 0 | 대 |
-| C (나머지 Feature) | ~15 | 0 | 중 |
-| D (마무리) | ~5 | 1 | 소 |
-| **합계** | **~36** | **4** | - |
+| C (나머지 Feature + ops 라우터) | ~20 | 0 | **대** |
+| D (마무리 + FE 수정) | ~7 | 1 | 중 |
+| **합계** | **~43** | **4** | - |
 
 ### 9.2 신규 의존성
 

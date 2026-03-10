@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, Path
 from pydantic import BaseModel
 from sqlalchemy import delete, desc, func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +9,12 @@ from sqlmodel import select
 
 from app.api.deps import get_current_user
 from app.core.db import get_session
+from app.core.exceptions import (
+    BusinessRuleError,
+    CommentNotFoundError,
+    PostNotFoundError,
+    UserNotFoundError,
+)
 from app.features.ops.application.audit_logs.service import save_audit_log
 from app.features.ops.application.growth_club import get_queue_summary
 from app.models.file import File
@@ -120,7 +126,7 @@ async def unblind_post(
 ):
     post = await session.get(GrowthClubPost, post_id)
     if not post:
-        raise HTTPException(status_code=404, detail="Post not found")
+        raise PostNotFoundError()
 
     post.is_blinded = False
     post.report_count = 0  # 블라인드 해제 시 신고 횟수도 초기화
@@ -221,7 +227,7 @@ async def unblind_comment(
 ):
     comment = await session.get(GrowthClubComment, comment_id)
     if not comment:
-        raise HTTPException(status_code=404, detail="Comment not found")
+        raise CommentNotFoundError()
 
     comment.is_blinded = False
     comment.report_count = 0
@@ -294,7 +300,7 @@ async def suspend_user(
 ):
     user = await session.get(User, user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise UserNotFoundError()
 
     from datetime import datetime, timezone
 
@@ -356,7 +362,7 @@ async def unsuspend_user(
 ):
     user = await session.get(User, user_id)
     if not user:
-        raise HTTPException(status_code=404, detail="User not found")
+        raise UserNotFoundError()
 
     user.is_suspended = False
     user.suspended_at = None
@@ -391,11 +397,9 @@ async def delete_blinded_post(
 ):
     post = await session.get(GrowthClubPost, post_id)
     if not post:
-        raise HTTPException(status_code=404, detail="Post not found")
+        raise PostNotFoundError()
     if not post.is_blinded:
-        raise HTTPException(
-            status_code=400, detail="블라인드 처리된 게시글만 삭제할 수 있습니다."
-        )
+        raise BusinessRuleError("블라인드 처리된 게시글만 삭제할 수 있습니다.")
 
     # 작성자 정보
     author = await session.get(User, post.author_id)
@@ -428,11 +432,9 @@ async def delete_blinded_comment(
 ):
     comment = await session.get(GrowthClubComment, comment_id)
     if not comment:
-        raise HTTPException(status_code=404, detail="Comment not found")
+        raise CommentNotFoundError()
     if not comment.is_blinded:
-        raise HTTPException(
-            status_code=400, detail="블라인드 처리된 댓글만 삭제할 수 있습니다."
-        )
+        raise BusinessRuleError("블라인드 처리된 댓글만 삭제할 수 있습니다.")
 
     # 작성자 정보
     author = await session.get(User, comment.author_id)

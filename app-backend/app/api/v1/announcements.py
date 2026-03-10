@@ -1,11 +1,11 @@
 from typing import List
 
-from fastapi import APIRouter, Depends, HTTPException, Path
+from fastapi import APIRouter, Depends, Path
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import desc, select
 
-from app.api import deps
 from app.core.db import get_session
+from app.core.exceptions import AnnouncementNotFoundError
 from app.features.ops.application.announcements.service import AnnouncementItem
 from app.models.announcement import Announcement
 
@@ -43,6 +43,6 @@ async def get_published_announcement(
 ) -> AnnouncementItem:
     row = await session.get(Announcement, announcement_id)
     if not row or row.status != "published":
-        raise HTTPException(status_code=404, detail="Announcement not found")
+        raise AnnouncementNotFoundError()
 
     return AnnouncementItem.model_validate(row, from_attributes=True)

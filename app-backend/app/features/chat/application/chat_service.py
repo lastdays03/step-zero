@@ -19,9 +19,10 @@ from uuid import UUID
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_openai import ChatOpenAI
 
-from fastapi import HTTPException
+import sentry_sdk
 
 from app.core.config import get_settings
+from app.core.exceptions import AppException, ExternalServiceError
 from app.core.logging import get_logger
 from app.features.chat.application.intent_classifier import (
     IntentClassifier,
@@ -143,8 +144,8 @@ class ChatService:
         if session_id is not None:
             try:
                 thread = await self._session_svc.get_session(session_id, user_id)
-            except HTTPException:
-                # 세션 미존재(404)만 폴백 — 소유권 오류도 404로 반환되므로 안전
+            except AppException:
+                # 세션 미존재 또는 소유권 오류 시 새 세션으로 폴백
                 thread = await self._session_svc.create_session(user_id=user_id)
         else:
             thread = await self._session_svc.create_session(user_id=user_id)
@@ -223,13 +224,22 @@ class ChatService:
                 ):
                     yield event
 
-        except Exception:
+        except Exception as exc:
             logger.exception("ChatService stream error")
-            yield _sse_event("error", {
-                "code": "INTERNAL_ERROR",
-                "message": "AI 응답 중 오류가 발생했습니다. "
-                "잠시 후 다시 시도해 주세요.",
-            })
+            sentry_sdk.capture_exception(exc)
+            if isinstance(exc, AppException):
+                yield _sse_event("error", {
+                    "code": exc.error_code,
+                    "error_code": exc.error_code,
+                    "message": exc.detail,
+                })
+            else:
+                err = ExternalServiceError("AI 응답 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.")
+                yield _sse_event("error", {
+                    "code": "INTERNAL_ERROR",
+                    "error_code": err.error_code,
+                    "message": err.detail,
+                })
 
         # 8. 어시스턴트 응답 DB 저장
         full_response = "".join(tokens)
@@ -482,12 +492,16 @@ class ChatService:
 
         except asyncio.CancelledError:
             logger.info("LLM 스트리밍 취소됨")
-        except Exception:
+        except Exception as exc:
             logger.exception("LLM streaming failed")
+            sentry_sdk.capture_exception(exc)
+            err = ExternalServiceError(
+                "AI 응답 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+            )
             yield _sse_event("error", {
                 "code": "LLM_ERROR",
-                "message": "AI 응답 중 오류가 발생했습니다. "
-                "잠시 후 다시 시도해 주세요.",
+                "error_code": err.error_code,
+                "message": err.detail,
             })
         finally:
             heartbeat_task.cancel()

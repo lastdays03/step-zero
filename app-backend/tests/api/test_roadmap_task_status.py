@@ -89,7 +89,7 @@ async def test_update_roadmap_step_status_blocks_out_of_order_completion(
         headers=headers,
     )
     assert out_of_order.status_code == 400
-    assert out_of_order.json()["detail"] == "Previous steps must be completed first"
+    assert out_of_order.json()["error_code"] == "STEP_ORDER_VIOLATION"
 
 
 @pytest.mark.asyncio

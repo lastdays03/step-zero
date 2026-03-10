@@ -11,7 +11,6 @@ from fastapi import (
     Path,
     Query,
     UploadFile,
-    status,
 )
 from pydantic import BaseModel, Field
 from sqlalchemy import and_, exists, func
@@ -22,6 +21,14 @@ from sqlmodel import select
 from app.api.deps import get_current_user, get_optional_current_user
 from app.core.config import get_settings
 from app.core.db import get_session
+from app.core.exceptions import (
+    AlreadyReportedError,
+    AppValidationError,
+    PostNotFoundError,
+    ResourceOwnershipError,
+    SelfReportError,
+    SuspendedUserError,
+)
 from app.features.growth_club.application.post_service import GrowthClubPostService
 from app.models.growth_club import (
     GrowthClubAttachmentRead,
@@ -79,9 +86,8 @@ async def _validate_and_read_uploads(
         label = "파일"
 
     if len(uploads) > max_count:
-        raise HTTPException(
-            status_code=400,
-            detail=f"{label}는 최대 {max_count}개까지 첨부할 수 있습니다.",
+        raise AppValidationError(
+            f"{label}는 최대 {max_count}개까지 첨부할 수 있습니다.",
         )
 
     prepared: list[tuple[UploadFile, bytes]] = []
@@ -92,9 +98,8 @@ async def _validate_and_read_uploads(
         extension = _extract_extension(upload.filename)
         if extension not in allowed_extensions:
             allowed = ", ".join(sorted(allowed_extensions))
-            raise HTTPException(
-                status_code=400,
-                detail=f"허용되지 않은 {label} 확장자입니다: {extension or '(none)'} (허용: {allowed})",
+            raise AppValidationError(
+                f"허용되지 않은 {label} 확장자입니다: {extension or '(none)'} (허용: {allowed})",
             )
 
         data = await upload.read()
@@ -113,9 +118,7 @@ async def _validate_and_read_uploads(
         if kind == "image":
             content_type = (upload.content_type or "").lower()
             if content_type and not content_type.startswith("image/"):
-                raise HTTPException(
-                    status_code=400, detail="이미지 MIME 타입이 올바르지 않습니다."
-                )
+                raise AppValidationError("이미지 MIME 타입이 올바르지 않습니다.")
 
         total_bytes += size_bytes
         if total_bytes > max_total_bytes:
@@ -297,9 +300,7 @@ async def create_post(
 ):
     """새 게시글 작성"""
     if current_user.is_suspended:
-        raise HTTPException(
-            status_code=403, detail="이용이 정지된 사용자입니다. 접근이 제한됩니다."
-        )
+        raise SuspendedUserError()
     image_uploads = [u for u in images if u is not None]
     file_uploads = [u for u in files if u is not None]
     prepared_images, total_bytes = await _validate_and_read_uploads(
@@ -386,13 +387,13 @@ async def delete_post(
     logger.info(f"Deleting post: {post_id} by user: {current_user.id}")
     try:
         await service.delete_post(post_id=post_id, current_user=current_user)
-    except HTTPException as exc:
-        if exc.status_code == 404:
-            logger.warning(f"Delete attempt for non-existent post: {post_id}")
-        elif exc.status_code == 403:
-            logger.warning(
-                f"Unauthorized delete attempt: post_id={post_id}, user_id={current_user.id}"
-            )
+    except PostNotFoundError:
+        logger.warning(f"Delete attempt for non-existent post: {post_id}")
+        raise
+    except ResourceOwnershipError:
+        logger.warning(
+            f"Unauthorized delete attempt: post_id={post_id}, user_id={current_user.id}"
+        )
         raise
     return {"status": "success", "message": "Post deleted successfully"}
 
@@ -411,17 +412,13 @@ async def report_post(
 ):
     """게시글 신고 (1회 이상 신고 시 자동 블라인드)"""
     if current_user.is_suspended:
-        raise HTTPException(
-            status_code=403, detail="이용이 정지된 사용자입니다. 접근이 제한됩니다."
-        )
+        raise SuspendedUserError()
     db_post = await session.get(GrowthClubPost, post_id)
     if not db_post:
-        raise HTTPException(status_code=404, detail="Post not found")
+        raise PostNotFoundError()
 
     if db_post.author_id == current_user.id:
-        raise HTTPException(
-            status_code=400, detail="자신의 게시물은 신고할 수 없습니다."
-        )
+        raise SelfReportError("자신의 게시물은 신고할 수 없습니다.")
 
     # 기존 신고 여부 확인
     existing_report_query = select(GrowthClubPostReport).where(
@@ -430,7 +427,7 @@ async def report_post(
     )
     existing_report_result = await session.execute(existing_report_query)
     if existing_report_result.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="이미 신고한 게시물입니다.")
+        raise AlreadyReportedError("이미 신고한 게시물입니다.")
 
     # 신고 기록 생성
     new_report = GrowthClubPostReport(
@@ -487,7 +484,7 @@ async def toggle_like_post(
     """게시글 좋아요 토글"""
     db_post = await session.get(GrowthClubPost, post_id)
     if not db_post:
-        raise HTTPException(status_code=404, detail="Post not found")
+        raise PostNotFoundError()
 
     query = select(GrowthClubPostLike).where(
         GrowthClubPostLike.post_id == post_id,

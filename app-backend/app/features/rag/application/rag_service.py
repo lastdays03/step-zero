@@ -8,6 +8,7 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_postgres import PGVector
 
 from app.core.config import get_settings
+from app.core.exceptions import ExternalServiceError, RagServiceUnavailableError
 from app.core.logging import get_logger
 
 logger = get_logger("services.rag")
@@ -131,18 +132,19 @@ class RagService:
 
     async def query(self, question: str) -> str:
         if not self.ready:
-            return (
-                "현재 법령 검색 서비스를 사용할 수 없습니다. "
-                "잠시 후 다시 시도하거나 관리자에게 문의해 주세요."
-            )
+            raise RagServiceUnavailableError(self.unavailable_reason or None)
         try:
             return await asyncio.wait_for(
                 run_in_threadpool(self.chain.invoke, question),
                 timeout=25,
             )
-        except asyncio.TimeoutError:
+        except asyncio.TimeoutError as exc:
             logger.warning("RAG query timed out")
-            return "요청 처리 시간이 초과되었습니다. 질문을 조금 더 구체적으로 입력해 주세요."
-        except Exception:
+            raise ExternalServiceError(
+                "요청 처리 시간이 초과되었습니다. 질문을 조금 더 구체적으로 입력해 주세요."
+            ) from exc
+        except Exception as exc:
             logger.exception("RAG query failed")
-            return "법령 검색 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+            raise ExternalServiceError(
+                "법령 검색 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+            ) from exc

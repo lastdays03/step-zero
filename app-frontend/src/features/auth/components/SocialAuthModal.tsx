@@ -64,11 +64,12 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
             const status = axiosErr?.response?.status;
             const data = axiosErr?.response?.data;
 
-            if (status === 403 && data?.code === 'ACCOUNT_RESTRICTED') {
+            if (status === 403 && data?.error_code === 'ACCOUNT_RESTRICTED') {
+                const ext = (data as Record<string, unknown>)?.extensions as Record<string, string> | undefined;
                 setSuspensionInfo({
-                    reason: data.reason || '운영 정책 위반으로 계정 이용이 정지되었습니다.',
-                    suspended_until: data.suspended_until || '영구',
-                    status: data.status || 'suspended'
+                    reason: ext?.reason || '운영 정책 위반으로 계정 이용이 정지되었습니다.',
+                    suspended_until: ext?.suspended_until || '영구',
+                    status: ext?.status || 'suspended'
                 });
                 setIsSuspensionOpen(true);
                 return;
@@ -80,7 +81,7 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                 return;
             }
             if (status === 503) {
-                if (data?.detail === 'Authentication backend unavailable') {
+                if (data?.error_code === 'DATABASE_UNAVAILABLE') {
                     toast.error('로그인 서버가 데이터베이스에 연결되지 않았습니다. 백엔드/DB 상태를 먼저 확인해주세요.');
                     return;
                 }
@@ -94,11 +95,12 @@ export const SocialAuthModal = ({ isOpen, onClose }: SocialAuthModalProps) => {
                     const fallbackStatus = fbErr?.response?.status;
                     const fallbackData = fbErr?.response?.data;
 
-                    if (fallbackStatus === 403 && fallbackData?.code === 'ACCOUNT_RESTRICTED') {
+                    if (fallbackStatus === 403 && fallbackData?.error_code === 'ACCOUNT_RESTRICTED') {
+                        const fbExt = (fallbackData as Record<string, unknown>)?.extensions as Record<string, string> | undefined;
                         setSuspensionInfo({
-                            reason: fallbackData.reason || '운영 정책 위반으로 계정 이용이 정지되었습니다.',
-                            suspended_until: fallbackData.suspended_until || '영구',
-                            status: fallbackData.status || 'suspended'
+                            reason: fbExt?.reason || '운영 정책 위반으로 계정 이용이 정지되었습니다.',
+                            suspended_until: fbExt?.suspended_until || '영구',
+                            status: fbExt?.status || 'suspended'
                         });
                         setIsSuspensionOpen(true);
                         return;

@@ -1,14 +1,23 @@
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, Header
 from fastapi.security import OAuth2PasswordBearer
 import jwt
-from jwt.exceptions import ExpiredSignatureError, InvalidTokenError
+from jwt.exceptions import ExpiredSignatureError
+from jwt.exceptions import InvalidTokenError as JWTInvalidTokenError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 from app.core.db import get_session
+from app.core.exceptions import (
+    AccountRestrictedError,
+    AdminRequiredError,
+    AppValidationError,
+    InvalidCredentialsError,
+    TeamAccessDeniedError,
+    TokenExpiredError,
+)
 from app.core.security import settings
 from app.models.team import Team, TeamMember
 from app.models.user import AuthenticatedUser, User
@@ -24,12 +33,6 @@ async def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     session: AsyncSession = Depends(get_session),
 ) -> AuthenticatedUser:
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-
     try:
         payload = jwt.decode(
             token,
@@ -42,12 +45,12 @@ async def get_current_user(
             from app.core.logging import get_logger
 
             get_logger("app.api.deps").warning("Token sub is missing")
-            raise credentials_exception
-    except InvalidTokenError as e:
+            raise InvalidCredentialsError()
+    except JWTInvalidTokenError as e:
         from app.core.logging import get_logger
 
         get_logger("app.api.deps").warning(f"JWT validation failed: {str(e)}")
-        raise credentials_exception
+        raise InvalidCredentialsError()
 
     user: User | None = None
     # Current token subject is user_id; keep email fallback for legacy tokens.
@@ -59,11 +62,9 @@ async def get_current_user(
         user = result.scalar_one_or_none()
 
     if not user:
-        raise credentials_exception
+        raise InvalidCredentialsError()
     if not user.is_active:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Inactive user"
-        )
+        raise AccountRestrictedError("Inactive user", status="inactive")
 
     return AuthenticatedUser(
         id=user.id,
@@ -84,10 +85,7 @@ async def get_current_team(
         try:
             parsed_team_id = UUID(x_team_id)
         except ValueError:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Invalid X-Team-Id",
-            )
+            raise AppValidationError("Invalid X-Team-Id")
         membership_stmt = (
             select(Team)
             .join(TeamMember, TeamMember.team_id == Team.id)
@@ -96,9 +94,7 @@ async def get_current_team(
         membership_result = await session.execute(membership_stmt)
         team = membership_result.scalar_one_or_none()
         if not team:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Team access denied"
-            )
+            raise TeamAccessDeniedError()
         return team
 
     membership_stmt = (
@@ -110,10 +106,7 @@ async def get_current_team(
     membership_result = await session.execute(membership_stmt)
     team = membership_result.scalars().first()
     if not team:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="No active team membership found",
-        )
+        raise TeamAccessDeniedError("No active team membership found")
     return team
 
 
@@ -134,7 +127,7 @@ async def get_optional_current_user(
         subject = payload.get("sub")
         if subject is None:
             return None
-    except InvalidTokenError:
+    except JWTInvalidTokenError:
         return None
 
     user: User | None = None
@@ -180,12 +173,8 @@ async def get_current_user_or_guest(
         if subject is None:
             return None
     except ExpiredSignatureError:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Token expired",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-    except InvalidTokenError:
+        raise TokenExpiredError()
+    except JWTInvalidTokenError:
         return None
 
     user: User | None = None
@@ -212,8 +201,5 @@ async def require_platform_admin(
     current_user: Annotated[AuthenticatedUser, Depends(get_current_user)],
 ) -> AuthenticatedUser:
     if not current_user.is_superuser:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Platform admin access denied",
-        )
+        raise AdminRequiredError()
     return current_user

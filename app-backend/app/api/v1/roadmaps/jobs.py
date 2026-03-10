@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Path, status
+from fastapi import APIRouter, Depends, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
@@ -12,6 +12,11 @@ from app.api.v1.schemas import (
     RoadmapJobResultResponse,
 )
 from app.core.db import get_session
+from app.core.exceptions import (
+    AppException,
+    AppValidationError,
+    RoadmapJobNotFoundError,
+)
 from app.features.roadmaps.application.roadmap_generation_service import (
     RoadmapGenerationService,
 )
@@ -72,9 +77,8 @@ async def create_roadmap_job(
         description=request.description,
     )
     if not validation.valid:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
-            detail=validation.reason or "Invalid business_type/location input",
+        raise AppValidationError(
+            validation.reason or "Invalid business_type/location input"
         )
 
     normalized_payload = request.model_dump()
@@ -97,10 +101,7 @@ async def create_roadmap_job(
             job, code="QUEUE_UNAVAILABLE", message="Failed to enqueue job"
         )
     if not job:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Job create failed",
-        )
+        raise AppException("Job create failed")
     return RoadmapJobResponse(
         job_id=job.id,
         status=job.status,
@@ -127,9 +128,7 @@ async def get_roadmap_job(
     repo = RoadmapJobRepository(session)
     job = await repo.get_for_team(job_id=job_id, team_id=current_team.id)
     if not job:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
-        )
+        raise RoadmapJobNotFoundError()
     return RoadmapJobResponse(
         job_id=job.id,
         status=job.status,
@@ -156,9 +155,7 @@ async def get_roadmap_job_result(
     repo = RoadmapJobRepository(session)
     job = await repo.get_for_team(job_id=job_id, team_id=current_team.id)
     if not job:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Job not found"
-        )
+        raise RoadmapJobNotFoundError()
     if job.status != "SUCCEEDED":
         return RoadmapJobResultResponse(
             job_id=job.id,

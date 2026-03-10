@@ -1,16 +1,16 @@
-from datetime import datetime
-
-from app.core.security import utc_now
 from uuid import UUID
 
+from app.core.exceptions import (
+    InvalidStatusTransitionError,
+    RoadmapStepActionNotFoundError,
+    RoadmapStepNotFoundError,
+    StepOrderViolationError,
+)
+from app.core.security import utc_now
 from app.models.roadmap import RoadmapStep, RoadmapStepAction
 from app.repositories.roadmap_repository import RoadmapRepository
 
 ALLOWED_STEP_STATUSES = {"PENDING", "IN_PROGRESS", "COMPLETED", "BLOCKED"}
-
-
-class InvalidRoadmapStepStatusError(ValueError):
-    pass
 
 
 class RoadmapProgressService:
@@ -25,7 +25,7 @@ class RoadmapProgressService:
         normalized_status: str,
     ) -> RoadmapStep:
         if normalized_status not in ALLOWED_STEP_STATUSES:
-            raise InvalidRoadmapStepStatusError("Unsupported status")
+            raise InvalidStatusTransitionError("Unsupported status")
 
         steps = await self.roadmap_repo.list_steps(step.roadmap_id)
         ordered_steps = sorted(steps, key=lambda s: s.step_order)
@@ -33,14 +33,12 @@ class RoadmapProgressService:
             (idx for idx, item in enumerate(ordered_steps) if item.id == step.id), None
         )
         if target_idx is None:
-            raise InvalidRoadmapStepStatusError("Roadmap step sequence not found")
+            raise RoadmapStepNotFoundError("Roadmap step sequence not found")
 
         previous_steps = ordered_steps[:target_idx]
         if normalized_status in {"IN_PROGRESS", "COMPLETED"}:
             if any(prev.status != "COMPLETED" for prev in previous_steps):
-                raise InvalidRoadmapStepStatusError(
-                    "Previous steps must be completed first"
-                )
+                raise StepOrderViolationError()
 
         was_completed = step.status == "COMPLETED"
 
@@ -50,7 +48,7 @@ class RoadmapProgressService:
                 s.status == "COMPLETED" for s in ordered_steps[target_idx + 1 :]
             )
             if subsequent_completed:
-                raise InvalidRoadmapStepStatusError(
+                raise StepOrderViolationError(
                     "Only the last completed step can be reverted"
                 )
 
@@ -89,13 +87,13 @@ class RoadmapProgressService:
     ) -> RoadmapStep:
         normalized_status = new_status.strip().upper()
         if normalized_status not in ALLOWED_STEP_STATUSES:
-            raise InvalidRoadmapStepStatusError("Unsupported status")
+            raise InvalidStatusTransitionError("Unsupported status")
 
         step = await self.roadmap_repo.get_step_for_team(
             step_id=step_id, team_id=team_id
         )
         if not step:
-            raise InvalidRoadmapStepStatusError("Roadmap step not found")
+            raise RoadmapStepNotFoundError()
 
         await self._apply_step_status_transition(
             team_id=team_id,
@@ -118,7 +116,7 @@ class RoadmapProgressService:
             step_id=step_id, team_id=team_id
         )
         if not step:
-            raise InvalidRoadmapStepStatusError("Roadmap step not found")
+            raise RoadmapStepNotFoundError()
 
         action = await self.roadmap_repo.get_step_action_for_team(
             step_id=step_id,
@@ -126,7 +124,7 @@ class RoadmapProgressService:
             team_id=team_id,
         )
         if not action:
-            raise InvalidRoadmapStepStatusError("Roadmap step action not found")
+            raise RoadmapStepActionNotFoundError()
 
         metadata = dict(action.metadata_json or {})
         metadata["completed"] = completed

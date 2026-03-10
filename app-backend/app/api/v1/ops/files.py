@@ -3,12 +3,13 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api import deps
 from app.core.db import get_session
+from app.core.exceptions import AppFileNotFoundError
 from app.features.ops.application.files import OpsFilesService
 from app.models.user import AuthenticatedUser
 
@@ -137,9 +138,6 @@ async def delete_file(
     service = OpsFilesService(session)
     ok = await service.delete_file(file_id, admin_id=admin.id)
     if not ok:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="파일을 찾을 수 없거나 삭제에 실패했습니다.",
-        )
+        raise AppFileNotFoundError("파일을 찾을 수 없거나 삭제에 실패했습니다.")
     await session.commit()
     return {"ok": True}

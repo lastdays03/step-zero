@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Body, Depends, HTTPException, Path
+from fastapi import APIRouter, Body, Depends, Path
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -8,6 +8,14 @@ from sqlmodel import select
 
 from app.api.deps import get_current_user
 from app.core.db import get_session
+from app.core.exceptions import (
+    AlreadyReportedError,
+    CommentNotFoundError,
+    PostNotFoundError,
+    ResourceOwnershipError,
+    SelfReportError,
+    SuspendedUserError,
+)
 from app.services.notification_pubsub import publish_notification
 from app.models.growth_club import (
     GrowthClubComment,
@@ -44,12 +52,10 @@ async def create_comment(
     session: AsyncSession = Depends(get_session),
 ):
     if current_user.is_suspended:
-        raise HTTPException(
-            status_code=403, detail="이용이 정지된 사용자입니다. 접근이 제한됩니다."
-        )
+        raise SuspendedUserError()
     post = await session.get(GrowthClubPost, comment_in.post_id)
     if not post:
-        raise HTTPException(status_code=404, detail="Post not found")
+        raise PostNotFoundError()
 
     comment = GrowthClubComment(
         content=comment_in.content,
@@ -132,10 +138,10 @@ async def delete_comment(
 ):
     comment = await session.get(GrowthClubComment, comment_id)
     if not comment:
-        raise HTTPException(status_code=404, detail="Comment not found")
+        raise CommentNotFoundError()
 
     if comment.author_id != current_user.id and not current_user.is_superuser:
-        raise HTTPException(status_code=403, detail="Not authorized")
+        raise ResourceOwnershipError("Not authorized")
 
     await session.delete(comment)
     await session.commit()
@@ -157,10 +163,10 @@ async def report_comment(
     """댓글 신고 (1회 이상 신고 시 자동 블라인드)"""
     comment = await session.get(GrowthClubComment, comment_id)
     if not comment:
-        raise HTTPException(status_code=404, detail="Comment not found")
+        raise CommentNotFoundError()
 
     if comment.author_id == current_user.id:
-        raise HTTPException(status_code=400, detail="자신의 댓글은 신고할 수 없습니다.")
+        raise SelfReportError("자신의 댓글은 신고할 수 없습니다.")
 
     # 기존 신고 여부 확인
     existing_report_query = select(GrowthClubCommentReport).where(
@@ -169,7 +175,7 @@ async def report_comment(
     )
     existing_report_result = await session.execute(existing_report_query)
     if existing_report_result.scalar_one_or_none():
-        raise HTTPException(status_code=400, detail="이미 신고한 댓글입니다.")
+        raise AlreadyReportedError("이미 신고한 댓글입니다.")
 
     # 신고 기록 생성
     new_report = GrowthClubCommentReport(

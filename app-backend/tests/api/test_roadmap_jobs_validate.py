@@ -132,5 +132,5 @@ async def test_create_job_blocks_invalid_input(
         },
         headers=headers,
     )
-    assert response.status_code == 422
-    assert response.json()["detail"] == "입력값이 불명확합니다."
+    assert response.status_code == 400
+    assert response.json()["error_code"] == "VALIDATION_ERROR"
