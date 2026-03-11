@@ -10,7 +10,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ```
 step-zero/
-├── app-backend/       # FastAPI backend (Python 3.11, port 8000)
+├── app-backend/       # FastAPI backend (Python 3.13, port 8000)
 ├── app-frontend/      # Next.js 16 frontend (React 18, port 3000)
 ├── docs/              # 기획/설계/컨텍스트 문서
 │   ├── context/       # 세션 운영 (상태/결정/핸드오프/규칙)
@@ -41,6 +41,7 @@ make test-eval-t3     # Tier 3 전체 평가 (~15분, ~$15-25)
 make migrate-up       # alembic upgrade head
 make migrate-revision m="description"  # 새 마이그레이션 생성
 make migrate-verify   # 모델 ↔ DB 스키마 diff 검증
+make migrate-status   # 현재 마이그레이션 상태 확인
 make rag-bootstrap    # RAG 벡터 시드 적재
 ```
 
@@ -92,7 +93,7 @@ cd app-frontend && pnpm lint                   # 프론트엔드 변경 시
 
 ## Backend Architecture
 
-**Framework:** FastAPI + SQLModel/SQLAlchemy + asyncpg (async)
+**Framework:** FastAPI + SQLModel/SQLAlchemy + asyncpg (async, Python 3.13)
 
 ### Feature-Based Structure
 
@@ -105,6 +106,8 @@ cd app-frontend && pnpm lint                   # 프론트엔드 변경 시
 | `dashboard` | 대시보드 통계 |
 | `roadmaps` | 핵심 - AI 로드맵 생성/관리 (비동기 파이프라인) |
 | `rag` | RAG + 시맨틱 라우팅 기반 법률/일반 AI 채팅 |
+| `chat` | 로드맵 기반 AI 채팅 (RAG 연동) |
+| `community` | 커뮤니티 공통 기능 |
 | `actionkit` | 법률 행정 키트 (파일 + 체크리스트) |
 | `growth_club` | 커뮤니티 게시판 |
 | `ops` | 관리자 콘솔 (superuser only) |
@@ -115,7 +118,8 @@ cd app-frontend && pnpm lint                   # 프론트엔드 변경 시
 - `app/models/` - SQLModel ORM 모델
 - `app/services/` - 공통 서비스 (vector_store, law_etl, actionkit_etl)
 - `app/api/v1/{feature}/` - HTTP 라우터 (`/api/v1` prefix)
-- `app/api/problem.py` - RFC 7807 에러 응답 (`application/problem+json`)
+- `app/core/exceptions.py` - DDD Exception 계층 (AppException → 구체 클래스)
+- `app/api/problem.py` - RFC 9457 에러 응답 (`application/problem+json`)
 
 ### Key Subsystems
 
@@ -144,7 +148,7 @@ cd app-frontend && pnpm lint                   # 프론트엔드 변경 시
 
 - PostgreSQL 16 + pgvector
 - 단일 세션 (`get_session()`) - Read/Write 분리 없음
-- Alembic 마이그레이션 (`app-backend/alembic/versions/` 8개 파일)
+- Alembic 마이그레이션 (`app-backend/alembic/versions/` 18개 파일)
 - 테스트: SQLite in-memory (`sqlite+aiosqlite`)
 
 ### ARQ Worker
@@ -199,13 +203,17 @@ pnpm types:sync     # 백엔드 OpenAPI → src/lib/api-types.ts 자동 생성
 ### Backend (Pytest)
 
 ```bash
-cd app-backend && make test
+cd app-backend && make test                                      # 전체 (eval 제외)
+cd app-backend && uv run pytest tests/api/test_auth.py           # 단일 파일
+cd app-backend && uv run pytest tests/api/test_auth.py::test_login  # 단일 함수
+cd app-backend && uv run pytest -v -s tests/services/            # verbose + stdout
+cd app-backend && uv run pytest -m "not requires_openai"         # 마커 필터
 ```
 - `pytest-asyncio` (asyncio_mode = "auto")
 - 테스트 DB: SQLite (`sqlite+aiosqlite`)
 - `tests/conftest.py`에서 테스트 유저/팀 시드
 - 디렉토리: `tests/api/`, `tests/integration/`, `tests/services/`
-- 마커: `@pytest.mark.requires_openai` - OPENAI_API_KEY 필요 테스트
+- 마커: `requires_openai` (API 키 필요), `slow`, `eval`, `full_eval`
 
 ### Frontend (Jest)
 

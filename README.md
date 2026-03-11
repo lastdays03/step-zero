@@ -15,7 +15,7 @@ StepZero 프로젝트의 **Core Engine(백엔드 + 기본 프론트엔드)** 레
 
 | 구분         | 기술                             | 설명                                        |
 | :----------- | :------------------------------- | :------------------------------------------ |
-| **Backend**  | **FastAPI** (Python 3.11)        | 고성능 비동기 웹 프레임워크. API 서버 담당. |
+| **Backend**  | **FastAPI** (Python 3.13)        | 고성능 비동기 웹 프레임워크. API 서버 담당. |
 | **Frontend** | **Next.js 16** (App Router)      | React 기반 웹 프레임워크. UI/UX 담당.       |
 | **Database** | **PostgreSQL 16** + **pgvector** | 관계형 데이터 및 벡터 임베딩 저장소.        |
 | **Cache**    | **Redis**                        | 세션 관리, 작업 큐, 캐싱 용도.              |
@@ -38,7 +38,7 @@ step-zero/
 │   │   ├── services/       # 공통 서비스 (RAG, Chat 등)
 │   │   ├── workers/        # ARQ 비동기 워커
 │   │   └── core/           # 설정(Config), DB 연결 등 핵심 로직
-│   ├── alembic/            # DB 마이그레이션 (6개 통합 파일)
+│   ├── alembic/            # DB 마이그레이션 (18개 파일)
 │   ├── scripts/            # 개발/운영 스크립트
 │   ├── tests/              # 테스트 코드 (Pytest)
 │   └── Dockerfile
@@ -142,7 +142,7 @@ cd app-backend
 # (최초 1회) 환경변수 파일 복사
 cp .env.example .env
 
-# 개발환경 자동 초기화 (Python 3.11 + dev 의존성)
+# 개발환경 자동 초기화 (Python 3.13 + dev 의존성)
 ./scripts/setup_dev.sh
 
 # 서버 실행 / 테스트 / 마이그레이션
