@@ -28,6 +28,12 @@ from app.services.law_api_client import (
 # ---------------------------------------------------------------------------
 
 
+@pytest.fixture(autouse=True)
+def no_rate_limit(monkeypatch: pytest.MonkeyPatch):
+    """Unit tests mock I/O, so production rate-limit sleeps are disabled."""
+    monkeypatch.setattr("app.services.law_api_client._REQUEST_INTERVAL", 0)
+
+
 @pytest.fixture
 def client():
     """OC를 직접 주입하여 settings 의존성 제거."""

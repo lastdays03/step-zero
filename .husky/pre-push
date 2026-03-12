@@ -19,9 +19,9 @@ if [ -n "$branch" ]; then
   fi
 fi
 
-echo "[pre-push] running backend tests + frontend lint in parallel"
+echo "[pre-push] running backend smoke tests + frontend lint in parallel"
 
-(cd app-backend && uv run pytest -q -m "not slow and not requires_openai") &
+(cd app-backend && uv run pytest -q -x tests/services tests/repositories tests/integration -m "not slow and not requires_openai") &
 pid_backend=$!
 
 (cd app-frontend && pnpm lint) &

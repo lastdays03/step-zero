@@ -49,3 +49,4 @@
 - 2026-03-10 | structlog 구조화 로깅 전환 (개발: ConsoleRenderer, 프로덕션: JSONRenderer) | ELK/CloudWatch 등 로그 수집기 호환성 + 개발 가독성 동시 확보
 - 2026-03-10 | 순수 ASGI 미들웨어 사용 (BaseHTTPMiddleware 미사용) | SSE 스트리밍 호환 문제 방지
 - 2026-03-10 | HTTPException 핸들러 유지 (마이그레이션 기간) — 잔여 4개 (413 Payload Too Large 2개 + Mock 엔드포인트 2개) | 점진적 전환 지원, 전용 Exception 없는 HTTP 상태 코드용
+- 2026-03-12 | 로컬 `pre-push`는 backend smoke subset(`tests/services`, `tests/repositories`, `tests/integration`) + frontend lint만 실행하고 CI는 backend 전체 회귀를 유지 | 로컬 피드백 루프를 27초 → 5.61초로 단축하면서 CI 안전망 유지

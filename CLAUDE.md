@@ -77,9 +77,12 @@ docker compose -f docker-compose.dev.yml logs -f app-backend app-worker  # 로�
 ### Quality Gates (변경 완료 전 반드시 실행)
 
 ```bash
-cd app-backend && uv run pytest -q             # 백엔드 변경 시
+cd app-backend && uv run pytest -q             # 백엔드 변경 시 전체 회귀 (eval 제외)
 cd app-frontend && pnpm lint                   # 프론트엔드 변경 시
 ```
+
+- 로컬 `pre-push` 훅은 빠른 피드백을 위해 backend smoke subset(`tests/services`, `tests/repositories`, `tests/integration`) + frontend `pnpm lint`만 실행한다.
+- CI는 backend 전체 회귀(`uv run pytest -q -m "not slow and not requires_openai"`)와 frontend lint/test/build를 유지한다.
 
 ## Git Workflow
 
@@ -90,6 +93,7 @@ cd app-frontend && pnpm lint                   # 프론트엔드 변경 시
 - 커밋: Conventional Commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `perf:`, `ci:`, `build:`, `revert:`)
 - PR 제목/설명: 한국어
 - 루트에서 `pnpm install` 1회 실행 → Husky + commitlint 훅 활성화
+- `pre-push`: backend smoke subset + frontend lint
 
 ## Backend Architecture
 
@@ -149,7 +153,7 @@ cd app-frontend && pnpm lint                   # 프론트엔드 변경 시
 - PostgreSQL 16 + pgvector
 - 단일 세션 (`get_session()`) - Read/Write 분리 없음
 - Alembic 마이그레이션 (`app-backend/alembic/versions/` 18개 파일)
-- 테스트: SQLite in-memory (`sqlite+aiosqlite`)
+- 테스트: SQLite file DB (`sqlite+aiosqlite:///.../tests/test.db`)
 
 ### ARQ Worker
 

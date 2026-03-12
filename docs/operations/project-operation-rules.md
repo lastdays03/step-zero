@@ -28,7 +28,7 @@
 - 커밋 메시지: Conventional Commits (`feat|fix|docs|refactor|test|chore|perf|ci|build|revert`)
 - 로컬 훅:
 - `commit-msg`: commitlint 검사
-- `pre-push`: backend 테스트 + frontend lint
+- `pre-push`: backend smoke subset(`tests/services`, `tests/repositories`, `tests/integration`) + frontend lint
 - PR 작성:
 - 제목/본문은 한글
 - `요약`, `변경 사항`, `검증`, `영향 범위`, `참고 이슈`를 포함
@@ -40,8 +40,8 @@
 - 흐름 정책(`pr-flow-policy`)
 - 브랜치명 규칙(`branch-name`)
 - 커밋 메시지(`commitlint`)
-- backend 테스트(`pytest -q`)
-- frontend lint(`pnpm lint`)
+- backend 전체 회귀(`pytest -q -m "not slow and not requires_openai"`)
+- frontend lint/test/build(`pnpm lint`, `pnpm test --runInBand`, `pnpm build`)
 - PR 본문 품질 검사는 현재 `warning only`로 운영한다.
 
 ## 6. 환경변수/시크릿 규칙
@@ -129,4 +129,3 @@
 - 코드 + 테스트 + 문서 반영
 - CI 통과
 - 영향 범위와 롤백 방법이 PR에 기록됨
-

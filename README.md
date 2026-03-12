@@ -300,12 +300,13 @@ git update-index --add --chmod=+x scripts/init_db.sh
    pnpm install
    ```
    - `commit-msg`: Conventional Commits 검사
-   - `pre-push`: backend 테스트 + frontend lint 검사
+   - `pre-push`: backend smoke subset(`tests/services`, `tests/repositories`, `tests/integration`) + frontend lint 검사
 
 4. **CI 검사**
    - PR 시 브랜치명 규칙 검사
    - PR 커밋 메시지(commitlint) 검사
-   - backend `pytest`, frontend `lint` 검사
+   - backend 전체 회귀 `pytest -q -m "not slow and not requires_openai"`
+   - frontend `lint`, `test`, `build` 검사
 
 ---
 
