@@ -3,24 +3,20 @@
 > **크기 가이드**: 이 문서는 40줄 이내로 유지한다.
 
 ## 마지막 업데이트
-- Date: 2026-03-10
+- Date: 2026-03-11
 - Branch: `develop` (clean)
 
 ## 이번 세션 요약
-- `exception-handler-integration` Phase A~D 전체 구현 + 코드 리뷰 + 수정
-- PR #31 머지, feature 브랜치 삭제 (원격+로컬)
-- GlitchTip 실서버 연동 검증 완료 (이벤트 전송/필터링 확인)
-- 코드 리뷰에서 3건 수정: actionkit/detail.py 구체 Exception, problem_response error_code/timestamp 일관성
-- pre-push 훅 백엔드+프론트엔드 병렬 실행 개선
-- setup_sentry에 try/except 추가 (잘못된 DSN으로 앱 크래시 방지)
+- 개발서버 마이그레이션 `018_add_actionkit_events` 적용 완료
+- dev-docs 업데이트 (문서 정리)
 
 ## Uncommitted Changes
-- 없음 (모두 커밋/푸시 완료)
+- `CLAUDE.example.md` 수정 (minor)
 
 ## 다음 세션 시작점
-1. 개발서버 마이그레이션: `docker compose exec app-backend uv run alembic upgrade head`
-2. 다음 작업 선정 — `docs/plans/active/` 비어있음
-3. (선택) 프로덕션 SENTRY_DSN 설정
+1. 다음 작업 선정 — `docs/plans/active/` 비어있음
+2. (선택) 프로덕션 SENTRY_DSN 설정
+3. (선택) `docs/plans/reports/` 리포트 아카이브 검토
 
 ## 핵심 주의사항
 - 프로덕션 배포 시 `ADMIN_EMAILS`, `SENTRY_DSN` 환경변수 설정 필수

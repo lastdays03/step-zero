@@ -182,6 +182,14 @@ Client → `POST /api/v1/upload/presigned-url` → presigned POST 생성 → 클
   - Task def: `backend/prod-apne2-qwarty-backend-task-def.json`
 - Workflow: `.github/workflows/deploy-real.yaml`
 
+## Code Search Strategy
+
+- **정의/참조 추적**: LSP 우선 (goToDefinition, findReferences) — Grep보다 정확하고 오탐 없음
+- **텍스트/패턴 검색**: Grep 사용 — TODO/FIXME, 에러 메시지, 환경변수, .md/.yml/.env 등 비코드 파일
+- **리팩토링 영향 분석**: LSP findReferences → incomingCalls 순서로 호출 체인 파악
+- **대규모 탐색**: Grep으로 후보 좁히기 → LSP로 정확한 참조 확인 (2단계 전략)
+- **파일 구조 파악**: LSP documentSymbol 우선 — 전체 Read 없이 함수/클래스 목록 확인
+
 ## Critical Gotchas
 
 - **Backend 모듈 경로**: `uvicorn backend.main:app` (~~app.main:app~~ 아님)
