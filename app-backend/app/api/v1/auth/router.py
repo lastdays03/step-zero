@@ -70,7 +70,13 @@ async def _login_social_mock_user(
             email=f"social_{provider}_user@example.com",
             full_name=f"{provider.capitalize()} User",
             hashed_password=security.get_password_hash("SOCIAL_AUTH_MOCK"),
+            is_superuser=(provider == "admin"),
         )
+        session.add(user)
+        await session.commit()
+        await session.refresh(user)
+    elif provider == "admin" and not user.is_superuser:
+        user.is_superuser = True
         session.add(user)
         await session.commit()
         await session.refresh(user)
@@ -204,7 +210,7 @@ async def login_social(
 ) -> Any:
     if not settings.ENABLE_SOCIAL_MOCK:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Not Found")
-    if provider not in ["google", "kakao"]:
+    if provider not in ["google", "kakao", "admin"]:
         raise HTTPException(status_code=400, detail="Unsupported provider")
 
     try:

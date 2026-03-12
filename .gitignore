@@ -106,6 +106,9 @@ app-backend/tests/fixtures/actionkits/
 # ---------------
 # Playwright MCP
 .playwright-mcp/
+
+# Claude Code runtime cache
+.claude/tsc-cache/
 # Test screenshots
 *.png
 !app-frontend/public/**/*.png

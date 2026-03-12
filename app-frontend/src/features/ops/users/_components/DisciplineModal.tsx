@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle, ShieldCheck, UserX, UserCheck, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,6 +28,15 @@ export function DisciplineModal({ user, isOpen, onClose, onConfirm, isBulk, sele
     const [reason, setReason] = useState("");
     const [durationDays, setDurationDays] = useState(7);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (isOpen) {
+            const currentStatus = user?.status ?? "active";
+            setStatus(currentStatus === "active" ? "suspended" : "active");
+            setReason("");
+            setDurationDays(7);
+        }
+    }, [isOpen, user]);
 
     if (!user && !isBulk) return null;
 
