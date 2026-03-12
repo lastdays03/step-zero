@@ -34,7 +34,10 @@ export function ChatPanel() {
   } = useChat();
 
   return (
-    <div className="fixed z-50 inset-x-0 bottom-0 h-[70vh] pb-16 md:pb-0 md:inset-x-auto md:right-8 md:bottom-8 md:w-[420px] md:h-[620px] md:max-h-[80vh] flex flex-col bg-slate-50 border border-slate-200 rounded-t-2xl md:rounded-2xl shadow-2xl animate-in slide-in-from-bottom duration-300">
+    <div
+      data-testid="chat-panel"
+      className="fixed z-50 inset-x-0 bottom-0 h-[70vh] pb-16 md:pb-0 md:inset-x-auto md:right-8 md:bottom-8 md:w-[420px] md:h-[620px] md:max-h-[80vh] flex flex-col bg-slate-50 border border-slate-200 rounded-t-2xl md:rounded-2xl shadow-2xl animate-in slide-in-from-bottom duration-300"
+    >
       {/* ---- 헤더 ---- */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-slate-200 bg-white rounded-t-2xl">
         <div className="flex items-center gap-2.5">
@@ -134,7 +137,7 @@ export function ChatPanel() {
 
       {/* ---- 에러 ---- */}
       {error && !isHistoryView && (
-        <div className="px-4 py-2 text-xs text-red-600 bg-red-50 border-t border-red-100">
+        <div data-testid="chat-panel-error" className="px-4 py-2 text-xs text-red-600 bg-red-50 border-t border-red-100">
           {error}
         </div>
       )}

@@ -1,23 +1,29 @@
-# REPORT: Playwright MCP 기반 프로젝트 디버깅 가이드
+# REPORT: 브라우저 MCP 기반 프로젝트 디버깅 가이드
 
-> 작성일: 2026-03-11
+> 작성일: 2026-03-11 (수정: 2026-03-12)
 > 대상: StepZero 프로젝트 (Next.js 16 + FastAPI 모노레포)
-> 도구: Playwright MCP (Claude Code 내장 플러그인)
+> 도구: Playwright MCP (`mcp__plugin_playwright_playwright__browser_*`)
 
 ---
 
 ## 1. 개요
 
+### 프로젝트 표준 브라우저 디버깅 도구
+
+> **표준:** StepZero의 브라우저 디버깅 도구는 Playwright MCP(`mcp__plugin_playwright_playwright__browser_*`)로 통일한다. 로그인, 폼 입력, 클릭, 업로드, 비동기 플로우 재현처럼 **사용자 인터랙션이 필요한 통합 시나리오**를 기본 기준으로 삼는다.
+
 ### Playwright MCP란?
 
-Claude Code에 내장된 Playwright 기반 브라우저 자동화 도구로, **실제 브라우저를 제어**하여 프론트엔드/백엔드 통합 디버깅을 수행한다. 별도 패키지 설치 없이 Claude Code 세션에서 즉시 사용 가능하다.
+Claude Code에서 사용 가능한 Playwright 기반 브라우저 자동화 도구(`mcp__plugin_playwright_playwright__` 접두사)로, **실제 브라우저를 제어**하여 프론트엔드/백엔드 통합 디버깅을 수행한다. Claude Code MCP 플러그인으로 설정되어 있어야 사용 가능하다.
+
+> 참고: 실제 MCP 함수명/접두사는 클라이언트 또는 세션 설정에 따라 달라질 수 있다. 이 문서는 Claude Code 플러그인 네이밍을 기준으로 설명한다.
 
 ### 기존 테스트 도구와의 차이
 
 | 도구 | 범위 | 특징 |
 |------|------|------|
 | Jest + @testing-library | 컴포넌트 단위 | jsdom 환경, API 모킹 필요 |
-| Pytest | 백엔드 API 단위 | SQLite in-memory, 외부 서비스 모킹 |
+| Pytest | 백엔드 API 단위 | SQLite file DB (`tests/test.db`), 외부 서비스 모킹 |
 | **Playwright MCP** | **풀스택 통합** | **실제 브라우저 + 실제 서버**, 사용자 시나리오 재현 |
 
 ### 사전 조건
@@ -25,12 +31,12 @@ Claude Code에 내장된 Playwright 기반 브라우저 자동화 도구로, **�
 ```bash
 # 최소: 프론트엔드 + 백엔드 실행
 cd app-backend && make run          # localhost:8000
-cd app-frontend && npx next dev     # localhost:3000
+cd app-frontend && pnpm dev          # localhost:3000 (next dev --webpack)
 
 # 전체 스택 (DB + Redis 포함)
 docker compose -f docker-compose.dev.yml up -d app-db app-redis
 cd app-backend && make run
-cd app-frontend && npx next dev
+cd app-frontend && pnpm dev
 ```
 
 ---
@@ -132,8 +138,8 @@ Step 2: 스냅샷으로 폼 요소 ref 확인
 
 Step 3: 로그인 폼 입력
 → browser_fill_form({ fields: [
-    { name: "이메일", type: "textbox", ref: "<email-ref>", value: "test@test.com" },
-    { name: "비밀번호", type: "textbox", ref: "<password-ref>", value: "password123" }
+    { name: "Email", type: "textbox", ref: "<email-ref>", value: "test@example.com" },
+    { name: "Password", type: "textbox", ref: "<password-ref>", value: "password123" }
   ]})
 
 Step 4: 로그인 버튼 클릭
@@ -145,10 +151,11 @@ Step 5: 리다이렉트 대기
 Step 6: 네트워크 요청으로 토큰 발급 확인
 → browser_network_requests({ includeStatic: false })
    - POST /api/v1/auth/login → 200 확인
-   - access_token, refresh_token 응답 확인
+   - 요청 Content-Type이 `application/x-www-form-urlencoded`인지 확인
+   - 로그인 직후 인증이 필요한 후속 요청이 정상적으로 나가는지 확인
 
 Step 7: localStorage 토큰 확인
-→ browser_evaluate({ function: "() => ({ token: localStorage.getItem('token'), refresh: localStorage.getItem('refresh_token'), team: localStorage.getItem('current_team_id') })" })
+→ browser_evaluate({ function: "() => ({ hasToken: !!localStorage.getItem('token'), hasRefreshToken: !!localStorage.getItem('refresh_token'), hasUser: !!localStorage.getItem('user'), hasCurrentTeamId: !!localStorage.getItem('current_team_id') })" })
 ```
 
 **디버깅 포인트:**
@@ -158,7 +165,8 @@ Step 7: localStorage 토큰 확인
 | 로그인 후 리다이렉트 안됨 | 네트워크 응답 코드 확인 | `network_requests` |
 | 401 에러 반복 | localStorage 토큰 존재 여부 | `evaluate` |
 | 토큰 만료 후 갱신 실패 | refresh 요청 네트워크 로그 | `network_requests` |
-| Google OAuth 실패 | 콘솔 에러 (CORS, client_id) | `console_messages` |
+| Google OAuth 실패 | 콘솔 에러 + `/auth/login/google` 응답 확인 | `console_messages`, `network_requests` |
+| Google 버튼이 안 보임 | `NEXT_PUBLIC_GOOGLE_CLIENT_ID` 미설정 시 fallback 안내 UI 노출 여부 확인 | `snapshot` |
 
 ### 3.3 API 통신 디버깅
 
@@ -190,12 +198,13 @@ Step 4: 요청 헤더 검증 (JavaScript로)
 
 ```json
 {
-  "type": "https://stepzero.dev/problems/roadmap-not-found",
-  "title": "Roadmap Not Found",
+  "type": "about:blank",
+  "title": "Not Found",
   "status": 404,
-  "detail": "로드맵을 찾을 수 없습니다",
+  "detail": "Roadmap not found",
+  "instance": "/api/v1/roadmaps/00000000-0000-0000-0000-000000000000",
   "error_code": "ROADMAP_NOT_FOUND",
-  "timestamp": "2026-03-11T10:00:00Z"
+  "timestamp": "2026-03-11T10:00:00+00:00"
 }
 ```
 
@@ -203,12 +212,12 @@ Step 4: 요청 헤더 검증 (JavaScript로)
 
 | API | 메서드 | 흔한 에러 | 원인 |
 |-----|--------|----------|------|
-| `/api/v1/auth/login` | POST | 401 | 잘못된 자격증명 |
-| `/api/v1/roadmaps` | GET | 403 | X-Team-Id 헤더 누락 |
-| `/api/v1/roadmaps/jobs` | POST | 503 | Worker 미실행 |
-| `/api/v1/chat/stream` | POST | CORS | SSE 스트리밍 CORS 설정 |
+| `/api/v1/auth/login` | POST | 401 / 422 | 잘못된 자격증명 또는 `x-www-form-urlencoded` 본문 형식 불일치 |
+| `/api/v1/roadmaps` | GET | 401 / 403 | 토큰 만료 또는 잘못된/권한 없는 `X-Team-Id` |
+| `/api/v1/roadmaps/jobs` | POST | 202 후 `FAILED` | Worker/Redis 미연결 시 `QUEUE_UNAVAILABLE`로 실패 마킹 |
+| `/api/v1/chat/stream` | POST | 401 / 403 / 503 | silent refresh 실패, 팀 컨텍스트 문제, RAG/LLM 의존성 실패 |
 | `/api/v1/rag/query` | POST | 503 | RAG 벡터 미적재 |
-| `/api/v1/actionkits/files/*` | GET | 404 | 파일 경로 인코딩 |
+| `/api/v1/actionkits/items/{item_id}/view` | GET | 404 / 302 / 307 | 최신 파일 없음, 뷰어 불가 포맷은 download 리다이렉트, 저장소 모드별 응답 차이 |
 
 ### 3.4 반응형 UI 디버깅
 
@@ -263,26 +272,28 @@ Step 4: 생성 요청 전송
 
 Step 5: 비동기 Job 상태 폴링 확인
 → browser_network_requests({ includeStatic: false })
-   확인: POST /api/v1/roadmaps/jobs → 201 (Job 생성)
+   확인: POST /api/v1/roadmaps/jobs → 202 (Job 생성)
    확인: GET /api/v1/roadmaps/jobs/{id} → 200 (폴링)
 
-Step 6: 콘솔에서 폴링 상태 모니터링
-→ browser_console_messages({ level: "info" })
+Step 6: 로컬 상태 확인
+→ browser_evaluate({ function: "() => ({ pollingJobId: localStorage.getItem('roadmap_polling_job_id') ? 'present' : 'cleared' })" })
 
-Step 7: 완료 대기
-→ browser_wait_for({ text: "로드맵이 생성되었습니다" })
-   또는 타임아웃 확인:
+Step 7: 완료 또는 실패 확인
 → browser_wait_for({ time: 30 })
 → browser_network_requests({ includeStatic: false })
+→ browser_snapshot()
+   - 성공: `GET /api/v1/roadmaps/jobs/{id}/result` 호출 후 로드맵 상세 UI가 렌더링
+   - 실패: 오류 문구 노출 또는 생성 UI가 계속 유지
 ```
 
 **비동기 파이프라인 디버깅 포인트:**
 
 | 단계 | 정상 | 실패 시 확인 |
 |------|------|-------------|
-| Job 생성 | 201 Created | Worker 연결 (Redis) |
-| Job 폴링 | status: QUEUED → RUNNING → COMPLETED | Worker 로그 (`make worker`) |
-| 결과 표시 | 로드맵 렌더링 | 프론트엔드 폴링 로직 |
+| Job 생성 | 202 Accepted | Worker/Redis 연결 상태, `QUEUE_UNAVAILABLE` |
+| Job 폴링 | status: `QUEUED → RUNNING → SUCCEEDED` | Worker 로그 (`make worker`) |
+| 세부 단계(stage) | `QUEUED → MASTER_GENERATING/DETAIL_GENERATING → COMPLETED` | 백엔드 progress 업데이트 누락 |
+| 결과 표시 | `roadmap_polling_job_id` 제거 + 로드맵 상세 렌더링 | 프론트엔드 폴링/완료 핸들러 |
 
 ### 3.6 AI 채팅 (SSE 스트리밍) 디버깅
 
@@ -309,9 +320,9 @@ Step 4: SSE 스트리밍 확인
 
 Step 5: 에러 시 콘솔 확인
 → browser_console_messages({ level: "error" })
-   - SSE 연결 실패
+   - fetch 스트리밍 실패
    - CORS 에러 (스트리밍 특유)
-   - RAG 서비스 503
+   - RAG/LLM 의존성 503
 ```
 
 ### 3.7 관리자(Ops) 콘솔 디버깅
@@ -341,19 +352,48 @@ Step 5: 각 페이지 API 호출 확인
 
 ### 3.8 파일 업로드/다운로드 디버깅
 
+StepZero에는 **두 가지 업로드 흐름**이 있다.
+
+1. 공용 presign 업로드: `POST /api/v1/storage/presign` 후 `PUT upload_url`
+2. Ops ActionKit 업로드: `POST /api/v1/ops/actionkit/items/{item_id}/files` (`multipart/form-data`)
+
+`/ops/files`는 업로드 화면이 아니라 **파일 목록/삭제 관리 화면**이다.
+
 ```
-Step 1: 파일 업로드 페이지 이동
-→ browser_navigate({ url: "http://localhost:3000/ops/files" })
+Flow A: presign 기반 업로드
+
+Step 1: 업로드 UI 페이지 이동
+→ browser_navigate({ url: "http://localhost:3000/profile" })  # 예: 프로필 업로드 UI가 있는 페이지
 
 Step 2: 파일 선택
 → browser_file_upload({ paths: ["/absolute/path/to/test-file.pdf"] })
 
-Step 3: 업로드 진행 확인
+Step 3: presign + PUT 업로드 확인
 → browser_network_requests({ includeStatic: false })
-   확인: POST /api/v1/storage/* → 200/201
+   확인: POST /api/v1/storage/presign → 200
+   확인: 이어지는 `upload_url` PUT 요청 → 200/204
 
-Step 4: 업로드된 파일 접근
-→ browser_evaluate({ function: "() => document.querySelectorAll('a[href*=\"/api/uploads\"]').length" })
+Step 4: 렌더링된 파일 URL 확인
+→ browser_network_requests({ includeStatic: true })
+   - local mode: `/api/uploads/*`
+   - R2 mode: 외부 public URL
+
+Flow B: Ops ActionKit 파일 업로드
+
+Step 1: 관리자 로그인 후 액션킷 편집 화면 이동
+→ browser_navigate({ url: "http://localhost:3000/ops/actionkit" })
+
+Step 2: 편집 모달에서 파일 선택
+→ browser_file_upload({ paths: ["/absolute/path/to/test-file.pdf"] })
+
+Step 3: 업로드 요청 확인
+→ browser_network_requests({ includeStatic: false })
+   확인: POST /api/v1/ops/actionkit/items/{item_id}/files → 200
+
+Step 4: 뷰어/다운로드 링크 확인
+→ browser_snapshot()
+   - 사용자 진입 링크: `/api/v1/actionkits/items/{item_id}/view`
+   - local static fallback: `/api/v1/actionkits/files/*`
 ```
 
 ---
@@ -373,9 +413,9 @@ browser_evaluate({
   function: "() => { const t = localStorage.getItem('token'); if (!t) return null; const p = JSON.parse(atob(t.split('.')[1])); return { sub: p.sub, exp: new Date(p.exp * 1000).toISOString(), iss: p.iss }; }"
 })
 
-// API base URL 확인
+// API base URL 확인 (env.ts의 getApiBaseUrl() 기반)
 browser_evaluate({
-  function: "() => ({ env: window.__NEXT_DATA__?.runtimeConfig, apiUrl: document.querySelector('meta[name=api-url]')?.content })"
+  function: "() => ({ pathname: location.pathname, hasToken: !!localStorage.getItem('token'), hasCurrentTeamId: !!localStorage.getItem('current_team_id'), note: '실제 baseURL은 app-frontend/src/lib/env.ts#getApiBaseUrl()에서 결정' })"
 })
 
 // 현재 라우트 정보
@@ -399,7 +439,7 @@ browser_run_code({
   code: `async (page) => {
     // 로그인
     await page.goto('http://localhost:3000/login');
-    await page.fill('input[type="email"]', 'test@test.com');
+    await page.fill('input[type="email"]', 'test@example.com');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
     await page.waitForURL('**/dashboard');
@@ -409,11 +449,12 @@ browser_run_code({
     await page.waitForLoadState('networkidle');
 
     // 결과 수집
-    const cards = await page.locator('[data-testid="roadmap-card"]').count();
+    // Note: 프로덕션 코드에 data-testid 속성이 없으므로 텍스트/CSS 셀렉터 사용
+    const content = await page.locator('main').textContent();
     const errors = [];
     page.on('console', msg => { if (msg.type() === 'error') errors.push(msg.text()); });
 
-    return { roadmapCards: cards, consoleErrors: errors, url: page.url() };
+    return { hasContent: content?.length > 0, consoleErrors: errors, url: page.url() };
   }`
 })
 ```
@@ -445,11 +486,8 @@ browser_run_code({
 → browser_network_requests({ includeStatic: false })
   → 결과에서 status >= 400인 항목 필터
 
-# 정적 리소스 포함 (이미지 깨짐, 폰트 로딩 실패 등)
+# 정적 리소스 포함 (이미지 깨짐, 폰트/JS/CSS 로딩 실패 등)
 → browser_network_requests({ includeStatic: true })
-
-# 파일로 저장하여 분석
-→ browser_network_requests({ includeStatic: false, filename: "network-log.txt" })
 ```
 
 ### 4.4 멀티 탭 시나리오
@@ -468,7 +506,7 @@ browser_run_code({
 
 # 크로스 탭 인증 동기화 테스트 (useSyncExternalStore)
 → browser_tabs({ action: "select", index: 1 })
-→ browser_evaluate({ function: "() => { localStorage.removeItem('token'); window.dispatchEvent(new StorageEvent('storage', { key: 'token' })); }" })
+→ browser_evaluate({ function: "() => { localStorage.removeItem('token'); localStorage.removeItem('refresh_token'); localStorage.removeItem('user'); localStorage.removeItem('current_team_id'); }" })
 → browser_tabs({ action: "select", index: 0 })
 → browser_snapshot()  # 로그아웃 동기화 확인
 ```
@@ -483,8 +521,8 @@ browser_run_code({
 1. browser_navigate → 해당 URL
 2. browser_console_messages({ level: "error" })
    → React 에러 확인 (Hydration, import 에러, undefined 접근)
-3. browser_network_requests({ includeStatic: false })
-   → JS 번들 로딩 실패 여부
+3. browser_network_requests({ includeStatic: true })
+   → JS/CSS 번들 로딩 실패 여부
 4. browser_evaluate({ function: "() => document.getElementById('__next')?.innerHTML?.length" })
    → React 마운트 여부 (0이면 완전 실패)
 ```
@@ -496,9 +534,9 @@ browser_run_code({
 2. browser_network_requests({ includeStatic: false })
    → API 호출 상태 코드 확인
    → 401: 토큰 만료 → evaluate로 토큰 확인
-   → 403: X-Team-Id 누락 → evaluate로 team_id 확인
+   → 403: 잘못된 팀 컨텍스트 또는 `/ops` 권한 부족 → team_id / superuser 여부 확인
    → 404: 엔드포인트 경로 오류
-   → 503: 백엔드 서비스 다운
+   → 503: 백엔드 또는 의존 서비스 다운
 3. browser_console_messages({ level: "warning" })
    → Axios 인터셉터 에러 메시지
 ```
@@ -512,7 +550,7 @@ browser_run_code({
 4. browser_network_requests({ includeStatic: false })
    → POST /api/v1/auth/login 응답 확인
    → CORS 에러: 백엔드 BACKEND_CORS_ORIGINS 설정 확인
-   → 422: 요청 본문 형식 오류 (URLEncoded vs JSON)
+   → 422: 요청 본문 형식 오류 (`application/x-www-form-urlencoded` vs JSON)
    → 401: 자격증명 불일치
 5. browser_evaluate → localStorage 토큰 저장 확인
 ```
@@ -526,7 +564,7 @@ browser_run_code({
    → 503: RAG 서비스 또는 OpenAI API 연결 실패
    → CORS: SSE 스트리밍 CORS 설정 문제
 3. browser_console_messages({ level: "error" })
-   → EventSource 또는 fetch 스트리밍 에러
+   → fetch/ReadableStream 스트리밍 에러
 4. 백엔드 로그 확인 (별도 터미널)
    → SemanticRouter 분류 결과
    → LLM API 호출 에러
@@ -536,15 +574,16 @@ browser_run_code({
 
 ```
 1. browser_network_requests({ includeStatic: false })
-   → POST /api/v1/roadmaps/jobs → 201 확인
+   → POST /api/v1/roadmaps/jobs → 202 확인
    → GET /api/v1/roadmaps/jobs/{id} 폴링 응답 확인
-   → status 필드: QUEUED → RUNNING → COMPLETED (또는 FAILED)
+   → status 필드: QUEUED → RUNNING → SUCCEEDED (또는 FAILED)
 2. browser_evaluate({
      function: "() => localStorage.getItem('roadmap_polling_job_id')"
    })
    → Job ID 존재 확인
 3. Worker 실행 확인 (별도 터미널: make worker)
 4. Redis 연결 확인 (docker compose logs app-redis)
+5. 실패 시 `error_code=QUEUE_UNAVAILABLE|GENERATION_FAILED` 여부 확인
 ```
 
 ---
@@ -628,7 +667,7 @@ browser_run_code({
 
     // Login
     await page.goto(BASE + '/login');
-    await page.fill('input[type="email"]', 'test@test.com');
+    await page.fill('input[type="email"]', 'test@example.com');
     await page.fill('input[type="password"]', 'password123');
     await page.click('button[type="submit"]');
     await page.waitForURL('**/dashboard', { timeout: 10000 }).catch(() => {});
@@ -657,16 +696,39 @@ browser_run_code({
 browser_run_code({
   code: `async (page) => {
     const BASE = 'http://localhost:8000';
+    await page.goto('http://localhost:3000/login');
+    await page.fill('input[type="email"]', 'test@example.com');
+    await page.fill('input[type="password"]', 'password123');
+    await page.click('button[type="submit"]');
+    await page.waitForURL('**/dashboard', { timeout: 10000 });
+    const auth = await page.evaluate(() => ({
+      token: localStorage.getItem('token'),
+      teamId: localStorage.getItem('current_team_id'),
+    }));
     const endpoints = [
-      { method: 'GET', path: '/api/v1/auth/me' },
+      { method: 'GET', path: '/health', auth: false },
+      { method: 'GET', path: '/api/openapi.json', auth: false },
+      { method: 'GET', path: '/api/v1/profile/me' },
       { method: 'GET', path: '/api/v1/roadmaps' },
-      { method: 'GET', path: '/api/v1/actionkits' },
-      { method: 'GET', path: '/docs' },  // OpenAPI docs
+      { method: 'GET', path: '/api/v1/actionkits/laws' },
+      { method: 'GET', path: '/api/v1/actionkits/kits' },
+      { method: 'POST', path: '/api/v1/chat/stream', body: { message: 'ping' } },
     ];
 
     const results = [];
     for (const ep of endpoints) {
-      const res = await page.request[ep.method.toLowerCase()](BASE + ep.path);
+      const headers = ep.auth === false
+        ? {}
+        : {
+            ...(auth.token ? { Authorization: \`Bearer \${auth.token}\` } : {}),
+            ...(auth.teamId ? { 'X-Team-Id': auth.teamId } : {}),
+            ...(ep.body ? { 'Content-Type': 'application/json' } : {}),
+          };
+      const requestOptions = {
+        headers,
+        ...(ep.body ? { data: ep.body } : {}),
+      };
+      const res = await page.request[ep.method.toLowerCase()](BASE + ep.path, requestOptions);
       results.push({
         ...ep,
         status: res.status(),
@@ -707,13 +769,14 @@ Playwright MCP는 세션 내에서 브라우저 상태(쿠키, localStorage)를 
 `network_requests`로는 SSE 스트림의 개별 이벤트를 볼 수 없다. 대신:
 
 ```
-1. browser_console_messages({ level: "debug" })
-   → 프론트엔드 채팅 훅의 로그 확인
+1. browser_console_messages({ level: "error" })
+   → fetch/ReadableStream 레벨 에러 확인
 
-2. browser_evaluate({
-     function: "() => document.querySelector('[data-testid=\"chat-messages\"]')?.textContent"
-   })
-   → 렌더링된 채팅 메시지 직접 확인
+2. browser_snapshot()
+   → 채팅 패널 접근성 트리에서 렌더링된 메시지 텍스트 직접 확인
+
+3. 백엔드 로그 확인
+   → `SemanticRouter`, RAG, LLM 호출 실패 여부 확인
 ```
 
 ### Q: Docker 환경에서 localhost 접근이 안됩니다
@@ -755,10 +818,17 @@ Docker 내부에서 실행 시 `host.docker.internal` 사용:
 |------|------|
 | `app-frontend/src/lib/api-client.ts` | Axios 인스턴스 + 토큰 인터셉터 |
 | `app-frontend/src/providers/AuthProvider.tsx` | 인증 상태 관리 |
+| `app-frontend/src/features/chat/hooks/useChat.ts` | `fetch` 기반 SSE 스트리밍 채팅 구현 |
+| `app-frontend/src/features/roadmap/components/RoadmapGenerationPanel.tsx` | 로드맵 생성 시작/폴링/localStorage 처리 |
 | `app-frontend/src/app/(dashboard)/layout.tsx` | 대시보드 레이아웃 (z-index 계층) |
+| `app-frontend/src/features/shared/file/hooks/useFileUpload.ts` | presign 기반 업로드 흐름 |
+| `app-frontend/src/features/ops/actionkit/components/actionkit-edit-modal.tsx` | Ops ActionKit 파일 업로드 UI |
+| `app-frontend/src/features/ops/files/view.tsx` | Ops 파일 목록/삭제 화면 (`/ops/files`) |
 | `app-backend/app/main.py` | FastAPI 앱 + 미들웨어 체인 |
 | `app-backend/app/core/exceptions.py` | DDD 예외 계층 |
 | `app-backend/app/api/problem.py` | RFC 9457 에러 응답 |
 | `app-backend/app/api/deps.py` | 인증/팀 의존성 주입 |
+| `app-backend/app/api/v1/roadmaps/jobs.py` | 로드맵 비동기 잡 생성/조회 API |
+| `app-backend/app/repositories/roadmap_job_repository.py` | 잡 상태/단계(status/stage) 업데이트 |
 | `app-backend/app/middleware/logging.py` | 요청 로깅 + request_id |
 | `docker-compose.dev.yml` | 개발 환경 서비스 구성 |

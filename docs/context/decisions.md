@@ -50,3 +50,6 @@
 - 2026-03-10 | 순수 ASGI 미들웨어 사용 (BaseHTTPMiddleware 미사용) | SSE 스트리밍 호환 문제 방지
 - 2026-03-10 | HTTPException 핸들러 유지 (마이그레이션 기간) — 잔여 4개 (413 Payload Too Large 2개 + Mock 엔드포인트 2개) | 점진적 전환 지원, 전용 Exception 없는 HTTP 상태 코드용
 - 2026-03-12 | 로컬 `pre-push`는 backend smoke subset(`tests/services`, `tests/repositories`, `tests/integration`) + frontend lint만 실행하고 CI는 backend 전체 회귀를 유지 | 로컬 피드백 루프를 27초 → 5.61초로 단축하면서 CI 안전망 유지
+- 2026-03-12 | 브라우저 통합 디버깅 표준 도구는 Playwright MCP로 통일 | StepZero 브라우저 이슈의 다수가 로그인/폼 입력/비동기 플로우 재현을 요구해 상호작용 자동화가 기본값이어야 함
+- 2026-03-12 | Playwright 재사용 자산은 `scripts/playwright/*.js`에 `browser_run_code`용 raw `async (page) => {}` snippet source로 저장 | MCP 실행기/CLI와 분리된 단일 소스 형태가 가장 재사용성이 높음
+- 2026-03-12 | 핵심 프로덕션 UI의 `data-testid`는 production 빌드에도 유지 | selector 안정성이 브라우저 통합 디버깅 생산성에 주는 이득이 현재 비용보다 큼

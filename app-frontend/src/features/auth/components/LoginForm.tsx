@@ -45,13 +45,14 @@ export const LoginForm = () => {
     };
 
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form">
             <div>
                 <input
                     type="email"
                     placeholder="Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
+                    data-testid="login-email"
                     className="w-full p-2 border rounded"
                 />
             </div>
@@ -61,12 +62,14 @@ export const LoginForm = () => {
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    data-testid="login-password"
                     className="w-full p-2 border rounded"
                 />
             </div>
             {error && <div className="text-red-500">{error}</div>}
             <button
                 type="submit"
+                data-testid="login-submit"
                 className="w-full p-2 bg-zinc-900 text-white rounded font-bold hover:bg-zinc-800 transition-colors"
             >
                 로그인

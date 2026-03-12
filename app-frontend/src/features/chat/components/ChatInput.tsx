@@ -41,13 +41,14 @@ export function ChatInput({ onSend, isStreaming }: ChatInputProps) {
   const remaining = MAX_LENGTH - value.length;
 
   return (
-    <div className="border-t border-slate-200 px-3 py-2 bg-white rounded-b-2xl">
+    <div data-testid="chat-input" className="border-t border-slate-200 px-3 py-2 bg-white rounded-b-2xl">
       <div className="flex items-end gap-2">
         <textarea
           ref={textareaRef}
           value={value}
           onChange={(e) => setValue(e.target.value.slice(0, MAX_LENGTH))}
           onKeyDown={handleKeyDown}
+          data-testid="chat-input-field"
           placeholder="메시지를 입력하세요..."
           rows={1}
           disabled={isStreaming}
@@ -56,6 +57,7 @@ export function ChatInput({ onSend, isStreaming }: ChatInputProps) {
         <Button
           onClick={handleSend}
           disabled={!canSend}
+          data-testid="chat-input-submit"
           size="icon"
           className="h-9 w-9 shrink-0 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
         >

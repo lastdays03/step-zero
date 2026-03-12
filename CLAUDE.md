@@ -279,17 +279,19 @@ cd app-backend && RAG_BOOTSTRAP_MODE=docker ./scripts/bootstrap_rag.sh
 2. `decisions.md` 확정사항 기록
 3. `handoff.md` 다음 시작점 작성 후 커밋 대기
 
-## Browser Testing (Chrome DevTools MCP)
+## Browser Testing (Playwright MCP)
 
-프론트엔드 브라우저 테스트/성능 측정 시 **chrome-devtools MCP** 사용:
+프론트엔드 브라우저 테스트/통합 디버깅 시 **Playwright MCP**를 기본 도구로 사용:
 
 ```
-1. mcp__chrome-devtools__navigate_page({ url: "http://localhost:3000" })
-2. mcp__chrome-devtools__take_snapshot({ verbose: false })
-3. mcp__chrome-devtools__list_console_messages()
-4. mcp__chrome-devtools__performance_start_trace({ reload: true, autoStop: true })
-5. mcp__chrome-devtools__take_screenshot({ fullPage: true })
+1. browser_navigate({ url: "http://localhost:3000" })
+2. browser_snapshot()
+3. browser_console_messages({ level: "error" })
+4. browser_network_requests({ includeStatic: false })
+5. browser_take_screenshot({ fullPage: true, type: "png" })
 ```
+
+- 로그인, 폼 입력, 클릭, 업로드, 비동기 플로우 재현처럼 사용자 인터랙션이 필요한 시나리오는 Playwright MCP를 우선 사용한다.
 
 Core Web Vitals 목표: LCP <2000ms, FCP <1000ms, CLS <0.1, TTI <2500ms, TBT <300ms
 

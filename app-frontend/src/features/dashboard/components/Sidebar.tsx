@@ -26,7 +26,10 @@ export const Sidebar = () => {
     const menuItems = getNavItems(canAccessOps);
 
     return (
-        <aside className="hidden md:flex w-72 bg-white border-r border-border min-h-screen flex-col sticky top-0">
+        <aside
+            data-testid="sidebar"
+            className="hidden md:flex w-72 bg-white border-r border-border min-h-screen flex-col sticky top-0"
+        >
             <div className="p-8">
                 <Link href="/dashboard" className="flex items-center gap-2">
                     <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-white font-bold text-xl">
@@ -43,6 +46,7 @@ export const Sidebar = () => {
                         <Link
                             key={item.label}
                             href={item.href}
+                            data-testid={item.testId}
                             className={`flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 group ${isActive
                                 ? 'bg-secondary text-primary font-bold'
                                 : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'

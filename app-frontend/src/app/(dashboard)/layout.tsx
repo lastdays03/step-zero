@@ -14,7 +14,10 @@ export default function DashboardLayout({
                 <Sidebar />
                 <div className="flex-1 flex flex-col overflow-hidden">
                     <Header />
-                    <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 md:p-6 pb-32 md:pb-20">
+                    <main
+                        data-testid="main-content"
+                        className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 md:p-6 pb-32 md:pb-20"
+                    >
                         <SessionExpiredBanner />
                         {children}
                     </main>

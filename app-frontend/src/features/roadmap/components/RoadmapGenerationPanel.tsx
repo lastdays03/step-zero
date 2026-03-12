@@ -148,23 +148,34 @@ export const RoadmapGenerationPanel = ({
         window.localStorage.removeItem(ROADMAP_JOB_STORAGE_KEY);
     };
 
+    const generationState = pollingJobId
+        ? (job?.status || "RUNNING")
+        : (generationError || job?.error_message)
+            ? "FAILED"
+            : "IDLE";
+
     return (
         <>
-            <RoadmapChatIntake
-                onValidate={handleValidateInput}
-                onSubmit={handleStartGeneration}
-                onRefresh={onRefresh}
-                externalError={generationError || job?.error_message}
-                isAuthenticated={isAuthenticated}
-                onRequireLogin={() => setIsAuthModalOpen(true)}
-                isGenerating={Boolean(pollingJobId)}
-                generatingStatus={{
-                    status: job?.status,
-                    stage: job?.stage,
-                    progress: job?.progress,
-                }}
-                onCancelGenerating={handleCancelGenerating}
-            />
+            <div
+                data-testid="roadmap-generation-panel"
+                data-generation-state={generationState}
+            >
+                <RoadmapChatIntake
+                    onValidate={handleValidateInput}
+                    onSubmit={handleStartGeneration}
+                    onRefresh={onRefresh}
+                    externalError={generationError || job?.error_message}
+                    isAuthenticated={isAuthenticated}
+                    onRequireLogin={() => setIsAuthModalOpen(true)}
+                    isGenerating={Boolean(pollingJobId)}
+                    generatingStatus={{
+                        status: job?.status,
+                        stage: job?.stage,
+                        progress: job?.progress,
+                    }}
+                    onCancelGenerating={handleCancelGenerating}
+                />
+            </div>
             <SocialAuthModal
                 isOpen={isAuthModalOpen}
                 onClose={() => setIsAuthModalOpen(false)}

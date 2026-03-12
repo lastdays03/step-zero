@@ -7,5 +7,9 @@ import { ChatPanel } from "./ChatPanel";
 export function ChatWidget() {
   const { isPanelOpen } = useChatProvider();
 
-  return isPanelOpen ? <ChatPanel /> : <ChatFAB />;
+  return (
+    <div data-testid="chat-widget" data-state={isPanelOpen ? "open" : "closed"}>
+      {isPanelOpen ? <ChatPanel /> : <ChatFAB />}
+    </div>
+  );
 }

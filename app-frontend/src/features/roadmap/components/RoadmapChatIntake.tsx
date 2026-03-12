@@ -227,16 +227,20 @@ export const RoadmapChatIntake = ({
     const suggestionItems = validated ? [] : (INTAKE_FIELD_SUGGESTIONS[current.key] || []);
 
     return (
-        <section className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50/60">
+        <section
+            data-testid="roadmap-chat-intake"
+            className="overflow-hidden rounded-3xl border border-slate-200 bg-slate-50/60"
+        >
             <div className="border-b border-slate-200 bg-white/60 px-6 py-5 sm:px-8">
                 <div className="flex items-end justify-between">
                     <span className="text-sm font-semibold text-slate-600">
                         1단계: 비즈니스 정보 수집 중
                     </span>
-                    <span className="text-sm font-bold text-blue-600">{progressPercent}%</span>
+                    <span data-testid="roadmap-progress-percent" className="text-sm font-bold text-blue-600">{progressPercent}%</span>
                 </div>
                 <div className="mt-2 h-2 rounded-full bg-slate-200">
                     <div
+                        data-testid="roadmap-progress-bar"
                         className="h-2 rounded-full bg-blue-600 transition-all duration-500"
                         style={{ width: `${Math.max(5, progressPercent)}%` }}
                     />
@@ -252,7 +256,10 @@ export const RoadmapChatIntake = ({
                             </div>
                             <div className="max-w-[85%]">
                                 <p className="ml-1 text-xs font-semibold text-slate-500">StepZero AI</p>
-                                <div className="mt-1 rounded-xl rounded-tl-none border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-700 shadow-sm">
+                                <div
+                                    data-testid="roadmap-current-prompt"
+                                    className="mt-1 rounded-xl rounded-tl-none border border-slate-200 bg-white p-4 text-sm leading-relaxed text-slate-700 shadow-sm"
+                                >
                                     {validated
                                         ? "정보 검증이 완료되었습니다. 아래 내용을 확인한 뒤 로드맵 생성을 시작하세요."
                                         : current.prompt}
@@ -278,7 +285,10 @@ export const RoadmapChatIntake = ({
                         ))}
 
                         {validated ? (
-                            <div className="ml-auto w-fit max-w-[90%] rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                            <div
+                                data-testid="roadmap-validation-summary"
+                                className="ml-auto w-fit max-w-[90%] rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700"
+                            >
                                 {validated.summary}
                             </div>
                         ) : suggestionItems.length ? (
@@ -297,7 +307,13 @@ export const RoadmapChatIntake = ({
                         ) : null}
 
                         {isGenerating ? (
-                            <div className="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+                            <div
+                                data-testid="roadmap-generation-status"
+                                data-status={generatingStatus?.status || "RUNNING"}
+                                data-stage={generatingStatus?.stage || "DETAIL_GENERATING"}
+                                data-progress={String(generatingStatus?.progress ?? 0)}
+                                className="rounded-xl border border-blue-100 bg-blue-50/60 p-4"
+                            >
                                 <div className="flex items-center gap-2 text-sm font-semibold text-blue-700">
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                     로드맵 생성 진행 중
@@ -317,6 +333,7 @@ export const RoadmapChatIntake = ({
                                     <button
                                         type="button"
                                         onClick={onCancelGenerating}
+                                        data-testid="roadmap-hide-generation-btn"
                                         className="mt-3 rounded-lg border border-slate-300 bg-white px-3 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                                     >
                                         생성 상태 숨기기
@@ -325,8 +342,8 @@ export const RoadmapChatIntake = ({
                             </div>
                         ) : null}
 
-                        {error ? <p className="text-sm text-red-600">{error}</p> : null}
-                        {externalError ? <p className="text-sm text-red-600">{externalError}</p> : null}
+                        {error ? <p data-testid="roadmap-intake-error" className="text-sm text-red-600">{error}</p> : null}
+                        {externalError ? <p data-testid="roadmap-generation-error" className="text-sm text-red-600">{externalError}</p> : null}
                     </div>
 
                     <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
@@ -349,6 +366,8 @@ export const RoadmapChatIntake = ({
                                 onFocus={() => {
                                     if (!isAuthenticated) onRequireLogin?.();
                                 }}
+                                data-testid="roadmap-input"
+                                data-roadmap-field={current.key}
                                 placeholder={current.required ? "여기에 답변을 입력하세요..." : "선택 정보를 입력하세요..."}
                                 disabled={isGenerating || validating || submitting}
                                 className="flex-1 border-none bg-transparent px-2 py-2 text-sm outline-none placeholder:text-slate-400 disabled:bg-slate-100"
@@ -358,6 +377,7 @@ export const RoadmapChatIntake = ({
                                     <button
                                         type="button"
                                         onClick={handleEdit}
+                                        data-testid="roadmap-edit-btn"
                                         disabled={submitting || isGenerating}
                                         className="rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
                                     >
@@ -366,6 +386,7 @@ export const RoadmapChatIntake = ({
                                     <button
                                         type="button"
                                         onClick={() => void handleSubmit()}
+                                        data-testid="roadmap-create-btn"
                                         disabled={submitting || isGenerating}
                                         className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
                                     >
@@ -377,6 +398,7 @@ export const RoadmapChatIntake = ({
                                 <button
                                     type="button"
                                     onClick={handleNext}
+                                    data-testid="roadmap-next-btn"
                                     disabled={submitting || validating || isGenerating}
                                     className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
                                 >
@@ -387,6 +409,7 @@ export const RoadmapChatIntake = ({
                                 <button
                                     type="button"
                                     onClick={() => void handleValidate()}
+                                    data-testid="roadmap-validate-btn"
                                     disabled={submitting || validating || requiredMissing || isGenerating}
                                     className="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-2 text-xs font-semibold text-white hover:bg-blue-500 disabled:opacity-50"
                                 >
@@ -442,6 +465,7 @@ export const RoadmapChatIntake = ({
                             <button
                                 type="button"
                                 onClick={onRefresh}
+                                data-testid="roadmap-refresh-btn"
                                 disabled={submitting || validating}
                                 className="rounded-full border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
                             >

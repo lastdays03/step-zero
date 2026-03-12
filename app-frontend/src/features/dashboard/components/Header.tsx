@@ -16,7 +16,10 @@ export const Header = () => {
     const userName = user?.full_name || user?.username || '게스트';
 
     return (
-        <header className="h-20 flex items-center justify-between px-8 bg-background/80 backdrop-blur-md sticky top-0 z-30 border-b border-transparent">
+        <header
+            data-testid="header"
+            className="h-20 flex items-center justify-between px-8 bg-background/80 backdrop-blur-md sticky top-0 z-30 border-b border-transparent"
+        >
             <div>
                 <h2 className="text-xl font-bold text-slate-900">{getGreeting()}, {userName}님.</h2>
                 <p className="text-xs text-slate-500 mt-1">오늘도 한 걸음 더 나아가 봅시다.</p>
