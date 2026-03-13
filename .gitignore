@@ -109,9 +109,7 @@ app-backend/tests/fixtures/actionkits/
 
 # Claude Code runtime cache
 .claude/tsc-cache/
-# Test screenshots
-*.png
-!app-frontend/public/**/*.png
+
 # Test/debug output
 *_output.txt
 *_logs.txt
